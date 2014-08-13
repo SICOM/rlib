@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2014 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -382,51 +382,55 @@ gchar *rlib_align_text(rlib *r, gchar **my_rtn, gchar *src, gint align, gint wid
 	gint len = 0, size = 0, lastidx = 0;
 	gchar *rtn;
 
-	if(width == 0) {
+	if (width == 0) {
 		rtn = *my_rtn = g_strdup("");
 		return rtn;
 	}
 
-	if(src != NULL) {
+	if (src != NULL) {
 		len = r_strlen(src);
 		size = strlen(src);
 		lastidx = width + size - len;
 	}
 
-	if(len > width) {
+	if (len > width) {
 		rtn = *my_rtn = g_strdup(src);
 		return rtn;
 	} else {
 		rtn = *my_rtn  = g_malloc(lastidx + 1);
-		if(width >= 1) {
+		if (width >= 1) {
 			memset(rtn, ' ', lastidx);
 			rtn[lastidx] = 0;
 		}  
-		if(src != NULL)
+		if (src != NULL)
 			memcpy(rtn, src, size);
 	}
 
-	if(!OUTPUT(r)->do_align)
+	if (!OUTPUT(r)->do_align)
 		return rtn;
 
-	if(align == RLIB_ALIGN_LEFT || width == -1) {
+	if (align == RLIB_ALIGN_LEFT || width == -1) {
+		/* intentionally do nothing here */
 	} else {
-		if(align == RLIB_ALIGN_RIGHT) {        
+		if (align == RLIB_ALIGN_RIGHT) {        
 			gint x = lastidx - size;
-			if(x > 0) {
+			if (x > 0) {
 				memset(rtn, ' ', x);
-				if(src == NULL)
+				if (src == NULL)
 					rtn[x] = 0;
 				else
 					g_strlcpy(rtn+x, src, lastidx);
 			}
 		}
-		if(align == RLIB_ALIGN_CENTER) {
-			if(!(width > 0 && len > width)) {
+		if (align == RLIB_ALIGN_CENTER) {
+			if (!(width > 0 && len > width)) {
 				gint x = (width - len)/2;
-				if(x > 0) {
+				if (x > 0) {
 					memset(rtn, ' ', x);
-					memcpy(rtn+x, src, size);
+					if (src == NULL)
+						rtn[x] = 0;
+					else
+						memcpy(rtn+x, src, size);
 				}
 			}
 		}

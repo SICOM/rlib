@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2014 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -323,9 +323,10 @@ gint rlib_pcode_operator_lte(rlib *r, struct rlib_pcode *code, struct rlib_value
 	struct rlib_value *v1, *v2, rval_rtn;
 	v1 = rlib_value_stack_pop(vs);
 	v2 = rlib_value_stack_pop(vs);
-	if(v1 != NULL && v2 != NULL) {
-		if(RLIB_VALUE_IS_NUMBER(v1) && RLIB_VALUE_IS_NUMBER(v2)) {
-			if(RLIB_VALUE_GET_AS_NUMBER(v2) <= RLIB_VALUE_GET_AS_NUMBER(v1))	{
+
+	if (v1 != NULL && v2 != NULL) {
+		if (RLIB_VALUE_IS_NUMBER(v1) && RLIB_VALUE_IS_NUMBER(v2)) {
+			if (RLIB_VALUE_GET_AS_NUMBER(v2) <= RLIB_VALUE_GET_AS_NUMBER(v1))	{
 				rlib_value_free(v1);
 				rlib_value_free(v2);
 				rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, RLIB_DECIMAL_PRECISION));
@@ -336,8 +337,8 @@ gint rlib_pcode_operator_lte(rlib *r, struct rlib_pcode *code, struct rlib_value
 			}
 			return TRUE;
 		}
-		if(RLIB_VALUE_IS_STRING(v1) && RLIB_VALUE_IS_STRING(v2)) {
-			if(r_strcmp(RLIB_VALUE_GET_AS_STRING(v2), RLIB_VALUE_GET_AS_STRING(v1)) <= 0) {
+		if (RLIB_VALUE_IS_STRING(v1) && RLIB_VALUE_IS_STRING(v2)) {
+			if (r_strcmp(RLIB_VALUE_GET_AS_STRING(v2), RLIB_VALUE_GET_AS_STRING(v1)) <= 0) {
 				rlib_value_free(v1);
 				rlib_value_free(v2);
 				rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, RLIB_DECIMAL_PRECISION));
@@ -348,17 +349,17 @@ gint rlib_pcode_operator_lte(rlib *r, struct rlib_pcode *code, struct rlib_value
 			}
 			return TRUE;
 		}
-	}
-	if(RLIB_VALUE_IS_DATE(v1) && RLIB_VALUE_IS_DATE(v2)) {
-		struct rlib_datetime *t1, *t2;
-		gint64 val;
-		t1 = &RLIB_VALUE_GET_AS_DATE(v1);
-		t2 = &RLIB_VALUE_GET_AS_DATE(v2);
-		val = (rlib_datetime_compare(t2, t1) <= 0)? RLIB_DECIMAL_PRECISION : 0;
-		rlib_value_free(v1);
-		rlib_value_free(v2);
-		rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, val));
-		return TRUE;
+		if (RLIB_VALUE_IS_DATE(v1) && RLIB_VALUE_IS_DATE(v2)) {
+			struct rlib_datetime *t1, *t2;
+			gint64 val;
+			t1 = &RLIB_VALUE_GET_AS_DATE(v1);
+			t2 = &RLIB_VALUE_GET_AS_DATE(v2);
+			val = (rlib_datetime_compare(t2, t1) <= 0)? RLIB_DECIMAL_PRECISION : 0;
+			rlib_value_free(v1);
+			rlib_value_free(v2);
+			rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, val));
+			return TRUE;
+		}
 	}
 	rlib_value_free(v1);
 	rlib_value_free(v2);
@@ -372,9 +373,9 @@ gint rlib_pcode_operator_lt(rlib *r, struct rlib_pcode *code, struct rlib_value_
 	struct rlib_value *v1, *v2, rval_rtn;
 	v1 = rlib_value_stack_pop(vs);
 	v2 = rlib_value_stack_pop(vs);
-	if(v1 != NULL && v2 != NULL) {
-		if(RLIB_VALUE_IS_NUMBER(v1) && RLIB_VALUE_IS_NUMBER(v2)) {
-			if(RLIB_VALUE_GET_AS_NUMBER(v2) < RLIB_VALUE_GET_AS_NUMBER(v1))	{
+	if (v1 != NULL && v2 != NULL) {
+		if (RLIB_VALUE_IS_NUMBER(v1) && RLIB_VALUE_IS_NUMBER(v2)) {
+			if (RLIB_VALUE_GET_AS_NUMBER(v2) < RLIB_VALUE_GET_AS_NUMBER(v1))	{
 				rlib_value_free(v1);
 				rlib_value_free(v2);
 				rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, RLIB_DECIMAL_PRECISION));
@@ -385,8 +386,8 @@ gint rlib_pcode_operator_lt(rlib *r, struct rlib_pcode *code, struct rlib_value_
 			}
 			return TRUE;
 		}
-		if(RLIB_VALUE_IS_STRING(v1) && RLIB_VALUE_IS_STRING(v2)) {
-			if(r_strcmp(RLIB_VALUE_GET_AS_STRING(v2), RLIB_VALUE_GET_AS_STRING(v1)) < 0) {
+		if (RLIB_VALUE_IS_STRING(v1) && RLIB_VALUE_IS_STRING(v2)) {
+			if (r_strcmp(RLIB_VALUE_GET_AS_STRING(v2), RLIB_VALUE_GET_AS_STRING(v1)) < 0) {
 				rlib_value_free(v1);
 				rlib_value_free(v2);
 				rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, RLIB_DECIMAL_PRECISION));
@@ -397,17 +398,17 @@ gint rlib_pcode_operator_lt(rlib *r, struct rlib_pcode *code, struct rlib_value_
 			}
 			return TRUE;
 		}
-	}
-	if(RLIB_VALUE_IS_DATE(v1) && RLIB_VALUE_IS_DATE(v2)) {
-		struct rlib_datetime *t1, *t2;
-		gint64 val;
-		t1 = &RLIB_VALUE_GET_AS_DATE(v1);
-		t2 = &RLIB_VALUE_GET_AS_DATE(v2);
-		val = (rlib_datetime_compare(t2, t1) < 0)? RLIB_DECIMAL_PRECISION : 0;
-		rlib_value_free(v1);
-		rlib_value_free(v2);
-		rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, val));
-		return TRUE;
+		if (RLIB_VALUE_IS_DATE(v1) && RLIB_VALUE_IS_DATE(v2)) {
+			struct rlib_datetime *t1, *t2;
+			gint64 val;
+			t1 = &RLIB_VALUE_GET_AS_DATE(v1);
+			t2 = &RLIB_VALUE_GET_AS_DATE(v2);
+			val = (rlib_datetime_compare(t2, t1) < 0)? RLIB_DECIMAL_PRECISION : 0;
+			rlib_value_free(v1);
+			rlib_value_free(v2);
+			rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, val));
+			return TRUE;
+		}
 	}
 	rlib_value_free(v1);
 	rlib_value_free(v2);

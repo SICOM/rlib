@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2014 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -578,10 +578,16 @@ gboolean rpdf_get_compression(struct rpdf *pdf) {
 
 static GString *rpdf_add_page_content_uncompressed(struct rpdf *pdf) {
 	GString *obj;
-	
-	obj = obj_printf(NULL, "<</Length %d>>\n", pdf->page_data->len);
+	gint len;
+
+	if (pdf == NULL || pdf->page_data == NULL)
+		len = 0;
+	else
+		len = pdf->page_data->len;
+
+	obj = obj_printf(NULL, "<</Length %d>>\n", len);
 	obj = obj_concat(obj, "stream\n");
-	if(pdf->page_data->len > 0) {
+	if (pdf != NULL && pdf->page_data != NULL && pdf->page_data->len > 0) {
 		obj = g_string_append(obj,  pdf->page_data->str);
 		obj = g_string_append(obj,  "\n");
 	}
@@ -596,7 +602,7 @@ static GString *rpdf_add_page_content_compressed(struct rpdf *pdf) {
 	gchar *compr;
 	int err;
 
-	if(pdf->page_data->str == NULL || pdf->page_data->len <= 0)
+	if (pdf == NULL || pdf->page_data == NULL || pdf->page_data->str == NULL || pdf->page_data->len <= 0)
 		return NULL;
 
 	c_stream = pdf->zlib_stream;

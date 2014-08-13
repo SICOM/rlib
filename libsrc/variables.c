@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2014 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -64,10 +64,10 @@ void rlib_process_variables(rlib *r, struct rlib_report *report, gboolean precal
 	struct rlib_element *e;
 	gboolean samerow = FALSE;
 
-	if(report->uniquerow_code != NULL) {
+	if (report->uniquerow_code != NULL) {
 		struct rlib_value tmp_rval;
 		rlib_execute_pcode(r, &tmp_rval, report->uniquerow_code, NULL);
-		if(rvalcmp(&tmp_rval, &report->uniquerow) == 0) {
+		if (rvalcmp(&tmp_rval, &report->uniquerow) == 0) {
 			samerow = TRUE;
 		} else {
 			rlib_value_free(&report->uniquerow);
@@ -75,30 +75,34 @@ void rlib_process_variables(rlib *r, struct rlib_report *report, gboolean precal
 		}
 	}
 
-	for(e = report->variables; e != NULL; e=e->next) {
+	for (e = report->variables; e != NULL; e = e->next) {
 		struct rlib_report_variable *rv = e->data;
 		struct rlib_value *count = &RLIB_VARIABLE_CA(rv)->count;
 		struct rlib_value *amount = &RLIB_VARIABLE_CA(rv)->amount;
-		struct rlib_value execute_result, *er = &execute_result;
+		struct rlib_value execute_result, *er = NULL;
 		gboolean ignore = FALSE;
-		if(rv->code != NULL)
-			rlib_execute_pcode(r, &execute_result, rv->code, NULL);
-			 
-		if(rv->ignore_code != NULL) {
+		if (rv->code != NULL)
+			er = rlib_execute_pcode(r, &execute_result, rv->code, NULL);
+
+		/* rv->code was NULL or rlib_execute_pcode() returned error */
+		if (er == NULL)
+			continue;
+
+		if (rv->ignore_code != NULL) {
 			gboolean test_ignore;
-			if(rlib_execute_as_boolean(r, rv->ignore_code, &test_ignore)) {
+			if (rlib_execute_as_boolean(r, rv->ignore_code, &test_ignore)) {
 				ignore = test_ignore;
 			}
 		}
 		
-		if(samerow)
+		if (samerow)
 			ignore = TRUE;
 
-		if(ignore == FALSE) {
-			if(rv->type == RLIB_REPORT_VARIABLE_COUNT) {
+		if (ignore == FALSE) {
+			if (rv->type == RLIB_REPORT_VARIABLE_COUNT) {
 				RLIB_VALUE_GET_AS_NUMBER(count) += RLIB_DECIMAL_PRECISION;
-			} else if(rv->type == RLIB_REPORT_VARIABLE_EXPRESSION) {
-				if(RLIB_VALUE_IS_NUMBER(er)) {
+			} else if (rv->type == RLIB_REPORT_VARIABLE_EXPRESSION) {
+				if (RLIB_VALUE_IS_NUMBER(er)) {
 					rlib_value_free(amount);
 					rlib_value_new_number(amount, RLIB_VALUE_GET_AS_NUMBER(er));
 				} else if (RLIB_VALUE_IS_STRING(er)) {
@@ -106,7 +110,7 @@ void rlib_process_variables(rlib *r, struct rlib_report *report, gboolean precal
 					rlib_value_new_string(amount, RLIB_VALUE_GET_AS_STRING(er));
 				} else
 					r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER OR STRING FOR RLIB_REPORT_VARIABLE_EXPRESSION\n");
-			} else if(rv->type == RLIB_REPORT_VARIABLE_SUM) {
+			} else if (rv->type == RLIB_REPORT_VARIABLE_SUM) {
 				if(RLIB_VALUE_IS_NUMBER(er))
 					RLIB_VALUE_GET_AS_NUMBER(amount) += RLIB_VALUE_GET_AS_NUMBER(er);
 				else
@@ -141,24 +145,23 @@ void rlib_process_variables(rlib *r, struct rlib_report *report, gboolean precal
 
 void rlib_process_expression_variables(rlib *r, struct rlib_report *report) {
 	struct rlib_element *e;
-	for(e = report->variables; e != NULL; e=e->next) {
+	for (e = report->variables; e != NULL; e = e->next) {
 		struct rlib_report_variable *rv = e->data;
 		struct rlib_value *amount = &RLIB_VARIABLE_CA(rv)->amount;
-		struct rlib_value execute_result, *er = &execute_result;
-		if(rv->type == RLIB_REPORT_VARIABLE_EXPRESSION) {
-			if(rv->code != NULL)
-				rlib_execute_pcode(r, &execute_result, rv->code, NULL);
-			if(RLIB_VALUE_IS_NUMBER(er)) {
+		struct rlib_value execute_result, *er = NULL;
+		if (rv->type == RLIB_REPORT_VARIABLE_EXPRESSION) {
+			if (rv->code != NULL)
+				er = rlib_execute_pcode(r, &execute_result, rv->code, NULL);
+			if (er && RLIB_VALUE_IS_NUMBER(er)) {
 				rlib_value_free(amount);
 				rlib_value_new_number(amount, RLIB_VALUE_GET_AS_NUMBER(er));
-			} else if (RLIB_VALUE_IS_STRING(er)) {
+			} else if (er && RLIB_VALUE_IS_STRING(er)) {
 				rlib_value_free(amount);
 				rlib_value_new_string(amount, RLIB_VALUE_GET_AS_STRING(er));
 			} else
 				r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER OR STRING FOR RLIB_REPORT_VARIABLE_EXPRESSION\n");
 		}
 	}
-	
 }
 
 gboolean rlib_variabls_needs_precalculate(rlib *r, struct rlib_part *part, struct rlib_report *report) {

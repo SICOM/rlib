@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2014 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -89,7 +89,7 @@ static void really_print_text(rlib *r, const gchar *passed_text, gint rval_type,
 	gchar csv_delimeter;
 	gint text_size = strlen(passed_text);
 	gint *size;
-	gint i, spot=0;
+	gint i, spot = 0;
 
 	if (text_size > MAXSTRLEN - 5) {
 		text_size = MAXSTRLEN - 5;
@@ -97,27 +97,28 @@ static void really_print_text(rlib *r, const gchar *passed_text, gint rval_type,
 
 	csv_delimeter = rlib_csv_get_delimiter(r);
 
-	if(passed_text != NULL && passed_text[0] != '\r') {
-		for(i=0;i<text_size+1;i++) {
-			if(passed_text[i] == '"')
+	if (passed_text != NULL && passed_text[0] != '\r') {
+		for (i = 0; i < text_size + 1; i++) {
+			if (passed_text[i] == '"')
 				text[spot++] = '\\';
 			text[spot++] = passed_text[i];			
 		}
-		if(OUTPUT_PRIVATE(r)->no_quotes == TRUE) {
-			for(i=spot-2; text[i] == ' ' && i>=0; i--);
+		if (OUTPUT_PRIVATE(r)->no_quotes == TRUE) {
+			for (i = spot - 2; i >= 0 && text[i] == ' '; i--)
+				/* intentionally empty loop body */;
 			text[++i] = '\0';
 			text_size = i;
 			spot = text_size + 1;
 		}
 
-		if(strlen(text) > MAXSTRLEN-4)
+		if (strlen(text) > MAXSTRLEN-4)
 			text[MAXSTRLEN-4] = 0;
 
-		if((OUTPUT_PRIVATE(r)->only_quote_strings == FALSE && OUTPUT_PRIVATE(r)->no_quotes == FALSE) || (OUTPUT_PRIVATE(r)->only_quote_strings == TRUE && rval_type == RLIB_VALUE_STRING)) {
+		if ((OUTPUT_PRIVATE(r)->only_quote_strings == FALSE && OUTPUT_PRIVATE(r)->no_quotes == FALSE) || (OUTPUT_PRIVATE(r)->only_quote_strings == TRUE && rval_type == RLIB_VALUE_STRING)) {
 			text_size = spot -1;
 			text_size += 2;
 
-			if(field_count == 0) {
+			if (field_count == 0) {
 				sprintf(buf, "\"%s\"", text);
 			} else {
 				/* Handle null delimeter */
@@ -130,7 +131,7 @@ static void really_print_text(rlib *r, const gchar *passed_text, gint rval_type,
 			}
 		} else {
 			text_size = spot -1;
-			if(field_count == 0) {
+			if (field_count == 0) {
 				sprintf(buf, "%s", text);
 			} else {
 				/* Handle null delimeter */
