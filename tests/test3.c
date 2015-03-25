@@ -23,11 +23,12 @@
 
 int main(int argc, char **argv) {
 	char *hostname, *username, *password, *database;
+	unsigned int port;
 	char query[MAXSTRLEN*20];
 	rlib *r;
 
-	if(argc != 5) {
-		fprintf(stderr, "%s requires 4 arguments hostname username password database\n", argv[0]);
+	if(argc != 6) {
+		fprintf(stderr, "%s requires 5 arguments hostname username password database port\n", argv[0]);
 		fprintf(stderr, "You provided %d\n", argc-1);
 		return -1;
 	}
@@ -36,6 +37,7 @@ int main(int argc, char **argv) {
 	username = argv[2];
 	password = argv[3];
 	database = argv[4];
+	port = atoi(argv[5]);
 
 	sprintf(query, " ");
 	sprintf(query, "%s SELECT store_hierarchy.g0_name, store_hierarchy.g1_name, store_hierarchy.g2_name, store_hierarchy.g3_name, store_hierarchy.g4_name,", query);
@@ -57,7 +59,7 @@ int main(int argc, char **argv) {
 
 
 	r = rlib_init();
-	rlib_add_datasource_mysql(r, "local_mysql", hostname, username, password, database);
+	rlib_add_datasource_mysql(r, "local_mysql", hostname, username, password, database, port);
 	rlib_add_query_as(r, "local_mysql", query, "topline");
 	rlib_add_query_as(r, "local_mysql", "select company.*, menu_items.name as report_name from company, menu_items where menu_items.id = 28", "header");
 	rlib_add_report(r, "report_financial_summary.xml");

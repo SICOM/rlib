@@ -17,12 +17,18 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+
+#include <config.h>
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
  
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <glib.h>
-#include <config.h>
 #include <php.h>
  
 #include "rlib.h"

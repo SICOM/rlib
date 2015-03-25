@@ -491,17 +491,18 @@ method_add_datasource_array(PyObject *self, PyObject *_args) {
 	return Py_None;
 }
 
-static char method_add_datasource_mysql__doc__[] = "add_datasource_mysql(datasource_name, hostname, username, password, database) -> int";
+static char method_add_datasource_mysql__doc__[] = "add_datasource_mysql(datasource_name, hostname, username, password, database, port) -> int";
 static PyObject *
 method_add_datasource_mysql(PyObject *self, PyObject *_args) {
 	RLIBObject	*rp = (RLIBObject *)self;
 	char 	*datasource, *hostname, *username, *password, *database;
+	unsigned int port;
 	int	result;
 	
-	if(!PyArg_ParseTuple(_args, "sssss:add_datasource_mysql",&datasource,&hostname,&username,&password,&database))
+	if (!PyArg_ParseTuple(_args, "sssssI:add_datasource_mysql", &datasource, &hostname, &username, &password, &database, &port))
 		return NULL;
 	check_rlibobject_open(rp);
-	result = rlib_add_datasource_mysql(rp->rlib_ptr,datasource,hostname,username,password,database);
+	result = rlib_add_datasource_mysql(rp->rlib_ptr, datasource, hostname, username, password, database, port);
 	return PyInt_FromLong((long)result);
 }
 
@@ -577,7 +578,6 @@ method_add_function(PyObject *self, PyObject *_args) {
 	char		*name;
 	int		param_count;
 	func_chain	*nfp;
-	long		result;
 	
 	PyObject *callable;
 	if (!PyArg_ParseTuple(_args, "sOi:add_function", &name, &callable, &param_count))
@@ -595,7 +595,7 @@ method_add_function(PyObject *self, PyObject *_args) {
 	nfp->param_count = param_count;
 	nfp->next = rp->funcs;
 	rp->funcs = nfp;
-	result = rlib_add_function(rp->rlib_ptr, name, implement_function_call, nfp);
+	rlib_add_function(rp->rlib_ptr, name, implement_function_call, nfp);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -1119,18 +1119,19 @@ static PyTypeObject RLIBType = {
 /* ----------------------------------------------------------------- */
 
 static char rlibmysql_report__doc__[] = "\
-mysql_report(hostname, username, password, database, xmlfilename, sqlquery, outputformat) -> 0\n\
+mysql_report(hostname, username, password, database, port, xmlfilename, sqlquery, outputformat) -> 0\n\
 Generate a mysql report and send it to standard out.\n\
 ";
 static PyObject *
 rlibmysql_report(PyObject *self, PyObject *_args)
 {
 	char	*hostname, *username, *password, *database, *xmlfile, *sqlquery, *oformat;
+	unsigned int port;
 	long	result;
 
-	if (!PyArg_ParseTuple(_args, "sssssss:mysql_report", &hostname, &username, &password, &database, &xmlfile, &sqlquery, &oformat))
+	if (!PyArg_ParseTuple(_args, "ssssIsss:mysql_report", &hostname, &username, &password, &database, &port, &xmlfile, &sqlquery, &oformat))
 		return NULL;
-	result = rlib_mysql_report(hostname, username, password, database, xmlfile, sqlquery, oformat);
+	result = rlib_mysql_report(hostname, username, password, database, port, xmlfile, sqlquery, oformat);
 	return PyInt_FromLong(result);
 }
 
