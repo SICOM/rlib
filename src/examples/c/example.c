@@ -23,15 +23,17 @@
 
 int main(int argc, char **argv) {
 	const char *hostname, *username, *password, *database;
+	unsigned int port;
 	rlib *r;
 
 	hostname = "localhost";
 	username = "rlib";
 	password = "rlib";
 	database = "rlib";
+	port = 3306;
 
 	r = rlib_init();
-	if(rlib_add_datasource_mysql(r, "local_mysql", hostname, username, password, database) < 0) {
+	if(rlib_add_datasource_mysql(r, "local_mysql", hostname, username, password, database, port) < 0) {
 		fprintf(stderr, "Could not connect to XML Database\n");
 		return 1;
 	}

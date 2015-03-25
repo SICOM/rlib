@@ -164,21 +164,23 @@ ZEND_FUNCTION(rlib_add_datasource_mysql) {
 	zval *z_rip = NULL;
 	gint datasource_length, sql_host_length, sql_user_length, sql_password_length, sql_database_length;
 	gchar *datasource_name, *database_host, *database_user, *database_password, *database_database;
+	long sql_database_port;
 	rlib_inout_pass *rip;
 	gint id = -1;
 	gint result = 0;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rsssss", &z_rip,
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rsssssl", &z_rip,
 		&datasource_name, &datasource_length,
 		&database_host, &sql_host_length, 
 		&database_user, &sql_user_length, 
 		&database_password, &sql_password_length, 
-		&database_database, &sql_database_length) == FAILURE) {
+		&database_database, &sql_database_length,
+		&sql_database_port) == FAILURE) {
 		return;
 	}
 	ZEND_FETCH_RESOURCE(rip, rlib_inout_pass *, &z_rip, id, LE_RLIB_NAME, le_link);
 	
-	result = rlib_add_datasource_mysql(rip->r, datasource_name, database_host, database_user, database_password, database_database);
+	result = rlib_add_datasource_mysql(rip->r, datasource_name, database_host, database_user, database_password, database_database, (unsigned int)sql_database_port);
 	RETURN_LONG(result);
 }
 

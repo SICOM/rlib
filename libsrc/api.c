@@ -516,16 +516,16 @@ const gchar *rlib_version(void) {
 }
 #endif
 
-gint rlib_mysql_report(gchar *hostname, gchar *username, gchar *password, gchar *database, gchar *xmlfilename, gchar *sqlquery, 
+gint rlib_mysql_report(gchar *hostname, gchar *username, gchar *password, gchar *database, unsigned int port, gchar *xmlfilename, gchar *sqlquery, 
 gchar *outputformat) {
 	rlib *r;
 	r = rlib_init();
-	if(rlib_add_datasource_mysql(r, "mysql", hostname, username, password, database) == -1)
+	if (rlib_add_datasource_mysql(r, "mysql", hostname, username, password, database, port) == -1)
 		return -1;
 	rlib_add_query_as(r, "mysql", sqlquery, "example");
 	rlib_add_report(r, xmlfilename);
 	rlib_set_output_format_from_text(r, outputformat);
-	if(rlib_execute(r) == -1)
+	if (rlib_execute(r) == -1)
 		return -1;
 	rlib_spool(r);
 	rlib_free(r);

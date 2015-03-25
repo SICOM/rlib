@@ -1046,7 +1046,7 @@ gboolean rlib_signal_connect_string(rlib *r, gchar *signal_name, gboolean (*sign
 gboolean rlib_signal_connect(rlib *r, gint signal_number, gboolean (*signal_function)(rlib *, gpointer), gpointer data);
 gchar *rlib_get_output(rlib *r);
 gint rlib_get_output_length(rlib *r);
-gint rlib_mysql_report(gchar *hostname, gchar *username, gchar *password, gchar *database, gchar *xmlfilename, gchar *sqlquery,
+gint rlib_mysql_report(gchar *hostname, gchar *username, gchar *password, gchar *database, unsigned int port, gchar *xmlfilename, gchar *sqlquery,
 	gchar *outputformat);
 gint rlib_postgres_report(gchar *connstr, gchar *xmlfilename, gchar *sqlquery, gchar *outputformat);
 gint rlib_add_resultset_follower(rlib *r, gchar *leader, gchar *follower);
@@ -1148,12 +1148,12 @@ void rlib_csv_new_output_filter(rlib *r);
 
 /***** PROTOTYPES: mysql.c ****************************************************/
 gpointer rlib_mysql_new_input_filter(void);
-gpointer rlib_mysql_real_connect(gpointer input_ptr, gchar *group, gchar *host, gchar *user, gchar *password, gchar *database);
+gpointer rlib_mysql_real_connect(gpointer input_ptr, gchar *group, gchar *host, gchar *user, gchar *password, gchar *database, unsigned int port);
 
 /***** PROTOTYPES: datasource.c ***********************************************/
 gint rlib_add_datasource(rlib *r, const gchar *input_name, struct input_filter *input);
 gint rlib_add_datasource_mysql(rlib *r, const gchar *input_name, const gchar *database_host, const gchar *database_user,
-	const gchar *database_password, const gchar *database_database);
+	const gchar *database_password, const gchar *database_database, unsigned int database_port);
 gint rlib_add_datasource_mysql_from_group(rlib *r, const gchar *input_name, const gchar *group);
 gint rlib_add_datasource_postgres(rlib *r, const gchar *input_name, const gchar *conn);
 gint rlib_add_datasource_odbc(rlib *r, const gchar *input_name, const gchar *source,

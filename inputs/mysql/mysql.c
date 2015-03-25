@@ -46,7 +46,7 @@ struct _private {
 	MYSQL *mysql;
 };
 
-gpointer rlib_mysql_real_connect(gpointer input_ptr, gchar *group, gchar *host, gchar *user, gchar *password, gchar *database) {
+gpointer rlib_mysql_real_connect(gpointer input_ptr, gchar *group, gchar *host, gchar *user, gchar *password, gchar *database, unsigned int port) {
 	struct input_filter *input = input_ptr;
 	MYSQL *mysql;
 
@@ -65,7 +65,7 @@ gpointer rlib_mysql_real_connect(gpointer input_ptr, gchar *group, gchar *host, 
 		group == NULL ? user : mysql->options.user,
 		group == NULL ? password : mysql->options.password,
 		group == NULL ? database : mysql->options.db,
-		group == NULL ? 0 : mysql->options.port,
+		group == NULL ? port : mysql->options.port,
 		group == NULL ? NULL : mysql->options.unix_socket,
 		0
 	   ) == NULL)

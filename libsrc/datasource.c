@@ -33,7 +33,7 @@ typedef struct {
 	} filter;
 	union {
 		gpointer ptr;
-		gpointer (*mysql_connect)(gpointer, const gchar *, const gchar *, const gchar *, const gchar*, const gchar *);
+		gpointer (*mysql_connect)(gpointer, const gchar *, const gchar *, const gchar *, const gchar*, const gchar *, unsigned int);
 		gpointer (*postgres_connect)(gpointer, const gchar *);
 		gpointer (*odbc_connect)(gpointer, const gchar *, const gchar *, const gchar *);
 	} connect;
@@ -49,7 +49,7 @@ gint rlib_add_datasource(rlib *r, const gchar *input_name, struct input_filter *
 }
 
 static gint rlib_add_datasource_mysql_private(rlib *r, const gchar *input_name, const gchar *database_group, const gchar *database_host, 
-const gchar *database_user, const gchar *database_password, const gchar *database_database) {
+const gchar *database_user, const gchar *database_password, const gchar *database_database, unsigned int database_port) {
 	GModule* handle;
 	datasource_t	ds;
 	gpointer mysql;
@@ -64,7 +64,7 @@ const gchar *database_user, const gchar *database_password, const gchar *databas
 	g_module_symbol(handle, "rlib_mysql_real_connect", &ds.connect.ptr);
 	r->inputs[r->inputs_count].input = ds.filter.new_input_filter();
 	mysql = ds.connect.mysql_connect(r->inputs[r->inputs_count].input, database_group, database_host, database_user, 
-		database_password, database_database);
+		database_password, database_database, database_port);
 
 	if(mysql == NULL) {
 		r_error(r,"ERROR: Could not connect to MYSQL\n");
@@ -80,12 +80,12 @@ const gchar *database_user, const gchar *database_password, const gchar *databas
 }
 
 gint rlib_add_datasource_mysql(rlib *r, const gchar *input_name, const gchar *database_host, const gchar *database_user, const gchar *database_password, 
-const gchar *database_database) {
-	return rlib_add_datasource_mysql_private(r, input_name, NULL, database_host, database_user, database_password, database_database);
+const gchar *database_database, unsigned int database_port) {
+	return rlib_add_datasource_mysql_private(r, input_name, NULL, database_host, database_user, database_password, database_database, database_port);
 }
 
 gint rlib_add_datasource_mysql_from_group(rlib *r, const gchar *input_name, const gchar *group) {
-	return rlib_add_datasource_mysql_private(r, input_name, group, NULL, NULL, NULL, NULL);
+	return rlib_add_datasource_mysql_private(r, input_name, group, NULL, NULL, NULL, NULL, 0);
 }
 
 gint rlib_add_datasource_postgres(rlib *r, const gchar *input_name, const gchar *conn) {
