@@ -658,7 +658,9 @@ rlib-$VERSION:
      PHP entension dir:      ${PHP_EXTENSION_DIR}
     PYTHON:                  ${enable_python}
      PYTHON version:         ${PYTHON_VERSION}
+     PYTHON script dir:      ${pythondir}
      PYTHON entension dir:   ${pyexecdir}
+     PYTHON module dir:      ${pkgpyexecdir}
     JAVA:                    ${enable_java}
     CSHARP:                  ${enable_csharp}
     PERL:                    ${enable_perl}

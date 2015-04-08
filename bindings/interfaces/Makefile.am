@@ -26,4 +26,4 @@ EXTRA_DIST = rlib.pm rlibcompat.py rlib.java  rlibJNI.java  SWIGTYPE_p_f_p_rlib_
 perldir = $(PERL_EXTENSION_DIR)
 perl_DATA = rlib.pm
 
-python_DATA = rlibcompat.py rlib.py
+pyexec_DATA = rlibcompat.py rlib.py
