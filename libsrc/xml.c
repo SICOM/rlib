@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2015 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -182,7 +182,7 @@ static void xml_end_part_table(rlib *r, struct rlib_part *part) {
 }
 
 
-static void xml_start_part_td(rlib *r, struct rlib_part *part, gfloat width, gfloat height) {
+static void xml_start_part_td(rlib *r, struct rlib_part *part, gfloat width, gfloat height, gint border_width, struct rlib_rgb *color) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<td ");
 	if (width)
 		g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "width=\"%f\" ", width);
