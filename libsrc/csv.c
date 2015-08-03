@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2014 SICOM Systems, INC.
+ *  Copyright (C) 2003-2015 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -248,7 +248,7 @@ static void csv_start_part_table(rlib *r, struct rlib_part *part) {}
 static void csv_end_part_table(rlib *r, struct rlib_part *part) {}
 static void csv_start_part_tr(rlib *r, struct rlib_part *part) {}
 static void csv_end_part_tr(rlib *r, struct rlib_part *part) {}
-static void csv_start_part_td(rlib *r, struct rlib_part *part, gfloat width, gfloat height) {}
+static void csv_start_part_td(rlib *r, struct rlib_part *part, gfloat width, gfloat height, gint border_width, struct rlib_rgb *color) {}
 static void csv_end_part_td(rlib *r, struct rlib_part *part) {}
 static void csv_start_part_pages_across(rlib *r, struct rlib_part *part, gfloat left_margin, gfloat top_margin, int width, int height, int border_width, struct rlib_rgb *color) {}
 static void csv_end_part_pages_across(rlib *r, struct rlib_part *part) {}

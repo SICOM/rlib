@@ -258,7 +258,7 @@ static void txt_start_part_table(rlib *r, struct rlib_part *part) {}
 static void txt_end_part_table(rlib *r, struct rlib_part *part) {}
 static void txt_start_part_tr(rlib *r, struct rlib_part *part) {}
 static void txt_end_part_tr(rlib *r, struct rlib_part *part) {}
-static void txt_start_part_td(rlib *r, struct rlib_part *part, gfloat width, gfloat height) {}
+static void txt_start_part_td(rlib *r, struct rlib_part *part, gfloat width, gfloat height, gint border_width, struct rlib_rgb *color) {}
 static void txt_end_part_td(rlib *r, struct rlib_part *part) {}
 static void txt_start_part_pages_across(rlib *r, struct rlib_part *part, gfloat left_margin, gfloat top_margin, int width, int height, int border_width, struct rlib_rgb *color) {}
 static void txt_end_part_pages_across(rlib *r, struct rlib_part *part) {}
