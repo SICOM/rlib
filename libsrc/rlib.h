@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2015 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -58,6 +58,10 @@
 
 #ifndef MAXSTRLEN
 #define MAXSTRLEN 1024
+#endif
+
+#ifndef MAX_COLOR_STRING
+#define MAX_COLOR_STRING 40
 #endif
 
 #define RLIB_MAXIMUM_REPORTS	5
@@ -918,7 +922,7 @@ struct output_filter {
 	void (*end_part_table)(rlib *, struct rlib_part *);
 	void (*start_part_tr)(rlib *, struct rlib_part *);
 	void (*end_part_tr)(rlib *, struct rlib_part *);
-	void (*start_part_td)(rlib *, struct rlib_part *, gfloat width, gfloat height);
+	void (*start_part_td)(rlib *, struct rlib_part *, gfloat width, gfloat height, gint border_width, struct rlib_rgb *color);
 	void (*end_part_td)(rlib *, struct rlib_part *);
 
 

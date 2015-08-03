@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2015 SICOM Systems, INC.
  *
  *  Authors:	Bob Doan <bdoan@sicompos.com>
  *
@@ -169,9 +169,10 @@ static gfloat html_get_string_width(rlib *r, const gchar *text) {
 	return 1;
 }
 
-static gchar *get_html_color(gchar *str, struct rlib_rgb *color) {
-	sprintf(str, "#%02x%02x%02x", (gint)(color->r*0xFF),
-		(gint)(color->g*0xFF), (gint)(color->b*0xFF));
+static gchar *get_html_color(gchar *str, size_t str_size, struct rlib_rgb *color) {
+	if (color && str)
+		snprintf(str, str_size, "#%02x%02x%02x", (gint)(color->r * 0xFF), (gint)(color->g * 0xFF), (gint)(color->b * 0xFF));
+		str[str_size - 1] = 0;
 	return str;
 }
 
@@ -227,13 +228,15 @@ static void html_end_boxurl(rlib *r, gint backwards) {
 
 
 static void html_hr(rlib *r, gint backwards, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall,
-struct rlib_rgb *color, gfloat indent, gfloat length) {
+                    struct rlib_rgb *color, gfloat indent, gfloat length) {
 	gchar buf[MAXSTRLEN];
 	gchar nbsp[MAXSTRLEN];
-	gchar color_str[40];
+	gchar color_str[MAX_COLOR_STRING];
 	gchar td[MAXSTRLEN];
 	int i;
-	get_html_color(color_str, color);
+	
+	memset(color_str, 0, sizeof(color_str));
+	get_html_color(color_str, sizeof(color_str), color);
 
 
 	if( how_tall > 0 ) {
@@ -345,7 +348,7 @@ static void html_start_rlib_report(rlib *r) {
 
 		g_string_append_printf(OUTPUT_PRIVATE(r)->whole_report, "pre { margin:0; padding:0; margin-top:0; margin-bottom:0; font-size:%dpt;}\n", BIGGER_HTML_FONT(font_size));
 		g_string_append_printf(OUTPUT_PRIVATE(r)->whole_report, "body { background-color: #ffffff;}\n");
-		g_string_append(OUTPUT_PRIVATE(r)->whole_report, "TABLE { border: 0; border-spacing: 0; padding: 0; width:100%; }\n");
+		g_string_append(OUTPUT_PRIVATE(r)->whole_report, "TABLE { border: 0; border-spacing: 0px; padding: 0; border-collapse:collapse; }\n");
 		g_string_append(OUTPUT_PRIVATE(r)->whole_report, "</style>\n");
 		meta = g_hash_table_lookup(r->output_parameters, "meta");
 		if(meta != NULL)
@@ -460,28 +463,43 @@ static void html_set_working_page(rlib *r, struct rlib_part *part, gint page) {
 }
 
 static void html_start_part_table(rlib *r, struct rlib_part *part) {
-	print_text(r, "<table><!--start from part table-->", FALSE);
+	print_text(r, "<!--start from part-->", FALSE);
 }
 
 static void html_end_part_table(rlib *r, struct rlib_part *part) {
-	print_text(r, "</table><!--ended from part table-->", FALSE);
+	print_text(r, "<!--ended from part-->\n", FALSE);
 }
 
 
 static void html_start_part_tr(rlib *r, struct rlib_part *part) {
-	print_text(r, "<tr><!--start from part tr-->", FALSE);
+	print_text(r, "<table><tr><!--start from part tr-->", FALSE);
 }
 
 static void html_end_part_tr(rlib *r, struct rlib_part *part) {
-	print_text(r, "</tr><!--ended from part tr-->", FALSE);
+	print_text(r, "</tr></table><!--ended from part tr-->\n", FALSE);
 }
 
-static void html_start_part_td(rlib *r, struct rlib_part *part, gfloat width, gfloat height) {
-	print_text(r, "<td><!--started from part td-->", FALSE);
+static void html_start_part_td(rlib *r, struct rlib_part *part, gfloat width, gfloat height, gint border_width, struct rlib_rgb *color) {
+	gchar buf[MAXSTRLEN];
+	gchar color_str[MAX_COLOR_STRING];
+	gchar border[MAXSTRLEN];
+
+	buf[0] = 0;
+	color_str[0] = 0;
+	border[0] = 0;
+
+	if (border_width && color) {
+		get_html_color(color_str, sizeof(color_str), color);
+		snprintf(border, sizeof(border) - 1, "border:solid %dpx %s; border-collapse:collapse; ", border_width, color_str);
+		buf[sizeof(border) - 1] = 0;
+	}
+	snprintf(buf, sizeof(buf), "<!--started from part td--><td style=\"%svertical-align: top;\">\n", border);
+	buf[sizeof(buf) - 1] = 0;
+	print_text(r, buf, FALSE);
 }
 
 static void html_end_part_td(rlib *r, struct rlib_part *part) {
-	print_text(r, "</td><!--ended from part td-->", FALSE);
+	print_text(r, "</td><!--ended from part td-->\n", FALSE);
 }
 
 static void html_start_report_line(rlib *r, struct rlib_part *part, struct rlib_report *report) {
