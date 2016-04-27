@@ -20,7 +20,6 @@
  
 #include <php.h>
 
-#include "ralloc.h"
 #include "rlib.h"
 
 static char * rlib_php_resolve_memory_variable(char *name) {

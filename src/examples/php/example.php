@@ -1,4 +1,4 @@
-<? dl ("rlib.so");
+<?php
 	$hostname = "localhost";
 	$username = "rlib";
 	$password = "rlib";

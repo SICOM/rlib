@@ -388,41 +388,6 @@ void rlib_set_radix_character(rlib *r, gchar radix_character) {
 	r->radix_character = radix_character;
 }
 
-void rlib_init_profiler() {
-	g_mem_set_vtable(glib_mem_profiler_table);
-}
-
-
-void rlib_dump_profile_stdout(gint profilenum) {
-	printf("\nRLIB memory profile #%d:\n", profilenum);
-	g_mem_profile();
-	fflush(stdout);
-}
-
-void rlib_dump_profile(gint profilenum, const gchar *filename) {
-	FILE *newout = NULL;
-	int fd;
-	
-	fflush(stdout);
-	fd = dup(STDOUT_FILENO); /* get a dup of current stdout */
-	if (fd < 0) {
-		//r_error(r, "Unable to dup stdout");
-		return;
-	}
-	if (filename) {
-		newout = freopen(filename, "ab", stdout);
-	}
-	if (!newout) dup2(STDERR_FILENO, STDOUT_FILENO); /* Use stderr */
-	rlib_dump_profile_stdout(profilenum);
-	if (newout) {
-		fclose(newout);
-	} else {
-		//r_error(r,"Could not open memory profile file: %s. Used stderr instead", filename);
-	}
-	dup2(fd, STDOUT_FILENO); /* restore original stdout and close the dup fd */
-	close(fd);
-}
-
 /**
  * put calls to this where you want to debug, then just set a breakpoint here.
  */

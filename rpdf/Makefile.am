@@ -1,6 +1,6 @@
 ## libsrc/Makefile.am for RLIB
 
-## Copyright (c) 2003-2006 SICOM Systems Inc (bdoan@sicompos.com)
+## Copyright (c) 2003-2016 SICOM Systems Inc (bdoan@sicompos.com)
 ## rlib is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation; either version 2, or (at your option)
@@ -26,9 +26,9 @@ rpdfinclude_HEADERS = rpdf.h
 AM_CFLAGS = $(RPDF_CFLAGS) $(RLIB_WERROR)
 
 lib_LTLIBRARIES = librpdf.la
-librpdf_la_SOURCES = rpdf.c rpdf.h 
+librpdf_la_SOURCES = rpdf.c rpdf.h
 
-librpdf_la_LIBADD = $(DYNAMIC_LD_LIBS) $(RPDF_LIBS) 
+librpdf_la_LIBADD = $(DYNAMIC_LD_LIBS) $(RPDF_LIBS) $(GD_LIBS)
 
 DEF_FILE=librpdf.def
 if WIN32

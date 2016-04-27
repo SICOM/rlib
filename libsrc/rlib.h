@@ -1055,8 +1055,6 @@ gint rlib_add_parameter(rlib *r, const gchar *name, const gchar *value);
 gint rlib_set_locale(rlib *r, gchar *locale);
 gchar * rlib_bindtextdomain(rlib *r, gchar *domainname, gchar *dirname);
 void rlib_set_radix_character(rlib *r, gchar radix_character);
-void rlib_init_profiler(void);
-void rlib_dump_profile(gint profilenum, const gchar *filename);
 void rlib_trap(void); /* For internals debugging only */
 const gchar *rlib_version(void); /* returns the version string. */
 gint rlib_set_datasource_encoding(rlib *r, gchar *input_name, gchar *encoding);

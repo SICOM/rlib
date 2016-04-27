@@ -146,6 +146,7 @@ src/examples/common/Makefile
 src/examples/common/Makefile.in
 src/examples/csharp/Makefile
 src/examples/csharp/Makefile.in
+src/examples/csharp/products.xml
 src/examples/java/Makefile
 src/examples/java/Makefile.in
 src/examples/java/*.java
@@ -173,3 +174,6 @@ tests/test2
 tests/test2.o
 tests/test3
 tests/test3.o
+
+src/examples/java/*.class
+src/examples/java/*.stamp

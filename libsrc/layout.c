@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -28,6 +28,7 @@
  
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <ctype.h>
 #include <libintl.h>
 
@@ -413,7 +414,7 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 	struct rlib_report_literal *rt;
 	struct rlib_report_image *ri;
 	struct rlib_report_barcode *rb;
-	struct rlib_element *e = rl->e;
+	struct rlib_element *e;
 	struct rlib_value line_rval_color;
 	struct rlib_value line_rval_bgcolor;
 	struct rlib_value line_rval_bold;
@@ -639,6 +640,8 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 				rl->max_line_height = RLIB_GET_LINE(height);
 		} else if(e->type == RLIB_ELEMENT_BARCODE) {
 			gfloat height;
+			gchar tmpstr[128] = "RLIB_IMAGE_FILE_XXXXXX";
+			int fd;
 			gchar filename[128];
 			gchar *barcode = "";
 			struct rlib_value rval_value;
@@ -652,7 +655,14 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 			}
 
 			rlib_execute_pcode(r, &extra_data[i].rval_image_height, rb->height_code, NULL);			
-			sprintf(filename, "%s.png", tempnam(NULL, "RLIB_IMAGE_FILE_XXXXX"));
+			fd = mkstemp(tmpstr);
+			if (fd >= 0) {
+				close(fd);
+				unlink(tmpstr);
+			} else {
+				r_error(r, "mkstemp returned error!");
+			}
+			sprintf(filename, "%s.png", tmpstr);
 
 			height = RLIB_FXP_TO_NORMAL_LONG_LONG(RLIB_VALUE_GET_AS_NUMBER(&extra_data[i].rval_image_height));
 
@@ -914,7 +924,6 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 
 	for(j=0;j<roa->count;j++) {
 		struct rlib_report_output *ro = roa->data[j];
-		margin = my_left_margin;
 
 		if(ro->type == RLIB_REPORT_PRESENTATION_DATA_LINE) {
 			struct rlib_report_lines *rl = ro->data;

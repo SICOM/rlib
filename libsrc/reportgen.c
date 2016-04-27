@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2014 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -411,7 +411,6 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 						
 						if(!processed_variables) {
 							rlib_process_variables(r, report, FALSE);
-							processed_variables = TRUE;
 						}
 						
 						rlib_break_evaluate_attributes(r, report);

@@ -1,4 +1,4 @@
-<? dl ("rlib.so");
+<?php
 	$header_data[0][0] = "name";
 
 	$colors = Array("black", "silver", "gray", "white", "maroon", "red", "purple", "fuchsia", "green", "lime", "olive", "yellow", "navy", "blue", "teal", "aqua", "bobkratz", "everton");

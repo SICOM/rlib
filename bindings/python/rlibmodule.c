@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: William K. Volkman
  *
@@ -577,7 +577,6 @@ method_add_function(PyObject *self, PyObject *_args) {
 	char		*name;
 	int		param_count;
 	func_chain	*nfp;
-	long		result;
 	
 	PyObject *callable;
 	if (!PyArg_ParseTuple(_args, "sOi:add_function", &name, &callable, &param_count))
@@ -595,7 +594,7 @@ method_add_function(PyObject *self, PyObject *_args) {
 	nfp->param_count = param_count;
 	nfp->next = rp->funcs;
 	rp->funcs = nfp;
-	result = rlib_add_function(rp->rlib_ptr, name, implement_function_call, nfp);
+	rlib_add_function(rp->rlib_ptr, name, implement_function_call, nfp);
 	Py_INCREF(Py_None);
 	return Py_None;
 }

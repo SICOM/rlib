@@ -1,4 +1,4 @@
-<? dl ("rlib.so");
+<?php
 	$header_data[0][0] = "name";
 
 	$header_data[1][0] = "06:00";

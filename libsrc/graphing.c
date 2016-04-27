@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -609,7 +609,6 @@ gfloat rlib_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, g
 							if(rlib_execute_as_string(r, plot->side_code, side_str, MAXSTRLEN)) {
 								if(strcmp(side_str, "right") == 0) {
 									side = RLIB_SIDE_RIGHT;
-									have_right_side = TRUE;
 								}
 							}
 

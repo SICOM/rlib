@@ -1,4 +1,4 @@
-<? dl ("rlib.so");
+<?php
 	$rlib =	rlib_init();
 	rlib_version();
 	rlib_add_datasource_xml($rlib, "local_xml");

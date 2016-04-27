@@ -1,6 +1,6 @@
 ## bin/Makefile.am for RLIB
 
-## Copyright (c) 2003-2006 SICOM Systems Inc (bdoan@sicompos.com)
+## Copyright (c) 2003-2016 SICOM Systems Inc (bdoan@sicompos.com)
 ## rlib is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation; either version 2, or (at your option)
@@ -23,7 +23,14 @@
 JAVAROOT=.
 javadir = .
 
-javafiles = rlib.java rlibJNI.java SWIGTYPE_p_f_p_rlib_p_void__int.java SWIGTYPE_p_rlib.java SWIGTYPE_p_void.java
+javafiles = rlib.java rlibJNI.java \
+	SWIGTYPE_p_f_p_rlib_p_void__int.java \
+	SWIGTYPE_p_rlib.java \
+	SWIGTYPE_p_void.java \
+	SWIGTYPE_p_float.java \
+	SWIGTYPE_p_gchar.java \
+	SWIGTYPE_p_rlib_report.java \
+	SWIGTYPE_p_rlib_part.java
 
 java_JAVA = $(javafiles) SWIGTYPE_p_rlib.java rlib.java rlibJNI.java example.java
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2014 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -191,7 +191,6 @@ void rlib_variables_precalculate(rlib *r, struct rlib_part *part, struct rlib_re
 			r->detail_line_count++;
 
 			if(did_it == FALSE) {
-				did_it = TRUE;
 				rlib_process_variables(r, report, TRUE);
 			}			
 			

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *  Authors: Zoltan Boszormenyi <zboszor@dunaweb.hu>
@@ -173,7 +173,8 @@ static gint odbc_read_first(gpointer result_ptr) {
 	SQLLEN ind;
 	if(SQL_SUCCEEDED(( V_OD_erg = SQLFetchScroll (results->V_OD_hstmt, SQL_FETCH_FIRST, 0)))) {
 		for (i=0;i<results->tot_fields;i++)
-			V_OD_erg = SQLGetData (results->V_OD_hstmt, i+1, SQL_C_CHAR, results->values[i].value, results->values[i].len+1, &ind);
+			if (!SQL_SUCCEEDED(( V_OD_erg = SQLGetData(results->V_OD_hstmt, i + 1, SQL_C_CHAR, results->values[i].value, results->values[i].len + 1, &ind))) || ind == SQL_NULL_DATA)
+				results->values[i].value = '\0';
 		return TRUE;
 	}
 	return FALSE;
@@ -207,7 +208,8 @@ static gint odbc_read_next(gpointer result_ptr) {
 	SQLLEN ind;
 	if(SQL_SUCCEEDED(( V_OD_erg = SQLFetchScroll (results->V_OD_hstmt, SQL_FETCH_NEXT, 0)))) {
 		for (i=0;i<results->tot_fields;i++)
-			V_OD_erg = SQLGetData (results->V_OD_hstmt, i+1, SQL_C_CHAR, results->values[i].value, results->values[i].len+1, &ind);
+			if (!SQL_SUCCEEDED(( V_OD_erg = SQLGetData(results->V_OD_hstmt, i + 1, SQL_C_CHAR, results->values[i].value, results->values[i].len + 1, &ind))) || ind == SQL_NULL_DATA)
+				results->values[i].value = '\0';
 		return TRUE;
 	}
 	return FALSE;
@@ -246,7 +248,8 @@ static gint odbc_read_prior(gpointer result_ptr) {
 	SQLLEN ind;
 	if(SQL_SUCCEEDED(( V_OD_erg = SQLFetchScroll (results->V_OD_hstmt, SQL_FETCH_PRIOR, 0)))) {
 		for (i=0;i<results->tot_fields;i++)
-			V_OD_erg = SQLGetData (results->V_OD_hstmt, i+1, SQL_C_CHAR, results->values[i].value, results->values[i].len+1, &ind);
+			if (!SQL_SUCCEEDED(( V_OD_erg = SQLGetData (results->V_OD_hstmt, i + 1, SQL_C_CHAR, results->values[i].value, results->values[i].len + 1, &ind))) || ind == SQL_NULL_DATA)
+				results->values[i].value = '\0';
 		return TRUE;
 	}
 	return FALSE;
@@ -279,7 +282,8 @@ static gint odbc_read_last(gpointer result_ptr) {
 	SQLLEN ind;
 	if(SQL_SUCCEEDED(( V_OD_erg = SQLFetchScroll (results->V_OD_hstmt, SQL_FETCH_LAST, 0)))) {
 		for (i=0;i<results->tot_fields;i++)
-			V_OD_erg = SQLGetData (results->V_OD_hstmt, i+1, SQL_C_CHAR, results->values[i].value, results->values[i].len+1, &ind);
+			if (!SQL_SUCCEEDED(( V_OD_erg = SQLGetData(results->V_OD_hstmt, i + 1, SQL_C_CHAR, results->values[i].value, results->values[i].len + 1, &ind))) || ind == SQL_NULL_DATA)
+				results->values[i].value = '\0';
 		return TRUE;
 	}
 	return FALSE;
@@ -365,7 +369,12 @@ gpointer odbc_new_result_from_query(gpointer input_ptr, gchar *query) {
 		SQLSMALLINT name_length;
 		V_OD_erg = SQLDescribeCol( V_OD_hstmt, i+1,	name, sizeof( name ), &name_length, NULL, &col_size, NULL, NULL );
 		results->fields[i].col = i;
-		strcpy(results->fields[i].name, (char *)name);
+		if (SQL_SUCCEEDED(V_OD_erg)) {
+			strcpy(results->fields[i].name, (char *)name);
+		} else {
+			strcpy(results->fields[i].name, "");
+			col_size = 0;
+		}
 		results->values[i].len = col_size;
 		results->values[i].value = g_malloc(col_size+1);
 		results->total_size += col_size+1;
@@ -382,7 +391,10 @@ gpointer odbc_new_result_from_query(gpointer input_ptr, gchar *query) {
 				GSList *row_data = NULL;
 				for (i=0;i<results->tot_fields;i++) {
 					V_OD_erg = SQLGetData (results->V_OD_hstmt, i+1, SQL_C_CHAR, results->values[i].value, results->values[i].len+1, &ind);
-					row_data = g_slist_append(row_data, g_strdup(results->values[i].value));
+					if (SQL_SUCCEEDED(V_OD_erg) && ind != SQL_NULL_DATA)
+						row_data = g_slist_append(row_data, g_strdup(results->values[i].value));
+					else
+						row_data = g_slist_append(row_data, "");
 				}
 
 				results->data = g_list_append(results->data, row_data);

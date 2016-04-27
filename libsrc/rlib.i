@@ -46,7 +46,7 @@ int rlib_signal_connect_string(rlib *r, char *signal_name, int (*signal_function
 int rlib_query_refresh(rlib *r);
 int rlib_add_parameter(rlib *r, const char *name, const char *value);
 int rlib_set_locale(rlib *r, char *locale);
-int rlib_bindtextdomain(rlib *r, char *domainname, char *dirname);
+char *rlib_bindtextdomain(rlib *r, char *domainname, char *dirname);
 void rlib_set_radix_character(rlib *r, gchar radix_character);
 void rlib_set_output_parameter(rlib *r, char *parameter, char *value);
 void rlib_set_output_encoding(rlib *r, const char *encoding);

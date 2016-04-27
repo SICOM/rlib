@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -233,15 +233,10 @@ gfloat nheight) {
 static void pdf_set_font_point_actual(rlib *r, gint point) {
 	const char *fontname;
 	int which_font = 0;
-	gchar *pdfdir1, *pdfdir2, *pdffontname;
-	
-	pdfdir1 = g_hash_table_lookup(r->output_parameters, "pdf_fontdir1");
-	pdfdir2 = g_hash_table_lookup(r->output_parameters, "pdf_fontdir2");
+	gchar *pdffontname;
+
 	pdffontname = g_hash_table_lookup(r->output_parameters, "pdf_fontname");
 
-	if(pdfdir2 == NULL)
-		pdfdir2 = pdfdir1;
-	
 	if(OUTPUT_PRIVATE(r)->is_bold)
 		which_font += BOLD;
 
