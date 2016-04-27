@@ -48,6 +48,8 @@ struct _private {
 gpointer rlib_mysql_real_connect(gpointer input_ptr, gchar *group, gchar *host, gchar *user, gchar *password, gchar *database) {
 	struct input_filter *input = input_ptr;
 	MYSQL *mysql;
+	gchar *host_copy = NULL;
+	int port = 3306;
 
 	mysql = mysql_init(NULL);
 
@@ -55,20 +57,35 @@ gpointer rlib_mysql_real_connect(gpointer input_ptr, gchar *group, gchar *host, 
 		return NULL;
 
 	if(group != NULL) {
-		if (mysql_options(mysql,MYSQL_READ_DEFAULT_GROUP,group))
+		if (mysql_options(mysql,MYSQL_READ_DEFAULT_GROUP,group)) {
+			mysql_close(mysql);
 			return NULL;
+		}
+	} else if (host) {
+		char *tmp, *port_s;
+		host_copy = g_strdup(host);
+		tmp = strchr(host_copy, ':');
+		if (tmp) {
+			*tmp = '\0';
+			port_s = tmp + 1;
+			port = atoi(port_s);
+		}
 	}
 
 	if (mysql_real_connect(mysql,
-		group == NULL ? host : mysql->options.host,
+		group == NULL ? host_copy : mysql->options.host,
 		group == NULL ? user : mysql->options.user,
 		group == NULL ? password : mysql->options.password,
 		group == NULL ? database : mysql->options.db,
-		group == NULL ? 0 : mysql->options.port,
+		group == NULL ? port : mysql->options.port,
 		group == NULL ? NULL : mysql->options.unix_socket,
 		0
-	   ) == NULL)
+	   ) == NULL) {
+		mysql_close(mysql);
 		return NULL;
+	}
+
+	g_free(host_copy);
 
 	mysql_select_db(mysql,database);
 
