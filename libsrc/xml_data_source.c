@@ -33,7 +33,7 @@
 #include <libxml/xinclude.h>
 
 #include "glib.h"
-#include "rlib.h"
+#include "rlib-internal.h"
 #include "rlib_input.h"
 
 #define INPUT_PRIVATE(input) (((struct _private *)input->private))

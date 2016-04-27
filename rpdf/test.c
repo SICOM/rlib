@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -35,7 +35,9 @@ static void callback_test(gchar *data, gint len, gpointer user_data) {
 
 int main(int argc, char **argv) {
 	ssize_t	byteswritten;
-	size_t	count, pos;
+	size_t	pos;
+	gint pdf_size;
+	char *buf;
 
 	struct rpdf *pdf = rpdf_new();
 	rpdf_new_page(pdf, RPDF_PAPER_LEGAL, RPDF_LANDSCAPE);
@@ -92,8 +94,9 @@ int main(int argc, char **argv) {
 /*	rpdf_image(pdf, 1, 1, 100, 100, RPDF_IMAGE_JPEG, "logo.jpg"); */
 	rpdf_finalize(pdf);
 	pos = 0;
-	while (pos < pdf->size) {
-		byteswritten = write(1, pdf->out_buffer + pos, pdf->size - pos);
+	buf = rpdf_get_buffer(pdf, &pdf_size);
+	while (pos < pdf_size) {
+		byteswritten = write(1, buf + pos, pdf_size - pos);
 		if (byteswritten > 0)
 			pos += byteswritten;
 		else

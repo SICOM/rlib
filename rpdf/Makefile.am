@@ -23,7 +23,7 @@
 rpdfincludedir=$(includedir)/rlib
 rpdfinclude_HEADERS = rpdf.h
 
-AM_CFLAGS = $(RPDF_CFLAGS) $(RLIB_WERROR)
+AM_CFLAGS = $(CFLAG_VISIBILITY) $(RPDF_CFLAGS) $(RLIB_WERROR)
 
 lib_LTLIBRARIES = librpdf.la
 librpdf_la_SOURCES = rpdf.c rpdf.h
@@ -31,8 +31,9 @@ librpdf_la_SOURCES = rpdf.c rpdf.h
 librpdf_la_LIBADD = $(DYNAMIC_LD_LIBS) $(RPDF_LIBS) $(GD_LIBS)
 
 DEF_FILE=librpdf.def
+IMPLIB_FILE=librpdf.a
 if WIN32
-def_ldflags=-Wl,--output-def,$(DEF_FILE) -avoid-version
+def_ldflags=-Wl,--out-implib,$(IMPLIB_FILE) $(DEF_FILE) --add-stdcall-alias -avoid-version
 endif
 
 librpdf_la_LDFLAGS = \

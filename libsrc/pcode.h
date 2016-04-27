@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -17,27 +17,6 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-
-#define RLIB_VALUE_ERROR	-1
-#define RLIB_VALUE_NONE		0
-#define RLIB_VALUE_NUMBER	1
-#define RLIB_VALUE_STRING	2
-#define RLIB_VALUE_DATE 	3
-#define RLIB_VALUE_IIF 		100
-
-#define RLIB_VALUE_TYPE_NONE(a) ((a)->type = RLIB_VALUE_NONE);((a)->free = FALSE)
-#define RLIB_VALUE_GET_TYPE(a) ((a)->type)
-#define RLIB_VALUE_IS_NUMBER(a)	(RLIB_VALUE_GET_TYPE(a)==RLIB_VALUE_NUMBER)
-#define RLIB_VALUE_IS_STRING(a)	(RLIB_VALUE_GET_TYPE(a)==RLIB_VALUE_STRING)
-#define RLIB_VALUE_IS_DATE(a)	(RLIB_VALUE_GET_TYPE(a)==RLIB_VALUE_DATE)
-#define RLIB_VALUE_IS_IIF(a)	(RLIB_VALUE_GET_TYPE(a)==RLIB_VALUE_IIF)
-#define RLIB_VALUE_IS_ERROR(a)	(RLIB_VALUE_GET_TYPE(a)==RLIB_VALUE_ERROR)
-#define RLIB_VALUE_IS_NONE(a)	(RLIB_VALUE_GET_TYPE(a)==RLIB_VALUE_NONE)
-#define RLIB_VALUE_GET_AS_NUMBER(a) ((a)->number_value)
-#define RLIB_VALUE_GET_AS_NUMBERNP(a) (&((a)->number_value))
-#define RLIB_VALUE_GET_AS_STRING(a) ((a)->string_value)
-#define RLIB_VALUE_GET_AS_DATE(a) (a->date_value)
-#define RLIB_VALUE_GET_AS_IIF(a) ((struct rlib_pcode_if *)a->iif_value)
 
 #define RLIB_FXP_MUL(a, b) rlib_fxp_mul(a, b, RLIB_DECIMAL_PRECISION)
 #define RLIB_FXP_DIV(num, denom) rlib_fxp_div(num, denom, RLIB_FXP_PRECISION)
@@ -108,20 +87,12 @@
 #define OP_STRLEN 	61
 #define OP_LOGICALOR 	62
 
-
 #define PCODE_PUSH	1
 #define PCODE_EXECUTE	2
 
 struct rlib_pcode_instruction {
 	gchar instruction;
 	void *value;
-};
-
-struct rlib_pcode {
-	gint count;
-	struct rlib_pcode_instruction *instructions;
-	gchar *infix_string;
-	gint line_number;
 };
 
 struct rlib_pcode_operator {
@@ -165,15 +136,9 @@ struct rlib_pcode_operand {
 	void *value;
 };
 
-#define RLIB_DECIMAL_PRECISION	10000000LL
 #define RLIB_FXP_PRECISION 7
 
 int execute_pcode(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gboolean show_stack_errors);
-struct rlib_value * rlib_value_stack_pop(struct rlib_value_stack *vs);
-int rlib_value_stack_push(rlib *r, struct rlib_value_stack *vs, struct rlib_value *value);
-struct rlib_value * rlib_value_new_number(struct rlib_value *rval, gint64 value);
-struct rlib_value * rlib_value_new_string(struct rlib_value *rval, const char *value);
-struct rlib_value * rlib_value_new_date(struct rlib_value *rval, struct rlib_datetime *date);
 void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, int offset);
 
 int rlib_pcode_operator_multiply(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gpointer user_data);

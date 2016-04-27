@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -17,24 +17,17 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#ifndef _RLIB_INPUT_H_
+#define _RLIB_INPUT_H_
 
-/* #include <iconv.h> */
-#include <charencoder.h> 
+#include <glib.h>
 
-#ifndef TRUE
-#define TRUE	1
-#endif
-
-#ifndef FALSE
-#define FALSE	0
-#endif
-
+#include <rlib.h>
 
 struct input_info {
 	char charset[64];
 	GIConv encoder;
 };
-
 
 typedef struct input_filter input_filter;
 struct input_filter {
@@ -56,4 +49,6 @@ struct input_filter {
 	gint (*set_encoding)(gpointer);
 };
 
+gint rlib_add_datasource(rlib *r, const gchar *input_name, struct input_filter *input);
 
+#endif /* _RLIB_INPUT_H_ */

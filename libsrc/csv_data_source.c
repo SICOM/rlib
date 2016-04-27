@@ -31,7 +31,7 @@
 #include <glib.h>
 #include <unistd.h>
 
-#include "rlib.h"
+#include "rlib-internal.h"
 #include "rlib_input.h"
 
 #define INPUT_PRIVATE(input) (((struct _private *)input->private))

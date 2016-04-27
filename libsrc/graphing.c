@@ -25,14 +25,15 @@
  * report defined in the rlib object.
  *
  */
+
+#include <config.h>
  
 #include <stdlib.h>
 #include <string.h>
-#include "config.h"
 
 #include <math.h>
 
-#include "rlib.h"
+#include "rlib-internal.h"
 #include "pcode.h"
 #include "rlib_input.h"
 #include "util.h"
@@ -195,7 +196,7 @@ static void rlib_graph_label_y_axis(rlib *r, gint side, gboolean for_real, gint 
 #define NEGATIVE 3
 #define MAX_X_TICKS 2000
 
-gfloat rlib_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left_margin_offset, gfloat *top_margin_offset) {
+DLL_EXPORT_SYM gfloat rlib_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left_margin_offset, gfloat *top_margin_offset) {
 	struct rlib_graph_plot *plot;
 	struct rlib_graph *graph = &report->graph;
 	GSList *list;

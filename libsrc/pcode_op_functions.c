@@ -27,7 +27,7 @@
 #include <locale.h>
 
 #include "config.h"
-#include "rlib.h"
+#include "rlib-internal.h"
 #include "datetime.h"
 #include "pcode.h"
 

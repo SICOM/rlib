@@ -29,7 +29,7 @@
 #include <inttypes.h>
 #include "config.h"
 
-#include "rlib.h"
+#include "rlib-internal.h"
 #include "pcode.h"
 #include "rlib_langinfo.h"
 
@@ -135,7 +135,7 @@ void rlib_pcode_find_index(rlib *r) {
 	}
 }
 
-void rlib_pcode_free(struct rlib_pcode *code) {
+DLL_EXPORT_SYM void rlib_pcode_free(struct rlib_pcode *code) {
 	gint i=0;
 
 	if(code == NULL)
@@ -587,7 +587,7 @@ static gchar *skip_next_closing_paren(gchar *str) {
 }
 
 
-struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *infix, gint line_number, gboolean look_at_metadata) {
+DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *infix, gint line_number, gboolean look_at_metadata) {
 	gchar *moving_ptr = infix;
 	gchar *op_pointer = infix;
 	gchar operand[255];
@@ -759,7 +759,7 @@ void rlib_value_stack_init(struct rlib_value_stack *vs) {
 	vs->count = 0;
 }
 
-gint rlib_value_stack_push(rlib *r, struct rlib_value_stack *vs, struct rlib_value *value) {
+DLL_EXPORT_SYM gint rlib_value_stack_push(rlib *r, struct rlib_value_stack *vs, struct rlib_value *value) {
 	if(vs->count == 99)
 		return FALSE;
 	if(value == NULL) {
@@ -771,7 +771,7 @@ gint rlib_value_stack_push(rlib *r, struct rlib_value_stack *vs, struct rlib_val
 	return TRUE;
 }
 
-struct rlib_value * rlib_value_stack_pop(struct rlib_value_stack *vs) {
+DLL_EXPORT_SYM struct rlib_value *rlib_value_stack_pop(struct rlib_value_stack *vs) {
 	if(vs->count <= 0) {
 		vs->values[0].type = RLIB_VALUE_NONE;
 		return &vs->values[0];
@@ -812,7 +812,7 @@ struct rlib_value * rlib_value_dup_contents(struct rlib_value *rval) {
 	return rval;
 }
 
-gint rlib_value_free(struct rlib_value *rval) {
+DLL_EXPORT_SYM gint rlib_value_free(struct rlib_value *rval) {
 	if(rval == NULL)
 		return FALSE;
 	else if(rval->free == FALSE)
@@ -826,22 +826,22 @@ gint rlib_value_free(struct rlib_value *rval) {
 	return FALSE;
 }
 
-struct rlib_value * rlib_value_new_number(struct rlib_value *rval, gint64 value) {
+DLL_EXPORT_SYM struct rlib_value * rlib_value_new_number(struct rlib_value *rval, gint64 value) {
 	rval->type = RLIB_VALUE_NUMBER;
 	rval->free = FALSE;
 	rval->number_value = value;
 	return rval;
 }
 
-struct rlib_value * rlib_value_new_string(struct rlib_value *rval, const gchar *value) {
+DLL_EXPORT_SYM struct rlib_value * rlib_value_new_string(struct rlib_value *rval, const gchar *value) {
 	return rlib_value_new(rval, RLIB_VALUE_STRING, TRUE, g_strdup(value));
 }
 
-struct rlib_value * rlib_value_new_date(struct rlib_value *rval, struct rlib_datetime *date) {
+DLL_EXPORT_SYM struct rlib_value * rlib_value_new_date(struct rlib_value *rval, struct rlib_datetime *date) {
 	return rlib_value_new(rval, RLIB_VALUE_DATE, FALSE, date);
 }
 
-struct rlib_value * rlib_value_new_error(struct rlib_value *rval) {
+DLL_EXPORT_SYM struct rlib_value * rlib_value_new_error(struct rlib_value *rval) {
 	return rlib_value_new(rval, RLIB_VALUE_ERROR, FALSE, NULL);
 }
 #endif
@@ -958,7 +958,7 @@ gint execute_pcode(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs
 	return TRUE;
 }
 
-struct rlib_value * rlib_execute_pcode(rlib *r, struct rlib_value *rval, struct rlib_pcode *code, struct rlib_value *this_field_value) {
+DLL_EXPORT_SYM struct rlib_value * rlib_execute_pcode(rlib *r, struct rlib_value *rval, struct rlib_pcode *code, struct rlib_value *this_field_value) {
 	struct rlib_value_stack value_stack;
 
 	if(code == NULL)

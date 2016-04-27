@@ -32,7 +32,7 @@
 #endif
 #include <locale.h>
 
-#include "rlib.h"
+#include "rlib-internal.h"
 
 #ifndef LC_MESSAGES
 #define LC_MESSAGES 5
@@ -215,8 +215,7 @@ static void local_rlogit(rlib *r, const gchar *message) {
 
 static void (*logMessage)(rlib *r, const gchar *msg) = local_rlogit;
 
-
-void rlogit_setmessagewriter(void (*msgwriter)(rlib *r, const gchar *msg)) {
+DLL_EXPORT_SYM void rlib_setmessagewriter(void (*msgwriter)(rlib *r, const gchar *msg)) {
 	logMessage = msgwriter;
 }
 

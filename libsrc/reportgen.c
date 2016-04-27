@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "config.h"
-#include "rlib.h"
+#include "rlib-internal.h"
 #include "pcode.h"
 #include "rlib_input.h"
 #include "rlib_langinfo.h"

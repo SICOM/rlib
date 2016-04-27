@@ -34,7 +34,7 @@
 #include "config.h"
 #include <errno.h>
 
-#include "rlib.h"
+#include "rlib-internal.h"
 #include "rlib_input.h"
 #include "rlib_langinfo.h"
 

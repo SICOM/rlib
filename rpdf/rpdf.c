@@ -43,6 +43,7 @@
 #include <zlib.h>
 #endif
 
+#include "rpdf-internal.h"
 #include "rpdf.h"
 
 #ifndef O_BINARY
@@ -541,7 +542,7 @@ static void rpdf_string_destroyer (gpointer data) {
 	g_free(data);
 }
 
-struct rpdf *rpdf_new(void) {
+DLL_EXPORT_SYM struct rpdf *rpdf_new(void) {
 	struct rpdf *pdf = g_new0(struct rpdf, 1);
 #ifdef RPDF_COMPRESS_STREAM
 	z_stream *c_stream = g_new(z_stream, 1);
@@ -565,11 +566,11 @@ struct rpdf *rpdf_new(void) {
 	return pdf;
 }
 
-void rpdf_set_compression(struct rpdf *pdf, gboolean use_compression) {
+DLL_EXPORT_SYM void rpdf_set_compression(struct rpdf *pdf, gboolean use_compression) {
 	pdf->use_compression = use_compression;
 }
 
-gboolean rpdf_get_compression(struct rpdf *pdf) {
+DLL_EXPORT_SYM gboolean rpdf_get_compression(struct rpdf *pdf) {
 	return pdf->use_compression;
 }
 
@@ -665,7 +666,7 @@ static gint rpdf_add_page_content(struct rpdf *pdf, struct rpdf_page_info *page_
 	return rpdf_object_append(pdf, FALSE,  obj, NULL, 0);
 }
 
-gboolean rpdf_finalize(struct rpdf *pdf) {
+DLL_EXPORT_SYM gboolean rpdf_finalize(struct rpdf *pdf) {
 	gint i, save_size;
 	gint pages_ref, page_ref, outlines_ref, procset_ref;
 	gint info_ref, catalog_ref;
@@ -829,40 +830,40 @@ gboolean rpdf_finalize(struct rpdf *pdf) {
 	return TRUE;
 }
 
-void rpdf_set_title(struct rpdf *pdf, const gchar *title) {
+DLL_EXPORT_SYM void rpdf_set_title(struct rpdf *pdf, const gchar *title) {
 	pdf->title = g_strconcat("(", title, ")", NULL);
 }	
 
-void rpdf_set_subject(struct rpdf *pdf, const gchar *subject) {
+DLL_EXPORT_SYM void rpdf_set_subject(struct rpdf *pdf, const gchar *subject) {
 	pdf->subject = g_strconcat("(", subject, ")", NULL);
 }	
 
-void rpdf_set_author(struct rpdf *pdf, const gchar *author) {
+DLL_EXPORT_SYM void rpdf_set_author(struct rpdf *pdf, const gchar *author) {
 	pdf->author = g_strconcat("(", author, ")", NULL);
 }	
 
-void rpdf_set_keywords(struct rpdf *pdf, const gchar *keywords) {
+DLL_EXPORT_SYM void rpdf_set_keywords(struct rpdf *pdf, const gchar *keywords) {
 	pdf->keywords = g_strconcat("(", keywords, ")", NULL);
 }	
 
-void rpdf_set_creator(struct rpdf *pdf, const gchar *creator) {
+DLL_EXPORT_SYM void rpdf_set_creator(struct rpdf *pdf, const gchar *creator) {
 	pdf->creator = g_strconcat("(", creator, ")", NULL);
 }	
 
-void rpdf_translate(struct rpdf *pdf, gdouble x, gdouble y) {
+DLL_EXPORT_SYM void rpdf_translate(struct rpdf *pdf, gdouble x, gdouble y) {
 	struct rpdf_page_info *page_info = pdf->page_info[pdf->current_page];
 	page_info->has_translation = TRUE;
 	page_info->translate_x = x;
 	page_info->translate_y = y;
 }
 
-void rpdf_rotate(struct rpdf *pdf, gdouble angle) {
+DLL_EXPORT_SYM void rpdf_rotate(struct rpdf *pdf, gdouble angle) {
 	struct rpdf_page_info *page_info = pdf->page_info[pdf->current_page];
 	page_info->has_rotation = TRUE;
 	page_info->rotation_angle = angle;
 }
 
-gboolean rpdf_new_page(struct rpdf *pdf, gint paper, gint orientation) {
+DLL_EXPORT_SYM gboolean rpdf_new_page(struct rpdf *pdf, gint paper, gint orientation) {
 	struct rpdf_page_info *page_info;
 	pdf->page_count++;
 	pdf->page_contents = g_realloc(pdf->page_contents, sizeof(gpointer) * pdf->page_count);
@@ -877,7 +878,7 @@ gboolean rpdf_new_page(struct rpdf *pdf, gint paper, gint orientation) {
 	return TRUE;
 }
 
-gboolean rpdf_set_page(struct rpdf *pdf, gint page) {
+DLL_EXPORT_SYM gboolean rpdf_set_page(struct rpdf *pdf, gint page) {
 	if(page < 0 || page >= pdf->page_count)
 		return FALSE;
 
@@ -885,7 +886,7 @@ gboolean rpdf_set_page(struct rpdf *pdf, gint page) {
 	return TRUE;
 }
 
-gboolean rpdf_set_font(struct rpdf *pdf, const gchar *font, const gchar *encoding, gdouble size) {
+DLL_EXPORT_SYM gboolean rpdf_set_font(struct rpdf *pdf, const gchar *font, const gchar *encoding, gdouble size) {
 	gint i=0;
 	gint found = FALSE;
 	struct rpdf_font_object *font_object;
@@ -934,7 +935,7 @@ gboolean rpdf_set_font(struct rpdf *pdf, const gchar *font, const gchar *encodin
 	return TRUE;
 }
 
-gboolean rpdf_set_font_size(struct rpdf *pdf, gdouble size) {
+DLL_EXPORT_SYM gboolean rpdf_set_font_size(struct rpdf *pdf, gdouble size) {
 	struct rpdf_page_info *page_info = pdf->page_info[pdf->current_page];
 	struct rpdf_stream_font *stream;
 	struct rpdf_stream *real_stream;
@@ -954,7 +955,7 @@ gboolean rpdf_set_font_size(struct rpdf *pdf, gdouble size) {
 	return TRUE;
 }
 
-gboolean rpdf_text_callback(struct rpdf *pdf, gdouble x, gdouble y, gdouble angle, gint len, CALLBACK, gpointer user_data) {
+DLL_EXPORT_SYM gboolean rpdf_text_callback(struct rpdf *pdf, gdouble x, gdouble y, gdouble angle, gint len, CALLBACK, gpointer user_data) {
 	struct rpdf_stream_text_callback *stream;
 	stream = g_new0(struct rpdf_stream_text_callback, 1);
 	stream->x = x;
@@ -969,7 +970,7 @@ gboolean rpdf_text_callback(struct rpdf *pdf, gdouble x, gdouble y, gdouble angl
 
 
 
-gboolean rpdf_text(struct rpdf *pdf, gdouble x, gdouble y, gdouble angle, const gchar *text) {
+DLL_EXPORT_SYM gboolean rpdf_text(struct rpdf *pdf, gdouble x, gdouble y, gdouble angle, const gchar *text) {
 	struct rpdf_stream_text *stream;
 	gint slen;
 	gint count = 0, spot=0, i;
@@ -1104,7 +1105,7 @@ static void jpeg_process_SOFn(gchar *stream, gint *spot, gint size, gint marker,
 	*spot = *spot + (3 * info->components);
 }
 
-gboolean rpdf_image(struct rpdf *pdf, gdouble x, gdouble y, gdouble width, gdouble height, gint image_type, gchar *file_name) {
+DLL_EXPORT_SYM gboolean rpdf_image(struct rpdf *pdf, gdouble x, gdouble y, gdouble width, gdouble height, gint image_type, gchar *file_name) {
 	struct rpdf_page_info *page_info = pdf->page_info[pdf->current_page];
 	gint fd;
 	off_t size, compare_size, pos;
@@ -1287,7 +1288,7 @@ gboolean rpdf_image(struct rpdf *pdf, gdouble x, gdouble y, gdouble width, gdoub
 	return TRUE;
 }
 
-gboolean rpdf_link(struct rpdf *pdf, gdouble start_x, gdouble start_y, gdouble end_x, gdouble end_y, const gchar *url) {
+DLL_EXPORT_SYM gboolean rpdf_link(struct rpdf *pdf, gdouble start_x, gdouble start_y, gdouble end_x, gdouble end_y, const gchar *url) {
 	struct rpdf_page_info *page_info = pdf->page_info[pdf->current_page];
 	struct rpdf_annots *annot = g_new0(struct rpdf_annots, 1);
 	annot->number = pdf->annot_count++;
@@ -1300,7 +1301,7 @@ gboolean rpdf_link(struct rpdf *pdf, gdouble start_x, gdouble start_y, gdouble e
 	return TRUE;
 }
 
-gboolean rpdf_moveto(struct rpdf *pdf, gdouble x, gdouble y) {
+DLL_EXPORT_SYM gboolean rpdf_moveto(struct rpdf *pdf, gdouble x, gdouble y) {
 	struct rpdf_stream_point *stream;
 	stream = g_new0(struct rpdf_stream_point, 1);
 	
@@ -1315,14 +1316,14 @@ gboolean rpdf_moveto(struct rpdf *pdf, gdouble x, gdouble y) {
 	return TRUE;
 }
 
-gboolean rpdf_set_line_width(struct rpdf *pdf, gdouble width) {
+DLL_EXPORT_SYM gboolean rpdf_set_line_width(struct rpdf *pdf, gdouble width) {
 	gdouble *new_width = g_malloc(sizeof(gdouble));
 	*new_width = width;
 	rpdf_stream_append(pdf, rpdf_stream_new(RPDF_TYPE_WIDTH, new_width));
 	return TRUE;
 }
 
-gboolean rpdf_lineto(struct rpdf *pdf, gdouble x, gdouble y) {
+DLL_EXPORT_SYM gboolean rpdf_lineto(struct rpdf *pdf, gdouble x, gdouble y) {
 	struct rpdf_stream_point *stream;
 	stream = g_new0(struct rpdf_stream_point, 1);
 
@@ -1337,17 +1338,17 @@ gboolean rpdf_lineto(struct rpdf *pdf, gdouble x, gdouble y) {
 	return TRUE;
 }
 
-gboolean rpdf_closepath(struct rpdf *pdf) {
+DLL_EXPORT_SYM gboolean rpdf_closepath(struct rpdf *pdf) {
 	rpdf_stream_append(pdf, rpdf_stream_new(RPDF_TYPE_CLOSEPATH, NULL));
 	return TRUE;
 }
 
-gboolean rpdf_stroke(struct rpdf *pdf) {
+DLL_EXPORT_SYM gboolean rpdf_stroke(struct rpdf *pdf) {
 	rpdf_stream_append(pdf, rpdf_stream_new(RPDF_TYPE_STROKE, NULL));
 	return TRUE;
 }
 
-gboolean rpdf_rect(struct rpdf *pdf, gdouble x, gdouble y, gdouble width, gdouble height) {
+DLL_EXPORT_SYM gboolean rpdf_rect(struct rpdf *pdf, gdouble x, gdouble y, gdouble width, gdouble height) {
 	struct rpdf_stream_rect *stream;
 	stream = g_new0(struct rpdf_stream_rect, 1);
 	stream->x = x;
@@ -1358,12 +1359,12 @@ gboolean rpdf_rect(struct rpdf *pdf, gdouble x, gdouble y, gdouble width, gdoubl
 	return TRUE;
 }
 
-gboolean rpdf_fill(struct rpdf *pdf) {
+DLL_EXPORT_SYM gboolean rpdf_fill(struct rpdf *pdf) {
 	rpdf_stream_append(pdf, rpdf_stream_new(RPDF_TYPE_FILL, NULL));
 	return TRUE;
 }
 
-gboolean rpdf_setrgbcolor(struct rpdf *pdf, gdouble r, gdouble g, gdouble b) {
+DLL_EXPORT_SYM gboolean rpdf_setrgbcolor(struct rpdf *pdf, gdouble r, gdouble g, gdouble b) {
 	struct rpdf_stream_color *stream;
 	stream = g_new0(struct rpdf_stream_color, 1);
 	stream->r = r;
@@ -1373,7 +1374,7 @@ gboolean rpdf_setrgbcolor(struct rpdf *pdf, gdouble r, gdouble g, gdouble b) {
 	return TRUE;
 }
 
-gdouble rpdf_text_width(struct rpdf *pdf, const gchar *text) {
+DLL_EXPORT_SYM gdouble rpdf_text_width(struct rpdf *pdf, const gchar *text) {
 	gint slen,i;
 	gdouble width = 0.0;
 	struct rpdf_page_info *page_info = pdf->page_info[pdf->current_page];
@@ -1389,7 +1390,7 @@ gdouble rpdf_text_width(struct rpdf *pdf, const gchar *text) {
 	return width*page_info->font_size/1000.0;
 }
 
-gint rpdf_arc(struct rpdf *pdf, gdouble x, gdouble y, gdouble radius, gdouble start_angle, gdouble end_angle) {
+DLL_EXPORT_SYM gint rpdf_arc(struct rpdf *pdf, gdouble x, gdouble y, gdouble radius, gdouble start_angle, gdouble end_angle) {
 	struct rpdf_stream_arc *stream = g_new0(struct rpdf_stream_arc, 1);
 	stream->x = x;
 	stream->y = y;
@@ -1400,12 +1401,12 @@ gint rpdf_arc(struct rpdf *pdf, gdouble x, gdouble y, gdouble radius, gdouble st
 	return TRUE;
 }
 
-gchar *rpdf_get_buffer(struct rpdf *pdf, gint *length) {
+DLL_EXPORT_SYM gchar *rpdf_get_buffer(struct rpdf *pdf, gint *length) {
 	*length = pdf->size;
 	return pdf->out_buffer;
 }
 
-void rpdf_free(struct rpdf *pdf) {
+DLL_EXPORT_SYM void rpdf_free(struct rpdf *pdf) {
 	gint i;
 #ifdef RPDF_COMPRESS_STREAM
 	if (pdf->zlib_stream != NULL) {

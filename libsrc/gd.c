@@ -40,7 +40,7 @@
 #include <glib.h>
 
 #include "config.h"
-#include "rlib.h"
+#include "rlib-internal.h"
 #include "rlib_gd.h"
 
 #ifdef HAVE_GD

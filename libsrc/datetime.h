@@ -22,13 +22,6 @@
 
 #define RLIB_DATETIME_SECSPERDAY (60 * 60 * 24)
 
-typedef struct rlib_datetime rlib_datetime;
-struct rlib_datetime {
-	GDate date;
-	glong ltime;
-};
-
-
 void rlib_datetime_clear(struct rlib_datetime *t1);
 void rlib_datetime_set_date(struct rlib_datetime *dt, gint y, gint m, gint d);
 void rlib_datetime_set_time(struct rlib_datetime *dt, gint h, gint m, gint s);

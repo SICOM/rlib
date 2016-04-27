@@ -24,7 +24,7 @@
 #include <gmodule.h>
 
 #include "config.h"
-#include "rlib.h"
+#include "rlib-internal.h"
 #include "pcode.h"
 #include "rlib_input.h"
 
@@ -560,7 +560,7 @@ gint rlib_free_follower(rlib *r ) {
 	return TRUE;
 }
 
-gint rlib_free(rlib *r) {
+DLL_EXPORT_SYM gint rlib_free(rlib *r) {
 	int i;
 	rlib_charencoder_free(r->output_encoder);
 	g_free(r->output_encoder_name);

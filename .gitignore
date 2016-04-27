@@ -34,12 +34,18 @@ missing
 rlib.pc
 rlib.spec
 rpdf/test
+rpdf/test.exe
 src/examples/c/example
+src/examples/c/example.exe
 src/examples/c/products.xml
 src/examples/c/relprt
+src/examples/c/relprt.exe
 src/examples/c/relpth1
+src/examples/c/relpth1.exe
 src/examples/c/relpth2
+src/examples/c/relpth2.exe
 src/examples/c/srcpth
+src/examples/c/srcpth.exe
 src/examples/csharp/products.xml
 src/examples/java/*.java
 src/examples/java/*.xml
@@ -47,15 +53,22 @@ src/examples/perl/products.xml
 src/examples/php/*.xml
 src/examples/python/*.xml
 src/rlibc
+src/rlibc.exe
 stamp-h1
 tests/.deps/
 tests/Makefile
 tests/Makefile.in
 tests/test1
+tests/test1.exe
 tests/test2
+tests/test2.exe
 tests/test3
+tests/test3.exe
 
 src/examples/java/*.class
 src/examples/java/*.stamp
+
+inputs/odbc/libr-odbc.def
+inputs/postgres/libr-postgres.def
 
 *.pdf

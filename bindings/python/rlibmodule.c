@@ -23,7 +23,6 @@ static char *rlib_interface_version="0.1.0";
 
 #include "rlib.h"
 #include "rlib_input.h"
-#include "pcode.h"
 
 #define INPUT_PRIVATE(input) (((struct _private *)input->private))
 
@@ -208,15 +207,15 @@ static gchar * rlib_python_resolve_memory_variable(gchar *name) {
 	}
 	result = PyString_AsString(varstr);
 	Py_DECREF(varstr);
-        return g_strdup(result);
+	return g_strdup(result);
 }
 
 static gint rlib_python_write_output(gchar *data, gint len) {
-        return write(1, data, len);
+	return write(1, data, len);
 }
 
 static void rlib_python_free(rlib *r) {
-        g_free(ENVIRONMENT(r));
+	g_free(rlib_get_environment(r));
 }
 
 static struct environment_filter *rlib_python_new_environment() {
@@ -1124,13 +1123,27 @@ Generate a mysql report and send it to standard out.\n\
 static PyObject *
 rlibmysql_report(PyObject *self, PyObject *_args)
 {
+	rlib *r;
 	char	*hostname, *username, *password, *database, *xmlfile, *sqlquery, *oformat;
-	long	result;
 
 	if (!PyArg_ParseTuple(_args, "sssssss:mysql_report", &hostname, &username, &password, &database, &xmlfile, &sqlquery, &oformat))
 		return NULL;
-	result = rlib_mysql_report(hostname, username, password, database, xmlfile, sqlquery, oformat);
-	return PyInt_FromLong(result);
+
+	r = rlib_init();
+	if (rlib_add_datasource_mysql(r, "mysql", hostname, username, password, database) == -1) {
+		rlib_free(r);
+        return PyInt_FromLong(-1);
+	}
+	rlib_add_query_as(r, "mysql", sqlquery, "example");
+	rlib_add_report(r, xmlfile);
+	rlib_set_output_format_from_text(r, oformat);
+	if (rlib_execute(r) == -1) {
+		rlib_free(r);
+		return PyInt_FromLong(-1);
+	}
+	rlib_spool(r);
+	rlib_free(r);
+	return PyInt_FromLong(0);
 }
 
 static char rlibopen__doc__[] = "\
@@ -1153,13 +1166,27 @@ Generate a PostgreSQL report and send it to standard out.\n\
 static PyObject *
 rlibpostgres_report(PyObject *self, PyObject *_args)
 {
+	rlib *r;
 	char	*connstr, *xmlfile, *sqlquery, *oformat;
-	long	result;
 
 	if (!PyArg_ParseTuple(_args, "ssss:postgres_report", &connstr, &xmlfile, &sqlquery, &oformat))
 		return NULL;
-	result = rlib_postgres_report(connstr, xmlfile, sqlquery, oformat);
-	return PyInt_FromLong(result);
+
+	r = rlib_init();
+	if (rlib_add_datasource_postgres(r, "postgres", connstr) == -1) {
+		rlib_free(r);
+		return PyInt_FromLong(-1);
+	}
+	rlib_add_query_as(r, "postgres", sqlquery, "example");
+	rlib_add_report(r, xmlfile);
+	rlib_set_output_format_from_text(r, oformat);
+	if (rlib_execute(r) == -1) {
+		rlib_free(r);
+        return PyInt_FromLong(-1);
+	}
+	rlib_spool(r);
+	rlib_free(r);
+	return PyInt_FromLong(0);
 }
 
 static PyMethodDef rlibmodule_methods[] = {

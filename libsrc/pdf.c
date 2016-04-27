@@ -23,7 +23,7 @@
 
 
 #include "config.h"
-#include "rlib.h"
+#include "rlib-internal.h"
 #include "rpdf.h"
 
 #define MAX_PDF_PAGES 500

@@ -22,7 +22,7 @@
 #include <string.h> 
 
 #include "config.h"
-#include "rlib.h"
+#include "rlib-internal.h"
 
 #define TEXT 1
 #define DELAY 2

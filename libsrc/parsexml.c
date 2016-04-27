@@ -29,7 +29,7 @@
 #include <glib.h>
 
 #include "config.h"
-#include "rlib.h"
+#include "rlib-internal.h"
 
 void dump_part(struct rlib_part *part);
 

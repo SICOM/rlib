@@ -32,7 +32,7 @@
 #include <math.h>
 
 #include "config.h"
-#include "rlib.h"
+#include "rlib-internal.h"
 
 #define GOOD_CONTRAST_THRESHOLD 0.5
 #define FALSE_ORGIN_CONTRAST_THRESHOLD 0.2

@@ -59,8 +59,8 @@ AC_CHECK_FUNCS([localtime_r strfmon])
 
 gl_VISIBILITY
 AS_IF([test x$gl_cv_cc_visibility = xyes],
-	[AC_DEFINE(DLL_EXPORT,[__attribute__((visibility("default")))],[Explicitly export global symbols])],
-	[AC_DEFINE(DLL_EXPORT,[],[Explicitly export global symbols])]
+	[AC_DEFINE(DLL_EXPORT_SYM,[__attribute__((visibility("default")))],[Explicitly export global symbols])],
+	[AC_DEFINE(DLL_EXPORT_SYM,[],[Explicitly export global symbols])]
 )
 
 dnl These linker flags would ensure that no symbols are missing
@@ -75,7 +75,7 @@ dnl AC_TRY_LINK_FLAG([-Wl,--as-needed],[ac_cv_Wl_as_needed])
 dnl AC_TRY_LINK_FLAG([-Wl,--no-allow-shlib-undefined],[ac_cv_Wl_no_allow_shlib_undefined])
 dnl AC_TRY_LINK_FLAG([-Wl,--no-copy-dt-needed-entries],[ac_cv_Wl_no_copy_dt_needed_entries])
 dnl AS_IF([test x$ac_cv_Wl_no_copy_dt_needed_entries = xno],
-dnl	[AC_TRY_LINK_FLAG([-Wl,--no-add-needed],[ac_cv_Wl_no_add_needed])])
+dnl 	[AC_TRY_LINK_FLAG([-Wl,--no-add-needed],[ac_cv_Wl_no_add_needed])])
 
 dnl Checks for libraries.
 AC_CHECK_LIB(c, exit)

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -32,7 +32,7 @@
 
 #include <math.h>
 
-#include "rlib.h"
+#include "rlib-internal.h"
 #include "pcode.h"
 #include "rlib_input.h"
 #include "util.h"
@@ -78,8 +78,7 @@ static void free_chart(GSList *row_list[]) {
 	}
 }
 
-gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left_margin_offset, gfloat *top_margin_offset) {
-
+DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left_margin_offset, gfloat *top_margin_offset) {
 	gint i = 0;
 	struct rlib_rgb bar_color;
 	struct rlib_rgb label_color;

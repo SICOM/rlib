@@ -1,6 +1,6 @@
 ## libsrc/Makefile.am for RLIB
 
-## Copyright (c) 2003-2006 SICOM Systems Inc (bdoan@sicompos.com)
+## Copyright (c) 2003-2016 SICOM Systems Inc (bdoan@sicompos.com)
 ## rlib is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation; either version 2, or (at your option)
@@ -36,18 +36,19 @@ libr_la_SOURCES = parsexml.c reportgen.c layout.c graphing.c api.c \
 libr_la_LIBADD = $(RLIB_LIBS) $(top_builddir)/rpdf/librpdf.la
 
 DEF_FILE=libr.def
+IMPLIB_FILE=libr.a
 if WIN32
-def_ldflags=-Wl,--output-def,$(DEF_FILE) -avoid-version
+def_ldflags=-Wl,--out-implib,$(IMPLIB_FILE) $(DEF_FILE) --add-stdcall-alias -avoid-version
 endif
 
 libr_la_LDFLAGS = \
 	-version-info $(RLIB_LT_CURRENT):$(RLIB_LT_REVISION):$(RLIB_LT_AGE) \
 	$(def_ldflags) $(EXTRA_LDFLAGS)
 
-rlibincludedir=$(includedir)/rlib
-rlibinclude_HEADERS = rlib.h rlib_input.h charencoder.h datetime.h\
-	util.h value.h pcode.h
+rlibincludedir = $(includedir)/rlib
+rlibinclude_HEADERS = rlib.h rlib_input.h
 
-AM_CFLAGS = $(RLIB_CFLAGS) $(RLIB_WERROR) -I$(top_srcdir)/rpdf
+AM_CFLAGS = $(CFLAG_VISIBILITY) $(RLIB_CFLAGS) $(RLIB_WERROR) -I$(top_srcdir)/rpdf
 
-EXTRA_DIST = rlib.i generate_bindings.sh
+EXTRA_DIST = rlib.i generate_bindings.sh \
+	charencoder.h datetime.h util.h value.h pcode.h

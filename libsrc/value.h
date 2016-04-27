@@ -27,6 +27,7 @@
 
 #include <glib.h>
 
+#include "rlib-internal.h"
 #include "datetime.h"
 
 

@@ -27,7 +27,6 @@
 #undef PACKAGE_VERSION
 
 #include "rlib.h"
-#include "pcode.h"
 #include "rlib_php.h"
 
 #include <php.h>
@@ -801,7 +800,7 @@ ZEND_FUNCTION(rlib_compile_infix) {
 		return;
 	}
 
-	rlogit_setmessagewriter(compile_error_capture);
+	rlib_setmessagewriter(compile_error_capture);
 	code = rlib_infix_to_pcode(NULL, NULL, NULL, infix, -1, FALSE);
 	if(code != NULL) {
 		rlib_execute_pcode(NULL, &value, code, NULL);

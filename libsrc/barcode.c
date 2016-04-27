@@ -1,4 +1,4 @@
-#include "rlib.h"
+#include "rlib-internal.h"
 #include "rlib_gd.h"
 #include <string.h>
 

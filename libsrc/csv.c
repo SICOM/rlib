@@ -22,7 +22,7 @@
 #include <string.h>
 
 #include "config.h"
-#include "rlib.h"
+#include "rlib-internal.h"
 #include "pcode.h"
 
 #define MAX_COL	100

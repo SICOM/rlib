@@ -23,6 +23,9 @@
  * for the RLIB library functions.
  */
 
+#include <config.h>
+
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -32,9 +35,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "config.h"
-
-#include "rlib.h"
+#include "rlib-internal.h"
 #include "pcode.h"
 #include "rlib_input.h"
 #include "rlib_langinfo.h"
@@ -54,7 +55,7 @@ static void metadata_destroyer (gpointer data) {
 	g_free(data);
 }
 
-rlib * rlib_init_with_environment(struct environment_filter *environment) {
+DLL_EXPORT_SYM rlib * rlib_init_with_environment(struct environment_filter *environment) {
 	rlib *r;
 	
 	init_signals();
@@ -83,7 +84,7 @@ rlib * rlib_init_with_environment(struct environment_filter *environment) {
 }
 
 
-rlib * rlib_init() {
+DLL_EXPORT_SYM rlib *rlib_init(void) {
 	return rlib_init_with_environment(NULL);
 }
 
@@ -99,7 +100,7 @@ static void rlib_alloc_query_space(rlib *r) {
 	r->results[r->queries_count] = g_malloc0(sizeof(struct rlib_results));
 }
 
-gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name) {
+DLL_EXPORT_SYM gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name) {
 	gint i;
 
 	rlib_alloc_query_space(r);
@@ -117,11 +118,11 @@ gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, c
 	return -1;
 }
 
-gint rlib_add_query_as(rlib *r, const gchar *input_source, const gchar *sql, const gchar *name) {
+DLL_EXPORT_SYM gint rlib_add_query_as(rlib *r, const gchar *input_source, const gchar *sql, const gchar *name) {
 	return rlib_add_query_pointer_as(r, input_source, g_strdup(sql), name);
 }
 
-gint rlib_add_report(rlib *r, const gchar *name) {
+DLL_EXPORT_SYM gint rlib_add_report(rlib *r, const gchar *name) {
 	gchar *tmp;
 	int i, found_dir_sep = 0, last_dir_sep;
 
@@ -154,11 +155,12 @@ gint rlib_add_report(rlib *r, const gchar *name) {
 	return r->parts_count;
 }
 
-gint rlib_add_report_from_buffer(rlib *r, gchar *buffer) {
+DLL_EXPORT_SYM gint rlib_add_report_from_buffer(rlib *r, gchar *buffer) {
 	char cwdpath[PATH_MAX + 1];
 	char *cwd;
 #ifdef _WIN32
-	char *tmp;
+	int i;
+	char *tmp __attribute__((unused));
 #endif
 
 	if (r->parts_count > RLIB_MAXIMUM_REPORTS - 1)
@@ -180,7 +182,7 @@ gint rlib_add_report_from_buffer(rlib *r, gchar *buffer) {
 #ifdef _WIN32
 	tmp = r->reportstorun[r->parts_count].dir;
 	/* Sanitize the file path to look like UNIX */
-	for (i = 0; i < len; i++)
+	for (i = 0; i < tmp[i]; i++)
 		if (tmp[i] == '\\')
 			tmp[i] = '/';
 #endif
@@ -189,9 +191,10 @@ gint rlib_add_report_from_buffer(rlib *r, gchar *buffer) {
 	return r->parts_count;
 }
 
-gint rlib_add_search_path(rlib *r, const gchar *path) {
+DLL_EXPORT_SYM gint rlib_add_search_path(rlib *r, const gchar *path) {
 	gchar *path_copy;
 #ifdef _WIN32
+	int i;
 	int len;
 #endif
 
@@ -229,13 +232,16 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 	gchar *file;
 	struct stat st;
 	GSList *elem;
+#ifdef _WIN32
+	int len = strlen(filename);
+#endif
 
 #ifdef _WIN32
 	/*
 	 * If the filename starts with a drive label,
 	 * it is an absolute file name. Return it.
 	 */
-	if (strlen(filename) >= 2) {
+	if (len >= 2) {
 		if (tolower(filename[0]) >= 'a' && tolower(filename[0]) <= 'z' &&
 				filename[1] == ':') {
 			r_info(r, "get_filename: Absolute file name with drive label: %s\n", filename);
@@ -388,7 +394,7 @@ static gint rlib_execute_queries(rlib *r) {
 	return TRUE;
 }
 
-gint rlib_execute(rlib *r) {
+DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 	gint i;
 	r->now = time(NULL);
 
@@ -427,7 +433,7 @@ gint rlib_execute(rlib *r) {
 	return 0;
 }
 
-gchar * rlib_get_content_type_as_text(rlib *r) {
+DLL_EXPORT_SYM gchar *rlib_get_content_type_as_text(rlib *r) {
 	static char buf[256];
 	gchar *filename = g_hash_table_lookup(r->output_parameters, "csv_file_name");
 	
@@ -463,7 +469,7 @@ gchar * rlib_get_content_type_as_text(rlib *r) {
 	return (gchar *)"UNKNOWN";
 }
 
-gint rlib_spool(rlib *r) {
+DLL_EXPORT_SYM gint rlib_spool(rlib *r) {
 	if(r->did_execute == TRUE) {
 		OUTPUT(r)->spool_private(r);
 		return 0;
@@ -471,12 +477,12 @@ gint rlib_spool(rlib *r) {
 	return -1;
 }
 
-gint rlib_set_output_format(rlib *r, int format) {
+DLL_EXPORT_SYM gint rlib_set_output_format(rlib *r, int format) {
 	r->format = format;
 	return 0;
 }
 
-gint rlib_add_resultset_follower_n_to_1(rlib *r, gchar *leader, gchar *leader_field, gchar *follower, gchar *follower_field) {
+DLL_EXPORT_SYM gint rlib_add_resultset_follower_n_to_1(rlib *r, gchar *leader, gchar *leader_field, gchar *follower, gchar *follower_field) {
 	gint ptr_leader = -1, ptr_follower = -1;
 	gint x;
 
@@ -511,11 +517,11 @@ gint rlib_add_resultset_follower_n_to_1(rlib *r, gchar *leader, gchar *leader_fi
 	return 0;
 }
 
-gint rlib_add_resultset_follower(rlib *r, gchar *leader, gchar *follower) {
+DLL_EXPORT_SYM gint rlib_add_resultset_follower(rlib *r, gchar *leader, gchar *follower) {
 	return rlib_add_resultset_follower_n_to_1(r, leader, NULL, follower, NULL);
 }
 
-gint rlib_set_output_format_from_text(rlib *r, gchar *name) {
+DLL_EXPORT_SYM gint rlib_set_output_format_from_text(rlib *r, gchar *name) {
 	r->format = rlib_format_get_number(name);
 
 	if(r->format == -1)
@@ -523,27 +529,27 @@ gint rlib_set_output_format_from_text(rlib *r, gchar *name) {
 	return 0;
 }
 
-gchar *rlib_get_output(rlib *r) {
+DLL_EXPORT_SYM gchar *rlib_get_output(rlib *r) {
 	if(r->did_execute) 
 		return OUTPUT(r)->get_output(r);
 	else
 		return NULL;
 }
 
-gint rlib_get_output_length(rlib *r) {
+DLL_EXPORT_SYM gint rlib_get_output_length(rlib *r) {
 	if(r->did_execute) 
 		return OUTPUT(r)->get_output_length(r);
 	else
 		return 0;
 }
 
-gboolean rlib_signal_connect(rlib *r, gint signal_number, gboolean (*signal_function)(rlib *, gpointer), gpointer data) {	
+DLL_EXPORT_SYM gboolean rlib_signal_connect(rlib *r, gint signal_number, gboolean (*signal_function)(rlib *, gpointer), gpointer data) {
 	r->signal_functions[signal_number].signal_function = signal_function;
 	r->signal_functions[signal_number].data = data;
 	return TRUE;
 }
 
-gboolean rlib_add_function(rlib *r, gchar *function_name, gboolean (*function)(rlib *, struct rlib_pcode *code, struct rlib_value_stack *, struct rlib_value *this_field_value, gpointer user_data), gpointer user_data) {	
+DLL_EXPORT_SYM gboolean rlib_add_function(rlib *r, gchar *function_name, gboolean (*function)(rlib *, struct rlib_pcode *code, struct rlib_value_stack *, struct rlib_value *this_field_value, gpointer user_data), gpointer user_data) {
 	struct rlib_pcode_operator *rpo = g_new0(struct rlib_pcode_operator, 1);
 	rpo->tag = g_strconcat(function_name, "(", NULL);	
 	rpo->taglen = strlen(rpo->tag);
@@ -557,7 +563,7 @@ gboolean rlib_add_function(rlib *r, gchar *function_name, gboolean (*function)(r
 	return TRUE;
 }
 
-gboolean rlib_signal_connect_string(rlib *r, gchar *signal_name, gboolean (*signal_function)(rlib *, gpointer), gpointer data) {
+DLL_EXPORT_SYM gboolean rlib_signal_connect_string(rlib *r, gchar *signal_name, gboolean (*signal_function)(rlib *, gpointer), gpointer data) {
 	gint signal = -1;
 	if(!strcasecmp(signal_name, "row_change"))
 		signal = RLIB_SIGNAL_ROW_CHANGE;
@@ -578,14 +584,14 @@ gboolean rlib_signal_connect_string(rlib *r, gchar *signal_name, gboolean (*sign
 	return rlib_signal_connect(r, signal, signal_function, data);
 }
 
-gboolean rlib_query_refresh(rlib *r) {
+DLL_EXPORT_SYM gboolean rlib_query_refresh(rlib *r) {
 	rlib_free_results(r);
 	rlib_execute_queries(r);
 	rlib_fetch_first_rows(r);
 	return TRUE;
 }
 
-gint rlib_add_parameter(rlib *r, const gchar *name, const gchar *value) {
+DLL_EXPORT_SYM gint rlib_add_parameter(rlib *r, const gchar *name, const gchar *value) {
 	g_hash_table_insert(r->parameters, g_strdup(name), g_strdup(value));
 	return TRUE;
 }
@@ -593,7 +599,7 @@ gint rlib_add_parameter(rlib *r, const gchar *name, const gchar *value) {
 /*
 *  Returns TRUE if locale was actually set, otherwise, FALSE
 */
-gint rlib_set_locale(rlib *r, gchar *locale) {
+DLL_EXPORT_SYM gint rlib_set_locale(rlib *r, gchar *locale) {
 
 #if DISABLE_UTF8
 	r->special_locale = g_strdup(locale);
@@ -603,11 +609,11 @@ gint rlib_set_locale(rlib *r, gchar *locale) {
 	return TRUE;
 }
 
-gchar * rlib_bindtextdomain(rlib *r, gchar *domainname, gchar *dirname) {
+DLL_EXPORT_SYM gchar * rlib_bindtextdomain(rlib *r, gchar *domainname, gchar *dirname) {
 	return bindtextdomain(domainname, dirname);
 }
 
-void rlib_set_radix_character(rlib *r, gchar radix_character) {
+DLL_EXPORT_SYM void rlib_set_radix_character(rlib *r, gchar radix_character) {
 	r->radix_character = radix_character;
 }
 
@@ -618,11 +624,11 @@ void rlib_trap() {
 	return;
 }
 
-void rlib_set_output_parameter(rlib *r, gchar *parameter, gchar *value) {
+DLL_EXPORT_SYM void rlib_set_output_parameter(rlib *r, gchar *parameter, gchar *value) {
 	g_hash_table_insert(r->output_parameters, g_strdup(parameter), g_strdup(value));
 }
 
-void rlib_set_output_encoding(rlib *r, const char *encoding) {
+DLL_EXPORT_SYM void rlib_set_output_encoding(rlib *r, const char *encoding) {
 	const char *new_encoding = (encoding ? encoding : "UTF-8");
 
 	if (strcasecmp(new_encoding, "UTF-8") == 0 ||
@@ -633,7 +639,7 @@ void rlib_set_output_encoding(rlib *r, const char *encoding) {
 	r->output_encoder_name  = g_strdup(new_encoding);
 }
 
-gint rlib_set_datasource_encoding(rlib *r, gchar *input_name, gchar *encoding) {
+DLL_EXPORT_SYM gint rlib_set_datasource_encoding(rlib *r, gchar *input_name, gchar *encoding) {
 	int i;
 	struct input_filter *tif;
 	
@@ -649,7 +655,7 @@ gint rlib_set_datasource_encoding(rlib *r, gchar *input_name, gchar *encoding) {
 	return -1;
 }
 
-gint rlib_graph_set_x_minor_tick(rlib *r, gchar *graph_name, gchar *x_value) {
+DLL_EXPORT_SYM gint rlib_graph_set_x_minor_tick(rlib *r, gchar *graph_name, gchar *x_value) {
 	struct rlib_graph_x_minor_tick *gmt = g_new0(struct rlib_graph_x_minor_tick, 1);
 	gmt->graph_name = g_strdup(graph_name);
 	gmt->x_value = g_strdup(x_value);
@@ -658,7 +664,7 @@ gint rlib_graph_set_x_minor_tick(rlib *r, gchar *graph_name, gchar *x_value) {
 	return TRUE;
 }
 
-gint rlib_graph_set_x_minor_tick_by_location(rlib *r, gchar *graph_name, gint location) {
+DLL_EXPORT_SYM gint rlib_graph_set_x_minor_tick_by_location(rlib *r, gchar *graph_name, gint location) {
 	struct rlib_graph_x_minor_tick *gmt = g_new0(struct rlib_graph_x_minor_tick, 1);
 	gmt->by_name = FALSE;
 	gmt->location = location;
@@ -668,7 +674,7 @@ gint rlib_graph_set_x_minor_tick_by_location(rlib *r, gchar *graph_name, gint lo
 	return TRUE;
 }
 
-gint rlib_graph_add_bg_region(rlib *r, gchar *graph_name, gchar *region_label, gchar *color, gfloat start, gfloat end) {
+DLL_EXPORT_SYM gint rlib_graph_add_bg_region(rlib *r, gchar *graph_name, gchar *region_label, gchar *color, gfloat start, gfloat end) {
 	struct rlib_graph_region *gr = g_new0(struct rlib_graph_region, 1);
 	gr->graph_name = g_strdup(graph_name);
 	gr->region_label = g_strdup(region_label);
@@ -680,14 +686,14 @@ gint rlib_graph_add_bg_region(rlib *r, gchar *graph_name, gchar *region_label, g
 	return TRUE;
 }
 
-gint rlib_graph_clear_bg_region(rlib *r, gchar *graph_name) {
+DLL_EXPORT_SYM gint rlib_graph_clear_bg_region(rlib *r, gchar *graph_name) {
 
 	return TRUE;
 }
 
 #ifdef VERSION
 const gchar *rpdf_version(void);
-const gchar *rlib_version(void) {
+DLL_EXPORT_SYM const gchar *rlib_version(void) {
 #if 0
 #if DISABLE_UTF8
 const gchar *charset="8859-1";
@@ -699,39 +705,7 @@ r_debug("rlib_version: version=[%s], CHARSET=%s, RPDF=%s", VERSION, charset, rpd
 	return VERSION;
 }
 #else
-const gchar *rlib_version(void) {
+DLL_EXPORT_SYM const gchar *rlib_version(void) {
 	return "Unknown";
 }
 #endif
-
-gint rlib_mysql_report(gchar *hostname, gchar *username, gchar *password, gchar *database, gchar *xmlfilename, gchar *sqlquery, 
-gchar *outputformat) {
-	rlib *r;
-	r = rlib_init();
-	if(rlib_add_datasource_mysql(r, "mysql", hostname, username, password, database) == -1)
-		return -1;
-	rlib_add_query_as(r, "mysql", sqlquery, "example");
-	rlib_add_report(r, xmlfilename);
-	rlib_set_output_format_from_text(r, outputformat);
-	if(rlib_execute(r) == -1)
-		return -1;
-	rlib_spool(r);
-	rlib_free(r);
-	return 0;
-}
-
-gint rlib_postgres_report(gchar *connstr, gchar *xmlfilename, gchar *sqlquery, gchar *outputformat) {
-	rlib *r;
-	r = rlib_init();
-	if(rlib_add_datasource_postgres(r, "postgres", connstr) == -1)
-		return -1;
-	rlib_add_query_as(r, "postgres", sqlquery, "example");
-	rlib_add_report(r, xmlfilename);
-	rlib_set_output_format_from_text(r, outputformat);
-	if(rlib_execute(r) == -1)
-		return -1;
-	rlib_spool(r);
-	rlib_free(r);
-	return 0;
-}
-

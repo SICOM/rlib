@@ -23,7 +23,7 @@
 #include <gmodule.h>
 
 #include "config.h"
-#include "rlib.h"
+#include "rlib-internal.h"
 #include "rlib_input.h"
 
 typedef struct {
@@ -39,7 +39,7 @@ typedef struct {
 	} connect;
 } datasource_t;
 
-gint rlib_add_datasource(rlib *r, const gchar *input_name, struct input_filter *input) {
+DLL_EXPORT_SYM gint rlib_add_datasource(rlib *r, const gchar *input_name, struct input_filter *input) {
 	r->inputs[r->inputs_count].input = input;
 	r->inputs[r->inputs_count].name = g_strdup(input_name);
 	r->inputs[r->inputs_count].handle = NULL;
@@ -48,8 +48,13 @@ gint rlib_add_datasource(rlib *r, const gchar *input_name, struct input_filter *
 	return 0;
 }
 
-static gint rlib_add_datasource_mysql_private(rlib *r, const gchar *input_name, const gchar *database_group, const gchar *database_host, 
-const gchar *database_user, const gchar *database_password, const gchar *database_database) {
+static gint rlib_add_datasource_mysql_private(rlib *r,
+								const gchar *input_name,
+								const gchar *database_group,
+								const gchar *database_host,
+								const gchar *database_user,
+								const gchar *database_password,
+								const gchar *database_database) {
 	GModule* handle;
 	datasource_t	ds;
 	gpointer mysql;
@@ -79,16 +84,16 @@ const gchar *database_user, const gchar *database_password, const gchar *databas
 	return 0;	
 }
 
-gint rlib_add_datasource_mysql(rlib *r, const gchar *input_name, const gchar *database_host, const gchar *database_user, const gchar *database_password, 
+DLL_EXPORT_SYM gint rlib_add_datasource_mysql(rlib *r, const gchar *input_name, const gchar *database_host, const gchar *database_user, const gchar *database_password, 
 const gchar *database_database) {
 	return rlib_add_datasource_mysql_private(r, input_name, NULL, database_host, database_user, database_password, database_database);
 }
 
-gint rlib_add_datasource_mysql_from_group(rlib *r, const gchar *input_name, const gchar *group) {
+DLL_EXPORT_SYM gint rlib_add_datasource_mysql_from_group(rlib *r, const gchar *input_name, const gchar *group) {
 	return rlib_add_datasource_mysql_private(r, input_name, group, NULL, NULL, NULL, NULL);
 }
 
-gint rlib_add_datasource_postgres(rlib *r, const gchar *input_name, const gchar *conn) {
+DLL_EXPORT_SYM gint rlib_add_datasource_postgres(rlib *r, const gchar *input_name, const gchar *conn) {
 	GModule* handle;
 	datasource_t ds;
 	gpointer postgres;
@@ -113,7 +118,7 @@ gint rlib_add_datasource_postgres(rlib *r, const gchar *input_name, const gchar 
 	return 0;
 }
 
-gint rlib_add_datasource_odbc(rlib *r, const gchar *input_name, const gchar *source, const gchar *user, const gchar *password) {
+DLL_EXPORT_SYM gint rlib_add_datasource_odbc(rlib *r, const gchar *input_name, const gchar *source, const gchar *user, const gchar *password) {
 	GModule* handle;
 	datasource_t ds;
 	gpointer odbc;
@@ -138,7 +143,7 @@ gint rlib_add_datasource_odbc(rlib *r, const gchar *input_name, const gchar *sou
 	return 0;
 }
 
-gint rlib_add_datasource_xml(rlib *r, const gchar *input_name) {
+DLL_EXPORT_SYM gint rlib_add_datasource_xml(rlib *r, const gchar *input_name) {
 	r->inputs[r->inputs_count].input = rlib_xml_new_input_filter(r);
 	rlib_xml_connect(r->inputs[r->inputs_count].input);
 	r->inputs[r->inputs_count].name = g_strdup(input_name);
@@ -148,7 +153,7 @@ gint rlib_add_datasource_xml(rlib *r, const gchar *input_name) {
 	return 0;
 }
 
-gint rlib_add_datasource_csv(rlib *r, const gchar *input_name) {
+DLL_EXPORT_SYM gint rlib_add_datasource_csv(rlib *r, const gchar *input_name) {
 	r->inputs[r->inputs_count].input = rlib_csv_new_input_filter(r);
 	rlib_csv_connect(r->inputs[r->inputs_count].input);
 	r->inputs[r->inputs_count].name = g_strdup(input_name);

@@ -70,7 +70,7 @@ static int rlib_php_write_output(char *data, int len) {
 }
 
 void rlib_php_free(rlib *r) {
-	efree(ENVIRONMENT(r));
+	efree(rlib_get_environment(r));
 }
 
 
