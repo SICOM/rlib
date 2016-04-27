@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<!DOCTYPE report >
+<Part layout="'flow'" fontSize="14" orientation="landscape">
+	<PageHeader>
+		<Output>
+			<Line fontSize="26">
+				<literal>Part Page Header</literal>
+			</Line>
+			<Line>
+				<literal>I love bacon</literal>
+			</Line>
+			<HorizontalLine size="4" bgcolor="'black'"/>
+			<HorizontalLine size="10" bgcolor="'white'"/>
+		</Output>
+	</PageHeader>		
+	<pr>
+		<pd width="47">
+			<load name="iif(0, '', 'subdir1/array-in-subdir.xml')"/>
+			<load name="iif(0, '', 'array2-in-subdir.xml')"/>
+		</pd>
+		<pd width="5"/>
+		<pd width="47">
+			<load name="iif(0, '', 'array2-in-subdir.xml')"/>
+		</pd>
+	</pr>
+<!--
+	<pr>
+		<pd width="47">
+			<load name="'subdir1/array-in-subdir.xml'"/>
+		</pd>
+		<pd width="5"/>
+		<pd width="47">
+			<load name="'subdir1/array-in-subdir.xml'"/>
+		</pd>
+	</pr>
+	<pr>
+		<pd width="47">
+			<load name="'array2-in-subdir.xml'"/>
+		</pd>
+		<pd width="5"/>
+		<pd width="47">
+			<load name="'array2-in-subdir.xml'"/>
+		</pd>
+	</pr>
+-->	
+	<PageFooter>
+		<Output>
+			<Line>
+				<literal>Page: </literal>	
+				<field value="r.pageno" width="3" align="right"/>
+			</Line>
+			<Line>
+				<literal>Wheeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee: </literal>	
+				<field value="r.pageno" width="3" align="right"/>
+			</Line>
+		</Output>
+	</PageFooter>
+</Part>

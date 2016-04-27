@@ -2221,6 +2221,45 @@ XS(_wrap_rlib_add_query_as) {
 }
 
 
+XS(_wrap_rlib_add_search_path) {
+  {
+    rlib *arg1 = (rlib *) 0 ;
+    char *arg2 = (char *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int argvi = 0;
+    int result;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: rlib_add_search_path(r,path);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_rlib, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_add_search_path" "', argument " "1"" of type '" "rlib *""'"); 
+    }
+    arg1 = (rlib *)(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "rlib_add_search_path" "', argument " "2"" of type '" "char const *""'");
+    }
+    arg2 = (char *)(buf2);
+    result = (int)rlib_add_search_path(arg1,(char const *)arg2);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
+    
+    if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_rlib_add_report) {
   {
     rlib *arg1 = (rlib *) 0 ;
@@ -3486,6 +3525,7 @@ static swig_command_info swig_commands[] = {
 {"rlibc::rlib_add_datasource_xml", _wrap_rlib_add_datasource_xml},
 {"rlibc::rlib_add_datasource_csv", _wrap_rlib_add_datasource_csv},
 {"rlibc::rlib_add_query_as", _wrap_rlib_add_query_as},
+{"rlibc::rlib_add_search_path", _wrap_rlib_add_search_path},
 {"rlibc::rlib_add_report", _wrap_rlib_add_report},
 {"rlibc::rlib_add_report_from_buffer", _wrap_rlib_add_report_from_buffer},
 {"rlibc::rlib_execute", _wrap_rlib_execute},

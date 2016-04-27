@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -73,6 +73,7 @@ ZEND_FUNCTION(rlib_set_output_parameter);
 ZEND_FUNCTION(rlib_set_datasource_encoding);
 ZEND_FUNCTION(rlib_set_output_encoding);
 ZEND_FUNCTION(rlib_compile_infix);
+ZEND_FUNCTION(rlib_add_search_path);
 
 ZEND_MODULE_STARTUP_D(rlib);
 
@@ -116,6 +117,7 @@ zend_function_entry rlib_functions[] =
 	ZEND_FE(rlib_set_datasource_encoding, NULL)
 	ZEND_FE(rlib_set_output_encoding, NULL)
 	ZEND_FE(rlib_compile_infix, NULL)
+	ZEND_FE(rlib_add_search_path, NULL)
 	{NULL, NULL, NULL}
 };
 
@@ -811,3 +813,19 @@ ZEND_FUNCTION(rlib_compile_infix) {
 	g_string_free(error_data, TRUE);
 }
 
+ZEND_FUNCTION(rlib_add_search_path) {
+	zval *z_rip = NULL;
+	gint sp_len;
+	gchar *sp;
+	rlib_inout_pass *rip;
+	gint id = -1;
+	gint result = 0;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rs", &z_rip, &sp, &sp_len) == FAILURE)
+		return;
+
+	ZEND_FETCH_RESOURCE(rip, rlib_inout_pass *, &z_rip, id, LE_RLIB_NAME, le_link);
+
+	result = rlib_add_search_path(rip->r, sp);
+	RETURN_LONG(result);
+}

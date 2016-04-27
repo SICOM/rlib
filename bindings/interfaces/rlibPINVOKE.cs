@@ -208,6 +208,9 @@ class rlibPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_add_query_as")]
   public static extern int rlib_add_query_as(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, string jarg4);
 
+  [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_add_search_path")]
+  public static extern int rlib_add_search_path(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_add_report")]
   public static extern int rlib_add_report(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
 

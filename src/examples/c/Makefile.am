@@ -1,6 +1,6 @@
 ## src/examples/c/Makefile.am for RLIB
 
-## Copyright (c) 2003-2006 SICOM Systems Inc (bdoan@sicompos.com)
+## Copyright (c) 2003-2016 SICOM Systems Inc (bdoan@sicompos.com)
 ## rlib is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation; either version 2, or (at your option)
@@ -20,12 +20,19 @@
 ##
 ## Process this file with automake to produce Makefile.in
 
-noinst_PROGRAMS = example
+noinst_PROGRAMS = example relpth1 relpth2 srcpth relprt
 
 AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
 
-example_SOURCES = example.c
-example_LDADD = $(top_builddir)/libsrc/libr.la  $(RLIB_LIBS)
+example_LDADD = $(top_builddir)/libsrc/libr.la
+
+relpth1_LDADD = $(top_builddir)/libsrc/libr.la
+
+relpth2_LDADD = $(top_builddir)/libsrc/libr.la
+
+srcpth_LDADD = $(top_builddir)/libsrc/libr.la
+
+relprt_LDADD = $(top_builddir)/libsrc/libr.la
 
 noinst_SCRIPTS = products.xml
 

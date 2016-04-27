@@ -38,6 +38,7 @@ struct input_info {
 
 typedef struct input_filter input_filter;
 struct input_filter {
+	gpointer r;
 	gpointer private;
 	struct input_info info;
 	gint (*input_close)(gpointer);

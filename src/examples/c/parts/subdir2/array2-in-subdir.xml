@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<!DOCTYPE report >
+<Report fontSize="9" orientation="landscape" query="'moredata'">
+	<Alternate>
+		<NoData>
+			<Output>
+				<Line fontSize="12">
+					<literal>NO DATA</literal>
+				</Line>		
+			</Output>
+		</NoData>
+	</Alternate>
+	<ReportHeader>
+		<Output>
+			<Line/>
+			<Line fontSize="12">
+				<literal>Test Report 2</literal>
+			</Line>
+			<Line fontsize="4"/>
+			<HorizontalLine size="4" bgcolor="'white'"/>
+			<HorizontalLine size="2" bgcolor="'black'"/>
+			<HorizontalLine size="4" bgcolor="'white'"/>
+		</Output>				
+	</ReportHeader>
+
+	<PageHeader>
+		<Output>
+			<Line fontSize="11">
+				<literal>Test Report (Page Header)</literal>
+			</Line>
+			<HorizontalLine size="4" bgcolor="'white'"/>
+		</Output>
+	</PageHeader>		
+	<Detail>
+		<FieldHeaders>
+			<Output>
+				<HorizontalLine size="1" bgcolor="'black'"/>
+				<Line bgcolor="'0xe5e5e5'">
+					<literal width="20" col="1">Name</literal>
+					<literal width="1"/>
+				</Line>
+				<HorizontalLine size="1" bgcolor="'black'"/>
+				<HorizontalLine size="4" bgcolor="'white'"/>
+			</Output>
+		</FieldHeaders>		
+		<FieldDetails>
+			<Output>
+				<Line bgcolor="iif(r.detailcnt%2,'0xe5e5e5','white')">
+					<field value="moredata.name" width="20" align="left" col="1"/>
+				</Line>
+			</Output>
+		</FieldDetails>
+	</Detail>
+
+	<PageFooter>
+		<Output>
+			<Line>
+				<literal>Page: </literal>	
+				<field value="r.pageno" width="3" align="right"/>
+			</Line>
+		</Output>
+	</PageFooter>
+
+	<ReportFooter>
+	</ReportFooter>
+</Report>

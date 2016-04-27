@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!DOCTYPE report >
+<Report fontSize="20" orientation="landscape">
+	<Alternate>
+		<NoData>
+			<Output>
+				<Line fontSize="12">
+					<literal>NO DATA</literal>
+				</Line>		
+			</Output>
+		</NoData>
+	</Alternate>
+		
+
+	<Detail>
+
+		<FieldDetails>
+			<Output>
+				<Line bgcolor="iif(r.detailcnt%2,'0xe5e5e5','white')">
+					<field value="'dude'" width="6" align="right" col="1" bgcolor="'red'"/>
+					<field value="'sweet'" width="6" align="right" col="2" bgcolor="'blue'"/>
+					<field value="'xxxx'" width="6" align="right" col="3" bgcolor="'yellow'"/>
+					<field value="'zzzzzz'" width="6" align="right" col="4" />
+					<field value="12345" width="6" align="right" col="5" />
+				</Line>
+			</Output>
+		</FieldDetails>
+	</Detail>
+</Report>

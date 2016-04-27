@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<!DOCTYPE report >
+<Report fontSize="9" orientation="landscape">
+	<ReportHeader>
+		<Output>
+			<Line fontSize="16">
+				<literal align="center">Testing relative path</literal>
+			</Line>
+			<Line fontSize="16">
+				<literal align="left">Below there should be a red A and a blue B</literal>
+			</Line>
+			<Image value="'redA.jpg'" type="'jpeg'" width="64" height="64" />
+			<Line fontSize="64" />
+			<Image value="'blueB.jpg'" type="'jpeg'" width="64" height="64" />
+			<Line fontSize="64" />
+			<Line fontSize="16">
+				<literal align="left">Below there should be a green C and a red D</literal>
+			</Line>
+			<Image value="'subdir/greenC.jpg'" type="'jpeg'" width="64" height="64" />
+			<Line fontSize="64" />
+			<Image value="'subdir/redD.jpg'" type="'jpeg'" width="64" height="64" />
+			<Line fontSize="64" />
+		</Output>
+	</ReportHeader>
+
+	<PageHeader>
+	</PageHeader>
+
+	<Detail>
+	</Detail>
+
+	<PageFooter>
+	</PageFooter>
+
+	<ReportFooter>
+	</ReportFooter>
+</Report>

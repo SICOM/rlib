@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  * 
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -259,10 +259,11 @@ static gint rlib_csv_free_input_filter(gpointer input_ptr){
 	return 0;
 }
 
-gpointer rlib_csv_new_input_filter() {
+gpointer rlib_csv_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
 	input = g_malloc(sizeof(struct input_filter));
+	input->r = r;
 	input->private = g_malloc(sizeof(struct _private));
 	memset(input->private, 0, sizeof(struct _private));
 	input->input_close = rlib_csv_input_close;

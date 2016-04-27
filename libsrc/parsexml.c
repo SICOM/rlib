@@ -33,7 +33,7 @@
 
 void dump_part(struct rlib_part *part);
 
-static struct rlib_report * parse_report_file(rlib *r, gchar *filename, gchar *query);
+static struct rlib_report * parse_report_file(rlib *r, int report_index, gchar *filename, gchar *query);
 
 void safestrncpy(gchar *dest, gchar *str, int n) {
 	if (!dest) return;
@@ -675,7 +675,7 @@ static struct rlib_report * parse_part_load(rlib *r, struct rlib_part *part, xml
 	rlib_execute_as_string(r, query_code,real_query, MAXSTRLEN-1);
 
 	if(result_name && result_name) {
-		report = parse_report_file(r, real_name, query);
+		report = parse_report_file(r, part->report_index, real_name, query);
 	} else {
 		r_error(r, "parse_part_load - Query or Name Is Invalid\n");
 		report = NULL;
@@ -787,7 +787,9 @@ void dump_part(struct rlib_part *part) {
 	g_slist_foreach(part->part_rows, dump_part_tr, NULL);
 }
 
-struct rlib_part * parse_part_file(rlib *r, gchar *filename, gchar type) {
+struct rlib_part * parse_part_file(rlib *r, int report_index) {
+	gchar *filename = r->reportstorun[report_index].name;
+	gchar type = r->reportstorun[report_index].type;
 	xmlDocPtr doc;
 	struct rlib_report *report;
 	struct rlib_part *part = NULL;
@@ -803,8 +805,11 @@ struct rlib_part * parse_part_file(rlib *r, gchar *filename, gchar type) {
 
 	if(type == RLIB_REPORT_TYPE_BUFFER)
 		doc = xmlReadMemory(filename, strlen(filename), NULL, NULL, XML_PARSE_XINCLUDE);
-	else
-		doc = xmlReadFile(filename, NULL, XML_PARSE_XINCLUDE);
+	else {
+		gchar *file = get_filename(r, filename, report_index, TRUE);
+		doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
+		g_free(file);
+	}
 
 	xmlXIncludeProcess(doc);
 
@@ -828,12 +833,14 @@ struct rlib_part * parse_part_file(rlib *r, gchar *filename, gchar type) {
 	}
 
 	part = (struct rlib_part *) g_new0(struct rlib_part, 1);
+
 	if(part == NULL) {
 		r_error(r, "Out of Memory :(\n");
 		xmlFreeDoc(doc);
 		return(NULL);
 	}
 
+	part->report_index = report_index;
 	if((xmlStrcmp(cur->name, (const xmlChar *) "Part"))==0) {
 		parse_part(r, part, doc, ns, cur);
 		found = TRUE;
@@ -895,8 +902,9 @@ struct rlib_part * parse_part_file(rlib *r, gchar *filename, gchar type) {
 	return part;
 }
 
-static struct rlib_report * parse_report_file(rlib *r, gchar *filename, gchar *query) {
+static struct rlib_report * parse_report_file(rlib *r, int report_index, gchar *filename, gchar *query) {
 	xmlDocPtr doc;
+	gchar *file;
 	struct rlib_report *report;
 	xmlNsPtr ns = NULL;
 	xmlNodePtr cur;
@@ -904,7 +912,9 @@ static struct rlib_report * parse_report_file(rlib *r, gchar *filename, gchar *q
 
 	xmlLineNumbersDefault(1);
 
-	doc = xmlReadFile(filename, NULL, XML_PARSE_XINCLUDE);
+	file = get_filename(r, filename, report_index, FALSE);
+	doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
+	g_free(file);
 	xmlXIncludeProcess(doc);
 
 	if (doc == NULL)  {

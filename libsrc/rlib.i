@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2005 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -30,6 +30,7 @@ int rlib_add_datasource_odbc(rlib *r, char *input_name, char *source, char *user
 int rlib_add_datasource_xml(rlib *r, char *input_name);
 int rlib_add_datasource_csv(rlib *r, char *input_name);
 int rlib_add_query_as(rlib *r, char *input_source, char *sql, char *name);
+int rlib_add_search_path(rlib *r, const char *path);
 int rlib_add_report(rlib *r, char *name);
 int rlib_add_report_from_buffer(rlib *r, char *buffer);
 int rlib_execute(rlib *r);

@@ -1,7 +1,7 @@
 /*
- *  Copyright (C) 2003-2016 SICOM Systems, INC.
+ *  Copyright (C) 2016 SICOM Systems, INC.
  *
- *  Authors: Bob Doan <bdoan@sicompos.com>
+ *  Author: Zoltán Böszörményi <zboszormenyi@sicom.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of version 2 of the GNU General Public
@@ -19,24 +19,12 @@
  */
  
 #include <rlib.h>
-#include <rlib_input.h>
 
 int main(int argc, char **argv) {
-	const char *hostname, *username, *password, *database;
 	rlib *r;
 
-	hostname = "localhost";
-	username = "rlib";
-	password = "rlib";
-	database = "rlib";
-
 	r = rlib_init();
-	if(rlib_add_datasource_mysql(r, "local_mysql", hostname, username, password, database) < 0) {
-		fprintf(stderr, "Could not connect to MariaDB/MySQL Database\n");
-		return 1;
-	}
-	rlib_add_query_as(r, "local_mysql", "select * FROM products", "products");
-	rlib_add_report(r, "products.xml");
+	rlib_add_report(r, "relpath/relpath-png.xml");
 	rlib_set_output_format(r, RLIB_FORMAT_PDF);
 	rlib_execute(r);
 	rlib_spool(r);

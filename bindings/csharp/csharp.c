@@ -390,6 +390,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_rlib_add_query_as(void * jarg1, char * jarg2, 
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_rlib_add_search_path(void * jarg1, char * jarg2) {
+  int jresult ;
+  rlib *arg1 = (rlib *) 0 ;
+  char *arg2 = (char *) 0 ;
+  int result;
+  
+  arg1 = (rlib *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (int)rlib_add_search_path(arg1,(char const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_rlib_add_report(void * jarg1, char * jarg2) {
   int jresult ;
   rlib *arg1 = (rlib *) 0 ;

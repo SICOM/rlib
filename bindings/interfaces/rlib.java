@@ -37,6 +37,10 @@ public class rlib {
     return rlibJNI.rlib_add_query_as(SWIGTYPE_p_rlib.getCPtr(r), input_source, sql, name);
   }
 
+  public static int rlib_add_search_path(SWIGTYPE_p_rlib r, String path) {
+    return rlibJNI.rlib_add_search_path(SWIGTYPE_p_rlib.getCPtr(r), path);
+  }
+
   public static int rlib_add_report(SWIGTYPE_p_rlib r, String name) {
     return rlibJNI.rlib_add_report(SWIGTYPE_p_rlib.getCPtr(r), name);
   }

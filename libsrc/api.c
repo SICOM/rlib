@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -29,6 +29,8 @@
 #include <string.h>
 #include <locale.h>
 #include <libintl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "config.h"
 
@@ -120,23 +122,245 @@ gint rlib_add_query_as(rlib *r, const gchar *input_source, const gchar *sql, con
 }
 
 gint rlib_add_report(rlib *r, const gchar *name) {
-	if(r->parts_count > (RLIB_MAXIMUM_REPORTS-1)) {
-		return - 1;
+	gchar *tmp;
+	int i, found_dir_sep = 0, last_dir_sep;
+
+	if (r->parts_count > RLIB_MAXIMUM_REPORTS - 1)
+		return -1;
+
+	tmp = g_strdup(name);
+#ifdef _WIN32
+	/* Sanitize the file path to look like UNIX */
+	for (i = 0; tmp[i]; i++)
+		if (tmp[i] == '\\')
+			tmp[i] = '/';
+#endif
+	for (i = 0; tmp[i]; i++) {
+		if (name[i] == '/') {
+			found_dir_sep = 1;
+			last_dir_sep = i;
+		}
 	}
-	r->reportstorun[r->parts_count].name = g_strdup(name);
+	if (found_dir_sep) {
+		r->reportstorun[r->parts_count].name = strdup(tmp + last_dir_sep + 1);
+		tmp[last_dir_sep] = '\0';
+		r->reportstorun[r->parts_count].dir = tmp;
+	} else {
+		r->reportstorun[r->parts_count].name = tmp;
+		r->reportstorun[r->parts_count].dir = strdup("");
+	}
 	r->reportstorun[r->parts_count].type = RLIB_REPORT_TYPE_FILE;
 	r->parts_count++;
 	return r->parts_count;
 }
 
 gint rlib_add_report_from_buffer(rlib *r, gchar *buffer) {
-	if(r->parts_count > (RLIB_MAXIMUM_REPORTS-1)) {
-		return - 1;
-	}
+	char cwdpath[PATH_MAX + 1];
+	char *cwd;
+#ifdef _WIN32
+	char *tmp;
+#endif
+
+	if (r->parts_count > RLIB_MAXIMUM_REPORTS - 1)
+		return -1;
+	/*
+	 * When we add a toplevel report part from buffer,
+	 * we can't rely on file path, we can only rely
+	 * on the application's current working directory.
+	 */
+	cwd = getcwd(cwdpath, sizeof(cwdpath));
+	/*
+	 * The errors when getcwd() returns NULL are pretty serious.
+	 * Let's not do any work in this case.
+	 */
+	if (cwd == NULL)
+		return -1;
 	r->reportstorun[r->parts_count].name = g_strdup(buffer);
+	r->reportstorun[r->parts_count].dir = g_strdup(cwdpath);
+#ifdef _WIN32
+	tmp = r->reportstorun[r->parts_count].dir;
+	/* Sanitize the file path to look like UNIX */
+	for (i = 0; i < len; i++)
+		if (tmp[i] == '\\')
+			tmp[i] = '/';
+#endif
 	r->reportstorun[r->parts_count].type = RLIB_REPORT_TYPE_BUFFER;
 	r->parts_count++;
 	return r->parts_count;
+}
+
+gint rlib_add_search_path(rlib *r, const gchar *path) {
+	gchar *path_copy;
+#ifdef _WIN32
+	int len;
+#endif
+
+	/* Don't add useless search paths */
+	if (path == NULL)
+		return -1;
+	if (strlen(path) == 0)
+		return -1;
+
+	path_copy = g_strdup(path);
+	if (path_copy == NULL)
+		return -1;
+
+#ifdef _WIN32
+	len = strlen(path_copy);
+	/* Sanitize the file path to look like UNIX */
+	for (i = 0; i < len; i++)
+		if (path_copy[i] == '\\')
+			path_copy[i] = '/';
+#endif
+	r->search_paths = g_slist_append(r->search_paths, path_copy);
+	return 0;
+}
+
+/*
+ * Try to search for a file and return the first one
+ * found at the possible locations.
+ *
+ * report_index:
+ *	index to r->reportstorun[] array, or
+ *	-1 to try to find relative to every reports
+ */
+gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean report) {
+	int have_report_dir = 0, ri;
+	gchar *file;
+	struct stat st;
+	GSList *elem;
+
+#ifdef _WIN32
+	/*
+	 * If the filename starts with a drive label,
+	 * it is an absolute file name. Return it.
+	 */
+	if (strlen(filename) >= 2) {
+		if (tolower(filename[0]) >= 'a' && tolower(filename[0]) <= 'z' &&
+				filename[1] == ':') {
+			r_info(r, "get_filename: Absolute file name with drive label: %s\n", filename);
+			return g_strdup(filename);
+		}
+	}
+#endif
+	/*
+	 * Absolute filename, on the same drive for Windows,
+	 * unconditionally for Un*xes.
+	 */
+	if (filename[0] == '/') {
+		r_info(r, "get_filename: Absolute file name: %s\n", filename);
+		return g_strdup(filename);
+	}
+
+	/*
+	 * Try to find the file in report's subdirectory
+	 */
+	if (report_index >= 0) {
+		have_report_dir = (r->reportstorun[report_index].dir[0] != 0);
+		if (have_report_dir) {
+			file = g_strdup_printf("%s/%s", r->reportstorun[report_index].dir, filename);
+			if (stat(file, &st) == 0) {
+				r_info(r, "get_filename: File found relative to the report: %s, full path: %s\n", filename, file);
+				return file;
+			}
+			g_free(file);
+		}
+	} else {
+		for (ri = 0; ri < r->parts_count; ri++) {
+			have_report_dir = (r->reportstorun[ri].dir[0] != 0);
+			if (have_report_dir) {
+				file = g_strdup_printf("%s/%s", r->reportstorun[ri].dir, filename);
+				if (stat(file, &st) == 0) {
+					r_info(r, "get_filename: File found relative to the report: %s, full path: %s\n", filename, file);
+					return file;
+				}
+				g_free(file);
+			}
+		}
+	}
+
+	/*
+	 * Try to find the file in the search path
+	 */
+	for (elem = r->search_paths; elem; elem = elem->next) {
+		gchar *search_path = elem->data;
+		gboolean absolute_search_path = FALSE;
+
+#ifdef _WIN32
+		/*
+		 * If the filename starts with a drive label,
+		 * it is an absolute file name. Use it.
+		 */
+		if (len >= 2) {
+			if (tolower(search_path[0]) >= 'a' && tolower(search_path[0]) <= 'z' &&
+					search_path[1] == ':')
+				absolute_search_path = TRUE;
+		}
+#endif
+		if (!absolute_search_path) {
+			if (search_path[0] == '/')
+				absolute_search_path = TRUE;
+		}
+
+		if (!absolute_search_path) {
+			if (report_index >= 0) {
+				have_report_dir = (r->reportstorun[report_index].dir[0] != 0);
+				if (have_report_dir) {
+					file = g_strdup_printf("%s/%s/%s", r->reportstorun[report_index].dir, search_path, filename);
+					if (stat(file, &st) == 0) {
+						r_info(r, "get_filename: File found in search path relative to report XML: %s, full path: %s\n", search_path, file);
+						return file;
+					}
+					g_free(file);
+				}
+			} else {
+				for (ri = 0; ri < r->parts_count; ri++) {
+					have_report_dir = (r->reportstorun[ri].dir[0] != 0);
+					if (have_report_dir) {
+						file = g_strdup_printf("%s/%s/%s", r->reportstorun[ri].dir, search_path, filename);
+						if (stat(file, &st) == 0) {
+							r_info(r, "get_filename: File found in search path relative to report XML: %s, full path: %s\n", search_path, file);
+							return file;
+						}
+						g_free(file);
+					}
+				}
+			}
+		}
+
+		file = g_strdup_printf("%s/%s", search_path, filename);
+
+		if (stat(file, &st) == 0) {
+			r_info(r, "get_filename: File found in search path: %s, full path: %s\n", search_path, file);
+			return file;
+		}
+
+		g_free(file);
+	}
+
+	/*
+	 * Last resort, return the file as is,
+	 * relative to the work directory of the
+	 * current process, distinguishing between
+	 * report file names and other implicit ones.
+	 * Let the caller fail because we already know
+	 * it doesn't exist at any known location.
+	 */
+	if (report && report_index >= 0) {
+		have_report_dir = (r->reportstorun[report_index].dir[0] != 0);
+		if (have_report_dir)
+			file = g_strdup_printf("%s/%s", r->reportstorun[report_index].dir, filename);
+		else
+			file = g_strdup(filename);
+	} else
+		file = g_strdup(filename);
+
+	if (stat(file, &st) == 0)
+		r_info(r, "get_filename: File found: %s\n", file);
+	else
+		r_info(r, "get_filename: File not found, expect errors. Filename: %s\n", file);
+
+	return file;
 }
 
 static gint rlib_execute_queries(rlib *r) {
@@ -177,18 +401,17 @@ gint rlib_execute(rlib *r) {
 	} 
 
 	if(r->queries_count < 1) {
-		r_error(r,"No queries added to report\n");
-		return -1;      
-	}
-	rlib_execute_queries(r);
+		r_warning(r,"Warning: No queries added to report\n");
+	} else
+		rlib_execute_queries(r);
 
 	LIBXML_TEST_VERSION
 
 	xmlKeepBlanksDefault(0);
-	for(i=0;i<r->parts_count;i++) {
-		r->parts[i] = parse_part_file(r, r->reportstorun[i].name, r->reportstorun[i].type);
-		xmlCleanupParser();		
-		if(r->parts[i] == NULL) {
+	for (i = 0; i < r->parts_count; i++) {
+		r->parts[i] = parse_part_file(r, i);
+		xmlCleanupParser();
+		if (r->parts[i] == NULL) {
 			r_error(r,"Failed to load a report file [%s]\n", r->reportstorun[i].name);
 			return -1;
 		}

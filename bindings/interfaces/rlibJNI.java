@@ -15,6 +15,7 @@ public class rlibJNI {
   public final static native int rlib_add_datasource_xml(long jarg1, String jarg2);
   public final static native int rlib_add_datasource_csv(long jarg1, String jarg2);
   public final static native int rlib_add_query_as(long jarg1, String jarg2, String jarg3, String jarg4);
+  public final static native int rlib_add_search_path(long jarg1, String jarg2);
   public final static native int rlib_add_report(long jarg1, String jarg2);
   public final static native int rlib_add_report_from_buffer(long jarg1, String jarg2);
   public final static native int rlib_execute(long jarg1);

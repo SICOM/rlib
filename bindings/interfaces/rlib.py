@@ -119,6 +119,10 @@ def rlib_add_query_as(r, input_source, sql, name):
     return _rlib.rlib_add_query_as(r, input_source, sql, name)
 rlib_add_query_as = _rlib.rlib_add_query_as
 
+def rlib_add_search_path(r, path):
+    return _rlib.rlib_add_search_path(r, path)
+rlib_add_search_path = _rlib.rlib_add_search_path
+
 def rlib_add_report(r, name):
     return _rlib.rlib_add_report(r, name)
 rlib_add_report = _rlib.rlib_add_report

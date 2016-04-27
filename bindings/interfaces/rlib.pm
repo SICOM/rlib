@@ -56,6 +56,7 @@ package rlib;
 *rlib_add_datasource_xml = *rlibc::rlib_add_datasource_xml;
 *rlib_add_datasource_csv = *rlibc::rlib_add_datasource_csv;
 *rlib_add_query_as = *rlibc::rlib_add_query_as;
+*rlib_add_search_path = *rlibc::rlib_add_search_path;
 *rlib_add_report = *rlibc::rlib_add_report;
 *rlib_add_report_from_buffer = *rlibc::rlib_add_report_from_buffer;
 *rlib_execute = *rlibc::rlib_execute;

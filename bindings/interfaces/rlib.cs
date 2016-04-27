@@ -46,6 +46,11 @@ public class rlib {
     return ret;
   }
 
+  public static int rlib_add_search_path(SWIGTYPE_p_rlib r, string path) {
+    int ret = rlibPINVOKE.rlib_add_search_path(SWIGTYPE_p_rlib.getCPtr(r), path);
+    return ret;
+  }
+
   public static int rlib_add_report(SWIGTYPE_p_rlib r, string name) {
     int ret = rlibPINVOKE.rlib_add_report(SWIGTYPE_p_rlib.getCPtr(r), name);
     return ret;

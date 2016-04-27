@@ -327,7 +327,6 @@ static void rpdf_make_page_stream(gpointer data, gpointer user_data) {
 	} else if(stream->type == RPDF_TYPE_ARC) {
 		char buf[1024];
 		struct rpdf_stream_arc *arc = stream->data;
-		gdouble save_x, save_y;
 		gdouble x = arc->x;
 		gdouble y = arc->y;
 		gdouble start_angle = arc->start_angle;
@@ -988,7 +987,7 @@ gboolean rpdf_text(struct rpdf *pdf, gdouble x, gdouble y, gdouble angle, const 
 	}
 
 	if(conv != NULL && text != NULL) {
-		gsize foo1, foo2;
+		gsize foo1;
 		new_text = g_convert_with_iconv(text, strlen(text), conv, &foo1, &foo1, NULL);
 		if(new_text != NULL) {
 		} else {

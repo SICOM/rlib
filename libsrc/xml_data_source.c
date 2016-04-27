@@ -190,8 +190,11 @@ void * xml_new_result_from_query(gpointer input_ptr, gchar *query) {
 	xmlNodePtr last_row;
 	xmlNodePtr first_field;
 	xmlDocPtr doc;
+	gchar *file;
 
-	doc = xmlReadFile(query, NULL, XML_PARSE_XINCLUDE);
+	file = get_filename(input->r, query, -1, FALSE);
+	doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
+	g_free(file);
 	xmlXIncludeProcess(doc);
 
 	if (doc == NULL) {
@@ -278,12 +281,13 @@ static gint rlib_xml_free_input_filter(gpointer input_ptr){
 	return 0;
 }
 
-gpointer rlib_xml_new_input_filter() {
+gpointer rlib_xml_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
 	input = g_malloc(sizeof(struct input_filter));
 	input->private = g_malloc(sizeof(struct _private));
 	memset(input->private, 0, sizeof(struct _private));
+	input->r = r;
 	input->input_close = rlib_xml_input_close;
 	input->first = rlib_xml_first;
 	input->next = rlib_xml_next;
@@ -298,4 +302,3 @@ gpointer rlib_xml_new_input_filter() {
 	input->free_result = rlib_xml_rlib_free_result;
 	return input;
 }
- 

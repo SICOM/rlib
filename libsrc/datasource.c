@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -29,7 +29,7 @@
 typedef struct {
 	union {
 		gpointer ptr;
-		gpointer (*new_input_filter)(void);
+		gpointer (*new_input_filter)(struct rlib *);
 	} filter;
 	union {
 		gpointer ptr;
@@ -62,7 +62,7 @@ const gchar *database_user, const gchar *database_password, const gchar *databas
 
 	g_module_symbol(handle, "rlib_mysql_new_input_filter", &ds.filter.ptr);
 	g_module_symbol(handle, "rlib_mysql_real_connect", &ds.connect.ptr);
-	r->inputs[r->inputs_count].input = ds.filter.new_input_filter();
+	r->inputs[r->inputs_count].input = ds.filter.new_input_filter(r);
 	mysql = ds.connect.mysql_connect(r->inputs[r->inputs_count].input, database_group, database_host, database_user, 
 		database_password, database_database);
 
@@ -100,7 +100,7 @@ gint rlib_add_datasource_postgres(rlib *r, const gchar *input_name, const gchar 
 	}
 	g_module_symbol(handle, "rlib_postgres_new_input_filter", &ds.filter.ptr);
 	g_module_symbol(handle, "rlib_postgres_connect", &ds.connect.ptr);
-	r->inputs[r->inputs_count].input = ds.filter.new_input_filter();
+	r->inputs[r->inputs_count].input = ds.filter.new_input_filter(r);
 	postgres = ds.connect.postgres_connect(r->inputs[r->inputs_count].input, conn);
 	if(postgres == NULL) {
 		r_error(r,"ERROR: Could not connect to POSTGRES\n");
@@ -125,7 +125,7 @@ gint rlib_add_datasource_odbc(rlib *r, const gchar *input_name, const gchar *sou
 	}
 	g_module_symbol(handle, "rlib_odbc_new_input_filter", &ds.filter.ptr);
 	g_module_symbol(handle, "rlib_odbc_connect", &ds.connect.ptr);
-	r->inputs[r->inputs_count].input = ds.filter.new_input_filter();
+	r->inputs[r->inputs_count].input = ds.filter.new_input_filter(r);
 	odbc = ds.connect.odbc_connect(r->inputs[r->inputs_count].input, source, user, password);
 	r->inputs[r->inputs_count].name = g_strdup(input_name);
 	if(odbc == NULL) {
@@ -139,7 +139,7 @@ gint rlib_add_datasource_odbc(rlib *r, const gchar *input_name, const gchar *sou
 }
 
 gint rlib_add_datasource_xml(rlib *r, const gchar *input_name) {
-	r->inputs[r->inputs_count].input = rlib_xml_new_input_filter();
+	r->inputs[r->inputs_count].input = rlib_xml_new_input_filter(r);
 	rlib_xml_connect(r->inputs[r->inputs_count].input);
 	r->inputs[r->inputs_count].name = g_strdup(input_name);
 	r->inputs[r->inputs_count].handle = NULL;
@@ -149,7 +149,7 @@ gint rlib_add_datasource_xml(rlib *r, const gchar *input_name) {
 }
 
 gint rlib_add_datasource_csv(rlib *r, const gchar *input_name) {
-	r->inputs[r->inputs_count].input = rlib_csv_new_input_filter();
+	r->inputs[r->inputs_count].input = rlib_csv_new_input_filter(r);
 	rlib_csv_connect(r->inputs[r->inputs_count].input);
 	r->inputs[r->inputs_count].name = g_strdup(input_name);
 	r->inputs[r->inputs_count].handle = NULL;
