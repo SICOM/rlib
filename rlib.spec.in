@@ -6,12 +6,11 @@
 Summary: RLIB is a reporting engine/library.
 Name: rlib
 Version: @VERSION@
-Release: 2
+Release: 3
 License: GPL
-Group: System/Libraries
-Source: %name-%{version}.tar.gz
+Group: System Environment/Libraries
+Source: https://github.com/SICOM/rlib/archive/v%{version}.tar.gz
 BuildRequires: mysql-devel, perl, php-devel, postgresql-devel, python-devel, unixODBC-devel
-BuildRoot: /var/tmp/%name-%{version}-root
 
 %description
 RLIB is a reporting engine/library.  To find out about all it can do visit:
@@ -19,7 +18,7 @@ http://rlib.sicompos.com
 
 %package devel
 Summary: RLIB headers and static lib
-Group: System/Libraries
+Group: Development/Libraries
 Requires: %{name} = %{version}
 
 %description devel
@@ -28,7 +27,7 @@ To find out about all it can do visit: http://rlib.sicompos.com
 
 %package mysql
 Summary: RLIB native MySQL datasource
-Group: System/Libraries
+Group: System Environment/Libraries
 Requires: %{name} = %{version}
 
 %description mysql
@@ -37,7 +36,7 @@ To find out about all it can do visit: http://rlib.sicompos.com
 
 %package odbc
 Summary: RLIB ODBC datasource
-Group: System/Libraries
+Group: System Environment/Libraries
 Requires: %{name} = %{version}
 
 %description odbc
@@ -46,7 +45,7 @@ To find out about all it can do visit: http://rlib.sicompos.com
 
 %package perl
 Summary: RLIB PERL extension
-Group: System/Libraries
+Group: System Environment/Libraries
 Requires: %{name} = %{version}
 
 %description perl
@@ -55,7 +54,7 @@ To find out about all it can do visit: http://rlib.sicompos.com
 
 %package php
 Summary: RLIB PHP extension
-Group: System/Libraries
+Group: System Environment/Libraries
 Requires: %{name} = %{version}
 Requires: php-common
 
@@ -65,7 +64,7 @@ To find out about all it can do visit: http://rlib.sicompos.com
 
 %package postgres
 Summary: RLIB native PostgreSQL datasource
-Group: System/Libraries
+Group: System Environment/Libraries
 Requires: %{name} = %{version}
 
 %description postgres
@@ -74,7 +73,7 @@ To find out about all it can do visit: http://rlib.sicompos.com
 
 %package python
 Summary: RLIB Python extension
-Group: System/Libraries
+Group: System Environment/Libraries
 Requires: %{name} = %{version}
 
 %description python
@@ -82,7 +81,7 @@ Python extension for RLIB, a reporting engine/library.
 To find out about all it can do visit: http://rlib.sicompos.com
 
 %prep
-%setup
+%setup -q
 
 %configure --enable-utf8 --with-pythonver=%{pythonver}
 
@@ -124,7 +123,8 @@ make
 %{_libdir}/libr-postgres.so
 
 %files perl
-%{perlextdir}/*
+%{perlextdir}/*.pm
+%{perlextdir}/auto/*
 
 %files php
 %{_sysconfdir}/php-zts.d/rlib.ini
