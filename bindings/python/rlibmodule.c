@@ -23,6 +23,7 @@ static char *rlib_interface_version="0.1.0";
 
 #include "rlib.h"
 #include "rlib_input.h"
+#include "pcode.h"
 
 #define INPUT_PRIVATE(input) (((struct _private *)input->private))
 
