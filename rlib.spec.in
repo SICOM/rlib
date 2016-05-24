@@ -83,6 +83,7 @@ To find out about all it can do visit: http://rlib.sicompos.com
 %prep
 %setup -q
 
+autoreconf -vif -Wall
 %configure --enable-utf8 --with-pythonver=%{pythonver}
 
 %build
