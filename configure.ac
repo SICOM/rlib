@@ -517,7 +517,7 @@ rlib-$VERSION:
    compiler:                 ${CC}
    Warning Fun:              ${enable_warningfun}
    Crash detection:          ${enable_crash}
-   UTF8 disabled:            ${enable_utf8}
+   UTF8 enabled:             ${enable_utf8}
    WIN32 build:              ${enable_win32}
    Documentation:            ${enable_doc}
 
