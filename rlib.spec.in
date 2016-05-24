@@ -9,7 +9,7 @@ Version: @VERSION@
 Release: 3
 License: GPL
 Group: System Environment/Libraries
-Source: https://github.com/SICOM/rlib/archive/v%{version}.tar.gz
+Source: https://github.com/SICOM/rlib/archive/%{name}-%{version}.tar.gz
 BuildRequires: mysql-devel, perl, php-devel, postgresql-devel, python-devel, unixODBC-devel
 
 %description
