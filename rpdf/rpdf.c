@@ -50,6 +50,8 @@
 #define	O_BINARY	(0)
 #endif
 
+#define UNUSED __attribute__((unused))
+
 struct _rpdf_paper rpdf_paper [] = {
 	{RPDF_PAPER_LETTER,612, 792, "LETTER"},
 	{RPDF_PAPER_LEGAL, 612, 1008, "LEGAL"},
@@ -246,11 +248,11 @@ static void rpdf_finalize_xref(gpointer data, gpointer user_data) {
 	rpdf_out_string(pdf, buf);
 }
 
-static void rpdf_stream_font_destroyer(gpointer data, gpointer user_data) {
+static void rpdf_stream_font_destroyer(gpointer data, gpointer user_data UNUSED) {
 	g_free(data);
 }
 
-static void rpdf_object_destroyer(gpointer data, gpointer user_data) {
+static void rpdf_object_destroyer(gpointer data, gpointer user_data UNUSED) {
 	struct rpdf_object *object = data;
 	g_string_free(object->contents, TRUE);
 	g_free(object);
@@ -508,13 +510,13 @@ static void rpdf_make_page_annot_obj(gpointer data, gpointer user_data) {
 	g_free(annot);
 }
 
-static void rpdf_make_page_fonts_stream(gpointer key, gpointer value, gpointer user_data) {
+static void rpdf_make_page_fonts_stream(gpointer key UNUSED, gpointer value, gpointer user_data) {
 	struct rpdf *pdf = user_data;
 	struct rpdf_stream_font *stream_font = value;
 	pdf->working_obj = obj_printf(pdf->working_obj, "/F%s %d 0 R\n", stream_font->font_object->name, stream_font->font_object->object_number);
 }
 
-static void rpdf_make_fonts_stream(gpointer key, gpointer value, gpointer user_data) {
+static void rpdf_make_fonts_stream(gpointer key UNUSED, gpointer value, gpointer user_data) {
 	struct rpdf *pdf = user_data;
 	struct rpdf_font_object *font = value;
 	GString *obj;
@@ -526,7 +528,7 @@ static void rpdf_make_fonts_stream(gpointer key, gpointer value, gpointer user_d
 	font->object_number = rpdf_object_append(pdf, TRUE,  obj, NULL, 0);
 }
 
-static void rpdf_number_fonts(gpointer key, gpointer value, gpointer user_data) {
+static void rpdf_number_fonts(gpointer key UNUSED, gpointer value, gpointer user_data) {
 	struct rpdf *pdf = user_data;
 	struct rpdf_font_object *font = value;
 	font->number = pdf->font_obj_number++;
@@ -1090,7 +1092,7 @@ static void jpeg_skip_section(gchar *stream, gint *spot, gint size) {
 }
 
 static void jpeg_process_SOFn(gchar *stream, gint *spot, gint size, gint marker, struct rpdf_image_jpeg *info) {
-	gint length;
+	guint length;
 	
 	length = stream_read_two_bytes(stream, spot, size);
 	info->process = marker;
@@ -1220,9 +1222,9 @@ DLL_EXPORT_SYM gboolean rpdf_image(struct rpdf *pdf, gdouble x, gdouble y, gdoub
 					tmp = png_info->trans->str[5];
 					png_info->trans_list = g_slist_append(NULL, GINT_TO_POINTER((tmp)));
 				} else {
-					int i;
-					for(i=0;i<png_info->trans->len;i++) {
-						if(png_info->trans->str[i] == 0) {
+					guint i;
+					for (i = 0; i < png_info->trans->len; i++) {
+						if (png_info->trans->str[i] == 0) {
 							tmp = png_info->trans->str[i];
 							png_info->trans_list = g_slist_append(NULL, GINT_TO_POINTER((tmp)));
 							break;
@@ -1401,8 +1403,9 @@ DLL_EXPORT_SYM gint rpdf_arc(struct rpdf *pdf, gdouble x, gdouble y, gdouble rad
 	return TRUE;
 }
 
-DLL_EXPORT_SYM gchar *rpdf_get_buffer(struct rpdf *pdf, gint *length) {
-	*length = pdf->size;
+DLL_EXPORT_SYM gchar *rpdf_get_buffer(struct rpdf *pdf, guint *length) {
+	if (length)
+		*length = pdf->size;
 	return pdf->out_buffer;
 }
 

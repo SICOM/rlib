@@ -27,7 +27,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "config.h"
+#include <config.h>
 #include "rlib-internal.h"
 #include "rlib_gd.h"
 

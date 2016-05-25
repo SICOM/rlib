@@ -21,7 +21,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "config.h"
+#include <config.h>
 #include "rlib-internal.h"
 #include "pcode.h"
 #include "rlib_input.h"
@@ -37,7 +37,7 @@
 	In this case r.pageno
 
 */
-gint rlib_resolve_rlib_variable(rlib *r, gchar *name) {
+gint resolve_rlib_variable(gchar *name) {
 	if(r_strlen(name) >= 3 && name[0] == 'r' && name[1] == '.') {
 		name += 2;
 		if(!strcmp(name, "pageno"))
@@ -511,7 +511,7 @@ void rlib_resolve_part_fields(rlib *r, struct rlib_part *part) {
 	part->left_margin_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_left_margin.xml, part->xml_left_margin.line, TRUE);
 	part->bottom_margin = RLIB_DEFAULT_BOTTOM_MARGIN;
 	part->bottom_margin_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_bottom_margin.xml, part->xml_bottom_margin.line, TRUE);
-	part->paper = rlib_layout_get_paper(r, RLIB_PAPER_LETTER);
+	part->paper = layout_get_paper(RLIB_PAPER_LETTER);
 	part->paper_type_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_paper_type.xml, part->xml_paper_type.line, TRUE);
 	part->pages_across = 1;
 	part->pages_across_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_pages_across.xml, part->xml_pages_across.line, TRUE);
@@ -549,7 +549,7 @@ gchar * rlib_resolve_memory_variable(rlib *r, gchar *name) {
 	return NULL;
 }
 
-void resolve_metadata(gpointer name, gpointer value, gpointer user_data) {
+void resolve_metadata(gpointer name UNUSED, gpointer value, gpointer user_data) {
 	struct rlib_metadata *metadata = value;
 	metadata->formula_code = rlib_infix_to_pcode(user_data, NULL, NULL, (gchar *)metadata->xml_formula.xml, metadata->xml_formula.line, FALSE);
 	RLIB_VALUE_TYPE_NONE(&metadata->rval_formula);
@@ -559,7 +559,7 @@ void rlib_resolve_metadata(rlib *r) {
 	g_hash_table_foreach(r->input_metadata, resolve_metadata, r);
 }
 
-void process_metadata(gpointer name, gpointer value, gpointer user_data) {
+void process_metadata(gpointer name UNUSED, gpointer value, gpointer user_data) {
 	struct rlib_metadata *metadata = value;
 	rlib_value_free(&metadata->rval_formula);
 	rlib_execute_pcode(user_data, &metadata->rval_formula, metadata->formula_code, NULL);

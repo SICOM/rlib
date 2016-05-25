@@ -32,9 +32,9 @@
 #include <ctype.h>
 #include <libintl.h>
 
-#include "config.h"
+#include <config.h>
 
-#include "config.h"
+#include <config.h>
 #include "rlib-internal.h"
 #include "pcode.h"
 #include "rlib_input.h"
@@ -80,7 +80,7 @@ static struct rlib_paper paper[] = {
 	{0, 0, 0, ""},
 };
 
-struct rlib_paper * rlib_layout_get_paper(rlib *r, gint paper_type) {
+struct rlib_paper * layout_get_paper(gint paper_type) {
 	gint i;
 	for(i=0;paper[i].type != 0;i++)
 		if(paper[i].type == paper_type)
@@ -88,7 +88,7 @@ struct rlib_paper * rlib_layout_get_paper(rlib *r, gint paper_type) {
 	return NULL;
 }
 
-struct rlib_paper * rlib_layout_get_paper_by_name(rlib *r, gchar *paper_name) {
+struct rlib_paper * layout_get_paper_by_name(gchar *paper_name) {
 	gint i;
 	if(paper_name == NULL)
 		return NULL;
@@ -129,14 +129,14 @@ static gchar *rlib_encode_text(rlib *r, gchar *text, gchar **result) {
 	return *result;
 }
 
-gfloat rlib_layout_get_next_line(rlib *r, struct rlib_part *part, gfloat position, struct rlib_report_lines *rl) {
+gfloat layout_get_next_line(struct rlib_part *part, gfloat position, struct rlib_report_lines *rl) {
 	if(part->landscape)
 		return ((part->paper->width/RLIB_PDF_DPI) - (position + rl->max_line_height));
 	else
 		return ((part->paper->height/RLIB_PDF_DPI) - (position + rl->max_line_height));
 }
 
-gfloat rlib_layout_get_next_line_by_font_point(rlib *r, struct rlib_part *part, gfloat position, gfloat point) {
+gfloat layout_get_next_line_by_font_point(struct rlib_part *part, gfloat position, gfloat point) {
 	if(part->landscape)
 		return ((part->paper->width/RLIB_PDF_DPI) - (position + RLIB_GET_LINE(point)));
 	else
@@ -151,7 +151,7 @@ static gint rlib_check_is_not_suppressed(rlib *r, struct rlib_pcode *code) {
 	return result? FALSE : TRUE;
 }
 
-static gfloat rlib_layout_get_report_width(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+static gfloat layout_get_report_width(struct rlib_part *part, struct rlib_report *report) {
 	if(report == NULL) {
 		if(part->landscape)
 			return (part->paper->height/RLIB_PDF_DPI) - (part->left_margin*2);
@@ -169,7 +169,7 @@ static gfloat rlib_layout_estimate_string_width(rlib *r, gint len) {
 	return (OUTPUT(r)->get_string_width(r, buf)*len);
 }
 
-static gchar *rlib_layout_suppress_non_memo_on_extra_lines(rlib *r, struct rlib_line_extra_data *extra_data, gint memo_line, gchar *spaced_out) {
+static gchar *layout_suppress_non_memo_on_extra_lines(struct rlib_line_extra_data *extra_data, gint memo_line, gchar *spaced_out) {
 	if(memo_line <= 1)
 		return extra_data->formatted_string;
 	else {
@@ -340,10 +340,7 @@ gint flag, gint memo_line) {
 	return rtn_width;
 }
 
-static gfloat rlib_layout_output_extras_end(rlib *r, struct rlib_part *part, gint backwards, gfloat left_origin, gfloat bottom_orgin, 
-struct rlib_line_extra_data *extra_data, gint memo_line) {
-
-
+static gfloat layout_output_extras_end(rlib *r, struct rlib_part *part, gint backwards, struct rlib_line_extra_data *extra_data, gint memo_line) {
 	if(extra_data->running_bgcolor_status & STATUS_STOP)
 		OUTPUT(r)->end_draw_cell_background(r);	
 
@@ -383,8 +380,7 @@ struct rlib_line_extra_data *extra_data) {
 	return extra_data->output_width;
 }
 
-static gfloat rlib_layout_text_string(rlib *r, gint backwards, gfloat left_origin, gfloat bottom_orgin, struct rlib_line_extra_data *extra_data, 
-gchar *text, gint memo_line) {
+static gfloat rlib_layout_text_string(rlib *r, gint backwards, gfloat left_origin, gfloat bottom_orgin, struct rlib_line_extra_data *extra_data, gchar *text) {
 	gfloat rtn_width;
 	gchar *encoded_text = NULL;
 
@@ -408,7 +404,7 @@ gchar *text, gint memo_line) {
 	return rtn_width;
 }
 
-static void rlib_advance_vertical_position(rlib *r, gfloat *rlib_position, struct rlib_report_lines *rl) {
+static inline void advance_vertical_position(gfloat *rlib_position, struct rlib_report_lines *rl) {
 	*rlib_position += rl->max_line_height;
 }
 
@@ -440,7 +436,7 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 	if(rl->italics_code != NULL)
 		rlib_execute_pcode(r, &line_rval_italics, rl->italics_code, NULL);
 
-	use_font_point = get_font_point(r, part, report, rl);
+	use_font_point = get_font_point(part, report, rl);
 
 	if(rl->max_line_height < RLIB_GET_LINE(use_font_point))
 		rl->max_line_height = RLIB_GET_LINE(use_font_point);
@@ -807,7 +803,7 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 	return line_has_memo;
 }	
 
-static void rlib_layout_find_common_properties_in_a_line(rlib *r, struct rlib_line_extra_data *extra_data, gint count, gint delayed) {
+static void rlib_layout_find_common_properties_in_a_line(rlib *r, struct rlib_line_extra_data *extra_data, gint count) {
 	gint i = 0;
 	struct rlib_line_extra_data *e_ptr = NULL, *save_ptr = NULL, *previous_ptr = NULL;
 	gint state = STATE_NONE;
@@ -923,7 +919,7 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 	
 	if(report != NULL) {
 		if(report->detail_columns > 1) {
-			gfloat paper_width = (rlib_layout_get_page_width(r, part) - (part->left_margin * 2)) / report->detail_columns;
+			gfloat paper_width = (layout_get_page_width(part) - (part->left_margin * 2)) / report->detail_columns;
 			my_left_margin += ((r->detail_line_count % report->detail_columns) * paper_width) + ((r->detail_line_count % report->detail_columns) * report->column_pad);		
 		}	
 	}
@@ -951,7 +947,7 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 				for (i = 0; i < count; i++)
 					extra_data[i].report_index = part->report_index;
 				has_memo = rlib_layout_execute_pcodes_for_line(r, part, report, rl, extra_data, &delayed);
-				rlib_layout_find_common_properties_in_a_line(r, extra_data, count, delayed);
+				rlib_layout_find_common_properties_in_a_line(r, extra_data, count);
 				count = 0;
 				if(has_memo) {
 					for(e = rl->e; e != NULL; e=e->next) {
@@ -970,7 +966,7 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 				for(i=1; i <= max_memo_lines; i++) {				
 					margin = my_left_margin;
 					
-					if(rlib_will_this_fit(r, part, report, RLIB_GET_LINE(get_font_point(r, part, report, rl)), 1) == FALSE && max_memo_lines > 1) {
+					if(rlib_will_this_fit(r, part, report, RLIB_GET_LINE(get_font_point(part, report, rl)), 1) == FALSE && max_memo_lines > 1) {
 						if(page_header_layout == FALSE) {
 							if(report != NULL) {
 /* We need to let the layout engine know this has nothing to do w/ pages across and then we have a really long memo field in the report header some how */							
@@ -1021,10 +1017,10 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 							if(e->type == RLIB_ELEMENT_FIELD) {
 								struct rlib_report_field *rf = ((struct rlib_report_field *)e->data);
 								rf->rval = &extra_data[count].rval_code;
-								bg_width = rlib_layout_output_extras(r, part, backwards, bg_margin, rlib_layout_get_next_line(r, part, *rlib_position, rl), 
+								bg_width = rlib_layout_output_extras(r, part, backwards, bg_margin, layout_get_next_line(part, *rlib_position, rl), 
 										&extra_data[count]);
 							} else if(e->type == RLIB_ELEMENT_LITERAL) {
-								bg_width = rlib_layout_output_extras(r, part, backwards, bg_margin, rlib_layout_get_next_line(r, part, *rlib_position, rl), 
+								bg_width = rlib_layout_output_extras(r, part, backwards, bg_margin, layout_get_next_line(part, *rlib_position, rl), 
 									&extra_data[count]);
 							} else if(e->type == RLIB_ELEMENT_IMAGE) {
 								bg_width = extra_data[count].output_width;
@@ -1040,21 +1036,20 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 								gchar *tmp_string;
 								if(start_count == -1)
 									start_count = count;
-								tmp_string = rlib_layout_suppress_non_memo_on_extra_lines(r, &extra_data[count], i, spaced_out);
+								tmp_string = layout_suppress_non_memo_on_extra_lines(&extra_data[count], i, spaced_out);
 								if(tmp_string != NULL)
 									strcat(buf, tmp_string);
 								fun_width += extra_data[count].output_width;
 							} else {
 								if(start_count != -1) {
-									rlib_layout_text_string(r, backwards, margin, rlib_layout_get_next_line(r, part, *rlib_position, rl), 
-										&extra_data[start_count], buf, i);
+									rlib_layout_text_string(r, backwards, margin, layout_get_next_line(part, *rlib_position, rl), &extra_data[start_count], buf);
 									start_count = -1;
 									margin += fun_width;
 									fun_width = 0;
 									buf[0] = 0;
 								}
 								
-								width = rlib_layout_text_from_extra_data(r, backwards, margin, rlib_layout_get_next_line(r, part, *rlib_position, rl), 
+								width = rlib_layout_text_from_extra_data(r, backwards, margin, layout_get_next_line(part, *rlib_position, rl), 
 									&extra_data[count], TEXT_NORMAL, i);
 								margin += width;
 
@@ -1063,7 +1058,7 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 						}
 						if(start_count != -1) {
 							width += fun_width;
-							rlib_layout_text_string(r, backwards, margin, rlib_layout_get_next_line(r, part, *rlib_position, rl), &extra_data[start_count], buf, i);
+							rlib_layout_text_string(r, backwards, margin, layout_get_next_line(part, *rlib_position, rl), &extra_data[start_count], buf);
 						}
 					} else { /* Not Group Next Follows */
 
@@ -1071,19 +1066,19 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 							if(e->type == RLIB_ELEMENT_FIELD) {
 								struct rlib_report_field *rf = ((struct rlib_report_field *)e->data);
 								rf->rval = &extra_data[count].rval_code;
-								rlib_layout_output_extras_start(r, part, backwards, margin, rlib_layout_get_next_line(r, part, *rlib_position, rl),
+								rlib_layout_output_extras_start(r, part, backwards, margin, layout_get_next_line(part, *rlib_position, rl),
 									 &extra_data[count], FALSE);
-								width = rlib_layout_text_from_extra_data(r, backwards, margin, rlib_layout_get_next_line(r, part, *rlib_position, rl), 
+								width = rlib_layout_text_from_extra_data(r, backwards, margin, layout_get_next_line(part, *rlib_position, rl), 
 									&extra_data[count], TEXT_LEFT, i);
-								rlib_layout_output_extras_end(r, part, backwards, margin, rlib_layout_get_next_line(r, part, *rlib_position, rl), 
-									&extra_data[count], i);
+								layout_get_next_line(part, *rlib_position, rl);
+								layout_output_extras_end(r, part, backwards, &extra_data[count], i);
 							} else if(e->type == RLIB_ELEMENT_LITERAL) {
-								rlib_layout_output_extras_start(r, part, backwards, margin, rlib_layout_get_next_line(r, part, *rlib_position, rl), 
+								rlib_layout_output_extras_start(r, part, backwards, margin, layout_get_next_line(part, *rlib_position, rl), 
 									&extra_data[count], FALSE);
-								width = rlib_layout_text_from_extra_data(r, backwards, margin, rlib_layout_get_next_line(r, part, *rlib_position, rl), 
+								width = rlib_layout_text_from_extra_data(r, backwards, margin, layout_get_next_line(part, *rlib_position, rl), 
 									&extra_data[count], TEXT_LEFT, i);
-								rlib_layout_output_extras_end(r, part, backwards, margin, rlib_layout_get_next_line(r, part, *rlib_position, rl), 
-									&extra_data[count], i);
+								layout_get_next_line(part, *rlib_position, rl);
+								layout_output_extras_end(r, part, backwards, &extra_data[count], i);
 							} else if(e->type == RLIB_ELEMENT_IMAGE) {
 								gchar *filename;
 								gfloat height1 = RLIB_FXP_TO_NORMAL_LONG_LONG(RLIB_VALUE_GET_AS_NUMBER(&extra_data[count].rval_image_height));
@@ -1091,7 +1086,7 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 								gchar *name = RLIB_VALUE_GET_AS_STRING(&extra_data[count].rval_image_name);
 								gchar *type = RLIB_VALUE_GET_AS_STRING(&extra_data[count].rval_image_type);
 								filename = get_filename(r, name, part->report_index, FALSE);
-								OUTPUT(r)->line_image(r, margin, rlib_layout_get_next_line(r, part, *rlib_position, rl), filename, type, width1, height1);
+								OUTPUT(r)->line_image(r, margin, layout_get_next_line(part, *rlib_position, rl), filename, type, width1, height1);
 								g_free(filename);
 								width = RLIB_GET_LINE(width1);
 							}  else if(e->type == RLIB_ELEMENT_BARCODE) {
@@ -1101,7 +1096,7 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 								gchar *name = RLIB_VALUE_GET_AS_STRING(&extra_data[count].rval_image_name);
 								gchar *type = RLIB_VALUE_GET_AS_STRING(&extra_data[count].rval_image_type);
 								filename = get_filename(r, name, part->report_index, FALSE);
-								OUTPUT(r)->line_image(r, margin, rlib_layout_get_next_line(r, part, *rlib_position, rl), filename, type, width1, height1);
+								OUTPUT(r)->line_image(r, margin, layout_get_next_line(part, *rlib_position, rl), filename, type, width1, height1);
 								g_free(filename);
 								width = RLIB_GET_LINE(width1);
 							}										
@@ -1109,7 +1104,7 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 							count++;
 						}
 					}
-					rlib_advance_vertical_position(r, rlib_position, rl);
+					advance_vertical_position(rlib_position, rl);
 				}
 
 				OUTPUT(r)->end_line(r, backwards);	
@@ -1172,10 +1167,10 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 					OUTPUT(r)->set_font_point(r, r->font_point);
 
 					if(length == 0)
-						OUTPUT(r)->hr(r, backwards, my_left_margin+indent, rlib_layout_get_next_line_by_font_point(r, part, *rlib_position, 
-							rhl->size),rlib_layout_get_report_width(r, part, report)-indent, rhl->size, &bgcolor, indent, length);
+						OUTPUT(r)->hr(r, backwards, my_left_margin+indent, layout_get_next_line_by_font_point(part, *rlib_position, 
+							rhl->size), layout_get_report_width(part, report)-indent, rhl->size, &bgcolor, indent, length);
 					else
-						OUTPUT(r)->hr(r, backwards, my_left_margin+indent, rlib_layout_get_next_line_by_font_point(r, part, *rlib_position, rhl->size),
+						OUTPUT(r)->hr(r, backwards, my_left_margin+indent, layout_get_next_line_by_font_point(part, *rlib_position, rhl->size),
 							length, rhl->size, &bgcolor, indent, length);
 
 					tmp_rlib_position = (rhl->size/RLIB_PDF_DPI);
@@ -1200,7 +1195,7 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 				gchar *filename;
 				output_count++;
 				filename = get_filename(r, name, part->report_index, FALSE);
-				OUTPUT(r)->background_image(r, my_left_margin, rlib_layout_get_next_line_by_font_point(r, part, *rlib_position, height1), filename,
+				OUTPUT(r)->background_image(r, my_left_margin, layout_get_next_line_by_font_point(part, *rlib_position, height1), filename,
 					type, width1, height1);
 				g_free(filename);
 				rlib_value_free(rval_value);
@@ -1310,7 +1305,7 @@ gint rlib_layout_report_output_with_break_headers(rlib *r, struct rlib_part *par
 }
 
 
-gfloat rlib_layout_get_page_width(rlib *r, struct rlib_part *part) {
+gfloat layout_get_page_width(struct rlib_part *part) {
 	if(!part->landscape)
 		return (part->paper->width/RLIB_PDF_DPI);
 	else
@@ -1359,7 +1354,7 @@ gint rlib_layout_end_page(rlib *r, struct rlib_part *part, struct rlib_report *r
 			rlib_layout_init_part_page(r, part, FALSE, normal);
 			report->raw_page_number++;
 		}
-		rlib_set_report_from_part(r, part, report, 0);
+		set_report_from_part(part, report, 0);
 		rlib_layout_init_report_page(r, part, report);
 	} else {
 		rlib_layout_init_part_page(r, part, FALSE, normal);
@@ -1375,7 +1370,7 @@ void rlib_layout_init_part_page(rlib *r, struct rlib_part *part, gboolean first,
 
 	for(i=0;i<part->pages_across;i++) {
 		part->position_top[i] = part->top_margin;
-		part->bottom_size[i] = get_outputs_size(r, part, NULL, part->page_footer, i);
+		part->bottom_size[i] = get_outputs_size(part, NULL, part->page_footer, i);
 	}		
 	r->current_font_point = -1;
 	OUTPUT(r)->start_new_page(r, part);

@@ -140,10 +140,10 @@ gint determine_graph_type(gchar *type, gchar *subtype) {
 /*
 	This is beyond evil but it seems to works.  Someone who understands floats better should really do this
 */
-static void rlib_graph_label_y_axis(rlib *r, gint side, gboolean for_real, gint y_ticks, gdouble y_min, gdouble y_max, gdouble y_origin, gint decimal_hint) {
+static void rlib_graph_label_y_axis(rlib *r, gint side, gboolean for_real, gint y_ticks, gdouble y_min, gdouble y_max, gint decimal_hint) {
 	gint i,j,max=0;
 	gchar format[20];
-	gint max_slen = 0;
+	guint max_slen = 0;
 	if(decimal_hint < 0) {
 		for(j=0;j<6;j++) {
 			gboolean bad = FALSE;
@@ -313,7 +313,7 @@ DLL_EXPORT_SYM gfloat rlib_graph(rlib *r, struct rlib_part *part, struct rlib_re
 
 	rlib_fetch_first_rows(r);
 	row_count = 0;
-	OUTPUT(r)->start_graph(r, part, report, left_margin_offset, rlib_layout_get_next_line_by_font_point(r, part, part->position_top[0]+(*top_margin_offset)+report->top_margin, 0), graph_width, graph_height, should_label_under_tick);
+	OUTPUT(r)->start_graph(r, part, report, left_margin_offset, layout_get_next_line_by_font_point(part, part->position_top[0]+(*top_margin_offset)+report->top_margin, 0), graph_width, graph_height, should_label_under_tick);
 
 	if(legend_orientation[0] != 0) {
 		gint orientation = RLIB_GRAPH_LEGEND_ORIENTATION_RIGHT;
@@ -405,12 +405,12 @@ DLL_EXPORT_SYM gfloat rlib_graph(rlib *r, struct rlib_part *part, struct rlib_re
 							
 							if(is_stacked_graph(graph_type)) { 
 								if( y_value >= 0 ) {
-									if( stacked_y_value_max < 0 ) 
+									if( stacked_y_value_max[side] < 0 ) 
 										stacked_y_value_max[side] = y_value;
 									else
 										stacked_y_value_max[side] += y_value;
 									stacked_y_value_min[side] = y_value;
-								} else { 
+								} else {
 									if( stacked_y_value_min[side] > 0 ) {
 										stacked_y_value_min[side] = 0;
 									}
@@ -496,9 +496,9 @@ DLL_EXPORT_SYM gfloat rlib_graph(rlib *r, struct rlib_part *part, struct rlib_re
 	
 	}
 
-	rlib_graph_label_y_axis(r, RLIB_SIDE_LEFT, FALSE, y_ticks, y_min[RLIB_SIDE_LEFT], y_max[RLIB_SIDE_LEFT], y_origin[RLIB_SIDE_LEFT], left_axis_decimal_hint);
+	rlib_graph_label_y_axis(r, RLIB_SIDE_LEFT, FALSE, y_ticks, y_min[RLIB_SIDE_LEFT], y_max[RLIB_SIDE_LEFT], left_axis_decimal_hint);
 	if(have_right_side)
-		rlib_graph_label_y_axis(r, RLIB_SIDE_RIGHT, FALSE, y_ticks, y_min[RLIB_SIDE_RIGHT], y_max[RLIB_SIDE_RIGHT], y_origin[RLIB_SIDE_RIGHT], right_axis_decimal_hint);
+		rlib_graph_label_y_axis(r, RLIB_SIDE_RIGHT, FALSE, y_ticks, y_min[RLIB_SIDE_RIGHT], y_max[RLIB_SIDE_RIGHT], right_axis_decimal_hint);
 
 	if(is_pie_graph(graph_type)) {
 		OUTPUT(r)->graph_set_data_plot_count(r, row_count * data_plot_count);
@@ -574,10 +574,10 @@ DLL_EXPORT_SYM gfloat rlib_graph(rlib *r, struct rlib_part *part, struct rlib_re
 		
 	if(!is_pie_graph(graph_type)) {
 		OUTPUT(r)->graph_set_limits(r, RLIB_SIDE_LEFT, y_min[RLIB_SIDE_LEFT], y_max[RLIB_SIDE_LEFT], y_origin[RLIB_SIDE_LEFT]);
-		rlib_graph_label_y_axis(r, RLIB_SIDE_LEFT, TRUE, y_ticks, y_min[RLIB_SIDE_LEFT], y_max[RLIB_SIDE_LEFT], y_origin[RLIB_SIDE_LEFT], left_axis_decimal_hint);
+		rlib_graph_label_y_axis(r, RLIB_SIDE_LEFT, TRUE, y_ticks, y_min[RLIB_SIDE_LEFT], y_max[RLIB_SIDE_LEFT], left_axis_decimal_hint);
 		if(have_right_side) {
 			OUTPUT(r)->graph_set_limits(r, RLIB_SIDE_RIGHT, y_min[RLIB_SIDE_RIGHT], y_max[RLIB_SIDE_RIGHT], y_origin[RLIB_SIDE_RIGHT]);
-			rlib_graph_label_y_axis(r, RLIB_SIDE_RIGHT, TRUE, y_ticks, y_min[RLIB_SIDE_RIGHT], y_max[RLIB_SIDE_RIGHT], y_origin[RLIB_SIDE_RIGHT], right_axis_decimal_hint);		
+			rlib_graph_label_y_axis(r, RLIB_SIDE_RIGHT, TRUE, y_ticks, y_min[RLIB_SIDE_RIGHT], y_max[RLIB_SIDE_RIGHT], right_axis_decimal_hint);
 		}
 	}
 

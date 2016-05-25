@@ -28,7 +28,7 @@
  
 #include <stdlib.h>
 #include <string.h>
-#include "config.h"
+#include <config.h>
 #include "rlib-internal.h"
 #include "pcode.h"
 #include "rlib_input.h"
@@ -76,7 +76,7 @@ static const gchar *orientations[] = {
 	NULL
 };
 
-gint get_font_point(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_lines *rl) {
+gint get_font_point(struct rlib_part *part, struct rlib_report *report, struct rlib_report_lines *rl) {
 	gint use_font_point;
 	
 	if(rl->font_point > 0)
@@ -103,7 +103,7 @@ void rlib_handle_page_footer(rlib *r, struct rlib_part *part, struct rlib_report
 	gint i;
 
 	for(i=0; i < report->pages_across; i++) {
-		report->bottom_size[i] = get_outputs_size(r, part, report, report->page_footer, i);
+		report->bottom_size[i] = get_outputs_size(part, report, report->page_footer, i);
 		report->position_bottom[i] -= report->bottom_size[i];
 	}
 
@@ -115,7 +115,7 @@ void rlib_handle_page_footer(rlib *r, struct rlib_part *part, struct rlib_report
 		report->position_bottom[i] -= report->bottom_size[i];
 }
 
-gfloat get_output_size(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_output_array *roa) {
+gfloat get_output_size(struct rlib_part *part, struct rlib_report *report, struct rlib_report_output_array *roa) {
 	gint j;
 	gfloat total=0;
 	
@@ -126,7 +126,7 @@ gfloat get_output_size(rlib *r, struct rlib_part *part, struct rlib_report *repo
 		struct rlib_report_output *rd = roa->data[j];
 		if(rd->type == RLIB_REPORT_PRESENTATION_DATA_LINE) {
 			struct rlib_report_lines *rl = rd->data;
-			total += RLIB_GET_LINE(get_font_point(r, part, report, rl));
+			total += RLIB_GET_LINE(get_font_point(part, report, rl));
 		} else if(rd->type == RLIB_REPORT_PRESENTATION_DATA_HR) {
 			struct rlib_report_horizontal_line *rhl = rd->data;
 			total += RLIB_GET_LINE(rhl->size);		
@@ -135,14 +135,14 @@ gfloat get_output_size(rlib *r, struct rlib_part *part, struct rlib_report *repo
 	return total;
 }
 
-gfloat get_outputs_size(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint page) {
+gfloat get_outputs_size(struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint page) {
 	gfloat total=0;
 	struct rlib_report_output_array *roa;
 
 	for(; e != NULL; e=e->next) {
 		roa = e->data;
 		if(roa->page == -1 || roa->page == page || roa->page == -1)
-			total += get_output_size(r, part, report, roa);
+			total += get_output_size(part, report, roa);
 	}			
 
 	return total;
@@ -176,13 +176,13 @@ gint will_outputs_fit(rlib *r, struct rlib_part *part, struct rlib_report *repor
 	for(; e != NULL; e=e->next) {
 		roa = e->data;
 		if(page == -1 || page == roa->page || roa->page == -1) {
-			size += get_output_size(r, part, report, roa);
+			size += get_output_size(part, report, roa);
 		}
 	}			
 	return rlib_will_this_fit(r, part, report, size, page);
 }
 
-void rlib_set_report_from_part(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat top_margin_offset) {
+void set_report_from_part(struct rlib_part *part, struct rlib_report *report, gfloat top_margin_offset) {
 	gint i;
 	for(i=0;i<report->pages_across;i++) {
 		report->position_top[i] = report->top_margin + part->position_top[0] + top_margin_offset;
@@ -279,7 +279,7 @@ static void rlib_evaulate_part_attributes(rlib *r, struct rlib_part *part) {
 		part->suppress = t;
 
 	if (rlib_execute_as_string(r, part->paper_type_code, buf, MAXSTRLEN)) {
-		struct rlib_paper *paper = rlib_layout_get_paper_by_name(r, buf);
+		struct rlib_paper *paper = layout_get_paper_by_name(buf);
 		if(paper != NULL)
 			part->paper = paper;
 	}
@@ -331,7 +331,7 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 				OUTPUT(r)->end_report(r, part, report);
 				return FALSE;
 			}
-			rlib_set_report_from_part(r, part, report, top_margin_offset);
+			set_report_from_part(part, report, top_margin_offset);
 			report->left_margin += left_margin_offset + part->left_margin;
 			OUTPUT(r)->start_report_header(r, part, report);
 			rlib_layout_report_output(r, part, report, report->report_header, FALSE, TRUE);
@@ -353,7 +353,7 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 				return FALSE;
 			}
 			
-			rlib_set_report_from_part(r, part, report, top_margin_offset);
+			set_report_from_part(part, report, top_margin_offset);
 			report->left_margin += left_margin_offset + part->left_margin;
 			if(report->font_size != -1) {
 				r->font_point = report->font_size;
@@ -504,7 +504,7 @@ struct rlib_report_position {
 void rlib_layout_part_td(rlib *r, struct rlib_part *part, GSList *part_deviations, long page_number, gfloat position_top, struct rlib_report_position *rrp) {
 	GSList *element;
 		
-	gfloat paper_width = rlib_layout_get_page_width(r, part) - (part->left_margin * 2);
+	gfloat paper_width = layout_get_page_width(part) - (part->left_margin * 2);
 	gfloat running_left_margin = 0;
 	
 	for(element = part_deviations;element != NULL;element = g_slist_next(element)) {
@@ -533,7 +533,7 @@ void rlib_layout_part_td(rlib *r, struct rlib_part *part, GSList *part_deviation
 		for(i=0;i<part->pages_across;i++) {
 			OUTPUT(r)->set_working_page(r, part, i);
 			OUTPUT(r)->start_part_td(r, part, width, height);
-			OUTPUT(r)->start_part_pages_across(r, part, running_left_margin+part->left_margin, rlib_layout_get_next_line_by_font_point(r, part, running_top_margin+position_top+part->position_top[0], 0), width,  height, border_width, border_color[0] == 0 ? NULL : &bgcolor);
+			OUTPUT(r)->start_part_pages_across(r, part, running_left_margin+part->left_margin, layout_get_next_line_by_font_point(part, running_top_margin+position_top+part->position_top[0], 0), width,  height, border_width, border_color[0] == 0 ? NULL : &bgcolor);
 		}
 		
 		for(report_element=td->reports;report_element != NULL;report_element = g_slist_next(report_element)) {

@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <gmodule.h>
 
-#include "config.h"
+#include <config.h>
 #include "rlib-internal.h"
 #include "pcode.h"
 #include "rlib_input.h"

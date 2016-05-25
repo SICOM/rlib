@@ -28,7 +28,7 @@
  
 #include <stdlib.h>
 #include <string.h>
-#include "config.h"
+#include <config.h>
 
 #include <math.h>
 
@@ -173,7 +173,7 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 	if (rows > MAX_ROWS)
 		rows = MAX_ROWS;
 
-	top_margin =  rlib_layout_get_next_line_by_font_point(r, part, part->position_top[0] + (*top_margin_offset) + report->top_margin, 0);
+	top_margin =  layout_get_next_line_by_font_point(part, part->position_top[0] + (*top_margin_offset) + report->top_margin, 0);
 	bottom_margin = part->paper->width / RLIB_PDF_DPI - part->position_bottom[0];
 
 	chart_size = rows;
@@ -380,7 +380,7 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 				r->font_point = report->font_size;
 				OUTPUT(r)->set_font_point(r, r->font_point);
 			}
-			top_margin = rlib_layout_get_next_line_by_font_point(r, part, part->position_top[0] + report->top_margin, 0);
+			top_margin = layout_get_next_line_by_font_point(part, part->position_top[0] + report->top_margin, 0);
 			//top_margin = part->paper->width / RLIB_PDF_DPI - part->position_top[0];
 			bottom_margin = part->paper->width / RLIB_PDF_DPI - part->position_bottom[0];
 		}

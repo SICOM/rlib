@@ -609,7 +609,7 @@ DLL_EXPORT_SYM gint rlib_set_locale(rlib *r, gchar *locale) {
 	return TRUE;
 }
 
-DLL_EXPORT_SYM gchar * rlib_bindtextdomain(rlib *r, gchar *domainname, gchar *dirname) {
+DLL_EXPORT_SYM gchar * rlib_bindtextdomain(rlib *r UNUSED, gchar *domainname, gchar *dirname) {
 	return bindtextdomain(domainname, dirname);
 }
 
@@ -686,8 +686,7 @@ DLL_EXPORT_SYM gint rlib_graph_add_bg_region(rlib *r, gchar *graph_name, gchar *
 	return TRUE;
 }
 
-DLL_EXPORT_SYM gint rlib_graph_clear_bg_region(rlib *r, gchar *graph_name) {
-
+DLL_EXPORT_SYM gint rlib_graph_clear_bg_region(rlib *r UNUSED, gchar *graph_name UNUSED) {
 	return TRUE;
 }
 

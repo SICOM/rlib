@@ -31,7 +31,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "config.h"
+#include <config.h>
 #include <errno.h>
 
 #include "rlib-internal.h"

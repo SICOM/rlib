@@ -28,7 +28,7 @@
 #include <time.h>
 #include <locale.h>
 
-#include "config.h"
+#include <config.h>
 
 #ifdef RLIB_HAVE_MONETARY_H 
 #include <monetary.h>

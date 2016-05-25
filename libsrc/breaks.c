@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "config.h"
+#include <config.h>
 #include "rlib-internal.h"
 #include "pcode.h"
 #include "rlib_input.h"
@@ -154,7 +154,7 @@ void rlib_handle_break_headers(rlib *r, struct rlib_part *part, struct rlib_repo
 				rb->didheader = TRUE;
 			}
 			for(page=0;page<report->pages_across;page++) {
-				total[page] += get_outputs_size(r, part, report, rb->header, page);
+				total[page] += get_outputs_size(part, report, rb->header, page);
 			}
 		}				
 	}

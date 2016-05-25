@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -26,7 +26,7 @@
 #include <stdarg.h>
 #include <time.h>
 #include <math.h>
-#include "config.h"
+#include <config.h>
 #ifdef HAVE_SYS_RESOURCE_H
 #include <sys/resource.h>
 #endif
@@ -85,7 +85,7 @@ int locale_codes[] = {
 
 #ifdef HAVE_SYS_RESOURCE_H
 #ifdef ENABLE_CRASH
-static void myFaultHandler (gint signum, siginfo_t *si, gpointer aptr) {
+static void myFaultHandler(gint signum UNUSED, siginfo_t *si UNUSED, gpointer aptr UNUSED) {
 	struct rlimit rlim;
 	rlogit(NULL, "** NUTS.. WE CRASHED\n");
 	getrlimit (RLIMIT_CORE, &rlim); /* POSSIBLY NOT NECESSARY */
@@ -176,8 +176,9 @@ static void local_rlogit(rlib *r, const gchar *message) {
 
 		/* escape '&','<','>' as HTML character entities */
 		char *htmlEncoded=(char *)malloc(strlen(message)*5+1); /* 5 times the original length is the worst-case-scenario: replacing '&' with "&amp;" */
-		int i,h=0;
-		for(i=0;i<strlen(message);++i) {
+		guint i;
+		int h = 0;
+		for (i = 0; i < strlen(message); ++i) {
 			switch(message[i]) {
 				case '&':
 					htmlEncoded[h++]='&';

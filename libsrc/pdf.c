@@ -22,7 +22,7 @@
 #include <math.h>
 
 
-#include "config.h"
+#include <config.h>
 #include "rlib-internal.h"
 #include "rpdf.h"
 
@@ -203,7 +203,7 @@ struct rlib_rgb *color, gfloat indent, gfloat length) {
 
 static void pdf_start_boxurl(rlib *r, struct rlib_part *part, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall, gchar *url, gint backwards) {
 	if(part->landscape) {
-		gfloat new_left = rlib_layout_get_page_width(r, part)-left_origin-how_long;
+		gfloat new_left = layout_get_page_width(part)-left_origin-how_long;
 		gfloat new_bottom = bottom_origin;
 		rpdf_link(OUTPUT_PRIVATE(r)->pdf, new_bottom, new_left, new_bottom+how_tall, new_left+how_long, url);
 	} else  {

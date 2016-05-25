@@ -27,7 +27,7 @@
 #include <value.h>
 
 #include "rlib-internal.h"
-#include "config.h"
+#include <config.h>
 #include "util.h"
 
 

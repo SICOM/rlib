@@ -27,7 +27,7 @@
 #include <time.h>
 #include <ctype.h>
 #include <inttypes.h>
-#include "config.h"
+#include <config.h>
 
 #include "rlib-internal.h"
 #include "pcode.h"
@@ -183,7 +183,7 @@ struct rlib_operator_stack {
 	struct rlib_pcode_operator *op[200];
 };
 
-static struct rlib_pcode_operator * rlib_find_operator(rlib *r, gchar *ptr, struct rlib_operator_stack *os, struct rlib_pcode *p, int have_operand) {
+static struct rlib_pcode_operator *rlib_find_operator(rlib *r, gchar *ptr, struct rlib_pcode *p, int have_operand) {
 	gint len = strlen(ptr);
 	gint result;
 	struct rlib_pcode_operator *op;
@@ -388,7 +388,7 @@ struct rlib_pcode_operand * rlib_new_operand(rlib *r, struct rlib_part *part, st
 	} else if((memresult = rlib_resolve_memory_variable(r, str))) {
 		o->type = OPERAND_MEMORY_VARIABLE;
 		o->value = g_strdup(memresult);
-	} else if((rvar = rlib_resolve_rlib_variable(r, str))) {
+	} else if((rvar = resolve_rlib_variable(str))) {
 		o->type = OPERAND_RLIB_VARIABLE;
 		o->value = GINT_TO_POINTER(rvar);
 	} else if(r != NULL && (metadata = g_hash_table_lookup(r->input_metadata, str)) != NULL && look_at_metadata == TRUE) {
@@ -551,7 +551,7 @@ void popopstack(struct rlib_pcode *p, struct rlib_operator_stack *os, struct rli
 	}
 }
 
-static void forcepopstack(rlib *r, struct rlib_pcode *p, struct rlib_operator_stack *os) {
+static void forcepopstack(struct rlib_pcode *p, struct rlib_operator_stack *os) {
 	struct rlib_pcode_operator *o;
 	struct rlib_pcode_instruction rpi;
 	while((o=operator_stack_pop(os))) {
@@ -633,7 +633,7 @@ DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part
 				break;
 		}
 
-		if(!instr && !indate && (op=rlib_find_operator(r, moving_ptr, &os, pcodes, moving_ptr != op_pointer))) {
+		if(!instr && !indate && (op = rlib_find_operator(r, moving_ptr, pcodes, moving_ptr != op_pointer))) {
 			if(moving_ptr != op_pointer) {
 				memcpy(operand, op_pointer, moving_ptr - op_pointer);
 				operand[moving_ptr - op_pointer] = '\0';
@@ -746,7 +746,7 @@ DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part
 			rlib_pcode_add(pcodes, rlib_new_pcode_instruction(&rpi, PCODE_PUSH, rlib_new_operand(r, part, report, operand, infix, line_number, look_at_metadata)));
 		}
 	}
-	forcepopstack(r, pcodes, &os);
+	forcepopstack(pcodes, &os);
 	if(os.pcount != 0) {
 		r_error(r, "Line: %d Compiler Error.  Parenthesis Mismatch [%s]\n", line_number, infix);
 	}
