@@ -748,8 +748,6 @@ struct rlib_resultset_followers {
 	struct rlib_pcode *follower_code;
 };
 
-struct rlib;
-typedef struct rlib rlib;
 struct rlib_signal_functions {
 	gboolean (*signal_function)(rlib *, gpointer);
 	gpointer data;
