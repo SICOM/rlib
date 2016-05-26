@@ -38,7 +38,7 @@
 #include "rlib_input.h"
 #include "rlib_langinfo.h"
 
-GIConv rlib_charencoder_new(const gchar *to_codeset, const gchar *from_codeset) {
+GIConv rlib_charencoder_new(const gchar *to_codeset UNUSED, const gchar *from_codeset UNUSED) {
 #ifdef DISABLE_UTF8
 	return (GIConv)-1;
 #else
@@ -46,14 +46,14 @@ GIConv rlib_charencoder_new(const gchar *to_codeset, const gchar *from_codeset) 
 #endif	
 }
 
-void rlib_charencoder_free(GIConv converter) {
+void rlib_charencoder_free(GIConv converter UNUSED) {
 #ifndef DISABLE_UTF8
 	if (converter != (GIConv)-1 && converter != (GIConv)0)
 		g_iconv_close(converter);
 #endif
 }
 
-gint rlib_charencoder_convert(GIConv converter, gchar **inbuf, gsize *inbytes_left, gchar **outbuf, gsize *outbytes_left) {
+gint rlib_charencoder_convert(GIConv converter UNUSED, gchar **inbuf, gsize *inbytes_left UNUSED, gchar **outbuf, gsize *outbytes_left UNUSED) {
 #ifdef DISABLE_UTF8
 	/* The strlen is passed in here so we bump it by 1 */
 	*outbuf = g_strdup(*inbuf);
