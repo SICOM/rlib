@@ -522,7 +522,6 @@ rlib-$VERSION:
 	 
    BINDINGS:
     PHP:                     ${enable_php}
-     PHP entension dir:      ${PHP_EXTENSION_DIR}
     PYTHON:                  ${enable_python}
      PYTHON version:         ${PYTHON_VERSION}
      PYTHON script dir:      ${pythondir}
