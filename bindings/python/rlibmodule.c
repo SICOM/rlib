@@ -27,6 +27,8 @@ static char *rlib_interface_version="0.1.0";
 
 #define INPUT_PRIVATE(input) (((struct _private *)input->private))
 
+#define UNUSED __attribute__((unused))
+
 static char rlibmodule__doc__[] = "\
 RLIB is a report generation library/language.\n\
 This is a python interface to the RLIB library.\n\
@@ -116,7 +118,7 @@ rlib_dealloc(register RLIBObject *rp)
 }
 
 static int
-implement_function_call(rlib *rlib_ptr,  struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, void *user_data) {
+implement_function_call(rlib *rlib_ptr,  struct rlib_pcode *code UNUSED, struct rlib_value_stack *vs, struct rlib_value *this_field_value UNUSED, void *user_data) {
 	PyObject 	*arglist;
 	PyObject 	*retval;
 	func_chain	*fp = user_data;
@@ -167,7 +169,7 @@ implement_function_call(rlib *rlib_ptr,  struct rlib_pcode *code, struct rlib_va
 
 
 static int
-implement_signal_call(rlib *rlib_ptr,  void *user_data) {
+implement_signal_call(rlib *rlib_ptr UNUSED,  void *user_data) {
 	signal_chain	*sp = user_data;
 	PyObject	*retval;
 	
@@ -357,10 +359,10 @@ void * rlib_python_array_new_result_from_query(gpointer input_ptr, gchar *query)
 
 
 
-static gint rlib_python_array_input_close(gpointer input_ptr) {
+static gint rlib_python_array_input_close(gpointer input_ptr UNUSED) {
         return TRUE;
 }
-static gint rlib_python_array_first(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_first(gpointer input_ptr UNUSED, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
         result->current_row = 1;
         if(result->rows <= 1) {
@@ -371,7 +373,7 @@ static gint rlib_python_array_first(gpointer input_ptr, gpointer result_ptr) {
         return TRUE;
 }
 
-static gint rlib_python_array_next(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
 	result->current_row++;
 	result->isdone = FALSE;
@@ -382,12 +384,12 @@ static gint rlib_python_array_next(gpointer input_ptr, gpointer result_ptr) {
 	return FALSE;
 }
 
-static gint rlib_python_array_isdone(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
         return result->isdone;
 }
 
-static gint rlib_python_array_previous(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_previous(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_python_array_results *result = result_ptr;
 	result->current_row--;
 	result->isdone = FALSE;
@@ -396,13 +398,13 @@ static gint rlib_python_array_previous(gpointer input_ptr, gpointer result_ptr) 
 	result->current_row = 0;
 	return FALSE;
 }
-static gint rlib_python_array_last(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_last(gpointer input_ptr UNUSED, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
         result->current_row = result->rows-1;
         return TRUE;
 }
 
-static gchar * rlib_python_array_get_field_value_as_string(gpointer input_ptr, gpointer result_ptr, gpointer field_ptr) {
+static gchar * rlib_python_array_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
         struct rlib_python_array_results *result = result_ptr;
         int which_field = GPOINTER_TO_INT(field_ptr) - 1;
         if(result->rows <= 1)
@@ -411,7 +413,7 @@ static gchar * rlib_python_array_get_field_value_as_string(gpointer input_ptr, g
         return result->data[(result->current_row*result->cols)+which_field];
 }
 
-static gpointer rlib_python_array_resolve_field_pointer(gpointer input_ptr, gpointer result_ptr, gchar *name) {
+static gpointer rlib_python_array_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) {
         struct rlib_python_array_results *result = result_ptr;
         int i;
         for(i=0;i<result->cols;i++) {
@@ -701,7 +703,7 @@ method_add_resultset_follower_n_to_1(PyObject *self, PyObject *_args) {
 
 static char method_execute__doc__[] = "execute() -> None";
 static PyObject *
-method_execute(PyObject *self, PyObject *_args) {
+method_execute(PyObject *self, PyObject *_args UNUSED) {
 	RLIBObject	*rp = (RLIBObject *)self;
 	long		result;
 
@@ -822,7 +824,7 @@ method_graph_set_x_minor_tick_by_location(PyObject *self, PyObject *_args) {
 
 static char method_query_refresh__doc__[] = "query_refresh() -> None";
 static PyObject *
-method_query_refresh(PyObject *self, PyObject *_args) {
+method_query_refresh(PyObject *self, PyObject *_args UNUSED) {
 	RLIBObject	*rp = (RLIBObject *)self;
 
 	check_rlibobject_open(rp);
@@ -1019,7 +1021,7 @@ method_signal_connect_string(PyObject *self, PyObject *_args) {
 static char method_spool__doc__[] = "spool() -> None\n\
 Send the report output to stdout, useful for CGI scripts.";
 static PyObject *
-method_spool(PyObject *self, PyObject *_args) {
+method_spool(PyObject *self, PyObject *_args UNUSED) {
 	RLIBObject	*rp = (RLIBObject *)self;
 	long		result;
 
@@ -1065,7 +1067,7 @@ static PyMethodDef rlib_methods[] = {
 	{"signal_connect", 		method_signal_connect,			METH_VARARGS, method_signal_connect__doc__},
 	{"signal_connect_string", 	method_signal_connect_string,		METH_VARARGS, method_signal_connect_string__doc__},
 	{"spool", 			method_spool,				METH_NOARGS,  method_spool__doc__},
-	{NULL, NULL}	/* sentinel */
+	{NULL, NULL, 0, NULL}	/* sentinel */
 };
 
 static PyObject *
@@ -1076,43 +1078,14 @@ rlib_getattr(RLIBObject *rp, char *name)
 
 static PyTypeObject RLIBType = {
 	PyObject_HEAD_INIT(NULL) 0,
-	"rlib.Rlib",
-	sizeof(RLIBObject),
-	0,
-	(destructor)rlib_dealloc,		/* tp_dealloc*/
-	0,					/* tp_print*/
-	(getattrfunc)rlib_getattr,		/* tp_getattr*/
-	0,					/* tp_setattr*/
-	0,					/* tp_compare*/
-	0,					/* tp_repr*/
-	0,					/* tp_as_number*/
-	0,					/* tp_as_sequence*/
-	0,					/* tp_as_mapping*/
-	0,					/* tp_hash*/
-	0,					/* tp_call*/
-	0,					/* tp_str*/
-	0,					/* tp_getattro*/
-	0,					/* tp_setattro*/
-	0,					/* tp_as_buffer*/
-	Py_TPFLAGS_DEFAULT,			/* tp_flags*/
-	rlib_object__doc__,			/* tp_doc*/
-	0,		               		/* tp_traverse */
-	0,		               		/* tp_clear */
-	0,		               		/* tp_richcompare */
-	0,		               		/* tp_weaklistoffset */
-	0,		               		/* tp_iter */
-	0,		               		/* tp_iternext */
-	rlib_methods,		             	/* tp_methods */
-	0,             				/* tp_members */
-	0,                         		/* tp_getset */
-	0,                         		/* tp_base */
-	0,                         		/* tp_dict */
-	0,                         		/* tp_descr_get */
-	0,                         		/* tp_descr_set */
-	0,                         		/* tp_dictoffset */
-	(initproc)0,				/* tp_init */
-	0,                         		/* tp_alloc */
-	newrlibobject,	                 		/* tp_new */
+	.tp_name = "rlib.Rlib",
+	.tp_basicsize = sizeof(RLIBObject),
+	.tp_dealloc = (destructor)rlib_dealloc,
+	.tp_getattr = (getattrfunc)rlib_getattr,
+	.tp_flags = Py_TPFLAGS_DEFAULT,
+	.tp_doc = rlib_object__doc__,
+	.tp_methods = rlib_methods,
+	.tp_new = newrlibobject,
 };
 
 /* ----------------------------------------------------------------- */
@@ -1122,7 +1095,7 @@ mysql_report(hostname, username, password, database, xmlfilename, sqlquery, outp
 Generate a mysql report and send it to standard out.\n\
 ";
 static PyObject *
-rlibmysql_report(PyObject *self, PyObject *_args)
+rlibmysql_report(PyObject *self UNUSED, PyObject *_args)
 {
 	rlib *r;
 	char	*hostname, *username, *password, *database, *xmlfile, *sqlquery, *oformat;
@@ -1153,7 +1126,7 @@ Create an instance of a Rlib report object.\n\
 ";
 
 static PyObject *
-rlibopen(PyObject *self, PyObject *args)
+rlibopen(PyObject *self UNUSED, PyObject *args)
 {
     if (!PyArg_ParseTuple(args, ":open"))
         return NULL;
@@ -1165,7 +1138,7 @@ postgres_report(connectionstring, xmlfilename, sqlquery, outputformat) -> 0\n\
 Generate a PostgreSQL report and send it to standard out.\n\
 ";
 static PyObject *
-rlibpostgres_report(PyObject *self, PyObject *_args)
+rlibpostgres_report(PyObject *self UNUSED, PyObject *_args)
 {
 	rlib *r;
 	char	*connstr, *xmlfile, *sqlquery, *oformat;
