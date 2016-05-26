@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Chet Heilman <cheilman@sicompos.com>
  *           Bob Doan <bdoan@sicompos.com>
@@ -48,7 +48,7 @@ GIConv rlib_charencoder_new(const gchar *to_codeset, const gchar *from_codeset) 
 
 void rlib_charencoder_free(GIConv converter) {
 #ifndef DISABLE_UTF8
-	if(converter > 0)
+	if (converter != (GIConv)-1 && converter != (GIConv)0)
 		g_iconv_close(converter);
 #endif
 }
