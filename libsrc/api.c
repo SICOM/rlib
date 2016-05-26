@@ -244,7 +244,6 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 	if (len >= 2) {
 		if (tolower(filename[0]) >= 'a' && tolower(filename[0]) <= 'z' &&
 				filename[1] == ':') {
-			r_info(r, "get_filename: Absolute file name with drive label: %s\n", filename);
 			return g_strdup(filename);
 		}
 	}
@@ -254,7 +253,6 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 	 * unconditionally for Un*xes.
 	 */
 	if (filename[0] == '/') {
-		r_info(r, "get_filename: Absolute file name: %s\n", filename);
 		return g_strdup(filename);
 	}
 
@@ -266,7 +264,6 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 		if (have_report_dir) {
 			file = g_strdup_printf("%s/%s", r->reportstorun[report_index].dir, filename);
 			if (stat(file, &st) == 0) {
-				r_info(r, "get_filename: File found relative to the report: %s, full path: %s\n", filename, file);
 				return file;
 			}
 			g_free(file);
@@ -277,7 +274,6 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 			if (have_report_dir) {
 				file = g_strdup_printf("%s/%s", r->reportstorun[ri].dir, filename);
 				if (stat(file, &st) == 0) {
-					r_info(r, "get_filename: File found relative to the report: %s, full path: %s\n", filename, file);
 					return file;
 				}
 				g_free(file);
@@ -314,7 +310,6 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 				if (have_report_dir) {
 					file = g_strdup_printf("%s/%s/%s", r->reportstorun[report_index].dir, search_path, filename);
 					if (stat(file, &st) == 0) {
-						r_info(r, "get_filename: File found in search path relative to report XML: %s, full path: %s\n", search_path, file);
 						return file;
 					}
 					g_free(file);
@@ -325,7 +320,6 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 					if (have_report_dir) {
 						file = g_strdup_printf("%s/%s/%s", r->reportstorun[ri].dir, search_path, filename);
 						if (stat(file, &st) == 0) {
-							r_info(r, "get_filename: File found in search path relative to report XML: %s, full path: %s\n", search_path, file);
 							return file;
 						}
 						g_free(file);
@@ -337,7 +331,6 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 		file = g_strdup_printf("%s/%s", search_path, filename);
 
 		if (stat(file, &st) == 0) {
-			r_info(r, "get_filename: File found in search path: %s, full path: %s\n", search_path, file);
 			return file;
 		}
 
@@ -360,11 +353,6 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 			file = g_strdup(filename);
 	} else
 		file = g_strdup(filename);
-
-	if (stat(file, &st) == 0)
-		r_info(r, "get_filename: File found: %s\n", file);
-	else
-		r_info(r, "get_filename: File not found, expect errors. Filename: %s\n", file);
 
 	return file;
 }
