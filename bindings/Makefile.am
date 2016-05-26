@@ -20,10 +20,6 @@
 ##
 ## Process this file with automake to produce Makefile.in
 
-if HAVE_PHP
-PHP_BINDINGS=php
-endif
-
 if HAVE_PYTHON
 PYTHON_BINDINGS=python
 endif
@@ -40,9 +36,7 @@ if HAVE_CSHARP
 CSHARP_BINDINGS=csharp
 endif
 
-
 SUBDIRS = \
-	$(PHP_BINDINGS) \
 	$(PYTHON_BINDINGS) \
 	$(JAVA_BINDINGS) \
 	$(PERL_BINDINGS) \

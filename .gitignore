@@ -10,6 +10,7 @@ compile
 py-compile
 *Makefile
 *Makefile.in
+acinclude.m4
 aclocal.m4
 m4/libtool.m4
 m4/ltoptions.m4
@@ -21,6 +22,7 @@ config.guess
 config.h
 config.h.in
 config.log
+config.lt
 config.status
 config.sub
 configure
@@ -31,6 +33,7 @@ libtool
 ltmain.sh
 ltmain.sh.bak
 missing
+mkinstalldirs
 rlib.pc
 rlib.spec
 rpdf/test
@@ -72,3 +75,10 @@ inputs/odbc/libr-odbc.def
 inputs/postgres/libr-postgres.def
 
 *.pdf
+
+bindings/php/build
+bindings/php/modules
+bindings/php/Makefile*
+bindings/php/config.nice
+bindings/php/configure.in
+bindings/php/run-tests.php

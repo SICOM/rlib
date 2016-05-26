@@ -35,8 +35,25 @@ SUBDIRS = rpdf libsrc inputs bindings src tests \
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = rlib.pc
 
+if HAVE_PHP
+
 phpini1dir = $(sysconfdir)/php.d
 phpini1_DATA = rlib.ini
 
 phpini2dir = $(sysconfdir)/php-zts.d
 phpini2_DATA = rlib.ini
+
+PHP_DIRS = bindings/php
+
+clean-local:
+	$(foreach var,$(PHP_DIRS),$(MAKE) -C $(var) clean && ) echo && echo make clean in PHP modules is successful && echo
+
+distclean-local:
+	$(foreach var,$(PHP_DIRS),$(MAKE) -C $(var) distclean && ) echo && echo make distclean in PHP modules is successful && echo
+
+install-exec-local:
+	$(foreach var,$(PHP_DIRS),(cd $(var) && phpize && ./configure LDFLAGS=-L$(DESTDIR)$(libdir)) && ) echo && echo PHP modules configured successfully && echo
+	$(foreach var,$(PHP_DIRS),$(MAKE) -C $(var) && ) echo && echo PHP modules are built successfully && echo
+	$(foreach var,$(PHP_DIRS),$(MAKE) -C $(var) INSTALL_ROOT=$(DESTDIR) install && ) echo && echo PHP modules are installed successfully && echo
+
+endif
