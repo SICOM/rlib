@@ -1476,9 +1476,9 @@ gint rlib_pcode_operator_left(rlib *r, struct rlib_pcode *code, struct rlib_valu
 
 	if(RLIB_VALUE_IS_STRING(v2) && RLIB_VALUE_IS_NUMBER(v1) && RLIB_VALUE_GET_AS_STRING(v2) != NULL) {
 		gchar *tmp = g_strdup(RLIB_VALUE_GET_AS_STRING(v2));
-		gint n = RLIB_VALUE_GET_AS_NUMBER(v1)/RLIB_DECIMAL_PRECISION;
+		ssize_t n = RLIB_VALUE_GET_AS_NUMBER(v1)/RLIB_DECIMAL_PRECISION;
 		if (n >= 0) {
-			if (r_strlen(tmp) > (guint)n) *r_ptrfromindex(tmp, n) = '\0';
+			if ((ssize_t)r_strlen(tmp) > n) *r_ptrfromindex(tmp, n) = '\0';
 		}
 		rlib_value_free(v1);
 		rlib_value_free(v2);
