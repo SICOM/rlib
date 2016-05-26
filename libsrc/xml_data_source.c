@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  * 
  *  Authors: Jeremy Lee <jlee@platinumtel.com> 
  *           Warren Smith <wsmith@platinumtel.com>
@@ -51,7 +51,7 @@ struct _private {
 	xmlDocPtr doc;
 };
 
-gpointer rlib_xml_connect(gpointer input_ptr) {
+gpointer rlib_xml_connect(gpointer input_ptr UNUSED) {
 	return NULL;
 }
 
@@ -63,12 +63,12 @@ static gint rlib_xml_input_close(gpointer input_ptr) {
 	return 0;
 }
 
-static const gchar* rlib_xml_get_error(gpointer input_ptr) {
+static const gchar* rlib_xml_get_error(gpointer input_ptr UNUSED) {
 	return "No error information";
 }
 
 
-static gint rlib_xml_first(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_xml_first(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_xml_results *result = result_ptr;
 
 	result->this_row = result->first_row;
@@ -81,7 +81,7 @@ static gint rlib_xml_first(gpointer input_ptr, gpointer result_ptr) {
 	return TRUE;
 }
 
-static gint rlib_xml_next(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_xml_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_xml_results *result = result_ptr;
 	xmlNodePtr row;
 
@@ -100,12 +100,12 @@ static gint rlib_xml_next(gpointer input_ptr, gpointer result_ptr) {
 	return TRUE;
 }
 
-static gint rlib_xml_isdone(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_xml_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_xml_results *result = result_ptr;
 	return result->isdone;
 }
 
-static gint rlib_xml_previous(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_xml_previous(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_xml_results *result = result_ptr;
 
 	if (result->this_row == NULL)
@@ -121,7 +121,7 @@ static gint rlib_xml_previous(gpointer input_ptr, gpointer result_ptr) {
 	return TRUE;
 }
 
-static gint rlib_xml_last(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_xml_last(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_xml_results *result = result_ptr;
 
 	result->this_row = result->last_row;
@@ -131,7 +131,7 @@ static gint rlib_xml_last(gpointer input_ptr, gpointer result_ptr) {
 	return TRUE;
 }
 
-static gchar * rlib_xml_get_field_value_as_string(gpointer input_ptr, gpointer result_ptr, gpointer field_ptr) {
+static gchar * rlib_xml_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_xml_results *result = result_ptr;
 	gint field_index = GPOINTER_TO_INT(field_ptr);
 	xmlNodePtr col;
@@ -162,7 +162,7 @@ static gchar * rlib_xml_get_field_value_as_string(gpointer input_ptr, gpointer r
 	return (gchar *)field_value->xmlChildrenNode->content;
 }
 
-static gpointer rlib_xml_resolve_field_pointer(gpointer input_ptr, gpointer result_ptr, gchar *name) { 
+static gpointer rlib_xml_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) { 
 	struct rlib_xml_results *results = result_ptr;
 	xmlNodePtr field;
 	gint field_index = 0;
@@ -269,7 +269,7 @@ void * xml_new_result_from_query(gpointer input_ptr, gchar *query) {
 	return results;
 }
 
-static void rlib_xml_rlib_free_result(gpointer input_ptr, gpointer result_ptr) {
+static void rlib_xml_rlib_free_result(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_xml_results *results = result_ptr;
 	g_free(results);
 }

@@ -69,11 +69,11 @@ static void print_text(rlib *r, const gchar *text, gint backwards) {
 	}
 }
 
-static gfloat txt_get_string_width(rlib *r, const gchar *text) {
+static gfloat txt_get_string_width(rlib *r UNUSED, const gchar *text UNUSED) {
 	return 1;
 }
 
-static void txt_print_text(rlib *r, gfloat left_origin, gfloat bottom_origin, const gchar *text, gint backwards, struct rlib_line_extra_data *extra_data) {
+static void txt_print_text(rlib *r, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, const gchar *text, gint backwards, struct rlib_line_extra_data *extra_data UNUSED) {
 	print_text(r, text, backwards);
 }
 
@@ -83,10 +83,10 @@ static void txt_start_new_page(rlib *r, struct rlib_part *part) {
 	part->position_bottom[0] = 11-part->bottom_margin;
 }
 
-static void txt_init_end_page(rlib *r) {}
-static void txt_start_rlib_report(rlib *r) {}
-static void txt_end_rlib_report(rlib *r) {}
-static void txt_finalize_private(rlib *r) {}
+static void txt_init_end_page(rlib *r UNUSED) {}
+static void txt_start_rlib_report(rlib *r UNUSED) {}
+static void txt_end_rlib_report(rlib *r UNUSED) {}
+static void txt_finalize_private(rlib *r UNUSED) {}
 
 static void txt_spool_private(rlib *r) {
 	ENVIRONMENT(r)->rlib_write_output(OUTPUT_PRIVATE(r)->both, OUTPUT_PRIVATE(r)->length);
@@ -96,18 +96,18 @@ static void txt_end_line(rlib *r, int backwards) {
 	print_text(r, "\n", backwards);
 }
 
-static void txt_start_report(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void txt_end_report(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void txt_start_report_field_headers(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void txt_end_report_field_headers(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void txt_start_report_field_details(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void txt_end_report_field_details(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void txt_start_report_line(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void txt_end_report_line(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void txt_start_report_header(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void txt_end_report_header(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void txt_start_report_footer(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void txt_end_report_footer(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
+static void txt_start_report(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void txt_end_report(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void txt_start_report_field_headers(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void txt_end_report_field_headers(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void txt_start_report_field_details(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void txt_end_report_field_details(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void txt_start_report_line(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void txt_end_report_line(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void txt_start_report_header(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void txt_end_report_header(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void txt_start_report_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void txt_end_report_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 
 
 static void txt_start_part(rlib *r, struct rlib_part *part) {
@@ -129,7 +129,7 @@ static gchar * txt_callback(struct rlib_delayed_extra_data *delayed_data) {
 	return buf2;
 }
 
-static void txt_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *delayed_data, int backwards, int rval_type) {
+static void txt_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *delayed_data, int backwards, int rval_type UNUSED) {
 	gint current_page = OUTPUT_PRIVATE(r)->page_number;
 	struct _packet *packet = g_new0(struct _packet, 1);
 	packet->type = DELAY;
@@ -213,7 +213,7 @@ static void txt_end_part(rlib *r, struct rlib_part *part) {
 	OUTPUT_PRIVATE(r)->length = strlen(OUTPUT_PRIVATE(r)->both);
 }
 
-static void txt_end_page(rlib *r, struct rlib_part *part) {
+static void txt_end_page(rlib *r, struct rlib_part *part UNUSED) {
 	r->current_page_number++;
 	r->current_line_number = 1;
 }
@@ -233,83 +233,80 @@ static long txt_get_output_length(rlib *r) {
 	return OUTPUT_PRIVATE(r)->length;
 }
 
-static void txt_set_working_page(rlib *r, struct rlib_part *part, int page) {
+static void txt_set_working_page(rlib *r, struct rlib_part *part UNUSED, int page) {
 	OUTPUT_PRIVATE(r)->page_number = page;
 }
 
-static void txt_set_fg_color(rlib *r, gfloat red, gfloat green, gfloat blue) {}
-static void txt_set_bg_color(rlib *r, gfloat red, gfloat green, gfloat blue) {}
-static void txt_hr(rlib *r, gint backwards, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall, 
-struct rlib_rgb *color, gfloat indent, gfloat length) {}
-static void txt_start_draw_cell_background(rlib *r, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall, 
-struct rlib_rgb *color) {}
-static void txt_end_draw_cell_background(rlib *r) {}
-static void txt_start_boxurl(rlib *r, struct rlib_part * part, gfloat
-left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall, gchar *url, gint backwards) {}
-static void txt_end_boxurl(rlib *r, gint backwards) {}
-static void txt_background_image(rlib *r, gfloat left_origin, gfloat bottom_origin, gchar *nname, gchar *type, gfloat nwidth, gfloat nheight) {}
-static void txt_set_font_point(rlib *r, gint point) {}
-static void txt_start_line(rlib *r, gint backwards) {}
-static void txt_start_output_section(rlib *r, struct rlib_report_output_array *roa) {}
-static void txt_end_output_section(rlib *r, struct rlib_report_output_array *roa) {}
-static void txt_start_evil_csv(rlib *r) {}
-static void txt_end_evil_csv(rlib *r) {}
-static void txt_start_part_table(rlib *r, struct rlib_part *part) {}
-static void txt_end_part_table(rlib *r, struct rlib_part *part) {}
-static void txt_start_part_tr(rlib *r, struct rlib_part *part) {}
-static void txt_end_part_tr(rlib *r, struct rlib_part *part) {}
-static void txt_start_part_td(rlib *r, struct rlib_part *part, gfloat width, gfloat height) {}
-static void txt_end_part_td(rlib *r, struct rlib_part *part) {}
-static void txt_start_part_pages_across(rlib *r, struct rlib_part *part, gfloat left_margin, gfloat top_margin, int width, int height, int border_width, struct rlib_rgb *color) {}
-static void txt_end_part_pages_across(rlib *r, struct rlib_part *part) {}
-static void txt_set_raw_page(rlib *r, struct rlib_part *part, gint page) {}
-static void txt_start_bold(rlib *r) {}
-static void txt_end_bold(rlib *r) {}
-static void txt_start_italics(rlib *r) {}
-static void txt_end_italics(rlib *r) {}
+static void txt_set_fg_color(rlib *r UNUSED, gfloat red UNUSED, gfloat green UNUSED, gfloat blue UNUSED) {}
+static void txt_set_bg_color(rlib *r UNUSED, gfloat red UNUSED, gfloat green UNUSED, gfloat blue UNUSED) {}
+static void txt_hr(rlib *r UNUSED, gint backwards UNUSED, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gfloat how_long UNUSED, gfloat how_tall UNUSED, struct rlib_rgb *color UNUSED, gfloat indent UNUSED, gfloat length UNUSED) {}
+static void txt_start_draw_cell_background(rlib *r UNUSED, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gfloat how_long UNUSED, gfloat how_tall UNUSED, struct rlib_rgb *color UNUSED) {}
+static void txt_end_draw_cell_background(rlib *r UNUSED) {}
+static void txt_start_boxurl(rlib *r UNUSED, struct rlib_part * part UNUSED, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gfloat how_long UNUSED, gfloat how_tall UNUSED, gchar *url UNUSED, gint backwards UNUSED) {}
+static void txt_end_boxurl(rlib *r UNUSED, gint backwards UNUSED) {}
+static void txt_background_image(rlib *r UNUSED, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gchar *nname UNUSED, gchar *type UNUSED, gfloat nwidth UNUSED, gfloat nheight UNUSED) {}
+static void txt_set_font_point(rlib *r UNUSED, gint point UNUSED) {}
+static void txt_start_line(rlib *r UNUSED, gint backwards UNUSED) {}
+static void txt_start_output_section(rlib *r UNUSED, struct rlib_report_output_array *roa UNUSED) {}
+static void txt_end_output_section(rlib *r UNUSED, struct rlib_report_output_array *roa UNUSED) {}
+static void txt_start_evil_csv(rlib *r UNUSED) {}
+static void txt_end_evil_csv(rlib *r UNUSED) {}
+static void txt_start_part_table(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void txt_end_part_table(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void txt_start_part_tr(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void txt_end_part_tr(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void txt_start_part_td(rlib *r UNUSED, struct rlib_part *part UNUSED, gfloat width UNUSED, gfloat height UNUSED) {}
+static void txt_end_part_td(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void txt_start_part_pages_across(rlib *r UNUSED, struct rlib_part *part UNUSED, gfloat left_margin UNUSED, gfloat top_margin UNUSED, int width UNUSED, int height UNUSED, int border_width UNUSED, struct rlib_rgb *color UNUSED) {}
+static void txt_end_part_pages_across(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void txt_set_raw_page(rlib *r UNUSED, struct rlib_part *part UNUSED, gint page UNUSED) {}
+static void txt_start_bold(rlib *r UNUSED) {}
+static void txt_end_bold(rlib *r UNUSED) {}
+static void txt_start_italics(rlib *r UNUSED) {}
+static void txt_end_italics(rlib *r UNUSED) {}
 
-static void txt_start_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left, gfloat top, gfloat width, gfloat height, gboolean x_axis_labels_are_under_tick) {}
-static void txt_graph_set_limits(rlib *r, gchar side, gdouble min, gdouble max, gdouble origin) {}
-static void txt_graph_set_title(rlib *r, gchar *title) {}
-static void txt_graph_x_axis_title(rlib *r, gchar *title) {}
-static void txt_graph_y_axis_title(rlib *r, gchar side, gchar *title) {}
-static void txt_graph_do_grid(rlib *r, gboolean just_a_box) {}
-static void txt_graph_tick_x(rlib *r) {}
-static void txt_graph_set_x_iterations(rlib *r, gint iterations) {}
-static void txt_graph_hint_label_x(rlib *r, gchar *label) {}
-static void txt_graph_label_x(rlib *r, gint iteration, gchar *label) {}
-static void txt_graph_tick_y(rlib *r, gint iterations) {}
-static void txt_graph_label_y(rlib *r, gchar side, gint iteration, gchar *label) {}
-static void txt_graph_hint_label_y(rlib *r, gchar side, gchar *label) {}
-static void txt_graph_set_data_plot_count(rlib *r, gint count) {}
-static void txt_graph_plot_bar(rlib *r, gchar side, gint iteration, gint plot, gfloat height_percent, struct rlib_rgb *color,gfloat last_height, gboolean divide_iterations, gfloat raw_data, gchar *label) {}
-static void txt_graph_plot_line(rlib *r, gchar side, gint iteration, gfloat p1_height, gfloat p1_last_height, gfloat p2_height, gfloat p2_last_height, struct rlib_rgb *color, gfloat raw_data, gchar *label, gint row_count) {}
-static void txt_graph_plot_pie(rlib *r, gfloat start, gfloat end, gboolean offset, struct rlib_rgb *color, gfloat raw_data, gchar *label) {}
-static void txt_graph_hint_legend(rlib *r, gchar *label) {}
-static void txt_graph_draw_legend(rlib *r) {}
-static void txt_graph_draw_legend_label(rlib *r, gint iteration, gchar *label, struct rlib_rgb *color, gboolean is_line) {}
-static void txt_end_graph(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void txt_graph_draw_line(rlib *r, gfloat x, gfloat y, gfloat new_x, gfloat new_y, struct rlib_rgb *color) {}
-static void txt_graph_set_name(rlib *r, gchar *name) {}
-static void txt_graph_set_legend_bg_color(rlib *r, struct rlib_rgb *rgb) {}
-static void txt_graph_set_legend_orientation(rlib *r, gint orientation) {}
-static void txt_graph_set_draw_x_y(rlib *r, gboolean draw_x, gboolean draw_y) {}
-static void txt_graph_set_bold_titles(rlib *r, gboolean bold_titles) {}
-static void txt_graph_set_grid_color(rlib *r, struct rlib_rgb *rgb) {}
-static void txt_start_part_header(rlib *r, struct rlib_part *part) {}
-static void txt_end_part_header(rlib *r, struct rlib_part *part) {}
-static void txt_start_part_page_header(rlib *r, struct rlib_part *part) {}
-static void txt_end_part_page_header(rlib *r, struct rlib_part *part) {}
-static void txt_start_part_footer(rlib *r, struct rlib_part *part) {}
-static void txt_end_part_footer(rlib *r, struct rlib_part *part) {}
-static void txt_start_report_page_footer(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void txt_end_report_page_footer(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void txt_start_report_break_header(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_break *rb) {}
-static void txt_end_report_break_header(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_break *rb) {}
-static void txt_start_report_break_footer(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_break *rb) {}
-static void txt_end_report_break_footer(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_break *rb) {}
-static void txt_start_report_no_data(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void txt_end_report_no_data(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
+static void txt_start_graph(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, gfloat left UNUSED, gfloat top UNUSED, gfloat width UNUSED, gfloat height UNUSED, gboolean x_axis_labels_are_under_tick UNUSED) {}
+static void txt_graph_set_limits(rlib *r UNUSED, gchar side UNUSED, gdouble min UNUSED, gdouble max UNUSED, gdouble origin UNUSED) {}
+static void txt_graph_set_title(rlib *r UNUSED, gchar *title UNUSED) {}
+static void txt_graph_x_axis_title(rlib *r UNUSED, gchar *title UNUSED) {}
+static void txt_graph_y_axis_title(rlib *r UNUSED, gchar side UNUSED, gchar *title UNUSED) {}
+static void txt_graph_do_grid(rlib *r UNUSED, gboolean just_a_box UNUSED) {}
+static void txt_graph_tick_x(rlib *r UNUSED) {}
+static void txt_graph_set_x_iterations(rlib *r UNUSED, gint iterations UNUSED) {}
+static void txt_graph_hint_label_x(rlib *r UNUSED, gchar *label UNUSED) {}
+static void txt_graph_label_x(rlib *r UNUSED, gint iteration UNUSED, gchar *label UNUSED) {}
+static void txt_graph_tick_y(rlib *r UNUSED, gint iterations UNUSED) {}
+static void txt_graph_label_y(rlib *r UNUSED, gchar side UNUSED, gint iteration UNUSED, gchar *label UNUSED) {}
+static void txt_graph_hint_label_y(rlib *r UNUSED, gchar side UNUSED, gchar *label UNUSED) {}
+static void txt_graph_set_data_plot_count(rlib *r UNUSED, gint count UNUSED) {}
+static void txt_graph_plot_bar(rlib *r UNUSED, gchar side UNUSED, gint iteration UNUSED, gint plot UNUSED, gfloat height_percent UNUSED, struct rlib_rgb *color UNUSED, gfloat last_height UNUSED, gboolean divide_iterations UNUSED, gfloat raw_data UNUSED, gchar *label UNUSED) {}
+static void txt_graph_plot_line(rlib *r UNUSED, gchar side UNUSED, gint iteration UNUSED, gfloat p1_height UNUSED, gfloat p1_last_height UNUSED, gfloat p2_height UNUSED, gfloat p2_last_height UNUSED, struct rlib_rgb *color UNUSED, gfloat raw_data UNUSED, gchar *label UNUSED, gint row_count UNUSED) {}
+static void txt_graph_plot_pie(rlib *r UNUSED, gfloat start UNUSED, gfloat end UNUSED, gboolean offset UNUSED, struct rlib_rgb *color UNUSED, gfloat raw_data UNUSED, gchar *label UNUSED) {}
+static void txt_graph_hint_legend(rlib *r UNUSED, gchar *label UNUSED) {}
+static void txt_graph_draw_legend(rlib *r UNUSED) {}
+static void txt_graph_draw_legend_label(rlib *r UNUSED, gint iteration UNUSED, gchar *label UNUSED, struct rlib_rgb *color UNUSED, gboolean is_line UNUSED) {}
+static void txt_end_graph(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void txt_graph_draw_line(rlib *r UNUSED, gfloat x UNUSED, gfloat y UNUSED, gfloat new_x UNUSED, gfloat new_y UNUSED, struct rlib_rgb *color UNUSED) {}
+static void txt_graph_set_name(rlib *r UNUSED, gchar *name UNUSED) {}
+static void txt_graph_set_legend_bg_color(rlib *r UNUSED, struct rlib_rgb *rgb UNUSED) {}
+static void txt_graph_set_legend_orientation(rlib *r UNUSED, gint orientation UNUSED) {}
+static void txt_graph_set_draw_x_y(rlib *r UNUSED, gboolean draw_x UNUSED, gboolean draw_y UNUSED) {}
+static void txt_graph_set_bold_titles(rlib *r UNUSED, gboolean bold_titles UNUSED) {}
+static void txt_graph_set_grid_color(rlib *r UNUSED, struct rlib_rgb *rgb UNUSED) {}
+static void txt_start_part_header(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void txt_end_part_header(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void txt_start_part_page_header(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void txt_end_part_page_header(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void txt_start_part_footer(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void txt_end_part_footer(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void txt_start_report_page_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void txt_end_report_page_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void txt_start_report_break_header(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, struct rlib_report_break *rb UNUSED) {}
+static void txt_end_report_break_header(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, struct rlib_report_break *rb UNUSED) {}
+static void txt_start_report_break_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, struct rlib_report_break *rb UNUSED) {}
+static void txt_end_report_break_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, struct rlib_report_break *rb UNUSED) {}
+static void txt_start_report_no_data(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void txt_end_report_no_data(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 
 
 void rlib_txt_new_output_filter(rlib *r) {

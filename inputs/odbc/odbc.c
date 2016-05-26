@@ -39,6 +39,8 @@
 
 #define INPUT_PRIVATE(input) (((struct _private *)input->private))
 
+#define UNUSED __attribute__((unused))
+
 struct odbc_fields {
 	gint col;
 	gchar name[512];
@@ -181,7 +183,7 @@ static gint odbc_read_first(gpointer result_ptr) {
 }
 
 
-static gint rlib_odbc_first(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_odbc_first(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_odbc_results *result = result_ptr;
 
 	if(result_ptr == NULL)
@@ -215,7 +217,7 @@ static gint odbc_read_next(gpointer result_ptr) {
 	return FALSE;
 }
 
-static gint rlib_odbc_next(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_odbc_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_odbc_results *result = result_ptr;
 
 	if(result->forward_only == TRUE) {
@@ -236,7 +238,7 @@ static gint rlib_odbc_next(gpointer input_ptr, gpointer result_ptr) {
 	}
 }
 
-static gint rlib_odbc_isdone(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_odbc_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_odbc_results *result = result_ptr;
 	return result->isdone;
 }
@@ -255,7 +257,7 @@ static gint odbc_read_prior(gpointer result_ptr) {
 	return FALSE;
 }
 
-static gint rlib_odbc_previous(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_odbc_previous(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_odbc_results *result = result_ptr;
 	if(result->forward_only == TRUE) {
 		result->navigator = g_list_previous(result->navigator);
@@ -289,7 +291,7 @@ static gint odbc_read_last(gpointer result_ptr) {
 	return FALSE;
 }
 
-static gint rlib_odbc_last(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_odbc_last(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_odbc_results *result = result_ptr;
 
 	if(result->forward_only == TRUE) {
@@ -309,14 +311,14 @@ static gint rlib_odbc_last(gpointer input_ptr, gpointer result_ptr) {
 	}
 }
 
-static gchar * rlib_odbc_get_field_value_as_string(gpointer input_ptr, gpointer result_ptr, gpointer field_ptr) {
+static gchar * rlib_odbc_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_odbc_results *results = result_ptr;
 	struct odbc_fields *the_field = field_ptr;
 	gint field = the_field->col;
 	return results->values[field].value;
 }
 
-static gpointer rlib_odbc_resolve_field_pointer(gpointer input_ptr, gpointer result_ptr, gchar *name) {
+static gpointer rlib_odbc_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) {
 	struct rlib_odbc_results *results = result_ptr;
 	gint i=0;
 
@@ -335,13 +337,11 @@ gpointer odbc_new_result_from_query(gpointer input_ptr, gchar *query) {
 	struct rlib_odbc_results *results;
 	struct input_filter *input = input_ptr;
 	SQLHSTMT V_OD_hstmt;
-	guint i;
-	SQLSMALLINT ncols;
+	SQLSMALLINT i, ncols;
 	gint V_OD_erg;
 	SQLULEN col_size;
 	SQLUINTEGER fFuncs;
 	SQLLEN ind;
-
 
 	V_OD_hstmt = rlib_odbc_query(input_ptr, query);
 	if(V_OD_hstmt == NULL)
@@ -364,7 +364,7 @@ gpointer odbc_new_result_from_query(gpointer input_ptr, gchar *query) {
 	results->values = g_malloc(sizeof(struct odbc_field_values) * ncols);
 
 	results->total_size = 0;
-	for(i=0;i<ncols;i++) {
+	for (i = 0; i < ncols; i++) {
 		SQLCHAR name[ 256 ];
 		SQLSMALLINT name_length;
 		V_OD_erg = SQLDescribeCol( V_OD_hstmt, i+1,	name, sizeof( name ), &name_length, NULL, &col_size, NULL, NULL );
@@ -406,7 +406,7 @@ gpointer odbc_new_result_from_query(gpointer input_ptr, gchar *query) {
 	return results;
 }
 
-static void rlib_odbc_rlib_free_result(gpointer input_ptr, gpointer result_ptr) {
+static void rlib_odbc_rlib_free_result(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_odbc_results *results = result_ptr;
 	gint i;
 	
@@ -440,7 +440,7 @@ static gint rlib_odbc_free_input_filter(gpointer input_ptr) {
 	return 0;
 }
 
-static const gchar * rlib_odbc_get_error(gpointer input_ptr) {
+static const gchar * rlib_odbc_get_error(gpointer input_ptr UNUSED) {
 	return "No error information";
 }
 

@@ -165,7 +165,7 @@ static void print_text(rlib *r, const gchar *text, gint backwards) {
 	}
 }
 
-static gfloat html_get_string_width(rlib *r, const gchar *text) {
+static gfloat html_get_string_width(rlib *r UNUSED, const gchar *text UNUSED) {
 	return 1;
 }
 
@@ -176,7 +176,7 @@ static gchar *get_html_color(gchar *str, struct rlib_rgb *color) {
 }
 
 
-static void html_print_text(rlib *r, gfloat left_origin, gfloat bottom_origin, const gchar *text, gint backwards, struct rlib_line_extra_data *extra_data) {
+static void html_print_text(rlib *r, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, const gchar *text, gint backwards, struct rlib_line_extra_data *extra_data) {
 	GString *string = g_string_new("");
 
 	g_string_append_printf(string, "<span data-col=\"%d\" data-width=\"%d\" style=\"font-size: %dpx; ", extra_data->col, extra_data->width, BIGGER_HTML_FONT(extra_data->font_point));
@@ -202,19 +202,18 @@ static void html_print_text(rlib *r, gfloat left_origin, gfloat bottom_origin, c
 }
 
 
-static void html_set_fg_color(rlib *r, gfloat red, gfloat green, gfloat blue) {}
+static void html_set_fg_color(rlib *r UNUSED, gfloat red UNUSED, gfloat green UNUSED, gfloat blue UNUSED) {}
 
-static void html_set_bg_color(rlib *r, gfloat red, gfloat green, gfloat blue) {}
+static void html_set_bg_color(rlib *r UNUSED, gfloat red UNUSED, gfloat green UNUSED, gfloat blue UNUSED) {}
 
-static void html_start_draw_cell_background(rlib *r, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall,
+static void html_start_draw_cell_background(rlib *r, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gfloat how_long UNUSED, gfloat how_tall UNUSED,
 struct rlib_rgb *color) {
 	OUTPUT(r)->set_bg_color(r, color->r, color->g, color->b);
 }
 
-static void html_end_draw_cell_background(rlib *r) {
-}
+static void html_end_draw_cell_background(rlib *r UNUSED) {}
 
-static void html_start_boxurl(rlib *r, struct rlib_part *part, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall, gchar *url, gint backwards) {
+static void html_start_boxurl(rlib *r, struct rlib_part *part UNUSED, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gfloat how_long UNUSED, gfloat how_tall UNUSED, gchar *url, gint backwards) {
 	gchar buf[MAXSTRLEN];
 	sprintf(buf, "<a href=\"%s\">", url);
 	print_text(r, buf, backwards);
@@ -226,8 +225,8 @@ static void html_end_boxurl(rlib *r, gint backwards) {
 
 
 
-static void html_hr(rlib *r, gint backwards, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall,
-struct rlib_rgb *color, gfloat indent, gfloat length) {
+static void html_hr(rlib *r, gint backwards, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gfloat how_long UNUSED, gfloat how_tall,
+struct rlib_rgb *color, gfloat indent, gfloat length UNUSED) {
 	gchar buf[MAXSTRLEN];
 	gchar nbsp[MAXSTRLEN];
 	gchar color_str[40];
@@ -253,7 +252,7 @@ struct rlib_rgb *color, gfloat indent, gfloat length) {
 	}
 }
 
-static void html_background_image(rlib *r, gfloat left_origin, gfloat bottom_origin, gchar *nname, gchar *type, gfloat nwidth,
+static void html_background_image(rlib *r, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gchar *nname, gchar *type UNUSED, gfloat nwidth,
 gfloat nheight) {
 	gchar buf[MAXSTRLEN];
 
@@ -263,8 +262,8 @@ gfloat nheight) {
 	print_text(r, "</span>", FALSE);
 }
 
-static void html_line_image(rlib *r, gfloat left_origin, gfloat bottom_origin, gchar *nname, gchar *type, gfloat nwidth,
-gfloat nheight) {
+static void html_line_image(rlib *r, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gchar *nname, gchar *type UNUSED, gfloat nwidth UNUSED,
+gfloat nheight UNUSED) {
 	gchar buf[MAXSTRLEN];
 
 	sprintf(buf, "<img src=\"%s\" alt=\"line image\"/>", nname);
@@ -296,7 +295,7 @@ static gchar *html_callback(struct rlib_delayed_extra_data *delayed_data) {
 	return buf2;
 }
 
-static void html_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *delayed_data, int backwards, int rval_type) {
+static void html_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *delayed_data, int backwards, int rval_type UNUSED) {
 	gint current_page = OUTPUT_PRIVATE(r)->page_number;
 	struct _packet *packet = g_new0(struct _packet, 1);
 	packet->type = DELAY;
@@ -309,16 +308,16 @@ static void html_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *del
 }
 
 
-static void html_start_report(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void html_end_report(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void html_start_report_field_headers(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void html_end_report_field_headers(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void html_start_report_field_details(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void html_end_report_field_details(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void html_start_report_header(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void html_end_report_header(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void html_start_report_footer(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void html_end_report_footer(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
+static void html_start_report(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void html_end_report(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void html_start_report_field_headers(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void html_end_report_field_headers(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void html_start_report_field_details(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void html_end_report_field_details(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void html_start_report_header(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void html_end_report_header(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void html_start_report_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void html_end_report_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 
 
 static void html_start_rlib_report(rlib *r) {
@@ -443,7 +442,7 @@ static void html_spool_private(rlib *r) {
 }
 
 
-static void html_end_page(rlib *r, struct rlib_part *part) {
+static void html_end_page(rlib *r, struct rlib_part *part UNUSED) {
 	r->current_line_number = 1;
 }
 
@@ -455,43 +454,38 @@ static long html_get_output_length(rlib *r) {
 	return OUTPUT_PRIVATE(r)->whole_report->len;
 }
 
-static void html_set_working_page(rlib *r, struct rlib_part *part, gint page) {
+static void html_set_working_page(rlib *r, struct rlib_part *part UNUSED, gint page) {
 	OUTPUT_PRIVATE(r)->page_number = page;
 }
 
-static void html_start_part_table(rlib *r, struct rlib_part *part) {
+static void html_start_part_table(rlib *r, struct rlib_part *part UNUSED) {
 	print_text(r, "<table><!--start from part table-->", FALSE);
 }
 
-static void html_end_part_table(rlib *r, struct rlib_part *part) {
+static void html_end_part_table(rlib *r, struct rlib_part *part UNUSED) {
 	print_text(r, "</table><!--ended from part table-->", FALSE);
 }
 
 
-static void html_start_part_tr(rlib *r, struct rlib_part *part) {
+static void html_start_part_tr(rlib *r, struct rlib_part *part UNUSED) {
 	print_text(r, "<tr><!--start from part tr-->", FALSE);
 }
 
-static void html_end_part_tr(rlib *r, struct rlib_part *part) {
+static void html_end_part_tr(rlib *r, struct rlib_part *part UNUSED) {
 	print_text(r, "</tr><!--ended from part tr-->", FALSE);
 }
 
-static void html_start_part_td(rlib *r, struct rlib_part *part, gfloat width, gfloat height) {
+static void html_start_part_td(rlib *r, struct rlib_part *part UNUSED, gfloat width UNUSED, gfloat height UNUSED) {
 	print_text(r, "<td><!--started from part td-->", FALSE);
 }
 
-static void html_end_part_td(rlib *r, struct rlib_part *part) {
+static void html_end_part_td(rlib *r, struct rlib_part *part UNUSED) {
 	print_text(r, "</td><!--ended from part td-->", FALSE);
 }
 
-static void html_start_report_line(rlib *r, struct rlib_part *part, struct rlib_report *report) {
-	
-	
-}
+static void html_start_report_line(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 
-static void html_end_report_line(rlib *r, struct rlib_part *part, struct rlib_report *report) {
-	
-}
+static void html_end_report_line(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 
 
 static void html_start_line(rlib *r, int backwards) {
@@ -502,31 +496,30 @@ static void html_end_line(rlib *r, int backwards) {
 	print_text(r, "</pre></div>\n", backwards);	
 }
 
-static void html_start_part_pages_across(rlib *r, struct rlib_part *part, gfloat left_margin, gfloat top_margin, int width, int height, int border_width, struct rlib_rgb *color) {
+static void html_start_part_pages_across(rlib *r, struct rlib_part *part UNUSED, gfloat left_margin UNUSED, gfloat top_margin UNUSED, int width UNUSED, int height UNUSED, int border_width UNUSED, struct rlib_rgb *color UNUSED) {
 	print_text(r, "<!--start pages across-->", FALSE);
-
 }
 
 
 //SOMETHING NEEDS TO HAPPEN HERE.. probably
-static void html_end_part_pages_across(rlib *r, struct rlib_part *part) {
+static void html_end_part_pages_across(rlib *r, struct rlib_part *part UNUSED) {
 	print_text(r, "<!--end pages across-->", FALSE);
 }
 
 
-static void html_start_bold(rlib *r) {}
-static void html_end_bold(rlib *r) {}
-static void html_start_italics(rlib *r) {}
-static void html_end_italics(rlib *r) {}
+static void html_start_bold(rlib *r UNUSED) {}
+static void html_end_bold(rlib *r UNUSED) {}
+static void html_start_italics(rlib *r UNUSED) {}
+static void html_end_italics(rlib *r UNUSED) {}
 
-static void html_graph_draw_line(rlib *r, gfloat x, gfloat y, gfloat new_x, gfloat new_y, struct rlib_rgb *color) {}
+static void html_graph_draw_line(rlib *r UNUSED, gfloat x UNUSED, gfloat y UNUSED, gfloat new_x UNUSED, gfloat new_y UNUSED, struct rlib_rgb *color UNUSED) {}
 
 static void html_graph_init(rlib *r) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	memset(graph, 0, sizeof(struct _graph));
 }
 
-static void html_graph_get_chart_layout(rlib *r, gfloat top, gfloat bottom, gint cell_height, gint rows, gint *chart_size, gint *chart_height) {
+static void html_graph_get_chart_layout(rlib *r, gfloat top UNUSED, gfloat bottom UNUSED, gint cell_height, gint rows, gint *chart_size UNUSED, gint *chart_height) {
 	// don't do anything with chart_size
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	gint height_offset = 1;
@@ -546,7 +539,7 @@ static void html_graph_get_chart_layout(rlib *r, gfloat top, gfloat bottom, gint
 	*chart_height = height_offset + rows * cell_height;
 }
 
-static void html_start_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left, gfloat top, gfloat width, gfloat height, gboolean x_axis_labels_are_under_tick) {
+static void html_start_graph(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, gfloat left UNUSED, gfloat top UNUSED, gfloat width, gfloat height, gboolean x_axis_labels_are_under_tick) {
 	char buf[MAXSTRLEN];
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 
@@ -564,7 +557,7 @@ static void html_start_graph(rlib *r, struct rlib_part *part, struct rlib_report
 	graph->x_axis_labels_are_under_tick = x_axis_labels_are_under_tick;
 }
 
-static void html_graph_set_limits(rlib *r, gchar side, gdouble min, gdouble max, gdouble origin) {
+static void html_graph_set_limits(rlib *r, gchar side UNUSED, gdouble min, gdouble max, gdouble origin) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	graph->y_min = min;
 	graph->y_max = max;
@@ -996,7 +989,7 @@ static void html_graph_draw_bar(rlib *r, gint row, gint start_iteration, gint en
 	//OUTPUT(r)->set_bg_color(r, 0, 0, 0);
 }
 
-static void html_graph_plot_bar(rlib *r, gchar side, gint iteration, gint plot, gfloat height_percent, struct rlib_rgb *color, gfloat last_height, gboolean divide_iterations, gfloat raw_data, gchar *label) {
+static void html_graph_plot_bar(rlib *r, gchar side UNUSED, gint iteration, gint plot, gfloat height_percent, struct rlib_rgb *color, gfloat last_height, gboolean divide_iterations, gfloat raw_data UNUSED, gchar *label UNUSED) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	gfloat bar_width = graph->x_tick_width *.6;
 	gfloat left = graph->x_start + (graph->x_tick_width * iteration) + (graph->x_tick_width *.2);
@@ -1018,7 +1011,7 @@ static void html_graph_plot_bar(rlib *r, gchar side, gint iteration, gint plot, 
 
 }
 
-static void html_graph_plot_line(rlib *r, gchar side, gint iteration, gfloat p1_height, gfloat p1_last_height, gfloat p2_height, gfloat p2_last_height, struct rlib_rgb * color, gfloat raw_data, gchar *label, gint row_count) {
+static void html_graph_plot_line(rlib *r, gchar side UNUSED, gint iteration, gfloat p1_height, gfloat p1_last_height, gfloat p2_height, gfloat p2_last_height, struct rlib_rgb * color, gfloat raw_data UNUSED, gchar *label UNUSED, gint row_count) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	gfloat p1_start = graph->y_start;
 	gfloat p2_start = graph->y_start;
@@ -1043,7 +1036,7 @@ static void html_graph_plot_line(rlib *r, gchar side, gint iteration, gfloat p1_
 	rlib_gd_set_thickness(OUTPUT_PRIVATE(r)->rgd, 1);
 }
 
-static void html_graph_plot_pie(rlib *r, gfloat start, gfloat end, gboolean offset, struct rlib_rgb *color, gfloat raw_data, gchar *label) {
+static void html_graph_plot_pie(rlib *r, gfloat start, gfloat end, gboolean offset, struct rlib_rgb *color, gfloat raw_data UNUSED, gchar *label UNUSED) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	gfloat start_angle = 360.0 * start;
 	gfloat end_angle = 360.0 * end;
@@ -1195,37 +1188,37 @@ static void html_graph_draw_legend_label(rlib *r, gint iteration, gchar *label, 
 	rlib_gd_text(OUTPUT_PRIVATE(r)->rgd, label,  graph->legend_left + (w_width*2), graph->legend_top + offset + textoffset, FALSE, FALSE);
 }
 
-static void html_end_graph(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+static void html_end_graph(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {
 	rlib_gd_spool(r, OUTPUT_PRIVATE(r)->rgd);
 	rlib_gd_free(OUTPUT_PRIVATE(r)->rgd);
 }
 
-static void html_init_end_page(rlib *r) {}
-static void html_end_rlib_report(rlib *r) {}
+static void html_init_end_page(rlib *r UNUSED) {}
+static void html_end_rlib_report(rlib *r UNUSED) {}
 
 static void html_finalize_private(rlib *r) {
 	g_string_append(OUTPUT_PRIVATE(r)->whole_report, "</body></html>");
 }
 
-static void html_start_output_section(rlib *r, struct rlib_report_output_array *roa) {}
-static void html_end_output_section(rlib *r, struct rlib_report_output_array *roa) {}
-static void html_start_evil_csv(rlib *r) {}
-static void html_end_evil_csv(rlib *r) {}
-static void html_set_raw_page(rlib *r, struct rlib_part *part, gint page) {}
-static void html_start_part_header(rlib *r, struct rlib_part *part) {}
-static void html_end_part_header(rlib *r, struct rlib_part *part) {}
-static void html_start_part_page_header(rlib *r, struct rlib_part *part) {}
-static void html_end_part_page_header(rlib *r, struct rlib_part *part) {}
-static void html_start_part_page_footer(rlib *r, struct rlib_part *part) {}
-static void html_end_part_page_footer(rlib *r, struct rlib_part *part) {}
-static void html_start_report_page_footer(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void html_end_report_page_footer(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void html_start_report_break_header(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_break *rb) {}
-static void html_end_report_break_header(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_break *rb) {}
-static void html_start_report_break_footer(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_break *rb) {}
-static void html_end_report_break_footer(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_break *rb) {}
-static void html_start_report_no_data(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void html_end_report_no_data(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
+static void html_start_output_section(rlib *r UNUSED, struct rlib_report_output_array *roa UNUSED) {}
+static void html_end_output_section(rlib *r UNUSED, struct rlib_report_output_array *roa UNUSED) {}
+static void html_start_evil_csv(rlib *r UNUSED) {}
+static void html_end_evil_csv(rlib *r UNUSED) {}
+static void html_set_raw_page(rlib *r UNUSED, struct rlib_part *part UNUSED, gint page UNUSED) {}
+static void html_start_part_header(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void html_end_part_header(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void html_start_part_page_header(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void html_end_part_page_header(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void html_start_part_page_footer(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void html_end_part_page_footer(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void html_start_report_page_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void html_end_report_page_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void html_start_report_break_header(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, struct rlib_report_break *rb UNUSED) {}
+static void html_end_report_break_header(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, struct rlib_report_break *rb UNUSED) {}
+static void html_start_report_break_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, struct rlib_report_break *rb UNUSED) {}
+static void html_end_report_break_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, struct rlib_report_break *rb UNUSED) {}
+static void html_start_report_no_data(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void html_end_report_no_data(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 
 static gint html_free(rlib *r) {
 	g_string_free(OUTPUT_PRIVATE(r)->whole_report, TRUE);
