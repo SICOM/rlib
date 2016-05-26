@@ -124,7 +124,7 @@ DLL_EXPORT_SYM gint rlib_add_query_as(rlib *r, const gchar *input_source, const 
 
 DLL_EXPORT_SYM gint rlib_add_report(rlib *r, const gchar *name) {
 	gchar *tmp;
-	int i, found_dir_sep = 0, last_dir_sep;
+	int i, found_dir_sep = 0, last_dir_sep = 0;
 
 	if (r->parts_count > RLIB_MAXIMUM_REPORTS - 1)
 		return -1;
