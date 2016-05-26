@@ -123,7 +123,7 @@ static void html_graph_get_y_label_width(rlib *r, gfloat *width) {
 static void html_graph_set_y_label_width(rlib *r, gfloat width) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	if (width == 0)
-		graph->y_label_width_left = rlib_gd_get_string_width(OUTPUT_PRIVATE(r)->rgd, "W", FALSE) * 2;
+		graph->y_label_width_left = gd_get_string_width("W", FALSE) * 2;
 	else
 		graph->y_label_width_left = (gint)width;
 }
@@ -531,15 +531,15 @@ static void html_graph_get_chart_layout(rlib *r, gfloat top, gfloat bottom, gint
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	gint height_offset = 1;
 	gint intersection = 5;
-	gint title_height = rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, graph->bold_titles);
+	gint title_height = gd_get_string_height(graph->bold_titles);
 
 	height_offset += (BOTTOM_PAD + title_height + intersection + graph->x_axis_label_height);
 
 	if (graph->vertical_x_label)
-		height_offset += graph->x_label_width + rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE) + BOTTOM_PAD;
+		height_offset += graph->x_label_width + gd_get_string_height(FALSE) + BOTTOM_PAD;
 	else {
 		if (graph->x_label_width != 0) {
-			height_offset += rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE) + BOTTOM_PAD;
+			height_offset += gd_get_string_height(FALSE) + BOTTOM_PAD;
 		}
 	}
 
@@ -573,8 +573,8 @@ static void html_graph_set_limits(rlib *r, gchar side, gdouble min, gdouble max,
 
 static void html_graph_set_title(rlib *r, gchar *title) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat title_width = rlib_gd_get_string_width(OUTPUT_PRIVATE(r)->rgd, title, graph->bold_titles);
-	graph->title_height = rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, graph->bold_titles);
+	gfloat title_width = gd_get_string_width(title, graph->bold_titles);
+	graph->title_height = gd_get_string_height(graph->bold_titles);
 	rlib_gd_text(OUTPUT_PRIVATE(r)->rgd, title, ((graph->width-title_width)/2.0), 0, FALSE, graph->bold_titles);
 }
 
@@ -629,25 +629,25 @@ static void html_graph_x_axis_title(rlib *r, gchar *title) {
 	if(title[0] == 0)
 		graph->x_axis_label_height += 0;
 	else {
-		gfloat title_width = rlib_gd_get_string_width(OUTPUT_PRIVATE(r)->rgd, title, graph->bold_titles);
-		graph->x_axis_label_height += rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, graph->bold_titles);
+		gfloat title_width = gd_get_string_width(title, graph->bold_titles);
+		graph->x_axis_label_height += gd_get_string_height(graph->bold_titles);
 		rlib_gd_text(OUTPUT_PRIVATE(r)->rgd, title,  (graph->width-title_width)/2.0, graph->whole_graph_height-graph->x_axis_label_height, FALSE, graph->bold_titles);
-		graph->x_axis_label_height += rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, graph->bold_titles) * 0.25;
+		graph->x_axis_label_height += gd_get_string_height(graph->bold_titles) * 0.25;
 
 	}
 }
 
 static void html_graph_y_axis_title(rlib *r, gchar side, gchar *title) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat title_width = rlib_gd_get_string_width(OUTPUT_PRIVATE(r)->rgd, title, graph->bold_titles);
+	gfloat title_width = gd_get_string_width(title, graph->bold_titles);
 	if(title[0] == 0) {
 
 	} else {
 		if(side == RLIB_SIDE_LEFT) {
 			rlib_gd_text(OUTPUT_PRIVATE(r)->rgd, title,  0, (graph->whole_graph_height-graph->legend_height)  -((graph->whole_graph_height - graph->legend_height - title_width)/2.0), TRUE, graph->bold_titles);
-			graph->y_axis_title_left = rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, graph->bold_titles);
+			graph->y_axis_title_left = gd_get_string_height(graph->bold_titles);
 		} else {
-			graph->y_axis_title_right = rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, graph->bold_titles);
+			graph->y_axis_title_right = gd_get_string_height(graph->bold_titles);
 			rlib_gd_text(OUTPUT_PRIVATE(r)->rgd, title, graph->whole_graph_width-graph->legend_width-graph->y_axis_title_right,  (graph->whole_graph_height-graph->legend_height)-((graph->whole_graph_height - graph->legend_height - title_width)/2.0), TRUE, graph->bold_titles);
 		}
 	}
@@ -670,7 +670,7 @@ static void html_graph_label_x_get_variables(rlib *r, gint iteration, gchar *lab
 	*y_start = graph->y_start;
 
 	if(string_width == 0)
-		string_width = rlib_gd_get_string_width(OUTPUT_PRIVATE(r)->rgd, label, FALSE);
+		string_width = gd_get_string_width(label, FALSE);
 
 	if(graph->vertical_x_label) {
 		*y_start += graph->x_label_width;
@@ -681,11 +681,11 @@ static void html_graph_label_x_get_variables(rlib *r, gint iteration, gchar *lab
 
 	if (graph->is_chart)
 		if (graph->vertical_x_label)
-			*left += rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE) / 2;
+			*left += gd_get_string_height(FALSE) / 2;
 
 	if(graph->x_axis_labels_are_under_tick) {
 		if(graph->vertical_x_label) {
-			*left -= rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE) / 2;
+			*left -= gd_get_string_height(FALSE) / 2;
 		} else {
 			*left -= (graph->x_tick_width / 2);
 		}
@@ -738,7 +738,7 @@ static void html_graph_do_grid(rlib *r, gboolean just_a_box) {
 		gint left,y_start,string_width=graph->x_label_width;
 		if(graph->minor_ticks[i] == FALSE) {
 			html_graph_label_x_get_variables(r, i, NULL, &left, &y_start, string_width);
-			if(left < (last_left+graph->x_label_width+rlib_gd_get_string_width(OUTPUT_PRIVATE(r)->rgd, "W", FALSE))) {
+			if(left < (last_left+graph->x_label_width+gd_get_string_width("W", FALSE))) {
 				if (!graph->is_chart)
 					graph->vertical_x_label = TRUE;
 				break;
@@ -755,13 +755,13 @@ static void html_graph_do_grid(rlib *r, gboolean just_a_box) {
 
 	if (graph->is_chart) {
 		if (graph->vertical_x_label) {
-			graph->height -= graph->x_label_width + rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE)+BOTTOM_PAD;
-			graph->y_start -= rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE)+BOTTOM_PAD;
+			graph->height -= graph->x_label_width + gd_get_string_height(FALSE)+BOTTOM_PAD;
+			graph->y_start -= gd_get_string_height(FALSE)+BOTTOM_PAD;
 		}
 		else {
 			if (graph->x_label_width != 0) {
-				graph->y_start -= rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE)+BOTTOM_PAD;
-				graph->height -= rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE)+BOTTOM_PAD;
+				graph->y_start -= gd_get_string_height(FALSE)+BOTTOM_PAD;
+				graph->height -= gd_get_string_height(FALSE)+BOTTOM_PAD;
 			}
 		}
 	}
@@ -770,12 +770,12 @@ static void html_graph_do_grid(rlib *r, gboolean just_a_box) {
 		graph->vertical_x_label = TRUE;
 		graph->y_start -= graph->x_label_width;
 		graph->height -= graph->x_label_width;
-		graph->y_start -= rlib_gd_get_string_width(OUTPUT_PRIVATE(r)->rgd, "w", FALSE);
+		graph->y_start -= gd_get_string_width("w", FALSE);
 	} else {
 		graph->vertical_x_label = FALSE;
 		if(graph->x_label_width != 0) {
-			graph->y_start -= rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE)+BOTTOM_PAD;
-			graph->height -= rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE)+BOTTOM_PAD;
+			graph->y_start -= gd_get_string_height(FALSE)+BOTTOM_PAD;
+			graph->height -= gd_get_string_height(FALSE)+BOTTOM_PAD;
 		}
 	}
 
@@ -825,7 +825,7 @@ static void html_graph_set_x_iterations(rlib *r, gint iterations) {
 
 static void html_graph_hint_label_x(rlib *r, gchar *label) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gint string_width = rlib_gd_get_string_width(OUTPUT_PRIVATE(r)->rgd, label, FALSE);
+	gint string_width = gd_get_string_width(label, FALSE);
 
 	if(string_width > graph->x_label_width) {
 		graph->x_label_width = string_width;
@@ -836,7 +836,7 @@ static void html_graph_label_x(rlib *r, gint iteration, gchar *label) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	gint left, y_start;
 	gboolean doit = TRUE;
-	gint height = rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE);
+	gint height = gd_get_string_height(FALSE);
 
 	html_graph_label_x_get_variables(r, iteration, label, &left, &y_start, 0);
 
@@ -853,12 +853,12 @@ static void html_graph_label_x(rlib *r, gint iteration, gchar *label) {
 		if (graph->is_chart) {
 			gint text_height;
 			if (graph->vertical_x_label) {
-				text_height = rlib_gd_get_string_width(OUTPUT_PRIVATE(r)->rgd, "w", FALSE);// graph->x_label_width;
+				text_height = gd_get_string_width("w", FALSE);// graph->x_label_width;
 				rlib_gd_text(OUTPUT_PRIVATE(r)->rgd, label, left, graph->y_start - (graph->height + text_height), graph->vertical_x_label, FALSE);
 				//rlib_gd_text(OUTPUT_PRIVATE(r)->rgd, label, left, graph->y_start - (graph->height + text_height), graph->vertical_x_label, FALSE);
 			}
 			else {
-				text_height = rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE);// / 3.0;
+				text_height = gd_get_string_height(FALSE);// / 3.0;
 				rlib_gd_text(OUTPUT_PRIVATE(r)->rgd, label, left, graph->y_start - (graph->height + text_height), graph->vertical_x_label, FALSE);
 			}
 			//rlib_gd_text(OUTPUT_PRIVATE(r)->rgd, label, left, graph->top + text_height, graph->vertical_x_label, FALSE);
@@ -914,7 +914,7 @@ static void html_graph_tick_y(rlib *r, gint iterations) {
 static void html_graph_label_y(rlib *r, gchar side, gint iteration, gchar *label) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	gfloat white_space = graph->height/graph->y_iterations;
-	gfloat line_width = rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE) / 3.0;
+	gfloat line_width = gd_get_string_height(FALSE) / 3.0;
 	gfloat top;
 
 	if (graph->is_chart) {
@@ -932,7 +932,7 @@ static void html_graph_label_y(rlib *r, gchar side, gint iteration, gchar *label
 
 static void html_graph_hint_label_y(rlib *r, gchar side, gchar *label) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat width =  rlib_gd_get_string_width(OUTPUT_PRIVATE(r)->rgd, label, FALSE);
+	gfloat width =  gd_get_string_width(label, FALSE);
 	if(side == RLIB_SIDE_LEFT) {
 		if(width > graph->y_label_width_left)
 			graph->y_label_width_left = width;
@@ -956,8 +956,8 @@ static void html_graph_draw_bar(rlib *r, gint row, gint start_iteration, gint en
 	gfloat y_adjust = height_pad / bar_height;
 	gfloat left = graph->x_start + (graph->x_tick_width * (start_iteration - 1)) + (graph->x_tick_width * x_adjust);
 	gfloat start = graph->y_start - ((graph->y_iterations - row) * bar_height + bar_height * y_adjust);
-	gfloat label_width =  rlib_gd_get_string_width(OUTPUT_PRIVATE(r)->rgd, label, FALSE);
-	gfloat line_width = rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE) / 3.0;
+	gfloat label_width =  gd_get_string_width(label, FALSE);
+	gfloat line_width = gd_get_string_height(FALSE) / 3.0;
 	gchar label_text[MAXSTRLEN];
 	gint i;
 
@@ -983,7 +983,7 @@ static void html_graph_draw_bar(rlib *r, gint row, gint start_iteration, gint en
 
 	while (i > 0 && label_width > bar_length) {
 		label_text[--i] = '\0';
-		label_width =  rlib_gd_get_string_width(OUTPUT_PRIVATE(r)->rgd, label_text, FALSE);
+		label_width =  gd_get_string_width(label_text, FALSE);
 	}
 
 	if (label_width > 0) {
@@ -1075,7 +1075,7 @@ static void html_graph_plot_pie(rlib *r, gfloat start, gfloat end, gboolean offs
 
 static void html_graph_hint_legend(rlib *r, gchar *label) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat width =  rlib_gd_get_string_width(OUTPUT_PRIVATE(r)->rgd, label, FALSE) + rlib_gd_get_string_width(OUTPUT_PRIVATE(r)->rgd, "WWW", FALSE);
+	gfloat width =  gd_get_string_width(label, FALSE) + gd_get_string_width("WWW", FALSE);
 
 	if(width > graph->legend_width)
 		graph->legend_width = width;
@@ -1087,7 +1087,7 @@ static void html_count_regions(gpointer data, gpointer user_data) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	if(graph->name != NULL) {
 		if(strcmp(graph->name, gr->graph_name) == 0) {
-			gfloat width =  rlib_gd_get_string_width(OUTPUT_PRIVATE(r)->rgd, gr->region_label, FALSE) + rlib_gd_get_string_width(OUTPUT_PRIVATE(r)->rgd, "WWW", FALSE);
+			gfloat width =  gd_get_string_width(gr->region_label, FALSE) + gd_get_string_width("WWW", FALSE);
 
 			if(width > graph->legend_width)
 				graph->legend_width = width;
@@ -1104,11 +1104,11 @@ static void html_label_regions(gpointer data, gpointer user_data) {
 	if(graph->name != NULL) {
 		if(strcmp(graph->name, gr->graph_name) == 0) {
 			gint iteration = graph->orig_data_plot_count + graph->current_region;
-			gfloat offset =  (iteration  * rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE));
-			gfloat picoffset = rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE);
-			gfloat textoffset = rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE)/4;
-			gfloat w_width = rlib_gd_get_string_width(OUTPUT_PRIVATE(r)->rgd, "W", FALSE);
-			gfloat line_height = rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE);
+			gfloat offset =  (iteration  * gd_get_string_height(FALSE));
+			gfloat picoffset = gd_get_string_height(FALSE);
+			gfloat textoffset = gd_get_string_height(FALSE)/4;
+			gfloat w_width = gd_get_string_width("W", FALSE);
+			gfloat line_height = gd_get_string_height(FALSE);
 			gfloat left = graph->legend_left + (w_width/2);
 			gfloat top = graph->legend_top + offset + picoffset;
 			gfloat bottom = top - (line_height*.6);
@@ -1136,13 +1136,13 @@ static void html_graph_draw_legend(rlib *r) {
 	if(graph->legend_orientation == RLIB_GRAPH_LEGEND_ORIENTATION_RIGHT) {
 		left = graph->whole_graph_width - graph->legend_width;
 		width = graph->legend_width-1;
-		height = (rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE) * graph->data_plot_count) + (rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE) / 2);
+		height = (gd_get_string_height(FALSE) * graph->data_plot_count) + (gd_get_string_height(FALSE) / 2);
 		top = 0;
 		bottom = height;
 	} else {
 		left = 0;
 		width = graph->width;
-		height = (rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE) * graph->data_plot_count) + (rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE) / 2);
+		height = (gd_get_string_height(FALSE) * graph->data_plot_count) + (gd_get_string_height(FALSE) / 2);
 		top = graph->height - height;
 		bottom = graph->height;
 	}
@@ -1174,11 +1174,11 @@ static void html_graph_draw_legend(rlib *r) {
 
 static void html_graph_draw_legend_label(rlib *r, gint iteration, gchar *label, struct rlib_rgb *color, gboolean is_line) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat offset =  (iteration  * rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE));
-	gfloat picoffset = rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE);
-	gfloat textoffset = rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE)/4;
-	gfloat w_width = rlib_gd_get_string_width(OUTPUT_PRIVATE(r)->rgd, "W", FALSE);
-	gfloat line_height = rlib_gd_get_string_height(OUTPUT_PRIVATE(r)->rgd, FALSE);
+	gfloat offset =  (iteration  * gd_get_string_height(FALSE));
+	gfloat picoffset = gd_get_string_height(FALSE);
+	gfloat textoffset = gd_get_string_height(FALSE)/4;
+	gfloat w_width = gd_get_string_width("W", FALSE);
+	gfloat line_height = gd_get_string_height(FALSE);
 	gfloat left = graph->legend_left + (w_width/2);
 	gfloat top = graph->legend_top + offset + picoffset;
 	gfloat bottom = top - (line_height*.6);

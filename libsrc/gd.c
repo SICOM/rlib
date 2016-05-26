@@ -157,15 +157,15 @@ int rlib_gd_color_text(struct rlib_gd *rgd, char *text, int x, int y, gboolean r
 	return TRUE;
 }
 
-int rlib_gd_get_string_width(struct rlib_gd *rgd, const gchar *text, gboolean bold) {
-	if(bold)
+int gd_get_string_width(const gchar *text, gboolean bold) {
+	if (bold)
 		return gdFontMediumBold->w * strlen(text);
 	else
 		return gdFontMedium->w * strlen(text);
 }
 
-int rlib_gd_get_string_height(struct rlib_gd *rgd, gboolean bold) {
-	if(bold)
+int gd_get_string_height(gboolean bold) {
+	if (bold)
 		return gdFontMediumBold->h;
 	else
 		return gdFontMedium->h;
@@ -244,11 +244,11 @@ int rlib_gd_color_text(struct rlib_gd *rgd, char *text, int x, int y, gboolean r
 	return TRUE;
 }
 
-int rlib_gd_get_string_width(struct rlib_gd *rgd, const char *text, gboolean bold) {
+int gd_get_string_width(const char *text UNUSED, gboolean bold UNUSED) {
 	return 0;
 }
 
-int rlib_gd_get_string_height(struct rlib_gd *rgd, gboolean bold) {
+int gd_get_string_height(gboolean bold UNUSED) {
 	return 0;
 }
 

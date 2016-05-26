@@ -34,7 +34,7 @@
 #include "rlib_input.h"
 #include "rlib_langinfo.h"
 
-void rlib_variable_clear(rlib *r, struct rlib_report_variable *rv, gboolean do_expression) {
+void variable_clear(struct rlib_report_variable *rv, gboolean do_expression) {
 	if(rv->type == RLIB_REPORT_VARIABLE_EXPRESSION && do_expression) {
 		RLIB_VARIABLE_CA(rv)->amount = *rlib_value_new_number(&RLIB_VARIABLE_CA(rv)->amount, 0);
 	} else if(rv->type == RLIB_REPORT_VARIABLE_COUNT) {
@@ -51,13 +51,12 @@ void rlib_variable_clear(rlib *r, struct rlib_report_variable *rv, gboolean do_e
 	}
 } 
 
-void rlib_init_variables(rlib *r, struct rlib_report *report) {
+void init_variables(struct rlib_report *report) {
 	struct rlib_element *e;
 	for(e = report->variables; e != NULL; e=e->next) {
 		struct rlib_report_variable *rv = e->data;
-		rlib_variable_clear(r, rv, TRUE);
+		variable_clear(rv, TRUE);
 	}
-
 }
 
 void rlib_process_variables(rlib *r, struct rlib_report *report, gboolean precalculate) {
@@ -164,7 +163,7 @@ void rlib_process_expression_variables(rlib *r, struct rlib_report *report) {
 	}
 }
 
-gboolean rlib_variabls_needs_precalculate(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+gboolean variabls_needs_precalculate(struct rlib_report *report) {
 	struct rlib_element *e;
 	for(e = report->variables; e != NULL; e=e->next) {
 		struct rlib_report_variable *rv = e->data;
@@ -215,7 +214,7 @@ void rlib_variables_precalculate(rlib *r, struct rlib_part *part, struct rlib_re
 		}
 	}
 	
-	rlib_breaks_clear(r, part, report);
+	breaks_clear(report);
 	rlib_fetch_first_rows(r);
 	rlib_emit_signal(r, RLIB_SIGNAL_PRECALCULATION_DONE);
 	rlib_value_free(&report->uniquerow);

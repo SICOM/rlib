@@ -179,7 +179,7 @@ void rlib_handle_break_headers(rlib *r, struct rlib_part *part, struct rlib_repo
 }
 
 /* TODO: Variables need to resolve the name into a number or something.. like break numbers for more efficient compareseon */
-static void rlib_reset_variables_on_break(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *name, gboolean precalculate) {
+static void reset_variables_on_break(struct rlib_report *report, gchar *name, gboolean precalculate) {
 	struct rlib_element *e;
 
 	for(e = report->variables; e != NULL; e=e->next) {
@@ -198,7 +198,7 @@ static void rlib_reset_variables_on_break(rlib *r, struct rlib_part *part, struc
 				}
 			}
 			
-			rlib_variable_clear(r, rv, FALSE);
+			variable_clear(rv, FALSE);
 		}	
 	}
 }
@@ -249,7 +249,7 @@ static void rlib_break_all_below_in_reverse_order(rlib *r, struct rlib_part *par
 				rlib_navigate_next(r, r->current_result);
 		}
 
-		rlib_reset_variables_on_break(r, part, report, (gchar *)rb->xml_name.xml, precalculate);
+		reset_variables_on_break(report, (gchar *)rb->xml_name.xml, precalculate);
 		rlib_process_expression_variables(r, report);
 		if (rlib_execute_as_boolean(r, rb->newpage_code, &t))
 			newpage = t;
@@ -322,7 +322,7 @@ void rlib_break_evaluate_attributes(rlib *r, struct rlib_report *report) {
 	}
 }
 
-void rlib_breaks_clear(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+void breaks_clear(struct rlib_report *report) {
 	struct rlib_element *e;
 	struct rlib_break_fields *bf;
 

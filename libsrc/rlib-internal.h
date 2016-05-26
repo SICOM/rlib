@@ -964,7 +964,7 @@ gboolean rlib_force_break_headers(rlib *r, struct rlib_part *part, struct rlib_r
 void rlib_handle_break_headers(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean precalculate);
 void rlib_handle_break_footers(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean precalculate);
 void rlib_break_evaluate_attributes(rlib *r, struct rlib_report *report);
-void rlib_breaks_clear(rlib *r, struct rlib_part *part, struct rlib_report *report);
+void breaks_clear(struct rlib_report *report);
 
 /***** PROTOTYPES: formatstring.c *********************************************/
 gint rlib_number_sprintf(rlib *r, gchar **dest, gchar *fmtstr, const struct rlib_value *rval, gint special_format, gchar *infix, gint line_number);
@@ -972,7 +972,7 @@ gint rlib_format_string(rlib *r, gchar **buf,  struct rlib_report_field *rf, str
 gint rlib_format_money(rlib *r, gchar **dest, const gchar *moneyformat, gint64 x);
 gint rlib_format_number(rlib *r, gchar **dest, const gchar *moneyformat, gint64 x);
 gchar *rlib_align_text(rlib *r, char **rtn, gchar *src, gint align, gint width);
-GSList * rlib_format_split_string(rlib *r, gchar *data, gint width, gint max_lines, gchar new_line, gchar space, gint *line_count);
+GSList *format_split_string(gchar *data, gint width, gchar new_line, gchar space, gint *line_count);
 
 /***** PROTOTYPES: fxp.c ******************************************************/
 gint64 rlib_fxp_mul(gint64 a, gint64 b, gint64 factor);
@@ -1098,12 +1098,12 @@ void r_warning(rlib *r, const gchar *fmt, ...);
 void r_error(rlib *r, const gchar *fmt, ...);
 
 /***** PROTOTYPES: variables.c ******************************************************/
-void rlib_init_variables(rlib *r, struct rlib_report *report);
+void init_variables(struct rlib_report *report);
 void rlib_process_variables(rlib *r, struct rlib_report *report, gboolean precalculate);
 void rlib_process_expression_variables(rlib *r, struct rlib_report *report);
-gboolean rlib_variabls_needs_precalculate(rlib *r, struct rlib_part *part, struct rlib_report *report);
+gboolean variabls_needs_precalculate(struct rlib_report *report);
 void rlib_variables_precalculate(rlib *r, struct rlib_part *part, struct rlib_report *report);
-void rlib_variable_clear(rlib *r, struct rlib_report_variable *rv, gboolean do_expression);
+void variable_clear(struct rlib_report_variable *rv, gboolean do_expression);
 
 /***** PROTOTYPES: datetime.c ******************************************************/
 void rlib_datetime_format(rlib *r, gchar **dest, struct rlib_datetime *dt, const gchar *fmt);

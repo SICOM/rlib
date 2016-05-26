@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -409,8 +409,8 @@ void rlib_resolve_report_fields(rlib *r, struct rlib_part *part, struct rlib_rep
 
 		}
 	}
-	
-	rlib_init_variables(r, report);
+
+	init_variables(report);
 	rlib_process_expression_variables(r, report);
 	
 	report->orientation = RLIB_ORIENTATION_PORTRAIT;

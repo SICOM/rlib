@@ -544,9 +544,8 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 				}
 
 				extra_data[i].formatted_string = buf;
-				extra_data[i].memo_lines = rlib_format_split_string(r, extra_data[i].formatted_string, rf->width, -1, '\n', ' ', &extra_data[i].memo_line_count);
+				extra_data[i].memo_lines = format_split_string(extra_data[i].formatted_string, rf->width, '\n', ' ', &extra_data[i].memo_line_count);
 			}
-			
 
 			extra_data[i].width = rf->width;
 			extra_data[i].field_code = rf->code;

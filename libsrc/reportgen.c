@@ -313,7 +313,7 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 
 
 	if(!part->has_only_one_report) {
-		if(rlib_variabls_needs_precalculate(r, part, report)) {
+		if (variabls_needs_precalculate(report)) {
 			rlib_navigate_first(r, r->current_result);
 			rlib_variables_precalculate(r, part, report);
 		}
@@ -342,7 +342,7 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 		} else {
 			rlib_navigate_first(r, r->current_result);
 			if (!part->has_only_one_report) {
-				rlib_init_variables(r, report);
+				init_variables(report);
 				rlib_process_variables(r, report, FALSE);
 			}
 			
@@ -662,12 +662,12 @@ gint rlib_evaulate_single_report_variables(rlib *r, struct rlib_part *part) {
 				rlib_resolve_report_fields(r, part, report);
 				rlib_pcode_free(report->query_code);
 
-				if(rlib_variabls_needs_precalculate(r, part, report)) {
+				if(variabls_needs_precalculate(report)) {
 					rlib_navigate_first(r, r->current_result);
 					rlib_variables_precalculate(r, part, report);
 				}
 
-				rlib_init_variables(r, report);
+				init_variables(report);
 				rlib_process_variables(r, report, FALSE);
 				part->only_report = report;
 			}
