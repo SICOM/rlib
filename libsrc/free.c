@@ -532,21 +532,45 @@ void rlib_free_tree(rlib *r) {
 	g_slist_free_full(r->search_paths, g_free);
 }
 
+/*
+ * Only free the rlib_results.result area
+ * This is called when re-running queries.
+ */
 void rlib_free_results(rlib *r) {
 	int i;
-	for(i=0;i<r->queries_count;i++) {
-		INPUT(r, i)->free_result(INPUT(r, i), r->results[i]->result);
+
+	for (i = 0; i < r->queries_count; i++) {
+		if (r->results[i]->result && INPUT(r, i)->free_result)
+			INPUT(r, i)->free_result(INPUT(r, i), r->results[i]->result);
+		r->results[i]->result = NULL;
 	}
 }
 
-void rlib_free_results_and_queries(rlib *r) {
+/*
+ * Free all the data allocated for queries and results.
+ * This is called by rlib_free() when destroying everything.
+ */
+static void rlib_free_results_and_queries(rlib *r) {
 	int i;
-	for(i=0;i<r->queries_count;i++) {
-		if (r->results[i]->result)
+
+	for (i = 0; i < r->queries_count; i++) {
+		if (r->results[i]->result && INPUT(r, i)->free_result) {
 			INPUT(r, i)->free_result(INPUT(r, i), r->results[i]->result);
-		g_free(r->queries[i]->sql);
+			r->results[i]->result = NULL;
+		}
+		g_free(r->results[i]);
+		r->results[i] = NULL;
+		if (r->queries[i]->sql_allocated)
+			g_free(r->queries[i]->sql);
 		g_free(r->queries[i]->name);
+		g_free(r->queries[i]);
+		r->queries[i] = NULL;
 	}
+	g_free(r->results);
+	r->results = NULL;
+	g_free(r->queries);
+	r->queries = NULL;
+	r->queries_count = 0;
 }
 
 
@@ -562,22 +586,22 @@ gint rlib_free_follower(rlib *r ) {
 
 DLL_EXPORT_SYM gint rlib_free(rlib *r) {
 	int i;
+
 	rlib_charencoder_free(r->output_encoder);
 	g_free(r->output_encoder_name);
 
 	rlib_free_tree(r);
 	xmlCleanupParser();
-	rlib_free_results_and_queries(r);
-	for(i=0;i<r->inputs_count;i++) {
+	for (i = 0; i < r->inputs_count; i++) {
 		rlib_charencoder_free(r->inputs[i].input->info.encoder);
 		r->inputs[i].input->input_close(r->inputs[i].input);
 		r->inputs[i].input->free(r->inputs[i].input);
-		if(r->inputs[i].handle != NULL)
+		if (r->inputs[i].handle != NULL)
 			g_module_close(r->inputs[i].handle);
 		g_free(r->inputs[i].name);
 	}
 
-	if(r->did_execute) {
+	if (r->did_execute) {
 		OUTPUT(r)->free(r);
 		ENVIRONMENT(r)->free(r);
 	}
@@ -587,12 +611,9 @@ DLL_EXPORT_SYM gint rlib_free(rlib *r) {
 	rlib_free_follower(r);
 	g_free(r->special_locale);
 	g_free(r->current_locale);
-	for(i=0;i<r->queries_count;i++) {
-		g_free(r->queries[i]);
-		g_free(r->results[i]);
-	}
-	g_free(r->queries);
-	g_free(r->results);
+
+	rlib_free_results_and_queries(r);
+
 	g_free(r);
 	return 0;
 }
