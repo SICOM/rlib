@@ -219,7 +219,7 @@ void * mysql_new_result_from_query(gpointer input_ptr, gchar *query) {
 	MYSQL_RES *result;
 	guint count,i;
 	result = rlib_mysql_query(INPUT_PRIVATE(input)->mysql, query);
-	if(result == NULL)
+	if (result == NULL)
 		return NULL;
 	else {
 		results = g_malloc(sizeof(struct rlib_mysql_results));
@@ -227,8 +227,8 @@ void * mysql_new_result_from_query(gpointer input_ptr, gchar *query) {
 	}
 	count = mysql_field_count(INPUT_PRIVATE(input)->mysql);
 	results->fields = g_malloc(sizeof(gint) * count);
-	for(i=0;i<count;i++) {
-		results->fields[i] = i+1;
+	for (i = 0; i < count; i++) {
+		results->fields[i] = i + 1;
 	}
 	return results;
 }
@@ -257,7 +257,7 @@ static const gchar* rlib_mysql_get_error(gpointer input_ptr) {
 gpointer rlib_mysql_new_input_filter(void) {
 	struct input_filter *input;
 
-	input = g_malloc(sizeof(struct input_filter));
+	input = g_malloc0(sizeof(struct input_filter));
 	input->private = g_malloc(sizeof(struct _private));
 	memset(input->private, 0, sizeof(struct _private));
 	input->input_close = rlib_mysql_input_close;

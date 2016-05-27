@@ -198,7 +198,7 @@ static const gchar * rlib_postgres_get_error(gpointer input_ptr) {
 gpointer rlib_postgres_new_input_filter(void) {
 	struct input_filter *input;
 	
-	input = g_malloc(sizeof(struct input_filter));
+	input = g_malloc0(sizeof(struct input_filter));
 	input->private = g_malloc(sizeof(struct _private));
 	memset(input->private, 0, sizeof(struct _private));
 	input->input_close = rlib_postgres_input_close;

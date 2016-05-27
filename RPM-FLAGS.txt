@@ -19,9 +19,10 @@ export UBSAN="-fsanitize=undefined -fsanitize=shift \
 export PTRBOUNDS="-fcheck-pointer-bounds -mmpx"
 
 export SANITIZE="$ASAN $UBSAN -fno-inline"
+#export SANITIZE=""
 
-#export FLAGS="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches   -m64 -mtune=generic"
-export FLAGS="-g -fno-inline -fno-inline-small-functions"
+export FLAGS="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches   -m64 -mtune=generic"
+#export FLAGS="-g -fno-inline -fno-inline-small-functions"
 
 export CFLAGS="$FLAGS $SANITIZE"
 export CXXFLAGS="$FLAGS $SANITIZE"
