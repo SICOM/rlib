@@ -468,7 +468,7 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 			r->html_debugging = TRUE; 	
 	} 
 
-	if(r->queries_count < 1) {
+	if (r->queries_count < 1) {
 		r_warning(r,"Warning: No queries added to report\n");
 	} else
 		rlib_execute_queries(r);
@@ -489,7 +489,7 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 	rlib_resolve_followers(r);
 
 	rlib_make_report(r);
-	
+
 	rlib_finalize(r);
 	r->did_execute = TRUE;
 	return 0;

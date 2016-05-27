@@ -542,11 +542,12 @@ static struct rlib_element * parse_report_variables(rlib *r, xmlNodePtr cur) {
 	cur = cur->xmlChildrenNode;
 	while (cur != NULL) {
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "Variable"))) {
-			if(e == NULL) {
+			if (e == NULL) {
 				e = parse_report_variable(r, cur);
 			} else {
 				struct rlib_element *xxx = e;
-				for(;xxx->next != NULL; xxx=xxx->next) {};
+				while (xxx->next != NULL)
+					xxx=xxx->next;
 				xxx->next = parse_report_variable(r, cur);
 			}
 		} else if (ignoreElement((const char *)cur->name)) {

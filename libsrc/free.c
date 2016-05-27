@@ -134,11 +134,11 @@ static void free_fields(struct rlib_report_output_array *roa) {
 	struct rlib_element *e, *save;
 	gint j;
 
-	if(roa == NULL)
+	if (roa == NULL)
 		return;
-	for(j=0;j<roa->count;j++) {
+	for (j = 0; j < roa->count; j++) {
 		struct rlib_report_output *ro = roa->data[j];
-		if(ro->type == RLIB_REPORT_PRESENTATION_DATA_LINE) {
+		if (ro->type == RLIB_REPORT_PRESENTATION_DATA_LINE) {
 			struct rlib_report_lines *rl = ro->data;
 			e = rl->e;
 			rlib_pcode_free(rl->bgcolor_code);
@@ -147,7 +147,7 @@ static void free_fields(struct rlib_report_output_array *roa) {
 			rlib_pcode_free(rl->font_size_code);
 			rlib_pcode_free(rl->bold_code);
 			rlib_pcode_free(rl->italics_code);
-			for(; e != NULL; e=e->next) {
+			for (; e != NULL; e = e->next) {
 				if(e->type == RLIB_ELEMENT_FIELD) {
 					field_free_pcode((struct rlib_report_field *)e->data);
 				} else if(e->type == RLIB_ELEMENT_LITERAL) {
@@ -158,10 +158,10 @@ static void free_fields(struct rlib_report_output_array *roa) {
 					barcode_free_pcode((struct rlib_report_barcode *)e->data);
 				}
 			}
-			for(e=rl->e; e != NULL; ) {
-				save = e;
-				e=e->next;
-				g_free(save);
+			for (e = rl->e; e != NULL; ) {
+				save = e->next;
+				g_free(e);
+				e = save;
 			}
 			xmlFree(rl->xml_bgcolor.xml);
 			xmlFree(rl->xml_color.xml);
@@ -400,8 +400,8 @@ static void rlib_free_report(struct rlib_report *report) {
 
 	}
 
-	if(report->variables != NULL) {
-		for(e = report->variables; e != NULL; e=e->next) {
+	if (report->variables != NULL) {
+		for (e = report->variables; e != NULL; e = e->next, g_free(e)) {
 			struct rlib_report_variable *rv = e->data;
 
 			rlib_pcode_free(rv->code);
