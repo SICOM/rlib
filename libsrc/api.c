@@ -88,38 +88,110 @@ DLL_EXPORT_SYM rlib *rlib_init(void) {
 	return rlib_init_with_environment(NULL);
 }
 
-static void rlib_alloc_query_space(rlib *r) {
-	if(r->queries_count == 0) {
+static struct rlib_query *rlib_alloc_query_space(rlib *r) {
+	struct rlib_query *query = NULL;
+	struct rlib_results *result = NULL;
+
+	if (r->queries_count == 0) {
 		r->queries = g_malloc((r->queries_count + 1) * sizeof(gpointer));
 		r->results = g_malloc((r->queries_count + 1) * sizeof(gpointer));		
+
+		if (r->queries == NULL || r->results == NULL) {
+			g_free(r->queries);
+			g_free(r->results);
+			r_error(r, "rlib_alloc_query_space: Out of memory!\n");
+			return NULL;
+		}
 	} else {
-		r->queries = g_realloc(r->queries, (r->queries_count + 1) * sizeof(void *));
-		r->results = g_realloc(r->results, (r->queries_count + 1) * sizeof(void *));
+		struct rlib_query **queries;
+		struct rlib_results **results;
+
+		queries = g_realloc(r->queries, (r->queries_count + 1) * sizeof(void *));
+		if (queries == NULL) {
+			r_error(r, "rlib_alloc_query_space: Out of memory!\n");
+			return NULL;
+		}
+
+		results = g_realloc(r->results, (r->queries_count + 1) * sizeof(void *));
+		if (results == NULL) {
+			r_error(r, "rlib_alloc_query_space: Out of memory!\n");
+			return NULL;
+		}
+
+		r->queries = queries;
+		r->results = results;
 	}
-	r->queries[r->queries_count] = g_malloc0(sizeof(struct rlib_queries));
-	r->results[r->queries_count] = g_malloc0(sizeof(struct rlib_results));
+
+	query = g_malloc0(sizeof(struct rlib_query));
+	result = g_malloc0(sizeof(struct rlib_results));
+
+	if (query == NULL || result == NULL) {
+		g_free(query);
+		g_free(result);
+		r_error(r, "rlib_alloc_query_space: Out of memory!\n");
+		return NULL;
+	}
+
+	r->queries[r->queries_count] = query;
+	r->results[r->queries_count] = result;
+
+	r->queries_count++;
+
+	return query;
 }
 
-DLL_EXPORT_SYM gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name) {
+static struct rlib_query *add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name) {
 	gint i;
 
-	rlib_alloc_query_space(r);
-	r->queries[r->queries_count]->sql = sql;
-	r->queries[r->queries_count]->name = g_strdup(name);
-	for(i=0;i<r->inputs_count;i++) {
-		if(!strcmp(r->inputs[i].name, input_source)) {
-			r->queries[r->queries_count]->input = r->inputs[i].input;
-			r->queries_count++;
-			return r->queries_count;
+	for (i = 0; i < r->inputs_count; i++) {
+		if (!strcmp(r->inputs[i].name, input_source)) {
+			char *name_copy;
+			struct rlib_query *query;
+
+			name_copy = strdup(name);
+			if (name_copy == NULL) {
+				r_error(r, "rlib_add_query_pointer_as: Out of memory!\n");
+				return NULL;
+			}
+
+			query = rlib_alloc_query_space(r);
+			if (query == NULL)
+				return NULL;
+
+			query->sql = sql;
+			query->name = name_copy;
+			query->input = r->inputs[i].input;
+
+			return query;
 		}
 	}
 
-	r_error(r, "rlib_add_query_as: Could not find input source [%s]!\n", input_source);
-	return -1;
+	r_error(r, "add_query_pointer_as: Could not find input source [%s]!\n", input_source);
+	return NULL;
+}
+
+DLL_EXPORT_SYM gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name) {
+	struct rlib_query *query = add_query_pointer_as(r, input_source, sql, name);
+
+	if (query == NULL)
+		return -1;
+	return r->queries_count;
 }
 
 DLL_EXPORT_SYM gint rlib_add_query_as(rlib *r, const gchar *input_source, const gchar *sql, const gchar *name) {
-	return rlib_add_query_pointer_as(r, input_source, g_strdup(sql), name);
+	gchar *sql_copy = g_strdup(sql);
+	struct rlib_query *query;
+
+	if (sql_copy == NULL)
+		return -1;
+
+	query = add_query_pointer_as(r, input_source, sql_copy, name);
+	if (query == NULL) {
+		free(sql_copy);
+		return -1;
+	}
+
+	return r->queries_count;
 }
 
 DLL_EXPORT_SYM gint rlib_add_report(rlib *r, const gchar *name) {
