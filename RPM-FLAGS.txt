@@ -1,12 +1,31 @@
 # These flags cause something in RPDF to miscompile
 # and PieCharts go missing in PDFs.
 
+export ASAN="-fsanitize=address -fno-omit-frame-pointer"
+export UBSAN="-fsanitize=undefined -fsanitize=shift \
+	-fsanitize=integer-divide-by-zero \
+	-fsanitize=unreachable -fsanitize=vla-bound \
+	-fsanitize=null -fsanitize=return \
+	-fsanitize=signed-integer-overflow \
+	-fsanitize=bounds \
+	-fsanitize=alignment -fsanitize=object-size \
+	-fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow \
+	-fsanitize=nonnull-attribute -fsanitize=returns-nonnull-attribute \
+	-fsanitize=bool -fsanitize=enum \
+	-fbounds-check \
+"
+# This requires an authentic Intel CPU with MPX support and
+# libmpx/libmpxwrappers libraries
+export PTRBOUNDS="-fcheck-pointer-bounds -mmpx"
+
+export SANITIZE="$ASAN $UBSAN"
+
 export CFLAGS="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 \
 	-fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 \
-	-grecord-gcc-switches   -m64 -mtune=generic"
+	-grecord-gcc-switches   -m64 -mtune=generic $SANITIZE"
 export CXXFLAGS="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 \
 	-fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 \
-	-grecord-gcc-switches   -m64 -mtune=generic"
+	-grecord-gcc-switches   -m64 -mtune=generic $SANITIZE"
 export LDFLAGS="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 \
 	-fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 \
-	-grecord-gcc-switches   -m64 -mtune=generic"
+	-grecord-gcc-switches   -m64 -mtune=generic $SANITIZE"
