@@ -45,7 +45,8 @@ struct input_filter {
 	const gchar * (*get_error)(gpointer);
 	gchar * (*get_field_value_as_string)(gpointer, gpointer, gpointer);
 	gpointer (*resolve_field_pointer)(gpointer, gpointer, gchar *);
-	void (*free_result)(gpointer, gpointer);	
+	void (*free_result)(gpointer, gpointer);
+	void (*free_query)(gpointer, gpointer);
 	gint (*set_encoding)(gpointer);
 };
 

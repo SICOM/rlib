@@ -31,7 +31,8 @@ libr_la_SOURCES = parsexml.c reportgen.c layout.c graphing.c api.c \
 	csv.c environment.c free.c navigation.c axis.c \
 	xml_data_source.c csv_data_source.c rlib_langinfo.c rlib_input.h \
 	pcode.h rlib.h charencoder.c charencoder.h rlib_gd.h \
-	rlib_langinfo.h barcode.c datetime.c datetime.h value.c value.h $(GD_FILES)
+	rlib_langinfo.h barcode.c datetime.c datetime.h value.c value.h $(GD_FILES) \
+	array_data_source.c
 
 libr_la_LIBADD = $(RLIB_LIBS) $(top_builddir)/rpdf/librpdf.la
 

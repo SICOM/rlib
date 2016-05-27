@@ -88,7 +88,7 @@ DLL_EXPORT_SYM rlib *rlib_init(void) {
 	return rlib_init_with_environment(NULL);
 }
 
-static struct rlib_query *rlib_alloc_query_space(rlib *r) {
+struct rlib_query *rlib_alloc_query_space(rlib *r) {
 	struct rlib_query *query = NULL;
 	struct rlib_results *result = NULL;
 
@@ -435,13 +435,12 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 static gint rlib_execute_queries(rlib *r) {
 	gint i;
 
-	for(i=0;i<r->queries_count;i++) {
+	for (i = 0; i < r->queries_count; i++) {
 		r->results[i]->input = NULL;
 		r->results[i]->result = NULL;
 	}
 
-	for(i=0;i<r->queries_count;i++) {
-
+	for (i = 0; i < r->queries_count; i++) {
 		r->results[i]->input = r->queries[i]->input;
 		r->results[i]->name =  r->queries[i]->name;
 		r->results[i]->result = INPUT(r,i)->new_result_from_query(INPUT(r,i), r->queries[i]->sql);

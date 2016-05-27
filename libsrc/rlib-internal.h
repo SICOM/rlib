@@ -821,6 +821,7 @@ struct rlib {
 };
 
 #define INPUT(r, i) (r->results[i]->input)
+#define QUERY(r, i) (r->queries[i])
 #define ENVIRONMENT(r) (r->environment)
 #define ENVIRONMENT_PRIVATE(r) (((struct _private *)r->evnironment->private))
 
@@ -981,6 +982,7 @@ gint64 rlib_fxp_div(gint64 num, gint64 denom, gint places);
 /***** PROTOTYPES: api.c ******************************************************/
 void rlib_trap(void); /* For internals debugging only */
 gchar * get_filename(rlib *r, const char *filename, int report_index, gboolean report); /* not an exported API, no rlib_ prefix */
+struct rlib_query *rlib_alloc_query_space(rlib *r);
 
 /***** PROTOTYPES: parsexml.c *************************************************/
 struct rlib_part * parse_part_file(rlib *r, gint report_index);

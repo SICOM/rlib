@@ -162,10 +162,12 @@ gint rlib_add_datasource_odbc(rlib *r, const gchar *input_name, const gchar *sou
 	const gchar *user, const gchar *password);
 gint rlib_add_datasource_xml(rlib *r, const gchar *input_name);
 gint rlib_add_datasource_csv(rlib *r, const gchar *input_name);
+gint rlib_add_datasource_array(rlib *r, const gchar *input_name);
 
 /* Query definition */
 gint rlib_add_query_as(rlib *r, const gchar *input_name, const gchar *sql, const gchar *name);
 gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name);
+gint rlib_add_query_array_as(rlib *r, const gchar *input_source, gpointer array, gint rows, gint cols, const gchar *name);
 
 /* Report XML definition */
 gint rlib_add_search_path(rlib *r, const gchar *path);

@@ -560,6 +560,8 @@ static void rlib_free_results_and_queries(rlib *r) {
 		}
 		g_free(r->results[i]);
 		r->results[i] = NULL;
+		if (QUERY(r, i) && QUERY(r, i)->input && QUERY(r, i)->input->free_query)
+			QUERY(r, i)->input->free_query(QUERY(r, i)->input, QUERY(r, i));
 		if (r->queries[i]->sql_allocated)
 			g_free(r->queries[i]->sql);
 		g_free(r->queries[i]->name);

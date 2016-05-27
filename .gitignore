@@ -49,6 +49,8 @@ src/examples/c/relpth2
 src/examples/c/relpth2.exe
 src/examples/c/srcpth
 src/examples/c/srcpth.exe
+src/examples/c/graph
+src/examples/c/graph.exe
 src/examples/csharp/products.xml
 src/examples/java/*.java
 src/examples/java/*.xml
