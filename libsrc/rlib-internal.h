@@ -715,10 +715,12 @@ struct rlib_report {
 
 };
 
-struct rlib_queries {
+struct rlib_query {
 	gchar *sql;
+	gint sql_allocated;
 	gchar *name;
 	struct input_filter *input;
+	gpointer *private;
 };
 
 #define RLIB_REPORT_TYPE_FILE 1
@@ -781,7 +783,7 @@ struct rlib {
 
 	struct rlib_signal_functions signal_functions[RLIB_SIGNALS];
 
-	struct rlib_queries **queries;
+	struct rlib_query **queries;
 
 	gint queries_count;
 	struct rlib_rip_reports reportstorun[RLIB_MAXIMUM_REPORTS];

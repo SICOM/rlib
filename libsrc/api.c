@@ -175,6 +175,7 @@ DLL_EXPORT_SYM gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source
 
 	if (query == NULL)
 		return -1;
+
 	return r->queries_count;
 }
 
@@ -190,6 +191,8 @@ DLL_EXPORT_SYM gint rlib_add_query_as(rlib *r, const gchar *input_source, const 
 		free(sql_copy);
 		return -1;
 	}
+
+	query->sql_allocated = 1;
 
 	return r->queries_count;
 }
