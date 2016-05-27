@@ -27,3 +27,7 @@ export FLAGS="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-pr
 export CFLAGS="$FLAGS $SANITIZE"
 export CXXFLAGS="$FLAGS $SANITIZE"
 export LDFLAGS="$FLAGS $SANITIZE"
+
+# Run any of the C examples with the following:
+#    cd src/examples/c
+#    ASAN_OPTIONS=fast_unwind_on_malloc=0 ./example
