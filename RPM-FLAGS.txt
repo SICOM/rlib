@@ -18,14 +18,11 @@ export UBSAN="-fsanitize=undefined -fsanitize=shift \
 # libmpx/libmpxwrappers libraries
 export PTRBOUNDS="-fcheck-pointer-bounds -mmpx"
 
-export SANITIZE="$ASAN $UBSAN"
+export SANITIZE="$ASAN $UBSAN -fno-inline"
 
-export CFLAGS="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 \
-	-fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 \
-	-grecord-gcc-switches   -m64 -mtune=generic $SANITIZE"
-export CXXFLAGS="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 \
-	-fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 \
-	-grecord-gcc-switches   -m64 -mtune=generic $SANITIZE"
-export LDFLAGS="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 \
-	-fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 \
-	-grecord-gcc-switches   -m64 -mtune=generic $SANITIZE"
+#export FLAGS="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches   -m64 -mtune=generic"
+export FLAGS="-g -fno-inline -fno-inline-small-functions"
+
+export CFLAGS="$FLAGS $SANITIZE"
+export CXXFLAGS="$FLAGS $SANITIZE"
+export LDFLAGS="$FLAGS $SANITIZE"
