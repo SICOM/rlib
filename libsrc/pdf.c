@@ -663,14 +663,19 @@ static void pdf_graph_do_grid(rlib *r, gboolean just_a_box) {
 	graph->width -= (graph->y_label_width_right + graph->y_label_space_right);
 	graph->x_width = graph->width - graph->width_offset - graph->intersection;
 
-	if(graph->x_axis_labels_are_under_tick)	 {
+	if (graph->x_axis_labels_are_under_tick)	 {
 		if(graph->x_iterations <= 1)
 			graph->x_tick_width = 0;
 		else
 			graph->x_tick_width = graph->x_width/(graph->x_iterations-1);
 	}
 	else
-		graph->x_tick_width = graph->x_width/graph->x_iterations;
+	{
+		if (graph->x_iterations == 0)
+			graph->x_tick_width = 0;
+		else
+			graph->x_tick_width = graph->x_width/graph->x_iterations;
+	}
 
 	graph->x_start = graph->left+graph->width_offset;
 
