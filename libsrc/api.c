@@ -44,14 +44,15 @@
 #define CODESET _NL_CTYPE_CODESET_NAME
 #endif
 
-static void string_destroyer (gpointer data) {
+static void string_destroyer(gpointer data) {
 	g_free(data);
 }
 
-static void metadata_destroyer (gpointer data) {
+static void metadata_destroyer(gpointer data) {
 	struct rlib_metadata *metadata = data;
+	rlib *r = metadata->r;
 	rlib_value_free(&metadata->rval_formula);
-	rlib_pcode_free(metadata->formula_code);
+	rlib_pcode_free(r, metadata->formula_code);
 	g_free(data);
 }
 
@@ -218,12 +219,12 @@ DLL_EXPORT_SYM gint rlib_add_report(rlib *r, const gchar *name) {
 		}
 	}
 	if (found_dir_sep) {
-		r->reportstorun[r->parts_count].name = strdup(tmp + last_dir_sep + 1);
+		r->reportstorun[r->parts_count].name = g_strdup(tmp + last_dir_sep + 1);
 		tmp[last_dir_sep] = '\0';
 		r->reportstorun[r->parts_count].dir = tmp;
 	} else {
 		r->reportstorun[r->parts_count].name = tmp;
-		r->reportstorun[r->parts_count].dir = strdup("");
+		r->reportstorun[r->parts_count].dir = g_strdup("");
 	}
 	r->reportstorun[r->parts_count].type = RLIB_REPORT_TYPE_FILE;
 	r->parts_count++;
@@ -446,7 +447,7 @@ static gint rlib_execute_queries(rlib *r) {
 		r->results[i]->result = INPUT(r,i)->new_result_from_query(INPUT(r,i), r->queries[i]->sql);
 		r->results[i]->next_failed = FALSE;
 		r->results[i]->navigation_failed = FALSE;
-		if(r->results[i]->result == NULL) {
+		if (r->results[i]->result == NULL) {
 			r_error(r, "Failed To Run A Query [%s]: %s\n", r->queries[i]->sql, INPUT(r,i)->get_error(INPUT(r,i)));
 			return FALSE;
 		} else {

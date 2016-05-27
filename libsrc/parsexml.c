@@ -268,13 +268,13 @@ static struct rlib_element *parse_report_output(rlib *r, xmlDocPtr doc, xmlNodeP
 	return e;
 }
 
-static struct rlib_element * parse_report_outputs(rlib *r, xmlDocPtr doc, xmlNodePtr cur) {
+static struct rlib_element *parse_report_outputs(rlib *r, xmlDocPtr doc, xmlNodePtr cur) {
 	struct rlib_element *e = NULL;
 
 	cur = cur->xmlChildrenNode;
 	while (cur != NULL) {
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "Output"))) {
-			if(e == NULL) {
+			if (e == NULL) {
 				e = parse_report_output(r, doc, cur);
 			} else {
 				struct rlib_element *xxx = e;
@@ -683,8 +683,8 @@ static struct rlib_report * parse_part_load(rlib *r, struct rlib_part *part, xml
 		r_error(r, "parse_part_load - Query or Name Is Invalid\n");
 		report = NULL;
 	}
-	rlib_pcode_free(name_code);
-	rlib_pcode_free(query_code);
+	rlib_pcode_free(r, name_code);
+	rlib_pcode_free(r, query_code);
 
 	return report;
 }
@@ -790,11 +790,10 @@ void dump_part(struct rlib_part *part) {
 	g_slist_foreach(part->part_rows, dump_part_tr, NULL);
 }
 
-struct rlib_part * parse_part_file(rlib *r, int report_index) {
+struct rlib_part *parse_part_file(rlib *r, int report_index) {
 	gchar *filename = r->reportstorun[report_index].name;
 	gchar type = r->reportstorun[report_index].type;
 	xmlDocPtr doc;
-	struct rlib_report *report;
 	struct rlib_part *part = NULL;
 	xmlNsPtr ns = NULL;
 	xmlNodePtr cur;
@@ -828,33 +827,35 @@ struct rlib_part * parse_part_file(rlib *r, int report_index) {
 		return(NULL);
 	}
 
-	report = (struct rlib_report *) g_new0(struct rlib_report, 1);
-	if(report == NULL) {
-		r_error(r, "Out of Memory :(\n");
-		xmlFreeDoc(doc);
-		return(NULL);
-	}
-
 	part = (struct rlib_part *) g_new0(struct rlib_part, 1);
 
-	if(part == NULL) {
+	if (part == NULL) {
 		r_error(r, "Out of Memory :(\n");
 		xmlFreeDoc(doc);
 		return(NULL);
 	}
 
 	part->report_index = report_index;
-	if((xmlStrcmp(cur->name, (const xmlChar *) "Part"))==0) {
+	if ((xmlStrcmp(cur->name, (const xmlChar *) "Part")) == 0) {
 		parse_part(r, part, doc, ns, cur);
 		found = TRUE;
-	}
+	} else if ((xmlStrcmp(cur->name, (const xmlChar *) "Report")) == 0) {
+		/*
+		 * If a report appears by it's self put it in a table w/ 1 row and 1 col 100%
+		 */
+		struct rlib_report *report;
+		struct rlib_part_tr *tr;
+		struct rlib_part_td *td;
 
-/*
-	If a report appears by it's self put it in a table w/ 1 row and 1 col 100%
-*/
-	if((xmlStrcmp(cur->name, (const xmlChar *) "Report"))==0) {
-		struct rlib_part_tr *tr= g_new0(struct rlib_part_tr, 1);
-		struct rlib_part_td *td= g_new0(struct rlib_part_td, 1);
+		report = (struct rlib_report *) g_new0(struct rlib_report, 1);
+		if (report == NULL) {
+			r_error(r, "Out of Memory :(\n");
+			xmlFreeDoc(doc);
+			return(NULL);
+		}
+
+		tr = g_new0(struct rlib_part_tr, 1);
+		td = g_new0(struct rlib_part_td, 1);
 
 		part->part_rows = NULL;
 		part->part_rows = g_slist_append(part->part_rows, tr);
@@ -885,12 +886,11 @@ struct rlib_part * parse_part_file(rlib *r, int report_index) {
 		found = TRUE;
 	}
 
-	if(!found) {
+	if (!found) {
 		r_error(r, "document of the wrong type, was '%s', Report or Part expected", cur->name);
 		r_error(r, "xmlDocDump follows\n");
 		xmlDocDump ( stderr, doc );
 		xmlFreeDoc(doc);
-		g_free(report);
 		g_free(part);
 		return(NULL);
 	}

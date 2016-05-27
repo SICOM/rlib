@@ -198,8 +198,7 @@ static void rlib_variable_resolve_pcode(rlib *r, struct rlib_part *part, struct 
 	} else {
 		rv->precalculate = FALSE;
 	}
-	rlib_pcode_free(code);
-
+	rlib_pcode_free(r, code);
 
 	rv->precalculated_values = NULL;
 }
@@ -259,15 +258,15 @@ static void rlib_resolve_fields2(rlib *r, struct rlib_part *part, struct rlib_re
 		roa->suppress = atol((char *)roa->xml_suppress.xml);
 		if(rlib_execute_as_boolean(r, code, &roa->suppress) == FALSE)
 			roa->suppress = FALSE;
-		rlib_pcode_free(code);
+		rlib_pcode_free(r, code);
 	} else
 		roa->suppress = FALSE;
 
 	
-	for(j=0;j<roa->count;j++) {
+	for (j = 0; j < roa->count; j++) {
 		struct rlib_report_output *ro = roa->data[j];
 		
-		if(ro->type == RLIB_REPORT_PRESENTATION_DATA_LINE) {
+		if (ro->type == RLIB_REPORT_PRESENTATION_DATA_LINE) {
 			struct rlib_report_lines *rl = ro->data;	
 			e = rl->e;
 			rl->bgcolor_code = rlib_infix_to_pcode(r, part, report, (gchar *)rl->xml_bgcolor.xml, rl->xml_bgcolor.line, TRUE);
@@ -276,7 +275,7 @@ static void rlib_resolve_fields2(rlib *r, struct rlib_part *part, struct rlib_re
 			rl->bold_code = rlib_infix_to_pcode(r, part, report, (gchar *)rl->xml_bold.xml, rl->xml_bold.line, TRUE);
 			rl->italics_code = rlib_infix_to_pcode(r, part, report, (gchar *)rl->xml_italics.xml, rl->xml_italics.line, TRUE);
 
-			for(; e != NULL; e=e->next) {
+			for (; e != NULL; e = e->next) {
 				if(e->type == RLIB_ELEMENT_FIELD) {
 					rlib_field_resolve_pcode(r, part, report, ((struct rlib_report_field *)e->data));
 				} else if(e->type == RLIB_ELEMENT_LITERAL) {
@@ -297,17 +296,16 @@ static void rlib_resolve_fields2(rlib *r, struct rlib_part *part, struct rlib_re
 
 static void rlib_resolve_outputs(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e) {
 	struct rlib_report_output_array *roa;
-	for(; e != NULL; e=e->next) {
+	for(; e != NULL; e = e->next) {
 		roa = e->data;
 		rlib_resolve_fields2(r, part, report, roa);
-	}			
-
+	}
 }
 
 /*
-	Report variables are refereced as v.whatever
-	but when created in the <variables/> section they use there normal name.. ie.. whatever
-*/
+ * Report variables are refereced as v.whatever
+ * but when created in the <variables/> section they use there normal name.. ie.. whatever
+ */
 struct rlib_report_variable *rlib_resolve_variable(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *name) {
 	struct rlib_element *e;
 	if(report == NULL && part != NULL)
@@ -521,7 +519,6 @@ void rlib_resolve_part_fields(rlib *r, struct rlib_part *part) {
 	part->suppress_page_header_first_page_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_suppress_page_header_first_page.xml, part->xml_suppress_page_header_first_page.line, TRUE);
 	part->suppress = FALSE;
 	part->suppress_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_suppress.xml, part->xml_suppress.line, TRUE);
-
 
 	if (rlib_execute_as_float(r, part->pages_across_code, &f))
 		part->pages_across = f;

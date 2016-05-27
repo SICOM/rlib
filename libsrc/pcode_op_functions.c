@@ -1079,7 +1079,7 @@ gboolean rlib_pcode_operator_iif(rlib *r, struct rlib_pcode *code, struct rlib_v
 		if(rif->false == NULL || rif->true == NULL) {
 			r_error(r, "IIF STATEMENT IS INVALID [%s] @ %d\n", code->infix_string, code->line_number);
 		} else {
-			execute_pcode(r, rif->evaulation, vs, this_field_value, FALSE);
+			execute_pcode(r, rif->evaluation, vs, this_field_value, FALSE);
 			result = rlib_value_stack_pop(vs);
 
 			if(RLIB_VALUE_IS_NUMBER(result)) {
@@ -1704,7 +1704,7 @@ gint rlib_pcode_operator_eval(rlib *r, struct rlib_pcode *code, struct rlib_valu
 			struct rlib_pcode *code = NULL;
 			code = rlib_infix_to_pcode(r, NULL, NULL, RLIB_VALUE_GET_AS_STRING(v1), -1, TRUE);
 			rlib_execute_pcode(r, &rval_rtn, code, this_field_value);
-			rlib_pcode_free(code);
+			rlib_pcode_free(r, code);
 			rlib_value_dup(&rval_rtn);
 			rlib_value_free(v1);
 			rlib_value_stack_push(r,vs,&rval_rtn);

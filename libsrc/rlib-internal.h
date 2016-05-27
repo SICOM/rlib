@@ -756,6 +756,7 @@ struct rlib_signal_functions {
 };
 
 struct rlib_metadata {
+	struct rlib *r;
 	struct rlib_from_xml xml_formula;
 	struct rlib_value rval_formula;
 	struct rlib_pcode *formula_code;

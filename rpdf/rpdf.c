@@ -382,8 +382,8 @@ static void rpdf_make_page_stream(gpointer data, gpointer user_data) {
 		gdouble text_sin= sin(angle);
 		gdouble text_cos = cos(angle);
 		char *text;
-		callback_data = g_malloc(stream_text_callback->len+1);
-	    stream_text_callback->callback(callback_data, stream_text_callback->len+1, stream_text_callback->user_data);
+		callback_data = g_malloc0(stream_text_callback->len + 1);
+		stream_text_callback->callback(callback_data, stream_text_callback->len+1, stream_text_callback->user_data);
 		text = g_strdup(callback_data);
 		result = g_strdup_printf("%s%.04f %.04f %.04f %.04f %.04f %.04f Tm\n(%s) Tj\n", extra, text_cos, text_sin, -text_sin, text_cos, stream_text_callback->x*RPDF_DPI, stream_text_callback->y*RPDF_DPI, text); 
 		g_free(text);
@@ -1005,16 +1005,16 @@ DLL_EXPORT_SYM gboolean rpdf_text(struct rpdf *pdf, gdouble x, gdouble y, gdoubl
 	stream->angle = angle;
 	
 	slen = strlen(new_text);
-	for(i=0;i<slen;i++) {
-		if(new_text[i] == '(' || new_text[i] == ')' || new_text[i] == '\\')
+	for (i = 0; i < slen; i++) {
+		if (new_text[i] == '(' || new_text[i] == ')' || new_text[i] == '\\')
 			count++;
 	}
-	if(count == 0)
+	if (count == 0)
 		stream->text = new_text;
 	else {
 		stream->text = g_malloc(slen + 1 + count);
-		for(i=0;i<slen;i++) {
-			if(new_text[i] == '(' || new_text[i] == ')' || new_text[i] == '\\') {
+		for (i = 0; i < slen; i++) {
+			if (new_text[i] == '(' || new_text[i] == ')' || new_text[i] == '\\') {
 				stream->text[spot++] = '\\';
 			}
 			stream->text[spot++] = new_text[i];

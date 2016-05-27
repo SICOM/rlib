@@ -40,10 +40,6 @@ struct rlib_array_results {
 	gint current_row;
 };
 
-struct _private {
-	gint dummy;
-};
-
 struct _query_private {
 	char **data;
 	gint cols;
@@ -153,11 +149,13 @@ void *php_array_new_result_from_query(gpointer input_ptr UNUSED, gchar *query) {
 	return result;
 }
 
-static gint rlib_array_free_input_filter(gpointer input_ptr UNUSED) {
+static gint rlib_array_free_input_filter(gpointer input_ptr) {
+	g_free(input_ptr);
 	return 0;
 }
 
-static void rlib_array_rlib_free_result(gpointer input_ptr UNUSED, gpointer result_ptr UNUSED) {
+static void rlib_array_rlib_free_result(gpointer input_ptr UNUSED, gpointer result_ptr) {
+	g_free(result_ptr);
 }
 
 static void rlib_array_rlib_free_query(gpointer input_ptr UNUSED, gpointer query_ptr) {
@@ -171,7 +169,7 @@ static gpointer rlib_array_new_input_filter(rlib *r) {
 
 	input = g_malloc(sizeof(struct input_filter));
 	input->r = r;
-	input->private = g_new0(struct _private, 1);
+	input->private = NULL;
 	input->input_close = rlib_array_input_close;
 	input->first = rlib_array_first;
 	input->next = rlib_array_next;

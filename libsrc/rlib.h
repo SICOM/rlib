@@ -75,7 +75,7 @@ struct environment_filter {
 
 struct rlib_pcode {
 	gint count;
-	struct rlib_pcode_instruction *instructions;
+	struct rlib_pcode_instruction **instructions;
 	gchar *infix_string;
 	gint line_number;
 };
@@ -215,7 +215,7 @@ struct rlib_value * rlib_value_new_error(struct rlib_value *rval);
 gint rlib_value_free(struct rlib_value *rval);
 struct rlib_pcode *rlib_infix_to_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *infix, gint line_number, gboolean look_at_metadata);
 struct rlib_value *rlib_execute_pcode(rlib *r, struct rlib_value *rval, struct rlib_pcode *code, struct rlib_value *this_field_value);
-void rlib_pcode_free(struct rlib_pcode *code);
+void rlib_pcode_free(rlib *r, struct rlib_pcode *code);
 
 /* Graphing */
 gfloat rlib_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left_margin_offset, gfloat *top_margin_offset);
