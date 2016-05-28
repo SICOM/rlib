@@ -48,10 +48,9 @@ struct _rlib_format_table {
 	{ "", -1},
 };
 
-
 gint rlib_format_get_number(const gchar *name) {
 	int i = 0;
-	while(rlib_fomat_table[i].number != -1) {
+	while (rlib_fomat_table[i].number != -1) {
 		if(strcasecmp(rlib_fomat_table[i].name, name) == 0)
 			return rlib_fomat_table[i].number;
 		i++;

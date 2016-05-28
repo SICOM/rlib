@@ -355,9 +355,8 @@ static void html_start_rlib_report(rlib *r) {
    	}
 }
 
-
 static void html_start_part(rlib *r, struct rlib_part *part) {
-	if(OUTPUT_PRIVATE(r)->top == NULL) {
+	if (OUTPUT_PRIVATE(r)->top == NULL) {
 		OUTPUT_PRIVATE(r)->top = g_new0(GSList *, part->pages_across);
 		OUTPUT_PRIVATE(r)->bottom = g_new0(GSList *, part->pages_across);
 	}
@@ -368,30 +367,32 @@ static void html_end_part(rlib *r, struct rlib_part *part) {
 
 	//g_string_append(OUTPUT_PRIVATE(r)->whole_report, "<table><!-- START PART-->\n");
 
-	for(i=0;i<part->pages_across;i++) {
+	for (i = 0; i < part->pages_across; i++) {
 		GSList *tmp = OUTPUT_PRIVATE(r)->top[i];
 		GSList *list = NULL;
 
 //		g_string_append(OUTPUT_PRIVATE(r)->whole_report, "<!--START PAGE ACROSS--><td valign=\"top\">\n");
 
-		while(tmp != NULL) {
+		while (tmp != NULL) {
 			list = g_slist_prepend(list, tmp->data);
 			tmp = tmp->next;
 		}
 
-		while(list != NULL) {
+		while (list != NULL) {
 			struct _packet *packet = list->data;
 			gchar *str;
-			if(packet->type == DELAY) {
+			if (packet->type == DELAY) {
 				str = html_callback(packet->data);
 			} else {
 				str = ((GString *)packet->data)->str;
 			}
-			
+
 			g_string_append(OUTPUT_PRIVATE(r)->whole_report, str);
-			
-			if(packet->type == TEXT)
+
+			if (packet->type == TEXT)
 				g_string_free(packet->data, TRUE);
+			else
+				g_free(str);
 			g_free(packet);
 			list = list->next;
 		}
@@ -415,8 +416,10 @@ static void html_end_part(rlib *r, struct rlib_part *part) {
 			
 			g_string_append(OUTPUT_PRIVATE(r)->whole_report, str);
 			
-			if(packet->type == TEXT)
+			if (packet->type == TEXT)
 				g_string_free(packet->data, TRUE);
+			else
+				g_free(str);
 
 			g_free(packet);
 			list = list->next;
@@ -1222,15 +1225,16 @@ static void html_end_report_no_data(rlib *r UNUSED, struct rlib_part *part UNUSE
 
 static gint html_free(rlib *r) {
 	g_string_free(OUTPUT_PRIVATE(r)->whole_report, TRUE);
+	g_free(OUTPUT_PRIVATE(r)->top);
+	g_free(OUTPUT_PRIVATE(r)->bottom);
 	g_free(OUTPUT_PRIVATE(r));
 	g_free(OUTPUT(r));
 	return 0;
 }
 
 void rlib_html_new_output_filter(rlib *r) {
-	OUTPUT(r) = g_malloc(sizeof(struct output_filter));
-	r->o->private = g_malloc(sizeof(struct _private));
-	memset(OUTPUT_PRIVATE(r), 0, sizeof(struct _private));
+	OUTPUT(r) = g_malloc0(sizeof(struct output_filter));
+	r->o->private = g_malloc0(sizeof(struct _private));
 
 	OUTPUT_PRIVATE(r)->page_number = 0;
 	OUTPUT_PRIVATE(r)->whole_report = NULL;

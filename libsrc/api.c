@@ -463,7 +463,6 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 
 	if(r->format == RLIB_FORMAT_HTML) {
 		gchar *param;
-		rlib_html_new_output_filter(r);
 		param = g_hash_table_lookup(r->output_parameters, "debugging");
 		if(param != NULL && strcmp(param, "yes") == 0)
 			r->html_debugging = TRUE; 	
@@ -549,14 +548,14 @@ DLL_EXPORT_SYM gint rlib_add_resultset_follower_n_to_1(rlib *r, gchar *leader, g
 	gint ptr_leader = -1, ptr_follower = -1;
 	gint x;
 
-	if(r->resultset_followers_count > (RLIB_MAXIMUM_FOLLOWERS-1)) {
+	if (r->resultset_followers_count > (RLIB_MAXIMUM_FOLLOWERS - 1)) {
 		return -1;
 	}
 
-	for(x=0;x<r->queries_count;x++) {
-		if(!strcmp(r->queries[x]->name, leader))
+	for (x = 0; x < r->queries_count; x++) {
+		if (!strcmp(r->queries[x]->name, leader))
 			ptr_leader = x;
-		if(!strcmp(r->queries[x]->name, follower))
+		if (!strcmp(r->queries[x]->name, follower))
 			ptr_follower = x;
 	}
 	
@@ -587,7 +586,7 @@ DLL_EXPORT_SYM gint rlib_add_resultset_follower(rlib *r, gchar *leader, gchar *f
 DLL_EXPORT_SYM gint rlib_set_output_format_from_text(rlib *r, gchar *name) {
 	r->format = rlib_format_get_number(name);
 
-	if(r->format == -1)
+	if (r->format == -1)
 		r->format = RLIB_FORMAT_TXT;
 	return 0;
 }
