@@ -309,7 +309,7 @@ gint flag, gint memo_line) {
 		if(extra_data->is_italics)
 			OUTPUT(r)->start_italics(r);
 
-		if(extra_data->delayed == TRUE) {
+		if (extra_data->delayed == TRUE) {
 			struct rlib_delayed_extra_data *delayed_data = g_new0(struct rlib_delayed_extra_data, 1);
 			delayed_data->backwards = backwards;
 			delayed_data->left_origin = left_origin;
@@ -317,6 +317,7 @@ gint flag, gint memo_line) {
 			delayed_data->extra_data = *extra_data;
 			delayed_data->r = r;
 			OUTPUT(r)->print_text_delayed(r, delayed_data, backwards, RLIB_VALUE_GET_TYPE(&extra_data->rval_code));
+			g_free(delayed_data);
 		} else {
 			gboolean need_free;
 			gchar *real_text = rlib_layout_get_true_text_from_extra_data(r, extra_data, memo_line, spaced_out, &need_free);

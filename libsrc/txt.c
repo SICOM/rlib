@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -167,8 +167,10 @@ static void txt_end_part(rlib *r, struct rlib_part *part) {
 				old = OUTPUT_PRIVATE(r)->both ;
 				OUTPUT_PRIVATE(r)->both  = g_strconcat(OUTPUT_PRIVATE(r)->both , str, NULL);
 				g_free(old);
-				if(packet->type == TEXT)
+				if (packet->type == TEXT)
 					g_string_free(packet->data, TRUE);
+				else
+					g_free(str);
 			}
 			g_free(packet);
 			list = list->next;
@@ -198,7 +200,8 @@ static void txt_end_part(rlib *r, struct rlib_part *part) {
 				g_free(old);
 				if(packet->type == TEXT)
 					g_string_free(packet->data, TRUE);
-
+				else
+					g_free(str);
 			}
 			g_free(packet);
 			list = list->next;
@@ -219,6 +222,8 @@ static void txt_end_page(rlib *r, struct rlib_part *part UNUSED) {
 }
 
 static int txt_free(rlib *r) {
+	g_free(OUTPUT_PRIVATE(r)->top);
+	g_free(OUTPUT_PRIVATE(r)->bottom);
 	g_free(OUTPUT_PRIVATE(r)->both);
 	g_free(OUTPUT_PRIVATE(r));
 	g_free(OUTPUT(r));
