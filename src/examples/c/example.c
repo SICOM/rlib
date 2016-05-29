@@ -32,8 +32,8 @@ int main(void) {
 	database = "rlib";
 
 	r = rlib_init();
-	if(rlib_add_datasource_mysql(r, "local_mysql", hostname, username, password, database) < 0) {
-		fprintf(stderr, "Could not connect to MariaDB/MySQL Database\n");
+	if (rlib_add_datasource_mysql(r, "local_mysql", hostname, username, password, database) < 0) {
+		rlib_free(r);
 		return 1;
 	}
 	rlib_add_query_as(r, "local_mysql", "select * FROM products", "products");
