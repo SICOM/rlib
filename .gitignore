@@ -38,8 +38,18 @@ rlib.pc
 rlib.spec
 rpdf/test
 rpdf/test.exe
-src/examples/c/example
-src/examples/c/example.exe
+
+# Symlinks from inputs/*
+libsrc/mysql_data_source.c
+libsrc/odbc_data_source.c
+libsrc/postgres_data_source.c
+
+src/examples/c/example_mysql
+src/examples/c/example_mysql.exe
+src/examples/c/example_pg
+src/examples/c/example_pg.exe
+src/examples/c/example_odbc
+src/examples/c/example_odbc.exe
 src/examples/c/products.xml
 src/examples/c/relprt
 src/examples/c/relprt.exe

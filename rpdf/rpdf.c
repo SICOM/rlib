@@ -677,12 +677,17 @@ DLL_EXPORT_SYM gboolean rpdf_finalize(struct rpdf *pdf) {
 	gchar buf[128];
 	struct tm my_tm;
 	time_t now;
-	
-	time(&now);
+	char *debugging;
+
+	debugging = getenv("RPDF_DEBUGGING");
+	if (debugging == NULL || *debugging == '\0')
+		time(&now);
+	else
+		now = (time_t)0;
 #ifdef HAVE_LOCALTIME_R
-	localtime_r(&now, &my_tm);
+	gmtime_r(&now, &my_tm);
 #else
-	memcpy(&my_tm, localtime(&now), sizeof(struct tm));
+	memcpy(&my_tm, gmtime(&now), sizeof(struct tm));
 #endif
 
 	rpdf_out_string(pdf, pdf->header);

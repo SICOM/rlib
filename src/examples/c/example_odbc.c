@@ -18,25 +18,26 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#include <config.h>
+
 #include <stdio.h>
 #include <rlib.h>
 #include <rlib_input.h>
 
 int main(void) {
-	const char *hostname, *username, *password, *database;
+	const char *source, *username, *password;
 	rlib *r;
 
-	hostname = "localhost";
+	source = "rlib";
 	username = "rlib";
 	password = "rlib";
-	database = "rlib";
 
 	r = rlib_init();
-	if (rlib_add_datasource_mysql(r, "local_mysql", hostname, username, password, database) < 0) {
+	if (rlib_add_datasource_odbc(r, "local_odbc", source, username, password) < 0) {
 		rlib_free(r);
 		return 1;
 	}
-	rlib_add_query_as(r, "local_mysql", "select * FROM products", "products");
+	rlib_add_query_as(r, "local_odbc", "select * FROM products", "products");
 	rlib_add_report(r, "products.xml");
 	rlib_set_output_format(r, RLIB_FORMAT_PDF);
 	rlib_execute(r);
