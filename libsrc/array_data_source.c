@@ -131,7 +131,7 @@ static gpointer rlib_array_resolve_field_pointer(gpointer input_ptr UNUSED, gpoi
 	return NULL;
 }
 
-void *php_array_new_result_from_query(gpointer input_ptr UNUSED, gchar *query) {
+static void *rlib_array_new_result_from_query(gpointer input_ptr UNUSED, gchar *query) {
 	struct rlib_array_results *result;
 	struct rlib_query *query_ptr = (struct rlib_query *)query;
 
@@ -177,7 +177,7 @@ static gpointer rlib_array_new_input_filter(rlib *r) {
 	input->last = rlib_array_last;
 	input->get_error = rlib_array_get_error;
 	input->isdone = rlib_array_isdone;
-	input->new_result_from_query = php_array_new_result_from_query;
+	input->new_result_from_query = rlib_array_new_result_from_query;
 	input->get_field_value_as_string = rlib_array_get_field_value_as_string;
 
 	input->resolve_field_pointer = rlib_array_resolve_field_pointer;
