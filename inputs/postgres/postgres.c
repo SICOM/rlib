@@ -17,7 +17,9 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
- 
+
+#include <config.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -46,18 +48,20 @@ struct _private {
 	PGconn *conn;
 };
 
-gpointer rlib_postgres_connect(gpointer input_ptr, gchar *conninfo) {
+static gint rlib_postgres_connect(gpointer input_ptr, const gchar *conninfo) {
 	struct input_filter *input = input_ptr;
+	rlib *r = input->r;
 	PGconn *conn;
 
 	conn = PQconnectdb(conninfo);
 	if (PQstatus(conn) != CONNECTION_OK) {
+		r_error(r, "rlib_postgres_connect: Cannot connect to POSTGRES\n");
 		PQfinish(conn);
-		conn = NULL;
+		return -1;
 	}
 
 	INPUT_PRIVATE(input)->conn = conn;	
-	return conn;
+	return 0;
 }
 
 static gint rlib_postgres_input_close(gpointer input_ptr) {
@@ -148,16 +152,17 @@ static gpointer rlib_postgres_resolve_field_pointer(gpointer input_ptr UNUSED, g
 	return NULL;
 }
 
-gpointer postgres_new_result_from_query(gpointer input_ptr, gchar *query) {
+static gpointer postgres_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	struct input_filter *input = input_ptr;
+	struct rlib_query *query = query_ptr;
 	struct rlib_postgres_results *results;
 	PGresult *result;
 	guint count,i;
 	
 	if(input_ptr == NULL)
 		return NULL;
-	
-	result = rlib_postgres_query(INPUT_PRIVATE(input)->conn, query);
+
+	result = rlib_postgres_query(INPUT_PRIVATE(input)->conn, query->sql);
 	if(result == NULL)
 		return NULL;
 	else {
@@ -195,12 +200,17 @@ static const gchar * rlib_postgres_get_error(gpointer input_ptr) {
 	return PQerrorMessage(INPUT_PRIVATE(input)->conn);
 }
 
-gpointer rlib_postgres_new_input_filter(void) {
+#ifdef HAVE_POSTGRES_BUILTIN
+gpointer rlib_postgres_new_input_filter(rlib *r) {
+#else
+DLL_EXPORT_SYM gpointer new_input_filter(rlib *r) {
+#endif
 	struct input_filter *input;
 	
 	input = g_malloc0(sizeof(struct input_filter));
-	input->private = g_malloc(sizeof(struct _private));
-	memset(input->private, 0, sizeof(struct _private));
+	input->private = g_malloc0(sizeof(struct _private));
+	input->r = r;
+	input->connect_with_connstr = rlib_postgres_connect;
 	input->input_close = rlib_postgres_input_close;
 	input->first = rlib_postgres_first;
 	input->next = rlib_postgres_next;

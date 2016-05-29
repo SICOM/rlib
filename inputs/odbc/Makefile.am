@@ -20,6 +20,8 @@
 ##
 ## Process this file with automake to produce Makefile.in
 
+if !HAVE_ODBC_BUILTIN
+
 AM_CFLAGS = $(LIBGLIB_CFLAGS) $(RLIB_CFLAGS) $(RLIB_WERROR) -I${top_srcdir}/libsrc
 odbcincludedir=$(includedir)/rlib
 lib_LTLIBRARIES = libr-odbc.la
@@ -32,3 +34,5 @@ endif
 libr_odbc_la_LDFLAGS = \
 	-version-info $(RLIB_LT_CURRENT):$(RLIB_LT_REVISION):$(RLIB_LT_AGE) \
 	$(def_ldflags) $(EXTRA_LDFLAGS) -avoid-version
+
+endif

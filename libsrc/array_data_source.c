@@ -131,9 +131,9 @@ static gpointer rlib_array_resolve_field_pointer(gpointer input_ptr UNUSED, gpoi
 	return NULL;
 }
 
-static void *rlib_array_new_result_from_query(gpointer input_ptr UNUSED, gchar *query) {
+static void *rlib_array_new_result_from_query(gpointer input_ptr UNUSED, gpointer query_ptr) {
 	struct rlib_array_results *result;
-	struct rlib_query *query_ptr = (struct rlib_query *)query;
+	struct rlib_query *query = (struct rlib_query *)query_ptr;
 
 	if (query_ptr == NULL)
 		return NULL;
@@ -142,9 +142,9 @@ static void *rlib_array_new_result_from_query(gpointer input_ptr UNUSED, gchar *
 	if (result == NULL)
 		return NULL;
 
-	result->rows = QUERY_PRIVATE(query_ptr)->rows;
-	result->cols = QUERY_PRIVATE(query_ptr)->cols;
-	result->data = QUERY_PRIVATE(query_ptr)->data;
+	result->rows = QUERY_PRIVATE(query)->rows;
+	result->cols = QUERY_PRIVATE(query)->cols;
+	result->data = QUERY_PRIVATE(query)->data;
 
 	return result;
 }
@@ -218,7 +218,6 @@ DLL_EXPORT_SYM gint rlib_add_query_array_as(rlib *r, const gchar *input_source, 
 				return -1;
 			}
 
-			query->sql = (char *)query;	/* trick the system with sql_allocated == FALSE */
 			query->name = g_strdup(name);
 			query->input = r->inputs[i].input;
 

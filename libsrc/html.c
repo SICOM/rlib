@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors:	Bob Doan <bdoan@sicompos.com>
  *
@@ -291,7 +291,6 @@ static gchar *html_callback(struct rlib_delayed_extra_data *delayed_data) {
 	rlib_format_string(r, &buf, extra_data->report_field, &extra_data->rval_code);
 	rlib_align_text(r, &buf2, buf, extra_data->report_field->align, extra_data->report_field->width);
 	g_free(buf);
-	g_free(delayed_data);
 	return buf2;
 }
 
@@ -301,12 +300,11 @@ static void html_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *del
 	packet->type = DELAY;
 	packet->data = delayed_data;
 
-	if(backwards)
+	if (backwards)
 		OUTPUT_PRIVATE(r)->bottom[current_page] = g_slist_prepend(OUTPUT_PRIVATE(r)->bottom[current_page], packet);
 	else
 		OUTPUT_PRIVATE(r)->top[current_page] = g_slist_prepend(OUTPUT_PRIVATE(r)->top[current_page], packet);
 }
-
 
 static void html_start_report(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 static void html_end_report(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
@@ -318,7 +316,6 @@ static void html_start_report_header(rlib *r UNUSED, struct rlib_part *part UNUS
 static void html_end_report_header(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 static void html_start_report_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 static void html_end_report_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
-
 
 static void html_start_rlib_report(rlib *r) {
 	gchar *meta;
@@ -362,82 +359,52 @@ static void html_start_part(rlib *r, struct rlib_part *part) {
 	}
 }
 
+static void process_end_part(gpointer data, gpointer user_data) {
+	rlib *r = user_data;
+	struct _packet *packet = data;
+	gchar *str;
+
+	if (packet->type == DELAY) {
+		str = html_callback(packet->data);
+	} else {
+		str = ((GString *)packet->data)->str;
+	}
+
+	g_string_append(OUTPUT_PRIVATE(r)->whole_report, str);
+
+	if (packet->type == TEXT)
+		g_string_free(packet->data, TRUE);
+	else {
+		g_free(packet->data);
+		g_free(str);
+	}
+	g_free(packet);
+}
+
 static void html_end_part(rlib *r, struct rlib_part *part) {
 	gint i;
 
 	//g_string_append(OUTPUT_PRIVATE(r)->whole_report, "<table><!-- START PART-->\n");
 
 	for (i = 0; i < part->pages_across; i++) {
-		GSList *tmp = OUTPUT_PRIVATE(r)->top[i];
-		GSList *list = NULL;
+		GSList *list;
 
 //		g_string_append(OUTPUT_PRIVATE(r)->whole_report, "<!--START PAGE ACROSS--><td valign=\"top\">\n");
 
-		while (tmp != NULL) {
-			list = g_slist_prepend(list, tmp->data);
-			tmp = tmp->next;
-		}
-
-		while (list != NULL) {
-			struct _packet *packet = list->data;
-			gchar *str;
-			if (packet->type == DELAY) {
-				str = html_callback(packet->data);
-			} else {
-				str = ((GString *)packet->data)->str;
-			}
-
-			g_string_append(OUTPUT_PRIVATE(r)->whole_report, str);
-
-			if (packet->type == TEXT)
-				g_string_free(packet->data, TRUE);
-			else
-				g_free(str);
-			g_free(packet);
-			list = list->next;
-		}
-
-		g_slist_free(list);
-		list = NULL;
-		tmp = OUTPUT_PRIVATE(r)->bottom[i];
-		while(tmp != NULL) {
-			list = g_slist_prepend(list, tmp->data);
-			tmp = tmp->next;
-		}
-
-		while(list != NULL) {
-			struct _packet *packet = list->data;
-			gchar *str;
-			if(packet->type == DELAY) {
-				str = html_callback(packet->data);
-			} else {
-				str = ((GString *)packet->data)->str;
-			}
-			
-			g_string_append(OUTPUT_PRIVATE(r)->whole_report, str);
-			
-			if (packet->type == TEXT)
-				g_string_free(packet->data, TRUE);
-			else
-				g_free(str);
-
-			g_free(packet);
-			list = list->next;
-		}
-
-		g_slist_free(list);
-		list = NULL;
-
+		list = g_slist_reverse(OUTPUT_PRIVATE(r)->top[i]);
+		g_slist_foreach(list, process_end_part, r);
+		g_slist_free(OUTPUT_PRIVATE(r)->top[i]);
 		OUTPUT_PRIVATE(r)->top[i] = NULL;
+
+		list = g_slist_reverse(OUTPUT_PRIVATE(r)->bottom[i]);
+		g_slist_foreach(list, process_end_part, r);
+		g_slist_free(OUTPUT_PRIVATE(r)->bottom[i]);
 		OUTPUT_PRIVATE(r)->bottom[i] = NULL;
 
 //		g_string_append(OUTPUT_PRIVATE(r)->whole_report, "</td><!--END PAGE ACROSS-->\n\n");
-
-
 	}
 
 	//g_string_append(OUTPUT_PRIVATE(r)->whole_report, "</table><!-- END PART-->");
-
 }
 
 static void html_spool_private(rlib *r) {

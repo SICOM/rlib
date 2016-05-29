@@ -36,9 +36,8 @@ void rlib_c_free(rlib *r) {
 	g_free(ENVIRONMENT(r));
 }
 
-
 void rlib_new_c_environment(rlib *r) {
-	ENVIRONMENT(r) = g_malloc(sizeof(struct environment_filter));
+	ENVIRONMENT(r) = g_malloc0(sizeof(struct environment_filter));
 
 	ENVIRONMENT(r)->rlib_resolve_memory_variable = rlib_c_resolve_memory_variable;
 	ENVIRONMENT(r)->rlib_write_output = rlib_c_write_output;

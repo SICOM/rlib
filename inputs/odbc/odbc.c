@@ -19,8 +19,8 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include "config.h"
- 
+#include <config.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -69,7 +69,7 @@ struct _private {
 	SQLHDBC V_OD_hdbc;
 };
 
-gpointer rlib_odbc_connect(gpointer input_ptr, gchar *source, gchar *user, gchar *password) {
+static gint rlib_odbc_connect(gpointer input_ptr, const gchar *source, const gchar *user, const gchar *password) {
 	struct input_filter *input = input_ptr;
 	gint V_OD_erg;
 	SQLINTEGER	V_OD_err;
@@ -77,13 +77,13 @@ gpointer rlib_odbc_connect(gpointer input_ptr, gchar *source, gchar *user, gchar
 	SQLCHAR		V_OD_stat[10]; 
 	SQLCHAR		V_OD_msg[200];
 
-	V_OD_erg=SQLAllocHandle(SQL_HANDLE_ENV,SQL_NULL_HANDLE,&INPUT_PRIVATE(input)->V_OD_Env);
+	V_OD_erg = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &INPUT_PRIVATE(input)->V_OD_Env);
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO)) {
 		fprintf(stderr, "Error AllocHandle\n");
-		return NULL;
+		return -1;
 	}
 
-	V_OD_erg=SQLSetEnvAttr(INPUT_PRIVATE(input)->V_OD_Env, SQL_ATTR_ODBC_VERSION, (void*)SQL_OV_ODBC3, 0);
+	V_OD_erg = SQLSetEnvAttr(INPUT_PRIVATE(input)->V_OD_Env, SQL_ATTR_ODBC_VERSION, (void*)SQL_OV_ODBC3, 0);
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO)) {
 		fprintf(stderr, "Error SetEnv\n");
 		SQLFreeHandle(SQL_HANDLE_ENV, INPUT_PRIVATE(input)->V_OD_Env);
@@ -113,7 +113,7 @@ gpointer rlib_odbc_connect(gpointer input_ptr, gchar *source, gchar *user, gchar
 		return NULL;
 	}
 
-	return  INPUT_PRIVATE(input)->V_OD_Env;
+	return 0;
 }
 
 static gint rlib_odbc_input_close(gpointer input_ptr) {
@@ -333,9 +333,10 @@ static gpointer rlib_odbc_resolve_field_pointer(gpointer input_ptr UNUSED, gpoin
 	return NULL;
 }
 
-gpointer odbc_new_result_from_query(gpointer input_ptr, gchar *query) {
+gpointer odbc_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	struct rlib_odbc_results *results;
 	struct input_filter *input = input_ptr;
+	struct rlib_query *query = query_ptr;
 	SQLHSTMT V_OD_hstmt;
 	SQLSMALLINT i, ncols;
 	gint V_OD_erg;
@@ -343,7 +344,7 @@ gpointer odbc_new_result_from_query(gpointer input_ptr, gchar *query) {
 	SQLUINTEGER fFuncs;
 	SQLLEN ind;
 
-	V_OD_hstmt = rlib_odbc_query(input_ptr, query);
+	V_OD_hstmt = rlib_odbc_query(input_ptr, query->sql);
 	if(V_OD_hstmt == NULL)
 		return NULL;
 	else {
@@ -444,11 +445,16 @@ static const gchar * rlib_odbc_get_error(gpointer input_ptr UNUSED) {
 	return "No error information";
 }
 
-gpointer rlib_odbc_new_input_filter(void) {
+#ifdef HAVE_ODBC_BUILTIN
+gpointer rlib_odbc_new_input_filter(rlib *r) {
+#else
+DLL_EXPORT_SYM gpointer new_input_filter(rlib *r) {
+#endif
 	struct input_filter *input;
 	input = g_malloc0(sizeof(struct input_filter));
-	input->private = g_malloc(sizeof(struct _private));
-	memset(input->private, 0, sizeof(struct _private));
+	input->private = g_malloc0(sizeof(struct _private));
+	input->r = r;
+	input->connect_local_with_credentials = rlib_odbc_connect;
 	input->input_close = rlib_odbc_input_close;
 	input->first = rlib_odbc_first;
 	input->next = rlib_odbc_next;

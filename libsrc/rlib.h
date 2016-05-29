@@ -221,4 +221,11 @@ void rlib_pcode_free(rlib *r, struct rlib_pcode *code);
 gfloat rlib_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left_margin_offset, gfloat *top_margin_offset);
 gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left_margin_offset, gfloat *top_margin_offset);
 
+/* Console messages */
+void rlogit(rlib *r, const gchar *fmt, ...);
+void r_debug(rlib *r, const gchar *fmt, ...);
+void r_info(rlib *r, const gchar *fmt, ...);
+void r_warning(rlib *r, const gchar *fmt, ...);
+void r_error(rlib *r, const gchar *fmt, ...);
+
 #endif /* RLIB_H_ */

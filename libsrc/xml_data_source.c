@@ -36,7 +36,7 @@
 #include "rlib-internal.h"
 #include "rlib_input.h"
 
-#define INPUT_PRIVATE(input) (((struct _private *)input->private))
+#define QUERY_PRIVATE(query) (((struct _query_private *)query->private))
 
 struct rlib_xml_results {
 	xmlNodePtr data;
@@ -47,19 +47,15 @@ struct rlib_xml_results {
 	gint isdone;
 };
 
-struct _private {
+struct _query_private {
 	xmlDocPtr doc;
 };
 
-gpointer rlib_xml_connect(gpointer input_ptr UNUSED) {
-	return NULL;
+static gint rlib_xml_connect(gpointer input_ptr UNUSED, const gchar *connstr UNUSED) {
+	return 0;
 }
 
-static gint rlib_xml_input_close(gpointer input_ptr) {
-	struct input_filter *input = input_ptr;
-	xmlFreeDoc(INPUT_PRIVATE(input)->doc);
-	INPUT_PRIVATE(input)->doc = NULL;
-
+static gint rlib_xml_input_close(gpointer input_ptr UNUSED) {
 	return 0;
 }
 
@@ -179,8 +175,9 @@ static gpointer rlib_xml_resolve_field_pointer(gpointer input_ptr UNUSED, gpoint
 	return NULL;
 }
 
-void * xml_new_result_from_query(gpointer input_ptr, gchar *query) {
+static void *xml_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	struct input_filter *input = input_ptr;
+	struct rlib_query *query = query_ptr;
 	struct rlib_xml_results *results;
 	xmlNodePtr cur;
 	xmlNodePtr data;
@@ -192,7 +189,7 @@ void * xml_new_result_from_query(gpointer input_ptr, gchar *query) {
 	xmlDocPtr doc;
 	gchar *file;
 
-	file = get_filename(input->r, query, -1, FALSE);
+	file = get_filename(input->r, query->sql, -1, FALSE);
 	doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
 	g_free(file);
 	xmlXIncludeProcess(doc);
@@ -202,9 +199,9 @@ void * xml_new_result_from_query(gpointer input_ptr, gchar *query) {
 		return NULL;
 	}
 
-	INPUT_PRIVATE(input)->doc = doc;
+	QUERY_PRIVATE(query)->doc = doc;
 
-	cur = xmlDocGetRootElement(INPUT_PRIVATE(input)->doc);
+	cur = xmlDocGetRootElement(QUERY_PRIVATE(query)->doc);
 	if (cur == NULL) {
 		r_error(NULL,"xmlParseError \n");
 		return NULL;
@@ -269,6 +266,14 @@ void * xml_new_result_from_query(gpointer input_ptr, gchar *query) {
 	return results;
 }
 
+static void rlib_xml_free_query(gpointer input_ptr UNUSED, gpointer query_ptr) {
+	struct rlib_query *query = query_ptr;
+
+	xmlFreeDoc(QUERY_PRIVATE(query)->doc);
+	QUERY_PRIVATE(query)->doc = NULL;
+}
+
+
 static void rlib_xml_rlib_free_result(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_xml_results *results = result_ptr;
 	g_free(results);
@@ -285,9 +290,8 @@ gpointer rlib_xml_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
 	input = g_malloc(sizeof(struct input_filter));
-	input->private = g_malloc(sizeof(struct _private));
-	memset(input->private, 0, sizeof(struct _private));
 	input->r = r;
+	input->connect_with_connstr = rlib_xml_connect;
 	input->input_close = rlib_xml_input_close;
 	input->first = rlib_xml_first;
 	input->next = rlib_xml_next;
@@ -299,6 +303,7 @@ gpointer rlib_xml_new_input_filter(rlib *r) {
 	input->get_field_value_as_string = rlib_xml_get_field_value_as_string;
 	input->resolve_field_pointer = rlib_xml_resolve_field_pointer;
 	input->free = rlib_xml_free_input_filter;
+	input->free_query = rlib_xml_free_query;
 	input->free_result = rlib_xml_rlib_free_result;
 	return input;
 }

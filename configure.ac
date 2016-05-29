@@ -41,6 +41,7 @@ AC_SUBST(RLIB_LT_REVISION)
 AC_SUBST(RLIB_LT_AGE)
 
 dnl Checks for programs.
+AC_LIB_RPATH
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_INSTALL
@@ -84,7 +85,7 @@ AC_CHECK_HEADER([zlib.h],
 		enable_compressed_pdf=no)],
 	[enable_compressed_pdf=no])
 AS_IF([test x$enable_compressed_pdf = xyes],
-	[AC_DEFINE([RPDF_COMPRESS_STREAM], [], [RPDF can compress streams])
+	[AC_DEFINE([RPDF_COMPRESS_STREAM], [1], [RPDF can compress streams])
 	 ZLIB_LIBS="-lz"])
 AC_SUBST(ZLIB_LIBS)
 
@@ -153,7 +154,6 @@ esac
 AM_CONDITIONAL(WIN32, test x$enable_win32 = "xyes")
 AC_SUBST(EXTRA_LDFLAGS)
 
-
 AC_ARG_ENABLE([mysql],
 	[AS_HELP_STRING([--disable-mysql],[disable mysql backend])],,enable_mysql=yes)
 AS_IF([test x$enable_mysql = xyes],[
@@ -166,12 +166,20 @@ AS_IF([test x$enable_mysql = xyes],[
 	MYSQL_CFLAGS=${MYSQL_CLIENT_CFLAGS}
 	AC_SUBST(MYSQL_CFLAGS)
 	MYSQL_LIBS=${MYSQL_CLIENT_LIBS}
-	AC_SUBST(MYSQL_LIBS)])
+	AC_SUBST(MYSQL_LIBS)
+	AC_DEFINE(HAVE_MYSQL, [1], [have mysql datasource])])
 AM_CONDITIONAL(HAVE_MYSQL, test x$enable_mysql = xyes)
+AS_IF([test x$enable_mysql = xyes],
+	[AC_ARG_ENABLE([built-in-mysql],
+		[AS_HELP_STRING([--enable-built-in-mysql],[build mysql input datasource into libr.so])],
+		[AC_DEFINE(HAVE_MYSQL_BUILTIN, 1, [build mysql input datasource into libr.so])],
+		[enable_built_in_mysql=no])],
+	[enable_built_in_mysql=no])
+AM_CONDITIONAL(HAVE_MYSQL_BUILTIN, test x$enable_built_in_mysql = xyes)
 
 AC_ARG_ENABLE([postgres],
 	[AS_HELP_STRING([--disable-postgres],[disable postgres backend])],,enable_postgres=yes)
-PKG_CHECK_MODULES(POSTGRES, libpq, [],
+PKG_CHECK_MODULES(POSTGRES, libpq, [AC_DEFINE(HAVE_POSTGRES,1,[Build with POSTGRES support])],
 	[case "$target" in
 	 *-*-cygwin*|*-*-mingw*)
 		PG_CONFIG=pg_config.exe
@@ -195,6 +203,13 @@ PKG_CHECK_MODULES(POSTGRES, libpq, [],
 AC_SUBST(POSTGRES_CFLAGS)
 AC_SUBST(POSTGRES_LIBS)
 AM_CONDITIONAL(HAVE_POSTGRES, test x$enable_postgres = xyes)
+AS_IF([test x$enable_postgres = xyes],
+	[AC_ARG_ENABLE([built-in-postgres],
+		[AS_HELP_STRING([--enable-built-in-postgres],[build postgres input datasource into libr.so])],
+		[AC_DEFINE(HAVE_POSTGRES_BUILTIN, 1, [build postgres input datasource into libr.so])],
+		[enable_build_in_postgres=no])],
+	[enable_built_in_postgres=no])
+AM_CONDITIONAL(HAVE_POSTGRES_BUILTIN, test x$enable_built_in_postgres = xyes)
 
 dnl .. ODBC checking borrowed from libgda
 ODBC_CFLAGS=""
@@ -202,8 +217,8 @@ ODBC_LIBS=""
 enable_odbc=yes
 AC_ARG_WITH([odbc],
 	[AS_HELP_STRING([--with-odbc=<directory>],[use ODBC libraries in <directory>])],
-	[AS_IF([test x$withval = xno],[enable_odbc=false],[test x$withval = xyes],[dir="$libdir"],[dir=$withval])],
-	[])
+	[AS_IF([test x$withval = xno],[enable_odbc=no],[test x$withval = xyes],[dir="$libdir"],[dir=$withval])],
+	[enable_odbc=yes])
 AS_IF([test x$enable_odbc = xyes],
 	[AS_IF([test x$enable_win32 = xyes],
 		[AC_MSG_CHECKING([whether <sql.h> needs  <windows.h>])
@@ -258,7 +273,13 @@ AS_IF([test x$enable_odbc = xyes],
 AM_CONDITIONAL(HAVE_ODBC, test x$enable_odbc = xyes)
 AC_SUBST(ODBC_CFLAGS)
 AC_SUBST(ODBC_LIBS)
-
+AS_IF([test x$enable_odbc = xyes],
+	[AC_ARG_ENABLE([built-in-odbc],
+		[AS_HELP_STRING([--enable-built-in-odbc],[build odbc input datasource into libr.so])],
+		[AC_DEFINE(HAVE_ODBC_BUILTIN, 1, [build odbc input datasource into libr.so])],
+		[enable_built_in_odbc=no])],
+	[enable_built_in_odbc=no])
+AM_CONDITIONAL(HAVE_ODBC_BUILTIN, test x$enable_built_in_odbc = xyes)
 
 AC_ARG_ENABLE([php],
 	[AS_HELP_STRING([--disable-php],[disable php frontend])],
@@ -479,7 +500,6 @@ src/examples/java/Makefile
 src/examples/perl/Makefile
 src/examples/csharp/Makefile
 bindings/Makefile
-bindings/php/Makefile
 bindings/python/Makefile
 bindings/perl/Makefile
 bindings/java/Makefile
@@ -509,9 +529,9 @@ rlib-$VERSION:
    Documentation:            ${enable_doc}
 
    INPUTS:
-    MYSQL:                   ${enable_mysql}
-    POSTGRES:                ${enable_postgres}
-    ODBC:                    ${enable_odbc}
+    MYSQL:                   ${enable_mysql} built-in: ${enable_built_in_mysql}
+    POSTGRES:                ${enable_postgres} built-in: ${enable_built_in_postgres}
+    ODBC:                    ${enable_odbc} built-in: ${enable_built_in_odbc}
 
    COMPRESSION:
     PDF:                     ${enable_compressed_pdf}

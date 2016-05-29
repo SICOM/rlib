@@ -64,7 +64,6 @@ static void xml_print_text(rlib *r, gfloat left_origin UNUSED, gfloat bottom_ori
 		g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],"color=\"#%02x%02x%02x\" ", (gint)(extra_data->color.r*0xFF), (gint)(extra_data->color.g*0xFF), (gint)(extra_data->color.b*0xFF));
 	if (field_type)
 		g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],"type=\"%s\" ", field_type);
-		
 	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],">%s</data>\n", escaped);
 	g_free(escaped);
 }
@@ -103,17 +102,16 @@ static void xml_end_part(rlib *r, struct rlib_part *part) {
 	int i;
 
 	g_string_append(OUTPUT_PRIVATE(r)->whole_report, "<part>\n");
-	for(i=0;i<part->pages_across;i++) {
+	for (i = 0; i < part->pages_across; i++) {
 		g_string_append_len(OUTPUT_PRIVATE(r)->whole_report, OUTPUT_PRIVATE(r)->top_of_page[i]->str, OUTPUT_PRIVATE(r)->top_of_page[i]->len);
 		g_string_append_len(OUTPUT_PRIVATE(r)->whole_report, OUTPUT_PRIVATE(r)->bottom_of_page[i]->str, OUTPUT_PRIVATE(r)->bottom_of_page[i]->len);
-		
+
 		g_string_free(OUTPUT_PRIVATE(r)->top_of_page[i], TRUE);
 		g_string_free(OUTPUT_PRIVATE(r)->bottom_of_page[i], TRUE);
 	}
 	g_free(OUTPUT_PRIVATE(r)->top_of_page);
 	g_free(OUTPUT_PRIVATE(r)->bottom_of_page);
 	g_string_append(OUTPUT_PRIVATE(r)->whole_report, "</part>\n");
-	
 }
 
 
@@ -326,19 +324,16 @@ static void xml_graph_plot_bar(rlib *r, gchar side, gint iteration, gint plot, g
 }
 
 static void xml_graph_set_limits(rlib *r, gchar side, gdouble min, gdouble max, gdouble origin) {
-	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<limits side=\"%s\" min=\"%f\" max=\"%f\" origin=\"%f\"/>\n", 
-		side == RLIB_SIDE_LEFT ? "left" : "right", min, max, origin);		
-	
+	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<limits side=\"%s\" min=\"%f\" max=\"%f\" origin=\"%f\"/>\n",
+		side == RLIB_SIDE_LEFT ? "left" : "right", min, max, origin);
 }
 
 static void xml_graph_do_grid(rlib *r, gboolean just_a_box) {
 	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<grid draw_lines=\"%s\"/>\n", just_a_box ? "false" : "true");		
-	
 }
 
 static void xml_graph_set_x_iterations(rlib *r, gint iterations) {
 	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<x_iterations>%d</x_iterations>\n", iterations);		
-	
 }
 
 static void xml_graph_tick_y(rlib *r, gint iterations) {
@@ -353,8 +348,6 @@ static void xml_graph_label_y(rlib *r, gchar side, gint iteration, gchar *label)
 	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<y_iterations_label side=\"%s\" iteration=\"%d\">%s</y_iterations_label>\n", 
 	side == RLIB_SIDE_LEFT ? "left" : "right", iteration, label);		
 }
-
-static void xml_print_text_delayed(rlib *r UNUSED, struct rlib_delayed_extra_data *delayed_data UNUSED, int backwards UNUSED, int rval_type UNUSED) {}
 
 static void xml_end_page(rlib *r, struct rlib_part *part UNUSED) {
 	r->current_page_number++;
@@ -414,9 +407,8 @@ static void xml_graph_set_grid_color(rlib *r UNUSED, struct rlib_rgb *rgb UNUSED
 static void xml_graph_set_minor_ticks(rlib *r UNUSED, gboolean *minor_ticks UNUSED) {}
 
 void rlib_xml_new_output_filter(rlib *r) {
-	OUTPUT(r) = g_malloc(sizeof(struct output_filter));
-	r->o->private = g_malloc(sizeof(struct _private));
-	memset(OUTPUT_PRIVATE(r), 0, sizeof(struct _private));
+	OUTPUT(r) = g_malloc0(sizeof(struct output_filter));
+	r->o->private = g_malloc0(sizeof(struct _private));
 	
 	OUTPUT(r)->do_align = TRUE;
 	OUTPUT(r)->do_breaks = TRUE;
@@ -429,7 +421,8 @@ void rlib_xml_new_output_filter(rlib *r) {
 	OUTPUT(r)->print_text = xml_print_text;
 	OUTPUT(r)->set_fg_color = xml_set_fg_color;
 	OUTPUT(r)->set_bg_color = xml_set_bg_color;
-	OUTPUT(r)->print_text_delayed = xml_print_text_delayed;	
+	/* Fix a leak in layout.c for delayed variables */
+	OUTPUT(r)->print_text_delayed = NULL;
 	OUTPUT(r)->hr = xml_hr;
 	OUTPUT(r)->start_draw_cell_background = xml_start_draw_cell_background;
 	OUTPUT(r)->end_draw_cell_background = xml_end_draw_cell_background;

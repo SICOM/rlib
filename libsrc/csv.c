@@ -211,8 +211,6 @@ static long csv_get_output_length(rlib *r) {
 	return OUTPUT_PRIVATE(r)->top_size;
 }
 
-static void csv_print_text_delayed(rlib *r UNUSED, struct rlib_delayed_extra_data *delayed_data UNUSED, gint backwards UNUSED, gint rval_type UNUSED) {}
-
 static void csv_set_working_page(rlib *r UNUSED, struct rlib_part *part UNUSED, gint page UNUSED) {}
 static void csv_set_fg_color(rlib *r UNUSED, gfloat red UNUSED, gfloat green UNUSED, gfloat blue UNUSED) {}
 static void csv_set_bg_color(rlib *r UNUSED, gfloat red UNUSED, gfloat green UNUSED, gfloat blue UNUSED) {}
@@ -341,7 +339,8 @@ void rlib_csv_new_output_filter(rlib *r) {
 
 	OUTPUT(r)->get_string_width = csv_get_string_width;
 	OUTPUT(r)->print_text = csv_print_text;
-	OUTPUT(r)->print_text_delayed = csv_print_text_delayed;
+	/* Fix a memory leak in layout.c */
+	OUTPUT(r)->print_text_delayed = NULL;
 	OUTPUT(r)->set_fg_color = csv_set_fg_color;
 	OUTPUT(r)->set_bg_color = csv_set_bg_color;
 	OUTPUT(r)->hr = csv_hr;

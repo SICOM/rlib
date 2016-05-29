@@ -223,30 +223,28 @@ static void rlib_python_free(rlib *r) {
 
 static struct environment_filter *rlib_python_new_environment() {
 	struct environment_filter *ef;
-        ef = g_malloc(sizeof(struct environment_filter));
-        ef->rlib_resolve_memory_variable = rlib_python_resolve_memory_variable;
-        ef->rlib_write_output = rlib_python_write_output;
-        ef->free = rlib_python_free;
+	ef = g_malloc(sizeof(struct environment_filter));
+	ef->rlib_resolve_memory_variable = rlib_python_resolve_memory_variable;
+	ef->rlib_write_output = rlib_python_write_output;
+	ef->free = rlib_python_free;
 	return ef;
 }
 
 struct rlib_python_array_results {
-        char 	*array_name;
-        int	cols;
-        int	rows;
-        int	isdone;
-        char	**data;
-        int	current_row;
+	char *array_name;
+	int	cols;
+	int	rows;
+	int	isdone;
+	char **data;
+	int	current_row;
 };
 
 struct _private {
-	PyObject	*localarray;
+	PyObject *localarray;
 	struct rlib_python_array_results *lastresult;
 };
 
-static PyObject *
-rlib_python_array_locate(char *name)
-{
+static PyObject *rlib_python_array_locate(char *name) {
 	PyObject	*moduledict = PyImport_GetModuleDict();
 	PyObject	*mainmodule;
 	PyObject	*dict;
@@ -269,26 +267,28 @@ rlib_python_array_locate(char *name)
 	return PySequence_Fast(array, "array is of incorrect type");
 }
 
-void * rlib_python_array_new_result_from_query(gpointer input_ptr, gchar *query) {
+void *rlib_python_array_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	struct input_filter *input = input_ptr;
-        struct rlib_python_array_results *result;
-	PyObject	*outerlist;
-	PyObject	*innerlist;
-	PyObject	*element;
-        int 		row=0, col=0;
-        int 		total_size;
-        char 		*data_result;
-        char		dstr[64];
+	struct rlib_query *query = query_ptr;
+	struct rlib_python_array_results *result;
+	PyObject *outerlist;
+	PyObject *innerlist;
+	PyObject *element;
+	int row = 0, col = 0;
+	int total_size;
+	char *data_result;
+	char dstr[64];
 
 	memset(dstr, 0, sizeof(dstr));
 
 	result = PyMem_Malloc(sizeof(struct rlib_python_array_results));
 	if (result == NULL)
 		return PyErr_NoMemory();
-        memset(result, 0, sizeof(struct rlib_python_array_results));
-        result->array_name = query;
 
-	outerlist = rlib_python_array_locate(query);
+	memset(result, 0, sizeof(struct rlib_python_array_results));
+	result->array_name = query->sql;
+
+	outerlist = rlib_python_array_locate(query->sql);
 	if (outerlist == NULL) {
 		PyMem_Free(result);
 		return NULL;
@@ -306,12 +306,13 @@ void * rlib_python_array_new_result_from_query(gpointer input_ptr, gchar *query)
 		PyErr_SetString(RLIBError, "sub-elements of array must be of type list or tuple"); /* Fixme: use type error exception */
 		return NULL;
 	}
-        result->cols = PySequence_Fast_GET_SIZE(innerlist);
 
-        total_size = result->rows * result->cols * sizeof(char *);
-        result->data = PyMem_Malloc(total_size);
+	result->cols = PySequence_Fast_GET_SIZE(innerlist);
+
+	total_size = result->rows * result->cols * sizeof(char *);
+	result->data = PyMem_Malloc(total_size);
 	memset(result->data, 0, total_size);
-        for (row=0; row < result->rows; row++) {
+	for (row = 0; row < result->rows; row++) {
 		innerlist = PySequence_Fast(PySequence_Fast_GET_ITEM(outerlist, row), "sub-elements of array must be of type list or tuple");
 		if (innerlist == NULL) {
 			Py_DECREF(outerlist);
@@ -320,7 +321,8 @@ void * rlib_python_array_new_result_from_query(gpointer input_ptr, gchar *query)
 			PyMem_Free(result);
 			return NULL;
 		}
-                for (col=0; col < result->cols; col++) {
+
+		for (col = 0; col < result->cols; col++) {
 			element = PySequence_Fast_GET_ITEM(innerlist, col);
 			if (element == NULL) {
 				Py_DECREF(innerlist);
@@ -331,37 +333,38 @@ void * rlib_python_array_new_result_from_query(gpointer input_ptr, gchar *query)
 				PyErr_SetString(RLIBError, "array dimensions must be uniform"); /* Fixme: use type error exception */
 				return NULL;
 			}
-                        if( PyString_Check(element) )
-                                data_result = strdup(PyString_AsString(element));
-                        else if( PyInt_Check(element) ) {
-                                sprintf(dstr,"%ld",PyInt_AsLong(element));
-                                data_result = strdup(dstr);
-                        } else if( PyFloat_Check(element) ) {
-                                sprintf(dstr,"%f",PyFloat_AsDouble(element));
-                                data_result = strdup(dstr);
-                        } else if( element == Py_None ) {
-                                data_result = strdup("");
-                        } else {
-				PyObject	*tp = PyObject_Type(element);
-				PyObject	*rp;
+
+			if (PyString_Check(element))
+				data_result = strdup(PyString_AsString(element));
+			else if (PyInt_Check(element)) {
+				sprintf(dstr,"%ld",PyInt_AsLong(element));
+				data_result = strdup(dstr);
+			} else if (PyFloat_Check(element)) {
+				sprintf(dstr,"%f",PyFloat_AsDouble(element));
+				data_result = strdup(dstr);
+			} else if (element == Py_None) {
+				data_result = strdup("");
+			} else {
+				PyObject *tp = PyObject_Type(element);
+				PyObject *rp;
 				rp = PyObject_Repr(tp);
-                                sprintf(dstr,"TYPE %s NOT SUPPORTED",PyString_AsString(rp));
+
+				sprintf(dstr,"TYPE %s NOT SUPPORTED",PyString_AsString(rp));
 				Py_XDECREF(rp);
 				Py_XDECREF(tp);
-                                data_result = strdup(dstr);
-                        }
-                        result->data[(row * result->cols)+col] = data_result;
-                }
+				data_result = strdup(dstr);
+			}
+			result->data[(row * result->cols)+col] = data_result;
+		}
 		Py_DECREF(innerlist);
-        }
-        return result;
+	}
+	return result;
 }
-
-
 
 static gint rlib_python_array_input_close(gpointer input_ptr UNUSED) {
-        return TRUE;
+	return TRUE;
 }
+
 static gint rlib_python_array_first(gpointer input_ptr UNUSED, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
         result->current_row = 1;

@@ -246,18 +246,17 @@ struct rlib_line_extra_data *extra_data, gboolean ignore_links) {
 }
 
 //BOBD: Extra_data seems to have all the stuff which needs to get passed in JSON
-static gfloat rlib_layout_text_from_extra_data(rlib *r, gint backwards, gfloat left_origin, gfloat bottom_orgin, struct rlib_line_extra_data *extra_data, 
-gint flag, gint memo_line) {
+static gfloat rlib_layout_text_from_extra_data(rlib *r, gint backwards, gfloat left_origin, gfloat bottom_orgin, struct rlib_line_extra_data *extra_data, gint flag, gint memo_line) {
 	gfloat rtn_width;
 	gchar *text = extra_data->formatted_string;
 	gint i, slen;
 	gchar spaced_out[MAXSTRLEN];
 
-	if(OUTPUT(r)->trim_links == FALSE) {
+	if (OUTPUT(r)->trim_links == FALSE) {
 		flag = TEXT_NORMAL;
 	}
 
-	if(flag == TEXT_LEFT && extra_data->found_link) {
+	if (flag == TEXT_LEFT && extra_data->found_link) {
 		text = g_strdup(text);
 		slen = r_strlen(text);
 		for(i=slen-1;i>0;i--) {
@@ -266,21 +265,21 @@ gint flag, gint memo_line) {
 			else
 				break;
 		}
-	} else if(flag == TEXT_RIGHT && extra_data->found_link) {
+	} else if (flag == TEXT_RIGHT && extra_data->found_link) {
 		gint count = 0;
 		slen = r_strlen(text);
-		for(i=slen-1;i>0;i--) {
-			if(isspace(text[i]))
+		for (i = slen - 1; i > 0; i--) {
+			if (isspace(text[i]))
 				count++;
 			else
 				break;
 		}
-		text = g_malloc(count+1);
+		text = g_malloc(count + 1);
 		memset(text, ' ', count);
 		text[count] = 0;
 	}
 
-	if(extra_data->type == RLIB_ELEMENT_IMAGE) {
+	if (extra_data->type == RLIB_ELEMENT_IMAGE) {
 		gchar *filename;
 		gfloat height = RLIB_FXP_TO_NORMAL_LONG_LONG(RLIB_VALUE_GET_AS_NUMBER(&extra_data->rval_image_height));
 		gfloat width = RLIB_FXP_TO_NORMAL_LONG_LONG(RLIB_VALUE_GET_AS_NUMBER(&extra_data->rval_image_width));
@@ -290,7 +289,7 @@ gint flag, gint memo_line) {
 		OUTPUT(r)->line_image(r, left_origin, bottom_orgin, filename, type, width, height);
 		g_free(filename);
 		rtn_width = extra_data->output_width;
-	} else if(extra_data->type == RLIB_ELEMENT_BARCODE) {
+	} else if (extra_data->type == RLIB_ELEMENT_BARCODE) {
 		gchar *filename;
 		gfloat height = RLIB_FXP_TO_NORMAL_LONG_LONG(RLIB_VALUE_GET_AS_NUMBER(&extra_data->rval_image_height));
 		gfloat width = RLIB_FXP_TO_NORMAL_LONG_LONG(RLIB_VALUE_GET_AS_NUMBER(&extra_data->rval_image_width));
@@ -310,19 +309,20 @@ gint flag, gint memo_line) {
 			OUTPUT(r)->start_italics(r);
 
 		if (extra_data->delayed == TRUE) {
-			struct rlib_delayed_extra_data *delayed_data = g_new0(struct rlib_delayed_extra_data, 1);
-			delayed_data->backwards = backwards;
-			delayed_data->left_origin = left_origin;
-			delayed_data->bottom_orgin = bottom_orgin+(extra_data->font_point/300.0);
-			delayed_data->extra_data = *extra_data;
-			delayed_data->r = r;
-			OUTPUT(r)->print_text_delayed(r, delayed_data, backwards, RLIB_VALUE_GET_TYPE(&extra_data->rval_code));
-			g_free(delayed_data);
+			if (OUTPUT(r)->print_text_delayed) {
+				struct rlib_delayed_extra_data *delayed_data = g_new0(struct rlib_delayed_extra_data, 1);
+				delayed_data->backwards = backwards;
+				delayed_data->left_origin = left_origin;
+				delayed_data->bottom_orgin = bottom_orgin+(extra_data->font_point/300.0);
+				delayed_data->extra_data = *extra_data;
+				delayed_data->r = r;
+				OUTPUT(r)->print_text_delayed(r, delayed_data, backwards, RLIB_VALUE_GET_TYPE(&extra_data->rval_code));
+			}
 		} else {
 			gboolean need_free;
 			gchar *real_text = rlib_layout_get_true_text_from_extra_data(r, extra_data, memo_line, spaced_out, &need_free);
 			OUTPUT(r)->print_text(r, left_origin, bottom_orgin+(extra_data->font_point/300.0), real_text, backwards, extra_data);
-			if(need_free)
+			if (need_free)
 				g_free(real_text);
 		}
 		rtn_width = extra_data->output_width;
@@ -335,7 +335,7 @@ gint flag, gint memo_line) {
 		OUTPUT(r)->set_font_point(r, r->font_point);
 	}
 	
-	if((flag == TEXT_LEFT || flag == TEXT_RIGHT) && extra_data->found_link) {
+	if ((flag == TEXT_LEFT || flag == TEXT_RIGHT) && extra_data->found_link) {
 		g_free(text);
 	}
 	return rtn_width;

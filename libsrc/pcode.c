@@ -982,7 +982,7 @@ gint execute_pcode(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs
 DLL_EXPORT_SYM struct rlib_value * rlib_execute_pcode(rlib *r, struct rlib_value *rval, struct rlib_pcode *code, struct rlib_value *this_field_value) {
 	struct rlib_value_stack value_stack;
 
-	if(code == NULL)
+	if (code == NULL)
 		return NULL;
 
 	rlib_value_stack_init(&value_stack);

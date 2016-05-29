@@ -715,14 +715,6 @@ struct rlib_report {
 
 };
 
-struct rlib_query {
-	gchar *sql;
-	gint sql_allocated;
-	gchar *name;
-	struct input_filter *input;
-	gpointer *private;
-};
-
 #define RLIB_REPORT_TYPE_FILE 1
 #define RLIB_REPORT_TYPE_BUFFER 2
 
@@ -1058,14 +1050,6 @@ void rlib_xml_new_output_filter(rlib *r);
 /***** PROTOTYPES: csv.c ******************************************************/
 void rlib_csv_new_output_filter(rlib *r);
 
-/***** PROTOTYPES: mysql.c ****************************************************/
-gpointer rlib_mysql_new_input_filter(rlib *r);
-gpointer rlib_mysql_real_connect(gpointer input_ptr, gchar *group, gchar *host, gchar *user, gchar *password, gchar *database);
-
-/***** PROTOTYPES: postgres.c **************************************************/
-gpointer rlib_postgres_new_input_filter(rlib *r);
-gpointer rlib_postgres_connect(gpointer input_ptr, gchar *conn);
-
 /***** PROTOTYPES: layout.c ***************************************************/
 gfloat layout_get_page_width(struct rlib_part *part);
 void rlib_layout_init_part_page(rlib *r, struct rlib_part *part, gboolean first, gboolean normal);
@@ -1087,18 +1071,24 @@ int adjust_limits(gdouble  dataMin, gdouble dataMax, gint denyMinEqualsAdjMin, g
 
 /***** PROTOTYPES: xml_data_source.c ******************************************************/
 gpointer rlib_xml_new_input_filter(rlib *r);
-gpointer rlib_xml_connect(gpointer input_ptr);
 
 /***** PROTOTYPES: csv_data_source.c ******************************************************/
 gpointer rlib_csv_new_input_filter(rlib *r);
-gpointer rlib_csv_connect(gpointer input_ptr);
 
-/***** PROTOTYPES: util.c ******************************************************/
-void rlogit(rlib *r, const gchar *fmt, ...);
-void r_debug(rlib *r, const gchar *fmt, ...);
-void r_info(rlib *r, const gchar *fmt, ...);
-void r_warning(rlib *r, const gchar *fmt, ...);
-void r_error(rlib *r, const gchar *fmt, ...);
+/***** PROTOTYPES: mysql_data_source.c ******************************************************/
+#ifdef HAVE_MYSQL_BUILTIN
+gpointer rlib_mysql_new_input_filter(rlib *r);
+#endif
+
+/***** PROTOTYPES: postgres_data_source.c ******************************************************/
+#ifdef HAVE_POSTGRES_BUILTIN
+gpointer rlib_postgres_new_input_filter(rlib *r);
+#endif
+
+/***** PROTOTYPES: odbc_data_source.c ******************************************************/
+#ifdef HAVE_ODBC_BUILTIN
+gpointer rlib_odbc_new_input_filter(rlib *r);
+#endif
 
 /***** PROTOTYPES: variables.c ******************************************************/
 void init_variables(struct rlib_report *report);

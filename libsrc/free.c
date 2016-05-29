@@ -599,8 +599,10 @@ DLL_EXPORT_SYM gint rlib_free(rlib *r) {
 
 	if (r->did_execute) {
 		OUTPUT(r)->free(r);
-		ENVIRONMENT(r)->free(r);
 	}
+
+	ENVIRONMENT(r)->free(r);
+
 	g_hash_table_destroy(r->output_parameters);
 	g_hash_table_destroy(r->input_metadata);
 	g_hash_table_destroy(r->parameters);

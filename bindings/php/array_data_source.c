@@ -135,7 +135,8 @@ static gpointer rlib_php_array_resolve_field_pointer(gpointer input_ptr, gpointe
 	return NULL;
 }
 
-void * php_array_new_result_from_query(gpointer input_ptr, gchar *query) {
+static void *php_array_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
+	struct rlib_query *query = query_ptr;
 	struct rlib_php_array_results *result = emalloc(sizeof(struct rlib_php_array_results));
 	long size;
 	void *data, *lookup_data;
@@ -144,14 +145,14 @@ void * php_array_new_result_from_query(gpointer input_ptr, gchar *query) {
 	HashTable *ht1, *ht2;
 	HashPosition pos1, pos2;
 	zval *zend_value, *lookup_value;
-	int row=0, col=0;
+	int row = 0, col = 0;
 	int total_size;
 	TSRMLS_FETCH();
 	
 	memset(result, 0, sizeof(struct rlib_php_array_results));
-	result->array_name = query;
-		
-	if ((size=zend_hash_find(&EG(symbol_table),query,strlen(query)+1, &data))==FAILURE) { 
+	result->array_name = query->sql;
+
+	if ((size = zend_hash_find(&EG(symbol_table), query->sql, strlen(query->sql) + 1, &data)) == FAILURE) {
 		return NULL;
 	} else {
 		result->zend_value = *(zval **)data;

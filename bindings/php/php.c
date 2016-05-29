@@ -155,10 +155,10 @@ ZEND_GET_MODULE(rlib)
 ZEND_FUNCTION(rlib_init) {
 	rlib_inout_pass *rip;
 	gint resource_id;
-	
+
 	rip = emalloc(sizeof(rlib_inout_pass));
 	memset(rip, 0, sizeof(rlib_inout_pass));
-	
+
 	rip->content_type = RLIB_CONTENT_TYPE_ERROR;
 
 	rip->r = rlib_init_with_environment(rlib_php_new_environment());
@@ -785,29 +785,34 @@ ZEND_FUNCTION(rlib_set_output_parameter) {
 
 GString *error_data;
 
-void compile_error_capture(rlib *r, const gchar *msg) {
+static void compile_error_capture(rlib *r, const gchar *msg) {
 	error_data = g_string_append(error_data, msg);
 }
 
 ZEND_FUNCTION(rlib_compile_infix) {
+	zval *z_rip = NULL;
+	rlib_inout_pass *rip;
 	gint size_of_string;
 	gchar *infix;
 	struct rlib_pcode *code;
 	struct rlib_value value;
+	gint id = -1;
+
 	error_data = g_string_new("");
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &infix, &size_of_string) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rs", &z_rip, &infix, &size_of_string) == FAILURE) {
 		return;
 	}
+	ZEND_FETCH_RESOURCE(rip, rlib_inout_pass *, &z_rip, id, LE_RLIB_NAME, le_link);
 
 	rlib_setmessagewriter(compile_error_capture);
 	code = rlib_infix_to_pcode(NULL, NULL, NULL, infix, -1, FALSE);
-	if(code != NULL) {
-		rlib_execute_pcode(NULL, &value, code, NULL);
-		rlib_pcode_free(code);
+	if (code != NULL) {
+		rlib_execute_pcode(rip->r, &value, code, NULL);
+		rlib_pcode_free(rip->r, code);
 		rlib_value_free(&value);
 	}
-	
+
 	RETURN_STRING(estrdup(error_data->str), TRUE);
 	g_string_free(error_data, TRUE);
 }

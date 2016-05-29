@@ -220,7 +220,7 @@ DLL_EXPORT_SYM void rlib_setmessagewriter(void (*msgwriter)(rlib *r, const gchar
 	logMessage = msgwriter;
 }
 
-void rlogit(rlib *r, const gchar *fmt, ...) {
+DLL_EXPORT_SYM void rlogit(rlib *r, const gchar *fmt, ...) {
 	va_list vl;
 	gchar *result = NULL;
 
@@ -235,7 +235,7 @@ void rlogit(rlib *r, const gchar *fmt, ...) {
 }
 
 
-void r_error(rlib *r, const char *fmt, ...) {
+DLL_EXPORT_SYM void r_error(rlib *r, const char *fmt, ...) {
 	va_list vl;
 	gchar *result = NULL;
 
@@ -250,8 +250,8 @@ void r_error(rlib *r, const char *fmt, ...) {
 }
 
 
+DLL_EXPORT_SYM void r_info(rlib *r, const gchar *fmt, ...) {
 #if ! DISABLERINFO
-void r_info(rlib *r, const gchar *fmt, ...) {
 	va_list vl;
 	gchar *result = NULL;
 
@@ -262,13 +262,13 @@ void r_info(rlib *r, const gchar *fmt, ...) {
 		logMessage(r, result);
 		g_free(result);
 	}
+#endif
 	return;
 }
-#endif
 
 
+DLL_EXPORT_SYM void r_debug(rlib *r, const gchar *fmt, ...) {
 #if ! DISABLERDEBUG
-void r_debug(rlib *r, const gchar *fmt, ...) {
 	va_list vl;
 	gchar *result = NULL;
 
@@ -279,12 +279,12 @@ void r_debug(rlib *r, const gchar *fmt, ...) {
 		logMessage(r, result);
 		g_free(result);
 	}
+#endif
 	return;
 }
-#endif
 
 
-void r_warning(rlib *r, const gchar *fmt, ...) {
+DLL_EXPORT_SYM void r_warning(rlib *r, const gchar *fmt, ...) {
 	va_list vl;
 	gchar *result = NULL;
 

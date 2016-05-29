@@ -56,7 +56,7 @@ static void metadata_destroyer(gpointer data) {
 	g_free(data);
 }
 
-DLL_EXPORT_SYM rlib * rlib_init_with_environment(struct environment_filter *environment) {
+DLL_EXPORT_SYM rlib *rlib_init_with_environment(struct environment_filter *environment) {
 	rlib *r;
 	
 	init_signals();
@@ -83,7 +83,6 @@ DLL_EXPORT_SYM rlib * rlib_init_with_environment(struct environment_filter *envi
 	rlib_pcode_find_index(r);
 	return r;
 }
-
 
 DLL_EXPORT_SYM rlib *rlib_init(void) {
 	return rlib_init_with_environment(NULL);
@@ -444,7 +443,7 @@ static gint rlib_execute_queries(rlib *r) {
 	for (i = 0; i < r->queries_count; i++) {
 		r->results[i]->input = r->queries[i]->input;
 		r->results[i]->name =  r->queries[i]->name;
-		r->results[i]->result = INPUT(r,i)->new_result_from_query(INPUT(r,i), r->queries[i]->sql);
+		r->results[i]->result = INPUT(r,i)->new_result_from_query(INPUT(r,i), r->queries[i]);
 		r->results[i]->next_failed = FALSE;
 		r->results[i]->navigation_failed = FALSE;
 		if (r->results[i]->result == NULL) {

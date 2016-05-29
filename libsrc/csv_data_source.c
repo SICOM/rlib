@@ -48,8 +48,8 @@ struct _private {
 	gchar *error;
 };
 
-gpointer rlib_csv_connect(gpointer input_ptr UNUSED) {
-	return NULL;
+static gint rlib_csv_connect(gpointer input_ptr UNUSED, const gchar *connstr UNUSED) {
+	return 0;
 }
 
 static gint rlib_csv_input_close(gpointer input_ptr UNUSED) {
@@ -198,9 +198,11 @@ static gboolean parse_line(gchar **ptr, GSList **all_items) {
 	return eof;
 }
 
-void * csv_new_result_from_query(gpointer input_ptr, gchar *query) {
+void * csv_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	struct rlib_csv_results *results = NULL;
 	struct input_filter *input = input_ptr;
+	struct rlib_query *query = query_ptr;
+	gchar *file;
 	gint fd;
 	gint size;
 	gchar *contents;
@@ -209,7 +211,9 @@ void * csv_new_result_from_query(gpointer input_ptr, gchar *query) {
 
 	INPUT_PRIVATE(input)->error = "";
 
-	fd = open(query, O_RDONLY, 6);
+	file = get_filename(input->r, query->sql, -1, FALSE);
+	fd = open(file, O_RDONLY, 6);
+	g_free(file);
 	if(fd > 0) {
 		size = lseek(fd, 0L, SEEK_END);
 		lseek(fd, 0L, SEEK_SET);
@@ -262,10 +266,10 @@ static gint rlib_csv_free_input_filter(gpointer input_ptr){
 gpointer rlib_csv_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
-	input = g_malloc(sizeof(struct input_filter));
+	input = g_malloc0(sizeof(struct input_filter));
 	input->r = r;
-	input->private = g_malloc(sizeof(struct _private));
-	memset(input->private, 0, sizeof(struct _private));
+	input->private = g_malloc0(sizeof(struct _private));
+	input->connect_with_connstr = rlib_csv_connect;
 	input->input_close = rlib_csv_input_close;
 	input->first = rlib_csv_first;
 	input->next = rlib_csv_next;
