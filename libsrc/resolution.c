@@ -120,7 +120,7 @@ gint rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gint *r
 				r_error(r, "rlib_resolve_namevalue: INVALID RESULT SET %s, name was [%s]\n", result_name, name);
 				return FALSE;
 			}
-		}		
+		}
 	}
 	*rtn_field = INPUT(r, resultset)->resolve_field_pointer(INPUT(r, resultset), r->results[resultset]->result, name);
 	

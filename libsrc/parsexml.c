@@ -18,6 +18,8 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#include <config.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -28,7 +30,6 @@
 
 #include <glib.h>
 
-#include <config.h>
 #include "rlib-internal.h"
 
 #define UNUSED __attribute__((unused))
@@ -672,12 +673,12 @@ static struct rlib_report * parse_part_load(rlib *r, struct rlib_part *part, xml
 	query =  (gchar *)xmlGetProp(cur, (const xmlChar *) "query");
 
 	name_code = rlib_infix_to_pcode(r, part, NULL, name, xmlGetLineNo (cur), TRUE);
-	query_code = rlib_infix_to_pcode(r, part, NULL, query,xmlGetLineNo (cur), TRUE);
+	query_code = rlib_infix_to_pcode(r, part, NULL, query, xmlGetLineNo (cur), TRUE);
 
-	result_name = rlib_execute_as_string(r, name_code,real_name, MAXSTRLEN-1);
-	rlib_execute_as_string(r, query_code,real_query, MAXSTRLEN-1);
+	result_name = rlib_execute_as_string(r, name_code, real_name, MAXSTRLEN - 1);
+	rlib_execute_as_string(r, query_code, real_query, MAXSTRLEN - 1);
 
-	if(result_name && result_name) {
+	if (result_name && result_name) {
 		report = parse_report_file(r, part->report_index, real_name, query);
 	} else {
 		r_error(r, "parse_part_load - Query or Name Is Invalid\n");
@@ -685,6 +686,8 @@ static struct rlib_report * parse_part_load(rlib *r, struct rlib_part *part, xml
 	}
 	rlib_pcode_free(r, name_code);
 	rlib_pcode_free(r, query_code);
+
+	xmlFree(name);
 
 	return report;
 }
