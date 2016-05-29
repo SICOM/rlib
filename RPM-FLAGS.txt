@@ -1,7 +1,7 @@
 # These flags cause something in RPDF to miscompile
 # and PieCharts go missing in PDFs.
 
-export ASAN="-fsanitize=address -fno-omit-frame-pointer"
+export ASAN="-fsanitize=address -fno-omit-frame-pointer -lasan"
 export UBSAN="-fsanitize=undefined -fsanitize=shift \
 	-fsanitize=integer-divide-by-zero \
 	-fsanitize=unreachable -fsanitize=vla-bound \
@@ -12,7 +12,7 @@ export UBSAN="-fsanitize=undefined -fsanitize=shift \
 	-fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow \
 	-fsanitize=nonnull-attribute -fsanitize=returns-nonnull-attribute \
 	-fsanitize=bool -fsanitize=enum \
-	-fbounds-check \
+	-fbounds-check -lubsan \
 "
 # This requires an authentic Intel CPU with MPX support and
 # libmpx/libmpxwrappers libraries
