@@ -46,10 +46,10 @@ phpini2_DATA = rlib.ini
 PHP_DIRS = bindings/php
 
 clean-local:
-	$(foreach var,$(PHP_DIRS),$(MAKE) -C $(var) clean && ) echo && echo make clean in PHP modules is successful && echo
+	$(foreach var,$(PHP_DIRS),$(MAKE) -C $(var) clean ; ) echo ; echo make clean in PHP modules is done ; echo
 
 distclean-local:
-	$(foreach var,$(PHP_DIRS),$(MAKE) -C $(var) distclean && ) echo && echo make distclean in PHP modules is successful && echo
+	$(foreach var,$(PHP_DIRS),$(MAKE) -C $(var) distclean ; ) echo ; echo make distclean in PHP modules is done ; echo
 
 install-exec-local:
 	$(foreach var,$(PHP_DIRS),(cd $(var) && phpize && ./configure LDFLAGS=-L$(DESTDIR)$(libdir)) && ) echo && echo PHP modules configured successfully && echo
