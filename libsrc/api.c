@@ -145,18 +145,20 @@ static struct rlib_query *add_query_pointer_as(rlib *r, const gchar *input_sourc
 
 	for (i = 0; i < r->inputs_count; i++) {
 		if (!strcmp(r->inputs[i].name, input_source)) {
-			char *name_copy;
+			gchar *name_copy;
 			struct rlib_query *query;
 
-			name_copy = strdup(name);
+			name_copy = g_strdup(name);
 			if (name_copy == NULL) {
 				r_error(r, "rlib_add_query_pointer_as: Out of memory!\n");
 				return NULL;
 			}
 
 			query = rlib_alloc_query_space(r);
-			if (query == NULL)
+			if (query == NULL) {
+				g_free(name_copy);
 				return NULL;
+			}
 
 			query->sql = sql;
 			query->name = name_copy;
