@@ -71,6 +71,7 @@ struct _private {
 
 static gint rlib_odbc_connect(gpointer input_ptr, const gchar *source, const gchar *user, const gchar *password) {
 	struct input_filter *input = input_ptr;
+	rlib *r = input->r;
 	gint V_OD_erg;
 	SQLINTEGER	V_OD_err;
 	SQLSMALLINT	V_OD_mlen;
@@ -79,13 +80,13 @@ static gint rlib_odbc_connect(gpointer input_ptr, const gchar *source, const gch
 
 	V_OD_erg = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &INPUT_PRIVATE(input)->V_OD_Env);
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO)) {
-		fprintf(stderr, "Error AllocHandle\n");
+		r_error(r, "Error AllocHandle\n");
 		return -1;
 	}
 
 	V_OD_erg = SQLSetEnvAttr(INPUT_PRIVATE(input)->V_OD_Env, SQL_ATTR_ODBC_VERSION, (void*)SQL_OV_ODBC3, 0);
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO)) {
-		fprintf(stderr, "Error SetEnv\n");
+		r_error(r, "Error SetEnv\n");
 		SQLFreeHandle(SQL_HANDLE_ENV, INPUT_PRIVATE(input)->V_OD_Env);
 		return NULL;
 	}
@@ -93,7 +94,7 @@ static gint rlib_odbc_connect(gpointer input_ptr, const gchar *source, const gch
 
 	V_OD_erg = SQLAllocHandle(SQL_HANDLE_DBC, INPUT_PRIVATE(input)->V_OD_Env, &INPUT_PRIVATE(input)->V_OD_hdbc); 
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO)) {
-		fprintf(stderr, "Error AllocHDB %d\n",V_OD_erg);
+		r_error(r, "Error AllocHDB %d\n",V_OD_erg);
 		SQLFreeHandle(SQL_HANDLE_ENV, INPUT_PRIVATE(input)->V_OD_Env);
 		return NULL;
 	}
@@ -104,9 +105,10 @@ static gint rlib_odbc_connect(gpointer input_ptr, const gchar *source, const gch
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO)) {
 		char szState[6];
 		unsigned char buffer[256];
-      SQLError(INPUT_PRIVATE(input)->V_OD_Env, INPUT_PRIVATE(input)->V_OD_hdbc, NULL, (SQLCHAR*)szState, NULL, buffer, 256, NULL);
-      printf("SQLError = %s \n", buffer); 
-		fprintf(stderr, "Error SQLConnect %d [%s]\n",V_OD_erg, buffer);
+
+		SQLError(INPUT_PRIVATE(input)->V_OD_Env, INPUT_PRIVATE(input)->V_OD_hdbc, NULL, (SQLCHAR*)szState, NULL, buffer, 256, NULL);
+		printf("SQLError = %s \n", buffer); 
+		r_error(r, "Error SQLConnect %d [%s]\n",V_OD_erg, buffer);
 		SQLGetDiagRec(SQL_HANDLE_DBC, INPUT_PRIVATE(input)->V_OD_hdbc,1, V_OD_stat, &V_OD_err,V_OD_msg,100,&V_OD_mlen);
 		SQLFreeHandle(SQL_HANDLE_DBC, INPUT_PRIVATE(input)->V_OD_hdbc);
 		SQLFreeHandle(SQL_HANDLE_ENV, INPUT_PRIVATE(input)->V_OD_Env);
@@ -126,6 +128,7 @@ static gint rlib_odbc_input_close(gpointer input_ptr) {
 
 static SQLHSTMT * rlib_odbc_query(gpointer input_ptr, gchar *query) {
 	struct input_filter *input = input_ptr;
+	rlib *r = input->r;
 	SQLHSTMT V_OD_hstmt;
 	SQLINTEGER	V_OD_err;
 	SQLSMALLINT	V_OD_mlen;
@@ -135,7 +138,7 @@ static SQLHSTMT * rlib_odbc_query(gpointer input_ptr, gchar *query) {
 
 	V_OD_erg=SQLAllocHandle(SQL_HANDLE_STMT, INPUT_PRIVATE(input)->V_OD_hdbc, &V_OD_hstmt);
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO)) {
-		fprintf(stderr, "Failed to allocate a connection handle %d\n",V_OD_erg);
+		r_error(r, "Failed to allocate a connection handle %d\n",V_OD_erg);
 		SQLGetDiagRec(SQL_HANDLE_DBC, INPUT_PRIVATE(input)->V_OD_hdbc,1, V_OD_stat,&V_OD_err,V_OD_msg,100,&V_OD_mlen);
 		SQLDisconnect(INPUT_PRIVATE(input)->V_OD_hdbc);
 		SQLFreeHandle(SQL_HANDLE_DBC,INPUT_PRIVATE(input)->V_OD_hdbc);
@@ -145,7 +148,7 @@ static SQLHSTMT * rlib_odbc_query(gpointer input_ptr, gchar *query) {
 
 	V_OD_erg=SQLExecDirect(V_OD_hstmt, (SQLCHAR *)query, SQL_NTS);
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO)) {
-		fprintf(stderr, "Error Select %d\n",V_OD_erg);
+		r_error(r, "Error Select %d\n",V_OD_erg);
 		SQLGetDiagRec(SQL_HANDLE_DBC, INPUT_PRIVATE(input)->V_OD_hdbc,1, V_OD_stat, &V_OD_err, V_OD_msg,100,&V_OD_mlen);
 		SQLFreeHandle(SQL_HANDLE_STMT,V_OD_hstmt);
 		SQLDisconnect(INPUT_PRIVATE(input)->V_OD_hdbc);

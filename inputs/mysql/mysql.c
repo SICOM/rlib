@@ -27,6 +27,7 @@
 #include <glib.h>
 
 #include "util.h"
+#include "rlib.h"
 #include "rlib_input.h"
 
 #define INPUT_PRIVATE(input) (((struct _private *)input->private))
@@ -55,6 +56,7 @@ struct _query_private {
 
 static gint rlib_mysql_connect_group(gpointer input_ptr, const gchar *group) {
 	struct input_filter *input = input_ptr;
+	rlib *r = input->r;
 	MYSQL *mysql;
 
 	mysql = mysql_init(NULL);
@@ -64,11 +66,13 @@ static gint rlib_mysql_connect_group(gpointer input_ptr, const gchar *group) {
 
 	if (mysql_options(mysql,MYSQL_READ_DEFAULT_GROUP,group)) {
 		mysql_close(mysql);
+		r_error(r, "Error in mysql_options\n");
 		return -1;
 	}
 
 	if (mysql_real_connect(mysql, mysql->options.host, mysql->options.user, mysql->options.password, mysql->options.db, mysql->options.port, mysql->options.unix_socket, 0) == NULL) {
 		mysql_close(mysql);
+		r_error(r, "Error in mysql_real_connect\n");
 		return -1;
 	}
 
@@ -80,6 +84,7 @@ static gint rlib_mysql_connect_group(gpointer input_ptr, const gchar *group) {
 
 static gint rlib_mysql_connect_with_credentials(gpointer input_ptr, const gchar *host, guint port, const gchar *user, const gchar *password, const gchar *database) {
 	struct input_filter *input = input_ptr;
+	rlib *r = input->r;
 	MYSQL *mysql;
 	gchar *host_copy = NULL;
 
@@ -101,6 +106,7 @@ static gint rlib_mysql_connect_with_credentials(gpointer input_ptr, const gchar 
 
 	if (mysql_real_connect(mysql, host_copy, user, password, database, port, NULL, 0) == NULL) {
 		mysql_close(mysql);
+		r_error(r, "Error in mysql_real_connect\n");
 		return -1;
 	}
 
