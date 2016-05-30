@@ -263,6 +263,7 @@ static struct rlib_element *parse_report_output(rlib *r, xmlDocPtr doc, xmlNodeP
 			/* ignore comments, etc */
 		} else {
 			r_error(r, "Line: %d - Unknown element  [%s] in <Output>. Expected: Line, HorizontalLine or Image On Line \n",xmlGetLineNo (cur), cur->name);
+			return GINT_TO_POINTER(-1);
 		}
 		cur = cur->next;
 	}
@@ -286,6 +287,7 @@ static struct rlib_element *parse_report_outputs(rlib *r, xmlDocPtr doc, xmlNode
 			/* ignore comments, etc */
 		} else {
 			r_error(r, "Line: %d - Invalid element: [%s] Expected: <Output> \n",xmlGetLineNo (cur), cur->name );
+			return GINT_TO_POINTER(-1);
 		}
 		cur = cur->next;
 	}
@@ -329,9 +331,15 @@ static struct rlib_element * parse_report_break(rlib *r, struct rlib_report *rep
 	rb->footer = NULL;
 	while (cur != NULL) {
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "BreakHeader"))) {
-			rb->header = parse_report_outputs(r, doc, cur);
+			struct rlib_element *ptr = parse_report_outputs(r, doc, cur);
+			if (GPOINTER_TO_INT(ptr) == -1)
+				return GINT_TO_POINTER(-1);
+			rb->header = ptr;
 		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "BreakFooter"))) {
-			rb->footer = parse_report_outputs(r, doc, cur);
+			struct rlib_element *ptr = parse_report_outputs(r, doc, cur);
+			if (GPOINTER_TO_INT(ptr) == -1)
+				return GINT_TO_POINTER(-1);
+			rb->footer = ptr;
 		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "BreakFields"))) {
 			if(rb->fields == NULL)
 				rb->fields = parse_break_field(r, cur);
@@ -344,6 +352,7 @@ static struct rlib_element * parse_report_break(rlib *r, struct rlib_report *rep
 			/* ignore comments, etc */
 		} else {
 			r_error(r, "Line: %d - Unknown element [%s] in <ReportBreak>. Expected BreakHeader, BreakFooter, BreakFieldsn \n",xmlGetLineNo (cur), cur->name );
+			return GINT_TO_POINTER(-1);
 		}
 		cur = cur->next;
 	}
@@ -351,7 +360,9 @@ static struct rlib_element * parse_report_break(rlib *r, struct rlib_report *rep
 	return e;
 }
 
-static struct rlib_element * parse_report_breaks(rlib *r, struct rlib_report *report, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur) {
+static struct rlib_element *parse_report_breaks(rlib *r, struct rlib_report *report, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur) __attribute__((warn_unused_result));
+
+static struct rlib_element *parse_report_breaks(rlib *r, struct rlib_report *report, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur) {
 	struct rlib_element *e = NULL;
 
 	cur = cur->xmlChildrenNode;
@@ -368,43 +379,60 @@ static struct rlib_element * parse_report_breaks(rlib *r, struct rlib_report *re
 			/* ignore comments, etc */
 		} else {
 			r_error(r, "Line: %d - Unknown element [%s] in <Breaks>. Expected Break.\n",xmlGetLineNo (cur), cur->name );
+			return GINT_TO_POINTER(-1);
 		}
 		cur = cur->next;
 	}
 	return e;
 }
 
-static void parse_detail(rlib *r, xmlDocPtr doc, xmlNodePtr cur, struct rlib_report_detail *rd) {
+static gint parse_detail(rlib *r, xmlDocPtr doc, xmlNodePtr cur, struct rlib_report_detail *rd) __attribute__((warn_unused_result));
+
+static gint parse_detail(rlib *r, xmlDocPtr doc, xmlNodePtr cur, struct rlib_report_detail *rd) {
 	cur = cur->xmlChildrenNode;
 	while (cur != NULL) {
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "FieldHeaders"))) {
-			rd->headers = parse_report_outputs(r, doc, cur);
+			struct rlib_element *ptr = parse_report_outputs(r, doc, cur);
+			if (GPOINTER_TO_INT(ptr) == -1)
+				return -1;
+			rd->headers = ptr;
 		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "FieldDetails"))) {
-			rd->fields = parse_report_outputs(r, doc, cur);
+			struct rlib_element *ptr = parse_report_outputs(r, doc, cur);
+			if (GPOINTER_TO_INT(ptr) == -1)
+				return -1;
+			rd->fields = ptr;
 		} else if (ignoreElement((const char *)cur->name)) {
 			/* ignore comments, etc */
 		} else {
 			r_error(r, "Line: %d - Unknown element [%s] in <Detail>. Expected FieldHeaders or FieldDetails\n",xmlGetLineNo (cur), cur->name );
+			return -1;
 		}
 		cur = cur->next;
 	}
-
+	return 0;
 }
 
-static void parse_alternate(rlib *r, xmlDocPtr doc, xmlNodePtr cur, struct rlib_report_alternate *ra) {
+static gint parse_alternate(rlib *r, xmlDocPtr doc, xmlNodePtr cur, struct rlib_report_alternate *ra) __attribute__((warn_unused_result));
+static gint parse_alternate(rlib *r, xmlDocPtr doc, xmlNodePtr cur, struct rlib_report_alternate *ra) {
 	cur = cur->xmlChildrenNode;
 	while (cur != NULL) {
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "NoData"))) {
-			ra->nodata = parse_report_outputs(r, doc, cur);
+			struct rlib_element *ptr = parse_report_outputs(r, doc, cur);
+			if (GPOINTER_TO_INT(ptr) == -1)
+				return -1;
+			ra->nodata = ptr;
 		} else if (ignoreElement((const char *)cur->name)) {
 			/* ignore comments, etc */
 		} else {
 			r_error(r, "Line: %d - Unknown element [%s] in <Alternate>. Expected NoData\n",xmlGetLineNo (cur), cur->name );
+			return -1;
 		}
 		cur = cur->next;
 	}
-
+	return 0;
 }
+
+static struct rlib_graph_plot * parse_graph_plots(xmlNodePtr cur) __attribute__((warn_unused_result));
 
 static struct rlib_graph_plot * parse_graph_plots(xmlNodePtr cur) {
 	struct rlib_graph_plot *gp = g_new0(struct rlib_graph_plot, 1);
@@ -419,7 +447,9 @@ static struct rlib_graph_plot * parse_graph_plots(xmlNodePtr cur) {
 	return gp;
 }
 
-static void parse_graph(rlib *r, xmlNodePtr cur, struct rlib_graph *graph) {
+static gint parse_graph(rlib *r, xmlNodePtr cur, struct rlib_graph *graph) __attribute__((warn_unused_result));
+
+static gint parse_graph(rlib *r, xmlNodePtr cur, struct rlib_graph *graph) {
 	get_both(&graph->xml_name, cur, "name");
 	get_both(&graph->xml_type, cur, "type");
 	get_both(&graph->xml_subtype, cur, "subtype");
@@ -448,12 +478,15 @@ static void parse_graph(rlib *r, xmlNodePtr cur, struct rlib_graph *graph) {
 			/* ignore comments, etc */
 		} else {
 			r_error(r, "Line: %d - Unknown element [%s] in  <Graph>. Expected Plot\n",xmlGetLineNo (cur), cur->name );
+			return -1;
 		}
 		cur = cur->next;
 	}
+
+	return 0;
 }
 
-static struct rlib_chart_row * parse_chart_row(xmlNodePtr cur, struct rlib_chart_row *cr) {
+static struct rlib_chart_row *parse_chart_row(xmlNodePtr cur, struct rlib_chart_row *cr) {
 	get_both(&cr->xml_row, cur, "row");
 	get_both(&cr->xml_bar_start, cur, "bar_start");
 	get_both(&cr->xml_bar_end, cur, "bar_end");
@@ -464,16 +497,16 @@ static struct rlib_chart_row * parse_chart_row(xmlNodePtr cur, struct rlib_chart
 	return cr;
 }
 
-static struct rlib_chart_header_row * parse_chart_header_row(xmlNodePtr cur, struct rlib_chart_header_row *chr) {
-
+static struct rlib_chart_header_row *parse_chart_header_row(xmlNodePtr cur, struct rlib_chart_header_row *chr) {
 	get_both(&chr->xml_query, cur, "query");
 	get_both(&chr->xml_field, cur, "field");
 	get_both(&chr->xml_colspan, cur, "colspan");
-
 	return chr;
 }
 
-static void parse_chart(rlib *r, xmlNodePtr cur, struct rlib_chart *chart) {
+static gint parse_chart(rlib *r, xmlNodePtr cur, struct rlib_chart *chart) __attribute__((warn_unused_result));
+
+static gint parse_chart(rlib *r, xmlNodePtr cur, struct rlib_chart *chart) {
 	chart->have_chart = FALSE;
 	get_both(&chart->xml_name, cur, "name");
 	get_both(&chart->xml_title, cur, "title");
@@ -490,17 +523,19 @@ static void parse_chart(rlib *r, xmlNodePtr cur, struct rlib_chart *chart) {
 	while (cur != NULL) {
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "HeaderRow")))
 			parse_chart_header_row(cur, &chart->header_row);
-		else
-		if ((!xmlStrcmp(cur->name, (const xmlChar *) "Row"))) {
+		else if ((!xmlStrcmp(cur->name, (const xmlChar *) "Row"))) {
 			parse_chart_row(cur, &chart->row);
 			chart->have_chart = TRUE;
 		} else if (ignoreElement((const char *)cur->name)) {
 			/* ignore comments, etc */
 		} else {
 			r_error(r, "Line: %d - Unknown element [%s] in  <Chart>. Expected Row or HeaderRow\n",xmlGetLineNo (cur), cur->name );
+			return -1;
 		}
 		cur = cur->next;
 	}
+
+	return 0;
 }
 
 static struct rlib_element * parse_report_variable(rlib *r, xmlNodePtr cur) {
@@ -537,7 +572,7 @@ static struct rlib_element * parse_report_variable(rlib *r, xmlNodePtr cur) {
 	return e;
 }
 
-static struct rlib_element * parse_report_variables(rlib *r, xmlNodePtr cur) {
+static struct rlib_element *parse_report_variables(rlib *r, xmlNodePtr cur) {
 	struct rlib_element *e = NULL;
 
 	cur = cur->xmlChildrenNode;
@@ -555,6 +590,7 @@ static struct rlib_element * parse_report_variables(rlib *r, xmlNodePtr cur) {
 			/* ignore comments, etc */
 		} else {
 			r_error(r, "Line: %d - Unknown element [%s] in <Variables>. Expected Variable.\n", xmlGetLineNo (cur), cur->name);
+			return (struct rlib_element *)GINT_TO_POINTER(-1);
 		}
 		cur = cur->next;
 	}
@@ -577,7 +613,7 @@ static void parse_metadata(xmlNodePtr cur, GHashTable *ht) {
 	return;
 }
 
-static void parse_metadata_item(rlib *r, xmlNodePtr cur, GHashTable *ht) {
+static gint parse_metadata_item(rlib *r, xmlNodePtr cur, GHashTable *ht) {
 	cur = cur->xmlChildrenNode;
 	while (cur != NULL) {
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "MetaData"))) {
@@ -586,26 +622,28 @@ static void parse_metadata_item(rlib *r, xmlNodePtr cur, GHashTable *ht) {
 			/* ignore comments, etc */
 		} else {
 			r_error(r, "Line: %d - Unknown element [%s] in <MetaData>. Expected MetaData.\n", xmlGetLineNo (cur), cur->name);
+			return -1;
 		}
 		cur = cur->next;
 	}
-	return;
+	return 0;
 }
 
-static void parse_report(rlib *r, struct rlib_part *part, struct rlib_report *report, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur, gchar *query) {
+static gint parse_report(rlib *r, struct rlib_part *part, struct rlib_report *report, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur, gchar *query) __attribute__((warn_unused_result));
+
+static gint parse_report(rlib *r, struct rlib_part *part, struct rlib_report *report, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur, gchar *query) {
 	report->doc = doc;
-	report->contents = NULL;
 /*	if (doc->encoding)
 		g_strlcpy(report->xml_encoding_name, doc->encoding, sizeof(report->xml_encoding_name)); */
 
 	while (cur && xmlIsBlankNode (cur))
 		cur = cur -> next;
 
-	if(cur == 0)
-		return;
+	if (cur == NULL)
+		return -1;
 
 	get_both(&report->xml_font_size, cur, "fontSize");
-	if(query == NULL) {
+	if (query == NULL) {
 		get_both(&report->xml_query, cur, "query");
 	} else {
 		report->xml_query.xml = xmlStrdup((xmlChar *)query);
@@ -621,7 +659,7 @@ static void parse_report(rlib *r, struct rlib_part *part, struct rlib_report *re
 	get_both(&report->xml_height, cur, "height");
 	get_both(&report->xml_iterations, cur, "iterations");
 
-	if(xmlHasProp(cur, (const xmlChar *) "paperType") && part->xml_paper_type.xml == NULL) {
+	if (xmlHasProp(cur, (const xmlChar *) "paperType") && part->xml_paper_type.xml == NULL) {
 		get_both(&part->xml_paper_type, cur, "paperType");
 	}
 
@@ -633,33 +671,60 @@ static void parse_report(rlib *r, struct rlib_part *part, struct rlib_report *re
 	cur = cur->xmlChildrenNode;
 	report->breaks = NULL;
 	while (cur != NULL) {
-		if ((!xmlStrcmp(cur->name, (const xmlChar *) "ReportHeader")))
-			report->report_header = parse_report_outputs(r, doc, cur);
-		else if ((!xmlStrcmp(cur->name, (const xmlChar *) "PageHeader")))
-			report->page_header = parse_report_outputs(r, doc, cur);
-		else if ((!xmlStrcmp(cur->name, (const xmlChar *) "PageFooter")))
-			report->page_footer = parse_report_outputs(r, doc, cur);
-		else if ((!xmlStrcmp(cur->name, (const xmlChar *) "ReportFooter")))
-			report->report_footer = parse_report_outputs(r, doc, cur);
-		else if ((!xmlStrcmp(cur->name, (const xmlChar *) "Detail")))
-			parse_detail(r, doc, cur, &report->detail);
-		else if ((!xmlStrcmp(cur->name, (const xmlChar *) "Alternate")))
-			parse_alternate(r, doc, cur, &report->alternate);
-		else if ((!xmlStrcmp(cur->name, (const xmlChar *) "Graph")))
-			parse_graph(r, cur, &report->graph);
-		else if ((!xmlStrcmp(cur->name, (const xmlChar *) "Chart")))
-			parse_chart(r, cur, &report->chart);
-		else if ((!xmlStrcmp(cur->name, (const xmlChar *) "Breaks")))
-			report->breaks = parse_report_breaks(r, report, doc, ns, cur);
-		else if ((!xmlStrcmp(cur->name, (const xmlChar *) "Variables")))
-			report->variables = parse_report_variables(r, cur);
-		else if ((!xmlStrcmp(cur->name, (const xmlChar *) "MetaData")))
-			parse_metadata_item(r, cur, r->input_metadata);
-		else if (!ignoreElement((const char *)cur->name)) /* must be last */
+		if ((!xmlStrcmp(cur->name, (const xmlChar *) "ReportHeader"))) {
+			struct rlib_element *ptr = parse_report_outputs(r, doc, cur);
+			if (GPOINTER_TO_INT(ptr) == -1)
+				return -1;
+			report->report_header = ptr;
+		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "PageHeader"))) {
+			struct rlib_element *ptr = parse_report_outputs(r, doc, cur);
+			if (GPOINTER_TO_INT(ptr) == -1)
+				return -1;
+			report->page_header = ptr;
+		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "PageFooter"))) {
+			struct rlib_element *ptr = parse_report_outputs(r, doc, cur);
+			if (GPOINTER_TO_INT(ptr) == -1)
+				return -1;
+			report->page_footer = ptr;
+		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "ReportFooter"))) {
+			struct rlib_element *ptr = parse_report_outputs(r, doc, cur);
+			if (GPOINTER_TO_INT(ptr) == -1)
+				return -1;
+			report->report_footer = ptr;
+		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "Detail"))) {
+			if (parse_detail(r, doc, cur, &report->detail) == -1)
+				return -1;
+		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "Alternate"))) {
+			if (parse_alternate(r, doc, cur, &report->alternate) == -1)
+				return -1;
+		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "Graph"))) {
+			if (parse_graph(r, cur, &report->graph) == -1)
+				return -1;
+		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "Chart"))) {
+			if (parse_chart(r, cur, &report->chart) == -1)
+				return -1;
+		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "Breaks"))) {
+			struct rlib_element *ptr = parse_report_breaks(r, report, doc, ns, cur);
+			if (GPOINTER_TO_INT(ptr) == -1)
+				return -1;
+			report->breaks = ptr;
+		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "Variables"))) {
+			struct rlib_element *ptr = parse_report_variables(r, cur);
+			if (GPOINTER_TO_INT(ptr) == -1)
+				return -1;
+			report->variables = ptr;
+		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "MetaData"))) {
+			if (parse_metadata_item(r, cur, r->input_metadata) == -1)
+				return -1;
+		} else if (!ignoreElement((const char *)cur->name)) { /* must be last */
 			/* ignore comments, etc */
 			r_error(r, "Line: %d - Unknown element [%s] in <Report>\n", xmlGetLineNo (cur), cur->name);
+			return -1;
+		}
 		cur = cur->next;
 	}
+
+	return 0;
 }
 
 static struct rlib_report * parse_part_load(rlib *r, struct rlib_part *part, xmlNodePtr cur) {
@@ -692,6 +757,8 @@ static struct rlib_report * parse_part_load(rlib *r, struct rlib_part *part, xml
 	return report;
 }
 
+
+
 static struct rlib_part_td * parse_part_td(rlib *r, struct rlib_part *part, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur) {
 	struct rlib_part_td *td = g_new0(struct rlib_part_td, 1);
 
@@ -704,16 +771,31 @@ static struct rlib_part_td * parse_part_td(rlib *r, struct rlib_part *part, xmlD
 	cur = cur->xmlChildrenNode;
 	while (cur != NULL) {
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "load"))) {
-			td->reports = g_slist_append(td->reports, parse_part_load(r, part, cur));
+			struct rlib_report *report = parse_part_load(r, part, cur);
+			if (report == NULL) {
+				rlib_free_part_td(r, td);
+				return NULL;
+			}
+			td->reports = g_slist_append(td->reports, report);
 		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "Report"))) {
-			struct rlib_report *report;
-			report = (struct rlib_report *) g_new0(struct rlib_report, 1);
-			parse_report(r, part, report, doc, ns, cur, NULL);
+			struct rlib_report *report = (struct rlib_report *) g_new0(struct rlib_report, 1);
+			if (report == NULL) {
+				rlib_free_part_td(r, td);
+				r_error(r, "Out of memory!\n");
+				return NULL;
+			}
+			if (parse_report(r, part, report, doc, ns, cur, NULL) == -1) {
+				rlib_free_report(r, report);
+				rlib_free_part_td(r, td);
+				return NULL;
+			}
 			td->reports = g_slist_append(td->reports, report);
 		} else if (ignoreElement((const char *)cur->name)) {
 			/* ignore comments, etc */
 		} else {
 			r_error(r, "Line: %d - Unknown element [%s] in <tr>. Expected td.\n", xmlGetLineNo (cur), cur->name);
+			rlib_free_part_td(r, td);
+			return NULL;
 		}
 		cur = cur->next;
 	}
@@ -740,12 +822,14 @@ static struct rlib_part_tr * parse_part_tr(rlib *r, struct rlib_part *part, xmlD
 	return tr;
 }
 
-static void parse_part(rlib *r, struct rlib_part *part, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur) {
+static gint parse_part(rlib *r, struct rlib_part *part, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur) __attribute__((warn_unused_result));
+
+static gint parse_part(rlib *r, struct rlib_part *part, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur) {
 	while (cur && xmlIsBlankNode (cur))
 		cur = cur -> next;
 
-	if(cur == 0)
-		return;
+	if (cur == NULL)
+		return 0;
 
 	get_both(&part->xml_name, cur, "name");
 	get_both(&part->xml_pages_across, cur, "pages_across");
@@ -757,28 +841,44 @@ static void parse_part(rlib *r, struct rlib_part *part, xmlDocPtr doc, xmlNsPtr 
 	get_both(&part->xml_paper_type, cur, "paper_type");
 	get_both(&part->xml_iterations, cur, "iterations");
 	get_both(&part->xml_suppress_page_header_first_page, cur, "suppressPageHeaderFirstPage");
-	if(xmlHasProp(cur, (const xmlChar *) "paperType") && part->xml_paper_type.xml == NULL) {
+	if (xmlHasProp(cur, (const xmlChar *) "paperType") && part->xml_paper_type.xml == NULL) {
 		get_both(&part->xml_paper_type, cur, "paperType");
 	}
-
 
 	part->part_rows = NULL;
 
 	cur = cur->xmlChildrenNode;
 	while (cur != NULL) {
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "pr"))) {
-			part->part_rows = g_slist_append(part->part_rows, parse_part_tr(r, part, doc, ns, cur));
+			struct rlib_part_tr *ptr = parse_part_tr(r, part, doc, ns, cur);
+			if (GPOINTER_TO_INT(ptr) == -1)
+				return -1;
+			if (ptr)
+				part->part_rows = g_slist_append(part->part_rows, ptr);
 		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "PageHeader"))) {
-			part->page_header = parse_report_outputs(r, doc, cur);
+			struct rlib_element *ptr = parse_report_outputs(r, doc, cur);
+			if (GPOINTER_TO_INT(ptr) == -1)
+				return -1;
+			part->page_header = ptr;
 		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "ReportHeader"))) {
-			part->report_header = parse_report_outputs(r, doc, cur);
+			struct rlib_element *ptr = parse_report_outputs(r, doc, cur);
+			if (GPOINTER_TO_INT(ptr) == -1)
+				return -1;
+			part->report_header = ptr;
 		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "PageFooter"))) {
-			part->page_footer = parse_report_outputs(r, doc, cur);
-		} else if (!ignoreElement((const char *)cur->name)) /* must be last */
+			struct rlib_element *ptr = parse_report_outputs(r, doc, cur);
+			if (GPOINTER_TO_INT(ptr) == -1)
+				return -1;
+			part->page_footer = ptr;
+		} else if (!ignoreElement((const char *)cur->name)) { /* must be last */
 			/* ignore comments, etc */
 			r_error(r, "Line: %d - Unknown element [%s] in <Part>\n", xmlGetLineNo (cur), cur->name);
+			return -1;
+		}
 		cur = cur->next;
 	}
+
+	return 0;
 }
 
 void dump_part_td(gpointer data UNUSED, gpointer user_data UNUSED) {
@@ -820,14 +920,14 @@ struct rlib_part *parse_part_file(rlib *r, int report_index) {
 
 	if (doc == NULL)  {
 		r_error(r, "xmlParseError \n");
-		return(NULL);
+		return NULL;
 	}
 
 	cur = xmlDocGetRootElement(doc);
 	if (cur == NULL) {
 		r_error(r, "xmlParseError \n");
 		xmlFreeDoc(doc);
-		return(NULL);
+		return NULL;
 	}
 
 	part = (struct rlib_part *) g_new0(struct rlib_part, 1);
@@ -835,12 +935,16 @@ struct rlib_part *parse_part_file(rlib *r, int report_index) {
 	if (part == NULL) {
 		r_error(r, "Out of Memory :(\n");
 		xmlFreeDoc(doc);
-		return(NULL);
+		return NULL;
 	}
 
 	part->report_index = report_index;
 	if ((xmlStrcmp(cur->name, (const xmlChar *) "Part")) == 0) {
-		parse_part(r, part, doc, ns, cur);
+		if (parse_part(r, part, doc, ns, cur) == -1) {
+			rlib_free_part(r, part);
+			xmlFreeDoc(doc);
+			return NULL;
+		}
 		found = TRUE;
 	} else if ((xmlStrcmp(cur->name, (const xmlChar *) "Report")) == 0) {
 		/*
@@ -851,22 +955,28 @@ struct rlib_part *parse_part_file(rlib *r, int report_index) {
 		struct rlib_part_td *td;
 
 		report = (struct rlib_report *) g_new0(struct rlib_report, 1);
-		if (report == NULL) {
-			r_error(r, "Out of Memory :(\n");
-			xmlFreeDoc(doc);
-			return(NULL);
-		}
-
 		tr = g_new0(struct rlib_part_tr, 1);
 		td = g_new0(struct rlib_part_td, 1);
+		if (report == NULL || tr == NULL || td == NULL) {
+			rlib_free_report(r, report);
+			g_free(tr);
+			g_free(td);
+			r_error(r, "Out of Memory :(\n");
+			xmlFreeDoc(doc);
+			return NULL;
+		}
 
-		part->part_rows = NULL;
+		if (parse_report(r, part, report, doc, ns, cur, NULL) == -1) {
+			rlib_free_report(r, report);
+			g_free(tr);
+			g_free(td);
+			r_error(r, "Out of Memory :(\n");
+			xmlFreeDoc(doc);
+			return NULL;
+		}
 		part->part_rows = g_slist_append(part->part_rows, tr);
-		tr->part_deviations = NULL;
 		tr->part_deviations = g_slist_append(tr->part_deviations, td);
-		td->reports = NULL;
 		td->reports = g_slist_append(td->reports, report);
-		parse_report(r, part, report, doc, ns, cur, NULL);
 		part->page_header = report->page_header;
 		part->report_header = report->report_header;
 		part->page_footer = report->page_footer;
@@ -892,23 +1002,23 @@ struct rlib_part *parse_part_file(rlib *r, int report_index) {
 	if (!found) {
 		r_error(r, "document of the wrong type, was '%s', Report or Part expected", cur->name);
 		r_error(r, "xmlDocDump follows\n");
-		xmlDocDump ( stderr, doc );
+		xmlDocDump(stderr, doc);
 		xmlFreeDoc(doc);
-		g_free(part);
-		return(NULL);
+		rlib_free_part(r, part);
+		return NULL;
 	}
 
 	xmlFreeDoc(doc);
 
 #if DISABLE_UTF8
-	if((long)r->xml_encoder != -1)
+	if ((long)r->xml_encoder != -1)
 		g_iconv_close(r->xml_encoder);
 #endif
 
 	return part;
 }
 
-static struct rlib_report * parse_report_file(rlib *r, int report_index, gchar *filename, gchar *query) {
+static struct rlib_report *parse_report_file(rlib *r, int report_index, gchar *filename, gchar *query) {
 	xmlDocPtr doc;
 	gchar *file;
 	struct rlib_report *report;
@@ -925,26 +1035,29 @@ static struct rlib_report * parse_report_file(rlib *r, int report_index, gchar *
 
 	if (doc == NULL)  {
 		r_error(r, "xmlParseError \n");
-		return(NULL);
+		return NULL;
 	}
 
 	cur = xmlDocGetRootElement(doc);
 	if (cur == NULL) {
 		r_error(r, "xmlParseError \n");
 		xmlFreeDoc(doc);
-		return(NULL);
+		return NULL;
 	}
 
 	report = (struct rlib_report *) g_new0(struct rlib_report, 1);
 	if(report == NULL) {
-		r_error(r, "Out of Memory :(\n");
+		r_error(r, "Out of memory!\n");
 		xmlFreeDoc(doc);
-		return(NULL);
+		return NULL;
 	}
 
-
 	if((xmlStrcmp(cur->name, (const xmlChar *) "Report"))==0) {
-		parse_report(r, NULL, report, doc, ns, cur, query);
+		if (parse_report(r, NULL, report, doc, ns, cur, query) == -1) {
+			rlib_free_report(r, report);
+			xmlFreeDoc(doc);
+			return NULL;
+		}
 		found = TRUE;
 	}
 
@@ -953,10 +1066,9 @@ static struct rlib_report * parse_report_file(rlib *r, int report_index, gchar *
 		r_error(r, "xmlDocDump follows\n");
 		xmlDocDump ( stderr, doc );
 		xmlFreeDoc(doc);
-		g_free(report);
-		return(NULL);
+		rlib_free_report(r, report);
+		return NULL;
 	}
-
 
 	return report;
 }

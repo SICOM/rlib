@@ -394,7 +394,7 @@ struct rlib_pcode_operand * rlib_new_operand(rlib *r, struct rlib_part *part, st
 		o->value = rf;
 	} else {
 		const gchar *err = "BAD_OPERAND";
-		gchar *newstr = g_malloc(r_strlen(err)+1);
+		gchar *newstr = g_malloc(r_strlen(err) + 1);
 		strcpy(newstr, err);
 		o->type = OPERAND_STRING;
 		o->value = newstr;

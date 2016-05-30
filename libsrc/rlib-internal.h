@@ -647,7 +647,6 @@ struct rlib_chart {
 
 struct rlib_report {
 	xmlDocPtr doc;
-	gchar *contents;
 	struct rlib_from_xml xml_font_size;
 	struct rlib_from_xml xml_query;
 	struct rlib_from_xml xml_orientation;
@@ -1033,6 +1032,11 @@ gint rlib_navigate_last(rlib *r, gint resultset_num);
 void rlib_new_c_environment(rlib *r);
 
 /***** PROTOTYPES: free.c *****************************************************/
+void rlib_free_report(rlib *r, struct rlib_report *report);
+void rlib_free_part(rlib *r, struct rlib_part *part);
+void rlib_free_part_td(rlib *r, struct rlib_part_td *td);
+void rlib_free_part_deviations(rlib *r, GSList *part_deviations);
+void rlib_free_part_tr(rlib *r, struct rlib_part *part);
 void rlib_free_results(rlib *r);
 
 /***** PROTOTYPES: pdf.c ******************************************************/

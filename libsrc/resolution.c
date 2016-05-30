@@ -88,9 +88,9 @@ gchar * rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 
 gint rlib_lookup_result(rlib *r, gchar *name) {
 	gint i;
-	for(i=0;i<r->queries_count;i++) {
-		if(r->results[i]->name != NULL) {
-			if(!strcmp(r->results[i]->name, name))
+	for (i = 0; i < r->queries_count; i++) {
+		if (r->results[i]->name != NULL) {
+			if (!strcmp(r->results[i]->name, name))
 				return i;
 		}
 	}
@@ -104,7 +104,7 @@ gint rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gint *r
 
 	resultset = r->current_result;
 	right_side = memchr(name, '.', r_strlen(name));
-	if(right_side != NULL) {
+	if (right_side != NULL) {
 		gint t;
 		result_name = g_malloc(r_strlen(name) - r_strlen(right_side) + 1);
 		memcpy(result_name, name, r_strlen(name) - r_strlen(right_side));
@@ -112,12 +112,13 @@ gint rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gint *r
 		right_side++;
 		name = right_side;
 		t = rlib_lookup_result(r, result_name);
-		if(t >= 0) {
+		if (t >= 0) {
 			found = TRUE;
 			resultset = t;
 		} else {
 			if(!isdigit((int)*result_name)) {
 				r_error(r, "rlib_resolve_namevalue: INVALID RESULT SET %s, name was [%s]\n", result_name, name);
+				g_free(result_name);
 				return FALSE;
 			}
 		}
