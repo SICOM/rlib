@@ -20,7 +20,7 @@ dnl Report bugs to rlib-devel@lists.sourceforge.net
 dnl
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([rlib],[2.0.10],[http://bugzilla.sicompos.com])
+AC_INIT([rlib],[2.0.11],[http://bugzilla.sicompos.com])
 AC_CANONICAL_TARGET
 AC_CONFIG_SRCDIR(libsrc/rlib.h)
 AC_CONFIG_MACRO_DIR([m4])

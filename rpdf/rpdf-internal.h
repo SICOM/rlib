@@ -27,8 +27,6 @@
 
 #define RPDF_MAX_CHARS 256
 
-#define DEGREE_2_RAD(x) (x*M_PI/180.0)
-
 struct _rpdf_paper {
 	gint type;
 	gint x;

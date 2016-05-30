@@ -264,22 +264,23 @@ static void rpdf_make_page_stream(gpointer data, gpointer user_data) {
 	struct rpdf *pdf = user_data;
 	extra[0] = 0;
 	
-	if(stream->type == RPDF_TYPE_FONT || stream->type == RPDF_TYPE_TEXT) {
+	if (stream->type == RPDF_TYPE_FONT || stream->type == RPDF_TYPE_TEXT) {
 		if(pdf->text_on == FALSE) {
 			pdf->text_on = TRUE;
 			sprintf(extra, "BT\n");
 		}
 	}
-	if(stream->type == RPDF_TYPE_RECT || stream->type == RPDF_TYPE_FILL || stream->type == RPDF_TYPE_IMAGE || stream->type == RPDF_TYPE_LINE
-		|| stream->type == RPDF_TYPE_MOVE || stream->type == RPDF_TYPE_CLOSEPATH || stream->type == RPDF_TYPE_STROKE || stream->type == RPDF_TYPE_WIDTH 
-		||	stream->type == RPDF_TYPE_ARC) {
+	if (stream->type != RPDF_TYPE_FONT && stream->type != RPDF_TYPE_TEXT &&
+			stream->type != RPDF_TYPE_COLOR && stream->type != RPDF_TYPE_TEXT_CB) {
 		if(pdf->text_on == TRUE) {
 			pdf->text_on = FALSE;
 			sprintf(extra, "ET\n");
 		}
 	}
 
-	if(stream->type == RPDF_TYPE_FONT) {
+	switch (stream->type) {
+	case RPDF_TYPE_FONT:
+	{
 		struct rpdf_stream_font *stream_font = stream->data;
 		gchar *font_object;
 		result = g_strdup_printf("%s/F%s %.03lf Tf\n", extra, stream_font->font_object->name, stream_font->size);
@@ -287,7 +288,10 @@ static void rpdf_make_page_stream(gpointer data, gpointer user_data) {
 		if(font_object == NULL) {
 			g_hash_table_insert(pdf->page_fonts, stream_font->font_object->name, stream_font);
 		}
-	} else if(stream->type == RPDF_TYPE_TEXT) {
+		break;
+	}
+	case RPDF_TYPE_TEXT:
+	{
 		struct rpdf_stream_text *stream_text = stream->data;
 		gdouble angle = M_PI * stream_text->angle / 180.0;
 		gdouble text_sin= sin(angle);
@@ -297,45 +301,71 @@ static void rpdf_make_page_stream(gpointer data, gpointer user_data) {
 		g_free(stream_text->text);
 		g_free(stream_text);
 		g_free(text);
-	} else if(stream->type == RPDF_TYPE_RECT) {
+		break;
+	}
+	case RPDF_TYPE_RECT:
+	{
 		struct rpdf_stream_rect *stream_rect = stream->data;
 		result = g_strdup_printf("%s%.03f %.03f %.03f %.03f re\n", extra, stream_rect->x*RPDF_DPI, stream_rect->y*RPDF_DPI, stream_rect->width*RPDF_DPI, stream_rect->height*RPDF_DPI);
 		g_free(stream_rect);
-	} else if(stream->type == RPDF_TYPE_FILL) {
+		break;
+	}
+	case RPDF_TYPE_FILL:
 		result = g_strdup_printf("%sf\n", extra);
-	} else if(stream->type == RPDF_TYPE_COLOR) {
+		break;
+	case RPDF_TYPE_COLOR:
+	{
 		struct rpdf_stream_color *stream_color = stream->data;
 		result = g_strdup_printf("%.04f %.04f %.04f rg\n%.04f %.04f %.04f RG\n", stream_color->r, stream_color->g, stream_color->b, stream_color->r, stream_color->g, stream_color->b);
 		g_free(stream_color);
-	} else if(stream->type == RPDF_TYPE_IMAGE) {
+		break;
+	}
+	case RPDF_TYPE_IMAGE:
+	{
 		struct rpdf_images *image = stream->data;
 		result = g_strdup_printf("%sq\n1.0000 0.0000 0.0000 1.0000 %.04f %.04f cm\n%.04f 0.0000 0.0000 %.04f 0.0000 0.0000 cm\n/IMrpdf%d Do\nQ\n", 
 			extra, image->x*RPDF_DPI, image->y*RPDF_DPI, image->width, image->height, image->number);
-	} else if(stream->type == RPDF_TYPE_MOVE) {
+		break;
+	}
+	case RPDF_TYPE_MOVE:
+	{
 		struct rpdf_stream_rect *stream_point = stream->data;
-		result = g_strdup_printf("%s%.03f %.03f m\n", extra, stream_point->x*RPDF_DPI, stream_point->y*RPDF_DPI);
+		result = g_strdup_printf("%s%.03f %.03f m\n", extra, stream_point->x * RPDF_DPI, stream_point->y * RPDF_DPI);
 		g_free(stream_point);
-	} else if(stream->type == RPDF_TYPE_WIDTH) {
+		break;
+	}
+	case RPDF_TYPE_WIDTH:
+	{
 		gdouble *width = stream->data;
 		result = g_strdup_printf("%s%.04f w\n", extra, *width);
 		g_free(width);
-	} else if(stream->type == RPDF_TYPE_LINE) {
+		break;
+	}
+	case RPDF_TYPE_LINE:
+	{
 		struct rpdf_stream_rect *stream_point = stream->data;
 		result = g_strdup_printf("%s%.03f %.03f l\n", extra, stream_point->x*RPDF_DPI, stream_point->y*RPDF_DPI);
 		g_free(stream_point);
-	} else if(stream->type == RPDF_TYPE_CLOSEPATH) {
+		break;
+	}
+	case RPDF_TYPE_CLOSEPATH:
 		result = g_strdup_printf("%sh\n", extra);
-	} else if(stream->type == RPDF_TYPE_STROKE) {
+		break;
+	case RPDF_TYPE_STROKE:
 		result = g_strdup_printf("%sS\n", extra);
-	} else if(stream->type == RPDF_TYPE_ARC) {
-		char buf[1024];
+		break;
+	case RPDF_TYPE_ARC:
+	{
+		GString *buf = g_string_new(NULL);
 		struct rpdf_stream_arc *arc = stream->data;
+
 		gdouble x = arc->x;
 		gdouble y = arc->y;
 		gdouble start_angle = arc->start_angle;
 		gdouble end_angle = arc->end_angle;
 		gdouble radius = arc->radius;
-		gint nsegs = 8,i;
+		gint nsegs = 8;
+		gint i;
 		gdouble total_angle,dt,dtm,t1,a0,b0,c0,d0,a1,b1,c1,d1;
 
 		x *= RPDF_DPI;
@@ -351,31 +381,33 @@ static void rpdf_make_page_stream(gpointer data, gpointer user_data) {
 		b0 = y + (radius * sin(t1));
 		c0 = -radius * sin(t1);
 		d0 = radius * cos(t1);
-		if(total_angle < DEGREE_2_RAD(360.0)) {  /* Pie Slices */
-			sprintf(buf, "%s%.03f %.03f m\n", extra, x, y);
-			sprintf(buf, "%s%.03f %.03f l\n", buf, a0, b0);
+		if (total_angle < DEGREE_2_RAD(360.0)) {  /* Pie Slices */
+			g_string_printf(buf, "%s%.03f %.03f m\n", extra, x, y);
+			g_string_append_printf(buf, "%.03f %.03f l\n", a0, b0);
 		} else {
-			sprintf(buf, "%s%.03f %.03f m\n", extra, a0,b0);
-		
-		}		
+			g_string_printf(buf, "%s%.03f %.03f m\n", extra, a0,b0);
+		}
 		for (i = 1; i <= nsegs; i++) {
 			t1 = ((gfloat)i * dt) + start_angle;
 			a1 = x + (radius * cos(t1));
 			b1 = y + (radius * sin(t1));
 			c1 = -radius * sin(t1);
 			d1 = radius * cos(t1);
-			sprintf(buf, "%s%.02f %.02f %.02f %.02f %.02f %.02f c\n", buf, (a0 + (c0 * dtm)),((b0 + (d0 * dtm))),(a1 - (c1 * dtm)),((b1 - (d1 * dtm))),a1,(b1));
+			g_string_append_printf(buf, "%.02f %.02f %.02f %.02f %.02f %.02f c\n", (a0 + (c0 * dtm)),((b0 + (d0 * dtm))),(a1 - (c1 * dtm)),((b1 - (d1 * dtm))),a1,(b1));
 			a0 = a1;
 			b0 = b1;
 			c0 = c1;
 			d0 = d1;
 		}
-		if(total_angle < DEGREE_2_RAD(360.0)) { /* pizza :) */
-			sprintf(buf, "%s%.03f %.03f l\n", buf, x, y);
+		if (total_angle < DEGREE_2_RAD(360.0)) { /* pizza :) */
+			g_string_append_printf(buf, "%.03f %.03f l\n", x, y);
 		}
-		result = g_strdup_printf("%s", buf);
+		result = g_string_free(buf, FALSE);
 		g_free(arc);
-	} else if(stream->type == RPDF_TYPE_TEXT_CB) {
+		break;
+	}
+	case RPDF_TYPE_TEXT_CB:
+	{
 		struct rpdf_stream_text_callback *stream_text_callback = stream->data;
 		gchar *callback_data;
 		gdouble angle = M_PI * stream_text_callback->angle / 180.0;
@@ -389,6 +421,10 @@ static void rpdf_make_page_stream(gpointer data, gpointer user_data) {
 		g_free(text);
 		g_free(callback_data);
 		g_free(stream_text_callback);
+		break;
+	}
+	default:
+		break;
 	}
 
 	g_free(stream);

@@ -84,29 +84,14 @@ To find out about all it can do visit: http://rlib.sicompos.com
 %setup -q
 
 autoreconf -vif -Wall
-
-# GCC 4.8.5 with the RPM_OPT_FLAGS optimization
-# miscompiles RPDF on CentOS 7.x, causing a problem
-# in reports with Pie Charts now displaying in
-# PDF reports. As a temporary measure, disable the
-# optimization.
-
-export RPM_OPT_FLAGS=""
-export CFLAGS="$RPM_OPT_FLAGS"
-export LDFLAGS="$RPM_OPT_FLAGS"
-./configure --enable-utf8 \
-	--prefix=%{_prefix} \
-	--bindir=%{_bindir} \
-	--libdir=%{_libdir} \
-	--sysconfdir=%{_sysconfdir}
+%configure --enable-utf8 --enable-mysql --enable-postgres --with-odbc
 
 %build
-
 make
 
 %install
 [ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf $RPM_BUILD_ROOT
-make install DESTDIR=$RPM_BUILD_ROOT
+%makeinstall
 
 %clean
 [ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf $RPM_BUILD_ROOT
