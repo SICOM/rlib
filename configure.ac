@@ -207,7 +207,7 @@ AS_IF([test x$enable_postgres = xyes],
 	[AC_ARG_ENABLE([built-in-postgres],
 		[AS_HELP_STRING([--enable-built-in-postgres],[build postgres input datasource into libr.so])],
 		[AC_DEFINE(HAVE_POSTGRES_BUILTIN, 1, [build postgres input datasource into libr.so])],
-		[enable_build_in_postgres=no])],
+		[enable_built_in_postgres=no])],
 	[enable_built_in_postgres=no])
 AM_CONDITIONAL(HAVE_POSTGRES_BUILTIN, test x$enable_built_in_postgres = xyes)
 
