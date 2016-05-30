@@ -646,7 +646,6 @@ struct rlib_chart {
 };
 
 struct rlib_report {
-	xmlDocPtr doc;
 	struct rlib_from_xml xml_font_size;
 	struct rlib_from_xml xml_query;
 	struct rlib_from_xml xml_orientation;

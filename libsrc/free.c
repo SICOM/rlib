@@ -316,9 +316,6 @@ static void free_chart(rlib *r, struct rlib_chart *chart) {
 void rlib_free_report(rlib *r, struct rlib_report *report) {
 	struct rlib_element *e, *prev;
 
-	if (report->doc != NULL)
-		xmlFreeDoc(report->doc);
-
 	rlib_pcode_free(r, report->font_size_code);
 	rlib_pcode_free(r, report->query_code);
 	rlib_pcode_free(r, report->orientation_code);

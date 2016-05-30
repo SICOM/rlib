@@ -632,7 +632,6 @@ static gint parse_metadata_item(rlib *r, xmlNodePtr cur, GHashTable *ht) {
 static gint parse_report(rlib *r, struct rlib_part *part, struct rlib_report *report, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur, gchar *query) __attribute__((warn_unused_result));
 
 static gint parse_report(rlib *r, struct rlib_part *part, struct rlib_report *report, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur, gchar *query) {
-	report->doc = doc;
 /*	if (doc->encoding)
 		g_strlcpy(report->xml_encoding_name, doc->encoding, sizeof(report->xml_encoding_name)); */
 
@@ -1031,12 +1030,13 @@ static struct rlib_report *parse_report_file(rlib *r, int report_index, gchar *f
 	file = get_filename(r, filename, report_index, FALSE);
 	doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
 	g_free(file);
-	xmlXIncludeProcess(doc);
 
 	if (doc == NULL)  {
 		r_error(r, "xmlParseError \n");
 		return NULL;
 	}
+
+	xmlXIncludeProcess(doc);
 
 	cur = xmlDocGetRootElement(doc);
 	if (cur == NULL) {
@@ -1069,6 +1069,8 @@ static struct rlib_report *parse_report_file(rlib *r, int report_index, gchar *f
 		rlib_free_report(r, report);
 		return NULL;
 	}
+
+	xmlFreeDoc(doc);
 
 	return report;
 }

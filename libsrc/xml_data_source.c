@@ -192,12 +192,13 @@ static void *xml_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	file = get_filename(input->r, query->sql, -1, FALSE);
 	doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
 	g_free(file);
-	xmlXIncludeProcess(doc);
 
 	if (doc == NULL) {
 		r_error(NULL,"xmlParseError\n");
 		return NULL;
 	}
+
+	xmlXIncludeProcess(doc);
 
 	QUERY_PRIVATE(query)->doc = doc;
 
