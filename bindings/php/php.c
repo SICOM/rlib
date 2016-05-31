@@ -806,7 +806,7 @@ ZEND_FUNCTION(rlib_compile_infix) {
 	ZEND_FETCH_RESOURCE(rip, rlib_inout_pass *, &z_rip, id, LE_RLIB_NAME, le_link);
 
 	rlib_setmessagewriter(compile_error_capture);
-	code = rlib_infix_to_pcode(NULL, NULL, NULL, infix, -1, FALSE);
+	code = rlib_infix_to_pcode(rip->r, NULL, NULL, infix, -1, FALSE);
 	if (code != NULL) {
 		rlib_execute_pcode(rip->r, &value, code, NULL);
 		rlib_pcode_free(rip->r, code);
