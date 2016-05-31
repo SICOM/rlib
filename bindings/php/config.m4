@@ -1,6 +1,6 @@
 dnl config.m4 for extension rlib
 
-PHP_ARG_ENABLE(mgrng_epayment, whether to enable mgrng_epayment module,
+PHP_ARG_ENABLE(rlib, whether to enable rlib module,
 [  --enable-rlib             Enable rlib module])
 
 if test "$PHP_RLIB" != "no"; then
