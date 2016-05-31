@@ -436,6 +436,11 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 
 static gint rlib_execute_queries(rlib *r) {
 	gint i;
+	char *env;
+	gint profiling;
+
+	env = getenv("RLIB_PROFILING");
+	profiling = !(env == NULL || *env == '\0');
 
 	for (i = 0; i < r->queries_count; i++) {
 		r->results[i]->input = NULL;
@@ -443,9 +448,26 @@ static gint rlib_execute_queries(rlib *r) {
 	}
 
 	for (i = 0; i < r->queries_count; i++) {
+		struct timespec ts1, ts2;
 		r->results[i]->input = r->queries[i]->input;
 		r->results[i]->name =  r->queries[i]->name;
+		clock_gettime(CLOCK_MONOTONIC, &ts1);
 		r->results[i]->result = INPUT(r,i)->new_result_from_query(INPUT(r,i), r->queries[i]);
+		clock_gettime(CLOCK_MONOTONIC, &ts2);
+		if (profiling) {
+			gchar *name = NULL;
+			int j;
+			long diff = (ts2.tv_sec - ts1.tv_sec) * 1000000 + (ts2.tv_nsec - ts1.tv_nsec) / 1000;
+
+			for (j = 0; j < r->inputs_count; j++) {
+				if (r->inputs[j].input == r->results[i]->input) {
+					name = r->inputs[j].name;
+					break;
+				}
+			}
+			r_warning(r, "rlib_execute_queries: executing query %s:%s took %ld microseconds\n",
+						(name ? name : "<unknown>"), r->results[i]->name, diff);
+		}
 		r->results[i]->next_failed = FALSE;
 		r->results[i]->navigation_failed = FALSE;
 		if (r->results[i]->result == NULL) {
@@ -460,9 +482,16 @@ static gint rlib_execute_queries(rlib *r) {
 
 DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 	gint i;
+	char *env;
+	gint profiling;
+	struct timespec ts1, ts2;
+
+	env = getenv("RLIB_PROFILING");
+	profiling = !(env == NULL || *env == '\0');
+
 	r->now = time(NULL);
 
-	if(r->format == RLIB_FORMAT_HTML) {
+	if (r->format == RLIB_FORMAT_HTML) {
 		gchar *param;
 		param = g_hash_table_lookup(r->output_parameters, "debugging");
 		if(param != NULL && strcmp(param, "yes") == 0)
@@ -471,8 +500,11 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 
 	if (r->queries_count < 1) {
 		r_warning(r,"Warning: No queries added to report\n");
-	} else
+	} else {
 		rlib_execute_queries(r);
+	}
+
+	clock_gettime(CLOCK_MONOTONIC, &ts1);
 
 	LIBXML_TEST_VERSION
 
@@ -493,6 +525,15 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 
 	rlib_finalize(r);
 	r->did_execute = TRUE;
+
+	clock_gettime(CLOCK_MONOTONIC, &ts2);
+
+	if (profiling) {
+		long diff = (ts2.tv_sec - ts1.tv_sec) * 1000000 + (ts2.tv_nsec - ts1.tv_nsec) / 1000;
+
+		r_warning(r, "rlib_execute: creating report took %ld microseconds\n", diff);
+	}
+
 	return 0;
 }
 
