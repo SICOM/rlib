@@ -28,7 +28,9 @@ if test "$PHP_RLIB" != "no"; then
 	dnl These below must be built before they can be used
 	dnl
 	LIBRLIB_CFLAGS="-I../../libsrc"
-	LIBRLIB_LIBS="-L../../rpdf -L../../libsrc -lr"
+	# We don't want errors telling:
+	# /usr/bin/grep: /usr/lib64/librpdf.la: No such file or directory
+	LIBRLIB_LIBS="-L../../rpdf/.libs -L../../libsrc/.libs -lr"
 
 	CFLAGS="$CFLAGS $GLIB_CFLAGS $LIBRLIB_CFLAGS"
 	LDFLAGS="$LDFLAGS $GLIB_LIBS $LIBRLIB_LIBS"
