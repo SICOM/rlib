@@ -88,7 +88,7 @@ static gint rlib_odbc_connect(gpointer input_ptr, const gchar *source, const gch
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO)) {
 		r_error(r, "Error SetEnv\n");
 		SQLFreeHandle(SQL_HANDLE_ENV, INPUT_PRIVATE(input)->V_OD_Env);
-		return NULL;
+		return -1;
 	}
 
 
@@ -96,7 +96,7 @@ static gint rlib_odbc_connect(gpointer input_ptr, const gchar *source, const gch
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO)) {
 		r_error(r, "Error AllocHDB %d\n",V_OD_erg);
 		SQLFreeHandle(SQL_HANDLE_ENV, INPUT_PRIVATE(input)->V_OD_Env);
-		return NULL;
+		return -1;
 	}
 
 	SQLSetConnectAttr(INPUT_PRIVATE(input)->V_OD_hdbc, SQL_LOGIN_TIMEOUT, (SQLPOINTER *)5, 0);
@@ -112,7 +112,7 @@ static gint rlib_odbc_connect(gpointer input_ptr, const gchar *source, const gch
 		SQLGetDiagRec(SQL_HANDLE_DBC, INPUT_PRIVATE(input)->V_OD_hdbc,1, V_OD_stat, &V_OD_err,V_OD_msg,100,&V_OD_mlen);
 		SQLFreeHandle(SQL_HANDLE_DBC, INPUT_PRIVATE(input)->V_OD_hdbc);
 		SQLFreeHandle(SQL_HANDLE_ENV, INPUT_PRIVATE(input)->V_OD_Env);
-		return NULL;
+		return -1;
 	}
 
 	return 0;
