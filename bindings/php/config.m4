@@ -28,11 +28,10 @@ if test "$PHP_RLIB" != "no"; then
 	dnl These below must be built before they can be used
 	dnl
 	LIBRLIB_CFLAGS="-I../../libsrc"
-	LIBRLIB_LIBS="-lr"
+	LIBRLIB_LIBS="-L../../rpdf -L../../libsrc -lr"
 
 	CFLAGS="$CFLAGS $GLIB_CFLAGS $LIBRLIB_CFLAGS"
 	LDFLAGS="$LDFLAGS $GLIB_LIBS $LIBRLIB_LIBS"
-	
 
 	PHP_NEW_EXTENSION(rlib, [array_data_source.c environment.c php.c], $ext_shared)
 	PHP_EVAL_INCLINE($CFLAGS)
