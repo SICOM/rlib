@@ -102,6 +102,9 @@ gint rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gint *r
 	gint found = FALSE;
 	gchar *right_side = NULL, *result_name = NULL;
 
+	if (r->results == NULL)
+		return FALSE;
+
 	resultset = r->current_result;
 	right_side = memchr(name, '.', r_strlen(name));
 	if (right_side != NULL) {
@@ -124,7 +127,7 @@ gint rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gint *r
 		}
 	}
 	*rtn_field = INPUT(r, resultset)->resolve_field_pointer(INPUT(r, resultset), r->results[resultset]->result, name);
-	
+
 	if(*rtn_field != NULL)
 		found = TRUE;
 	else {
@@ -134,9 +137,8 @@ gint rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gint *r
 			r_error(r, "The field [%s.%s] does not exist\n", result_name, name);
 	}
 	*rtn_resultset = resultset;
-	
-	if(result_name != NULL)
-		g_free(result_name);
+
+	g_free(result_name);
 	
 	return found;
 }
