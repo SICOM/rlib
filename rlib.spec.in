@@ -10,7 +10,12 @@ Release: 4%{?dist}
 License: GPL
 Group: System Environment/Libraries
 Source: https://github.com/SICOM/rlib/archive/%{name}-%{version}.tar.gz
-BuildRequires: mysql-devel, perl, php-devel, postgresql-devel, python-devel, unixODBC-devel
+# Build
+BuildRequires: autoconf, automake, libtool, gettext-devel
+# Bindings
+BuildRequires: perl-devel, php-devel, python-devel
+# Input datasources
+BuildRequires: mysql-devel, postgresql-devel, unixODBC-devel
 
 %description
 RLIB is a reporting engine/library.  To find out about all it can do visit:
