@@ -167,7 +167,7 @@ static void rlib_array_rlib_free_query(gpointer input_ptr UNUSED, gpointer query
 static gpointer rlib_array_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
-	input = g_malloc(sizeof(struct input_filter));
+	input = g_malloc0(sizeof(struct input_filter));
 	input->r = r;
 	input->private = NULL;
 	input->input_close = rlib_array_input_close;

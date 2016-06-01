@@ -290,7 +290,7 @@ static gint rlib_xml_free_input_filter(gpointer input_ptr){
 gpointer rlib_xml_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
-	input = g_malloc(sizeof(struct input_filter));
+	input = g_malloc0(sizeof(struct input_filter));
 	input->r = r;
 	input->connect_with_connstr = rlib_xml_connect;
 	input->input_close = rlib_xml_input_close;
