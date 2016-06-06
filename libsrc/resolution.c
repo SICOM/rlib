@@ -309,17 +309,17 @@ static void rlib_resolve_outputs(rlib *r, struct rlib_part *part, struct rlib_re
  * Report variables are refereced as v.whatever
  * but when created in the <variables/> section they use there normal name.. ie.. whatever
  */
-struct rlib_report_variable *rlib_resolve_variable(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *name) {
+struct rlib_report_variable *rlib_resolve_variable(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report, gchar *name) {
 	struct rlib_element *e;
-	if(report == NULL && part != NULL)
+	if (report == NULL && part != NULL)
 		report = part->only_report;
-	if(report == NULL)
+	if (report == NULL)
 		return NULL;
-	if(r_strlen(name) >= 3 && name[0] == 'v' && name[1] == '.') {
+	if (r_strlen(name) >= 3 && name[0] == 'v' && name[1] == '.') {
 		name += 2;
-		for(e = report->variables; e != NULL; e=e->next) {
+		for (e = report->variables; e != NULL; e = e->next) {
 			struct rlib_report_variable *rv = e->data;
-		if(!strcmp(name, (char *)rv->xml_name.xml))
+		if (!strcmp(name, (char *)rv->xml_name.xml))
 			return rv;
 		}	
 		rlogit(r, "rlib_resolve_variable: Could not find [%s]\n", name);
@@ -451,8 +451,10 @@ void rlib_resolve_report_fields(rlib *r, struct rlib_part *part, struct rlib_rep
 	rlib_resolve_outputs(r, part, report, report->page_header);
 	rlib_resolve_outputs(r, part, report, report->page_footer);
 	rlib_resolve_outputs(r, part, report, report->report_footer);
-	rlib_resolve_outputs(r, part, report, report->detail.fields);
-	rlib_resolve_outputs(r, part, report, report->detail.headers);
+	if (report->detail) {
+		rlib_resolve_outputs(r, part, report, report->detail->fields);
+		rlib_resolve_outputs(r, part, report, report->detail->headers);
+	}
 	rlib_resolve_outputs(r, part, report, report->alternate.nodata);
 
 	rlib_resolve_graph(r, part, report, &report->graph);

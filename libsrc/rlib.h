@@ -183,6 +183,7 @@ gint rlib_set_locale(rlib *r, gchar *locale);
 void rlib_set_output_encoding(rlib *r, const char *encoding);
 gint rlib_set_datasource_encoding(rlib *r, gchar *input_name, gchar *encoding);
 gint rlib_execute(rlib *r);
+gint rlib_parse(rlib *);
 gchar * rlib_get_content_type_as_text(rlib *r);
 gint rlib_spool(rlib *r);
 gchar *rlib_get_output(rlib *r);

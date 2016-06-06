@@ -53,6 +53,7 @@ static void metadata_destroyer(gpointer data) {
 	rlib *r = metadata->r;
 	rlib_value_free(&metadata->rval_formula);
 	rlib_pcode_free(r, metadata->formula_code);
+	xmlFree(metadata->xml_formula.xml);
 	g_free(data);
 }
 
@@ -480,6 +481,56 @@ static gint rlib_execute_queries(rlib *r) {
 	return TRUE;
 }
 
+
+DLL_EXPORT_SYM gint rlib_parse(rlib *r) {
+	gint i;
+	char *env;
+	gint profiling;
+	struct timespec ts1, ts2;
+
+	env = getenv("RLIB_PROFILING");
+	profiling = !(env == NULL || *env == '\0');
+
+	r->now = time(NULL);
+
+	if (r->format == RLIB_FORMAT_HTML) {
+		gchar *param;
+		param = g_hash_table_lookup(r->output_parameters, "debugging");
+		if(param != NULL && strcmp(param, "yes") == 0)
+			r->html_debugging = TRUE;
+	}
+
+	LIBXML_TEST_VERSION
+
+	xmlKeepBlanksDefault(0);
+	for (i = 0; i < r->parts_count; i++) {
+		r->parts[i] = parse_part_file(r, i);
+		xmlCleanupParser();
+		if (r->parts[i] == NULL) {
+			r_error(r,"Failed to load a report file [%s]\n", r->reportstorun[i].name);
+			return -1;
+		}
+	}
+
+#if 0
+	/* Causes unnecessary warnings in parse-only mode. */
+	rlib_resolve_metadata(r);
+	rlib_resolve_followers(r);
+#endif
+
+	r->did_execute = TRUE;
+
+	clock_gettime(CLOCK_MONOTONIC, &ts2);
+
+	if (profiling) {
+		long diff = (ts2.tv_sec - ts1.tv_sec) * 1000000 + (ts2.tv_nsec - ts1.tv_nsec) / 1000;
+
+		r_warning(r, "rlib_parse: creating report took %ld microseconds\n", diff);
+	}
+
+	return 0;
+}
+
 DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 	gint i;
 	char *env;
@@ -495,8 +546,8 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 		gchar *param;
 		param = g_hash_table_lookup(r->output_parameters, "debugging");
 		if(param != NULL && strcmp(param, "yes") == 0)
-			r->html_debugging = TRUE; 	
-	} 
+			r->html_debugging = TRUE;
+	}
 
 	if (r->queries_count < 1) {
 		r_warning(r,"Warning: No queries added to report\n");

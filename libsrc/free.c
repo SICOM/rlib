@@ -130,8 +130,44 @@ static void field_free_pcode(rlib *r, struct rlib_report_field *rf) {
 	g_free(rf);
 }
 
+void rlib_free_line_elements(rlib *r, struct rlib_element *e) {
+	struct rlib_element *next;
+
+	for (next = NULL; e != NULL; next = e->next, g_free(e), e = next) {
+		if (e->type == RLIB_ELEMENT_FIELD) {
+			field_free_pcode(r, (struct rlib_report_field *)e->data);
+		} else if (e->type == RLIB_ELEMENT_LITERAL) {
+			//r_error(r, "freed RLIB_ELEMENT_LITERAL e=%p literal=%p\n", e, e->data);
+			text_free_pcode(r, (struct rlib_report_literal *)e->data);
+		} else if (e->type == RLIB_ELEMENT_IMAGE) {
+			image_free_pcode(r, (struct rlib_report_image *)e->data);
+		} else if (e->type == RLIB_ELEMENT_BARCODE) {
+			barcode_free_pcode(r, (struct rlib_report_barcode *)e->data);
+		}
+	}
+}
+
+void rlib_free_lines(rlib *r, struct rlib_report_lines *rl) {
+	rlib_pcode_free(r, rl->bgcolor_code);
+	rlib_pcode_free(r, rl->color_code);
+	rlib_pcode_free(r, rl->suppress_code);
+	rlib_pcode_free(r, rl->font_size_code);
+	rlib_pcode_free(r, rl->bold_code);
+	rlib_pcode_free(r, rl->italics_code);
+
+	rlib_free_line_elements(r, rl->e);
+	rl->e = NULL;
+
+	xmlFree(rl->xml_bgcolor.xml);
+	xmlFree(rl->xml_color.xml);
+	xmlFree(rl->xml_bold.xml);
+	xmlFree(rl->xml_italics.xml);
+	xmlFree(rl->xml_font_size.xml);
+	xmlFree(rl->xml_suppress.xml);
+	g_free(rl);
+}
+
 static void free_fields(rlib *r, struct rlib_report_output_array *roa) {
-	struct rlib_element *e, *save;
 	gint j;
 
 	if (roa == NULL)
@@ -140,36 +176,7 @@ static void free_fields(rlib *r, struct rlib_report_output_array *roa) {
 		struct rlib_report_output *ro = roa->data[j];
 		if (ro->type == RLIB_REPORT_PRESENTATION_DATA_LINE) {
 			struct rlib_report_lines *rl = ro->data;
-			e = rl->e;
-			rlib_pcode_free(r, rl->bgcolor_code);
-			rlib_pcode_free(r, rl->color_code);
-			rlib_pcode_free(r, rl->suppress_code);
-			rlib_pcode_free(r, rl->font_size_code);
-			rlib_pcode_free(r, rl->bold_code);
-			rlib_pcode_free(r, rl->italics_code);
-			for (; e != NULL; e = e->next) {
-				if(e->type == RLIB_ELEMENT_FIELD) {
-					field_free_pcode(r, (struct rlib_report_field *)e->data);
-				} else if(e->type == RLIB_ELEMENT_LITERAL) {
-					text_free_pcode(r, (struct rlib_report_literal *)e->data);
-				} else if(e->type == RLIB_ELEMENT_IMAGE) {
-					image_free_pcode(r, (struct rlib_report_image *)e->data);
-				} else if(e->type == RLIB_ELEMENT_BARCODE) {
-					barcode_free_pcode(r, (struct rlib_report_barcode *)e->data);
-				}
-			}
-			for (e = rl->e; e != NULL; ) {
-				save = e->next;
-				g_free(e);
-				e = save;
-			}
-			xmlFree(rl->xml_bgcolor.xml);
-			xmlFree(rl->xml_color.xml);
-			xmlFree(rl->xml_bold.xml);
-			xmlFree(rl->xml_italics.xml);
-			xmlFree(rl->xml_font_size.xml);
-			xmlFree(rl->xml_suppress.xml);
-			g_free(rl);
+			rlib_free_lines(r, rl);
 		} else if(ro->type == RLIB_REPORT_PRESENTATION_DATA_HR) {
 			hr_free_pcode(r, (struct rlib_report_horizontal_line *)ro->data);
 		} else if(ro->type == RLIB_REPORT_PRESENTATION_DATA_IMAGE) {
@@ -189,15 +196,12 @@ static void break_free_pcode(rlib *r, struct rlib_break_fields *bf) {
 	xmlFree(bf->xml_value.xml);
 }
 
-static void free_output(rlib *r, struct rlib_element *e) {
+void rlib_free_output(rlib *r, struct rlib_element *e) {
 	struct rlib_report_output_array *roa;
-	struct rlib_element *save;
-	while(e != NULL) {
-		save = e;
+	struct rlib_element *next;
+	for (; e != NULL; next = e->next, g_free(e), e = next) {
 		roa = e->data;
 		free_fields(r, roa);
-		e = e->next;
-		g_free(save);
 	}
 }
 
@@ -281,6 +285,8 @@ static void free_chart(rlib *r, struct rlib_chart *chart) {
 	xmlFree(chart->xml_rows.xml);
 	xmlFree(chart->xml_cell_width.xml);
 	xmlFree(chart->xml_cell_height.xml);
+	xmlFree(chart->xml_cell_width_padding.xml);
+	xmlFree(chart->xml_cell_height_padding.xml);
 	xmlFree(chart->xml_label_width.xml);
 	xmlFree(chart->xml_header_row.xml);
 
@@ -313,8 +319,71 @@ static void free_chart(rlib *r, struct rlib_chart *chart) {
 	xmlFree(row->xml_bar_label_color.xml);
 }
 
+void rlib_free_break_fields(rlib *r, struct rlib_element *be) {
+	struct rlib_element *next;
+
+	for (; be; next = be->next, g_free(be), be = next) {
+		struct rlib_break_fields *bf = be->data;
+
+		break_free_pcode(r, bf);
+		g_free(bf);
+	}
+}
+
+void rlib_free_breaks(rlib *r, struct rlib_element *e) {
+	struct rlib_element *next;
+//	struct rlib_element *prev;
+
+	for (; e != NULL; next = e->next, g_free(e), e = next) {
+		struct rlib_report_break *rb = e->data;
+
+		//struct rlib_element *be;
+		rlib_free_output(r, rb->header);
+		rlib_free_output(r, rb->footer);
+
+		rlib_free_break_fields(r, rb->fields);
+		rb->fields = NULL;
+
+		rlib_pcode_free(r, rb->newpage_code);
+		rlib_pcode_free(r, rb->headernewpage_code);
+		rlib_pcode_free(r, rb->suppressblank_code);
+		xmlFree(rb->xml_name.xml);
+		xmlFree(rb->xml_newpage.xml);
+		xmlFree(rb->xml_headernewpage.xml);
+		xmlFree(rb->xml_suppressblank.xml);
+		g_free(rb);
+	}
+}
+
+void rlib_free_variables(rlib *r, struct rlib_element *e) {
+	struct rlib_element *save;
+
+	for (; e != NULL; save = e, e = e->next, g_free(save)) {
+		struct rlib_report_variable *rv = e->data;
+
+		rlib_pcode_free(r, rv->code);
+		rlib_pcode_free(r, rv->ignore_code);
+
+		xmlFree(rv->xml_name.xml);
+		xmlFree(rv->xml_str_type.xml);
+		xmlFree(rv->xml_value.xml);
+		xmlFree(rv->xml_resetonbreak.xml);
+		xmlFree(rv->xml_precalculate.xml);
+		xmlFree(rv->xml_ignore.xml);
+
+		if(rv->precalculated_values != NULL) {
+			g_free(rv->precalculated_values->data);
+			rv->precalculated_values = g_slist_remove_link (rv->precalculated_values, rv->precalculated_values);
+		}
+
+		g_free(rv);
+		e->data = NULL;
+	}
+}
+
 void rlib_free_report(rlib *r, struct rlib_report *report) {
-	struct rlib_element *e, *prev;
+	if (report == NULL)
+		return;
 
 	rlib_pcode_free(r, report->font_size_code);
 	rlib_pcode_free(r, report->query_code);
@@ -329,13 +398,21 @@ void rlib_free_report(rlib *r, struct rlib_report *report) {
 	rlib_pcode_free(r, report->column_pad_code);
 	rlib_pcode_free(r, report->uniquerow_code);
 
-	free_output(r, report->report_header);
-	free_output(r, report->page_header);
-	free_output(r, report->page_footer);
-	free_output(r, report->report_footer);
-	free_output(r, report->detail.fields);
-	free_output(r, report->detail.headers);
-	free_output(r, report->alternate.nodata);
+	rlib_free_output(r, report->report_header);
+	report->report_header = NULL;
+	rlib_free_output(r, report->page_header);
+	report->page_header = NULL;
+	rlib_free_output(r, report->page_footer);
+	report->page_footer = NULL;
+	rlib_free_output(r, report->report_footer);
+	report->report_footer = NULL;
+	if (report->detail) {
+		rlib_free_output(r, report->detail->fields);
+		rlib_free_output(r, report->detail->headers);
+		g_free(report->detail);
+		report->detail = NULL;
+	}
+	rlib_free_output(r, report->alternate.nodata);
 
 	free_graph(r, &report->graph);
 	free_chart(r, &report->chart);
@@ -346,66 +423,12 @@ void rlib_free_report(rlib *r, struct rlib_report *report) {
 
 	rlib_value_free(&report->uniquerow);
 
-	if (report->breaks != NULL) {
-		struct rlib_element *save;
-		for (e = report->breaks; e != NULL; save = e, e = e->next, g_free(save)) {
-			struct rlib_report_break *rb = e->data;
-			struct rlib_element *be;
-			free_output(r, rb->header);
-			free_output(r, rb->footer);
-			for(be = rb->fields; be != NULL; be=be->next) {
-				struct rlib_break_fields *bf = be->data;
-				break_free_pcode(r, bf);
-				g_free(bf);
-			}
+	rlib_free_breaks(r, report->breaks);
+	report->breaks = NULL;
 
-			while(rb->fields) {
-				prev = NULL;
-				for(be = rb->fields; be->next != NULL; be=be->next) {
-					prev = be;
-				}
-				g_free(be);
-				if(prev != NULL)
-					prev->next = NULL;
-				else
-					break;
-			}
-			rlib_pcode_free(r, rb->newpage_code);
-			rlib_pcode_free(r, rb->headernewpage_code);
-			rlib_pcode_free(r, rb->suppressblank_code);
-			xmlFree(rb->xml_name.xml);
-			xmlFree(rb->xml_newpage.xml);
-			xmlFree(rb->xml_headernewpage.xml);
-			xmlFree(rb->xml_suppressblank.xml);
-			g_free(rb);
-		}
-		report->breaks = NULL;
-	}
+	rlib_free_variables(r, report->variables);
+	report->variables = NULL;
 
-	if (report->variables != NULL) {
-		struct rlib_element *save;
-		for (e = report->variables; e != NULL; save = e, e = e->next, g_free(save)) {
-			struct rlib_report_variable *rv = e->data;
-
-			rlib_pcode_free(r, rv->code);
-			rlib_pcode_free(r, rv->ignore_code);
-
-			xmlFree(rv->xml_name.xml);
-			xmlFree(rv->xml_str_type.xml);
-			xmlFree(rv->xml_value.xml);
-			xmlFree(rv->xml_resetonbreak.xml);
-			xmlFree(rv->xml_ignore.xml);
-
-			if(rv->precalculated_values != NULL) {
-				g_free(rv->precalculated_values->data);
-				rv->precalculated_values = g_slist_remove_link (rv->precalculated_values, rv->precalculated_values);
-			}
-
-			g_free(rv);
-			e->data = NULL;
-		}
-		report->variables = NULL;
-	}
 	xmlFree(report->xml_font_size.xml);
 	xmlFree(report->xml_query.xml);
 	xmlFree(report->xml_orientation.xml);
@@ -418,10 +441,17 @@ void rlib_free_report(rlib *r, struct rlib_report *report) {
 	xmlFree(report->xml_iterations.xml);
 	xmlFree(report->xml_pages_across.xml);
 	xmlFree(report->xml_suppress_page_header_first_page.xml);
+	xmlFree(report->xml_suppress.xml);
+	xmlFree(report->xml_uniquerow.xml);
+
+	g_free(report);
 }
 
 void rlib_free_part_td(rlib *r, struct rlib_part_td *td) {
 	GSList *reports;
+
+	if (td == NULL)
+		return NULL;
 
 	rlib_pcode_free(r, td->width_code);
 	rlib_pcode_free(r, td->height_code);
@@ -438,7 +468,6 @@ void rlib_free_part_td(rlib *r, struct rlib_part_td *td) {
 			rlib_free_report(r, report);
 	}
 
-	g_slist_foreach(td->reports, (GFunc) g_free, NULL);
 	g_slist_free(td->reports);
 	td->reports = NULL;
 	g_free(td);
@@ -450,27 +479,22 @@ void rlib_free_part_deviations(rlib *r, GSList *part_deviations) {
 		struct rlib_part_td *td = element->data;
 		rlib_free_part_td(r, td);
 	}
+	g_slist_free(part_deviations);
 }
 
-void rlib_free_part_tr(rlib *r, struct rlib_part *part) {
-	GSList *element;
-
-	for (element = part->part_rows; element != NULL; element = g_slist_next(element)) {
-		struct rlib_part_tr *tr = element->data;
-		rlib_pcode_free(r, tr->layout_code);
-		rlib_pcode_free(r, tr->newpage_code);
-		xmlFree(tr->xml_layout.xml);
-		xmlFree(tr->xml_newpage.xml);
-		rlib_free_part_deviations(r, tr->part_deviations);
-		g_slist_free(tr->part_deviations);
-		tr->part_deviations = NULL;
-		g_free(tr);
-	}
-	g_slist_free(part->part_rows);
-	part->part_rows = NULL;
+void rlib_free_part_tr(rlib *r, struct rlib_part_tr *tr) {
+	rlib_pcode_free(r, tr->layout_code);
+	rlib_pcode_free(r, tr->newpage_code);
+	xmlFree(tr->xml_layout.xml);
+	xmlFree(tr->xml_newpage.xml);
+	rlib_free_part_deviations(r, tr->part_deviations);
+	tr->part_deviations = NULL;
+	g_free(tr);
 }
 
 void rlib_free_part(rlib *r, struct rlib_part *part) {
+	GSList *element;
+
 	if (part == NULL)
 		return;
 
@@ -500,11 +524,21 @@ void rlib_free_part(rlib *r, struct rlib_part *part) {
 	g_free(part->position_bottom);
 	g_free(part->bottom_size);
 
-	free_output(r, part->page_header);
-	free_output(r, part->page_footer);
-	free_output(r, part->report_header);
+	rlib_free_output(r, part->page_header);
+	part->page_header = NULL;
+	rlib_free_output(r, part->page_footer);
+	part->page_footer = NULL;
+	rlib_free_output(r, part->report_header);
+	part->report_header = NULL;
 
-	rlib_free_part_tr(r, part);
+	for (element = part->part_rows; element != NULL; element = g_slist_next(element)) {
+		struct rlib_part_tr *tr = element->data;
+		rlib_free_part_tr(r, tr);
+	}
+	g_slist_free(part->part_rows);
+	part->part_rows = NULL;
+
+	g_free(part);
 }
 
 void rlib_free_tree(rlib *r) {
@@ -514,7 +548,6 @@ void rlib_free_tree(rlib *r) {
 		rlib_free_part(r, part);
 		g_free(r->reportstorun[i].name);
 		g_free(r->reportstorun[i].dir);
-		g_free(part);
 		r->parts[i] = NULL;
 	}
 
@@ -594,7 +627,7 @@ DLL_EXPORT_SYM gint rlib_free(rlib *r) {
 		g_free(r->inputs[i].name);
 	}
 
-	if (r->did_execute) {
+	if (r->did_execute && OUTPUT(r)) {
 		OUTPUT(r)->free(r);
 	}
 

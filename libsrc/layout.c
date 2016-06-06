@@ -1293,7 +1293,8 @@ gint rlib_layout_report_output_with_break_headers(rlib *r, struct rlib_part *par
 		OUTPUT(r)->start_report_field_details(r, part, report);	
 	}
 
-	rlib_layout_report_outputs_across_pages(r, part, report, report->detail.fields, FALSE, FALSE);
+	if (report->detail)
+		rlib_layout_report_outputs_across_pages(r, part, report, report->detail->fields, FALSE, FALSE);
 
 	for(i=0;i<report->pages_across;i++) {
 		OUTPUT(r)->set_working_page(r, part, i);
@@ -1333,7 +1334,8 @@ void rlib_layout_init_report_page(rlib *r, struct rlib_part *part, struct rlib_r
 		OUTPUT(r)->start_report_field_headers(r, part, report);
 	}
 
-	rlib_layout_report_output(r, part, report, report->detail.headers, FALSE, FALSE);
+	if (report->detail)
+		rlib_layout_report_output(r, part, report, report->detail->headers, FALSE, FALSE);
 
 	for(i=0;i<report->pages_across;i++) {
 		OUTPUT(r)->set_working_page(r, part, i);

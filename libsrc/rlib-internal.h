@@ -133,9 +133,9 @@ struct rlib_value_stack {
 };
 
 struct rlib_element {
+	struct rlib_element *next;
 	gint type;
 	gpointer data;
-	struct rlib_element *next;
 };
 
 #define RLIB_ALIGN_LEFT 	0
@@ -686,7 +686,7 @@ struct rlib_report {
 
 	struct rlib_element *report_header;
 	struct rlib_element *page_header;
-	struct rlib_report_detail detail;
+	struct rlib_report_detail *detail;
 	struct rlib_element *page_footer;
 	struct rlib_element *report_footer;
 	struct rlib_element *variables;
@@ -1035,8 +1035,14 @@ void rlib_free_report(rlib *r, struct rlib_report *report);
 void rlib_free_part(rlib *r, struct rlib_part *part);
 void rlib_free_part_td(rlib *r, struct rlib_part_td *td);
 void rlib_free_part_deviations(rlib *r, GSList *part_deviations);
-void rlib_free_part_tr(rlib *r, struct rlib_part *part);
+void rlib_free_part_tr(rlib *r, struct rlib_part_tr *tr);
 void rlib_free_results(rlib *r);
+void rlib_free_output(rlib *r, struct rlib_element *e);
+void rlib_free_break_fields(rlib *r, struct rlib_element *be);
+void rlib_free_breaks(rlib *r, struct rlib_element *e);
+void rlib_free_variables(rlib *r, struct rlib_element *e);
+void rlib_free_lines(rlib *r, struct rlib_report_lines *rl);
+void rlib_free_line_elements(rlib *r, struct rlib_element *e);
 
 /***** PROTOTYPES: pdf.c ******************************************************/
 void rlib_pdf_new_output_filter(rlib *r);

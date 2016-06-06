@@ -69,6 +69,8 @@ src/examples/php/*.xml
 src/examples/python/*.xml
 src/rlibc
 src/rlibc.exe
+src/rlib-parse
+src/rlib-parse.exe
 stamp-h1
 tests/.deps/
 tests/Makefile
