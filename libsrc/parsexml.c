@@ -774,11 +774,23 @@ static gint parse_report(rlib *r, struct rlib_part *part, struct rlib_report *re
 				r_error(r, "parse_report: parse_report_outputs(\"ReportHeader\") returned error\n");
 				return -1;
 			}
+			if (report->report_header) {
+				r_error(r, "Line % - Duplicate ReportHeader in <Report>\n", xmlGetLineNo(cur));
+				rlib_free_output(r, ptr);
+				rlib_free_report(r, report);
+				return -1;
+			}
 			report->report_header = ptr;
 		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "PageHeader"))) {
 			struct rlib_element *ptr = parse_report_outputs(r, doc, cur, &error1);
 			if (error1) {
 				r_error(r, "parse_report: parse_report_outputs(\"PageHeader\") returned error\n");
+				return -1;
+			}
+			if (report->page_header) {
+				r_error(r, "Line % - Duplicate PageHeader in <Report>\n", xmlGetLineNo(cur));
+				rlib_free_output(r, ptr);
+				rlib_free_report(r, report);
 				return -1;
 			}
 			report->page_header = ptr;
@@ -853,6 +865,12 @@ static gint parse_report(rlib *r, struct rlib_part *part, struct rlib_report *re
 			struct rlib_element *ptr = parse_report_variables(r, cur, &error1);
 			if (error1) {
 				r_error(r, "parse_report: parse_report_variables returned error\n");
+				return -1;
+			}
+			if (report->variables) {
+				r_error(r, "Line % - Duplicate Variables in <Report>\n", xmlGetLineNo(cur));
+				rlib_free_variables(r, ptr);
+				rlib_free_report(r, report);
 				return -1;
 			}
 			report->variables = ptr;

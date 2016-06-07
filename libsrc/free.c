@@ -458,7 +458,7 @@ void rlib_free_part_td(rlib *r, struct rlib_part_td *td) {
 	GSList *reports;
 
 	if (td == NULL)
-		return NULL;
+		return;
 
 	rlib_pcode_free(r, td->width_code);
 	rlib_pcode_free(r, td->height_code);
