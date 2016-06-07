@@ -44,4 +44,5 @@ public class rlibJNI {
   public final static native int rlib_graph_set_x_minor_tick(long jarg1, String jarg2, String jarg3);
   public final static native int rlib_graph_set_x_minor_tick_by_location(long jarg1, String jarg2, int jarg3);
   public final static native float rlib_graph(long jarg1, long jarg2, long jarg3, float jarg4, long jarg5);
+  public final static native int rlib_parse(long jarg1);
 }

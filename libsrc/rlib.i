@@ -59,3 +59,4 @@ int rlib_graph_clear_bg_region(rlib *r, char *graph_name);
 int rlib_graph_set_x_minor_tick(rlib *r, char *graph_name, char *x_value);
 int rlib_graph_set_x_minor_tick_by_location(rlib *r, char *graph_name, int location);
 float rlib_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, float left_margin_offset, float *top_margin_offset);
+int rlib_parse(rlib *r);

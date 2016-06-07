@@ -294,4 +294,7 @@ class rlibPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_graph")]
   public static extern float rlib_graph(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2, global::System.Runtime.InteropServices.HandleRef jarg3, float jarg4, global::System.Runtime.InteropServices.HandleRef jarg5);
+
+  [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_parse")]
+  public static extern int rlib_parse(global::System.Runtime.InteropServices.HandleRef jarg1);
 }

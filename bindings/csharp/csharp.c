@@ -814,6 +814,18 @@ SWIGEXPORT float SWIGSTDCALL CSharp_rlib_graph(void * jarg1, void * jarg2, void 
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_rlib_parse(void * jarg1) {
+  int jresult ;
+  rlib *arg1 = (rlib *) 0 ;
+  int result;
+  
+  arg1 = (rlib *)jarg1; 
+  result = (int)rlib_parse(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
 #ifdef __cplusplus
 }
 #endif

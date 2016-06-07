@@ -54,3 +54,4 @@ rlib_execute_pcode@49
 rlib_pcode_free@50
 rlib_graph@51
 rlib_chart@52
+rlib_parse@53

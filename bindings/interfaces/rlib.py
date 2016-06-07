@@ -234,6 +234,10 @@ rlib_graph_set_x_minor_tick_by_location = _rlib.rlib_graph_set_x_minor_tick_by_l
 def rlib_graph(r, part, report, left_margin_offset, top_margin_offset):
     return _rlib.rlib_graph(r, part, report, left_margin_offset, top_margin_offset)
 rlib_graph = _rlib.rlib_graph
+
+def rlib_parse(r):
+    return _rlib.rlib_parse(r)
+rlib_parse = _rlib.rlib_parse
 # This file is compatible with both classic and new-style classes.
 
 

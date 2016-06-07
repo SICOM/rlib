@@ -153,4 +153,8 @@ public class rlib {
     return rlibJNI.rlib_graph(SWIGTYPE_p_rlib.getCPtr(r), SWIGTYPE_p_rlib_part.getCPtr(part), SWIGTYPE_p_rlib_report.getCPtr(report), left_margin_offset, SWIGTYPE_p_float.getCPtr(top_margin_offset));
   }
 
+  public static int rlib_parse(SWIGTYPE_p_rlib r) {
+    return rlibJNI.rlib_parse(SWIGTYPE_p_rlib.getCPtr(r));
+  }
+
 }

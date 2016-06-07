@@ -73,6 +73,7 @@ ZEND_FUNCTION(rlib_set_datasource_encoding);
 ZEND_FUNCTION(rlib_set_output_encoding);
 ZEND_FUNCTION(rlib_compile_infix);
 ZEND_FUNCTION(rlib_add_search_path);
+ZEND_FUNCTION(rlib_parse);
 
 ZEND_MODULE_STARTUP_D(rlib);
 
@@ -117,6 +118,7 @@ zend_function_entry rlib_functions[] =
 	ZEND_FE(rlib_set_output_encoding, NULL)
 	ZEND_FE(rlib_compile_infix, NULL)
 	ZEND_FE(rlib_add_search_path, NULL)
+	ZEND_FE(rlib_parse, NULL)
 	{NULL, NULL, NULL}
 };
 
@@ -831,5 +833,19 @@ ZEND_FUNCTION(rlib_add_search_path) {
 	ZEND_FETCH_RESOURCE(rip, rlib_inout_pass *, &z_rip, id, LE_RLIB_NAME, le_link);
 
 	result = rlib_add_search_path(rip->r, sp);
+	RETURN_LONG(result);
+}
+
+ZEND_FUNCTION(rlib_parse) {
+	zval *z_rip = NULL;
+	rlib_inout_pass *rip;
+	gint id = -1;
+	gint result = 0;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &z_rip) == FAILURE) {
+		return;
+	}
+
+	ZEND_FETCH_RESOURCE(rip, rlib_inout_pass *, &z_rip, id, LE_RLIB_NAME, le_link);
+	result = rlib_parse(rip->r);
 	RETURN_LONG(result);
 }

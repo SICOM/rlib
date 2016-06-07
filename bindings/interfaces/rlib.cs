@@ -189,4 +189,9 @@ public class rlib {
     return ret;
   }
 
+  public static int rlib_parse(SWIGTYPE_p_rlib r) {
+    int ret = rlibPINVOKE.rlib_parse(SWIGTYPE_p_rlib.getCPtr(r));
+    return ret;
+  }
+
 }
