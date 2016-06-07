@@ -335,7 +335,10 @@ int is_true_str(const gchar *str) {
 void rlib_resolve_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_graph *graph) {
 	struct rlib_graph_plot *plot;
 	GSList *list;
-	
+
+	if (graph == NULL)
+		return;
+
 	graph->name_code = rlib_infix_to_pcode(r, part, report, (gchar *)graph->xml_name.xml, graph->xml_name.line, TRUE);
 	graph->type_code = rlib_infix_to_pcode(r, part, report, (gchar *)graph->xml_type.xml, graph->xml_type.line, TRUE);
 	graph->subtype_code = rlib_infix_to_pcode(r, part, report, (gchar *)graph->xml_subtype.xml, graph->xml_subtype.line, TRUE);

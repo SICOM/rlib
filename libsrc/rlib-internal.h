@@ -786,6 +786,7 @@ struct rlib {
 
 	gint format;
 	gint inputs_count;
+	gboolean did_parse;
 	gboolean did_execute;
 
 	gchar *special_locale;
