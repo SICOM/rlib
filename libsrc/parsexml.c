@@ -801,11 +801,23 @@ static gint parse_report(rlib *r, struct rlib_part *part, struct rlib_report *re
 				r_error(r, "parse_report: parse_report_outputs(\"ReportFooter\") returned error\n");
 				return -1;
 			}
+			if (report->report_footer) {
+				r_error(r, "Line % - Duplicate ReportFooter in <Report>\n", xmlGetLineNo(cur));
+				rlib_free_output(r, ptr);
+				rlib_free_report(r, report);
+				return -1;
+			}
 			report->report_footer = ptr;
 		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "Detail"))) {
 			struct rlib_report_detail *ptr = parse_detail(r, doc, cur);
 			if (ptr == NULL) {
 				r_error(r, "parse_report: parse_detail returned error\n");
+				return -1;
+			}
+			if (report->detail) {
+				r_error(r, "Line % - Duplicate Detail in <Report>\n", xmlGetLineNo(cur));
+				rlib_free_detail(r, ptr);
+				rlib_free_report(r, report);
 				return -1;
 			}
 			report->detail = ptr;

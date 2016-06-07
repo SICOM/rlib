@@ -204,7 +204,7 @@ static void reset_variables_on_break(struct rlib_report *report, gchar *name, gb
 }
 
 static void rlib_break_all_below_in_reverse_order(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gboolean precalculate) {
-	gint count=0,i=0,j=0;
+	gint count = 0, i = 0, j = 0;
 	gint newpage = FALSE;
 	gboolean t;
 	struct rlib_report_break *rb;
@@ -214,9 +214,9 @@ static void rlib_break_all_below_in_reverse_order(rlib *r, struct rlib_part *par
 	for (xxx = e; xxx != NULL; xxx=xxx->next)
 		count++;
 
-	for (i=count;i > 0;i--) {
+	for (i = count; i > 0; i--) {
 		xxx = e;
-		for(j=0;j<i-1;j++)
+		for (j = 0; j < i - 1; j++)
 			xxx = xxx->next;		
 		rb = xxx->data;
 		for (be = rb->fields; be != NULL; be=be->next) {
@@ -226,8 +226,7 @@ static void rlib_break_all_below_in_reverse_order(rlib *r, struct rlib_part *par
 		}
 		if (OUTPUT(r)->do_breaks) {
 			gint did_end_page = FALSE;
-			
-			
+
 			if (precalculate == FALSE)
 				did_end_page = rlib_end_page_if_line_wont_fit(r, part, report, rb->footer);
 
@@ -255,9 +254,9 @@ static void rlib_break_all_below_in_reverse_order(rlib *r, struct rlib_part *par
 			newpage = t;
 		
 	}
-	if(newpage && OUTPUT(r)->do_breaks) {
-		if(!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
-			if(OUTPUT(r)->paginate)
+	if (newpage && OUTPUT(r)->do_breaks) {
+		if (!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
+			if (OUTPUT(r)->paginate)
 				rlib_layout_end_page(r, part, report, TRUE);
 			rlib_force_break_headers(r, part, report, precalculate);
 		}
@@ -265,25 +264,24 @@ static void rlib_break_all_below_in_reverse_order(rlib *r, struct rlib_part *par
 }
 
 /*
-	Footers are complicated.... I need to go in reverse order for footers... and if I find a match...
-	I need to go back down the list and force breaks for everyone.. in reverse order.. ugh
-
-*/
+ * Footers are complicated.... I need to go in reverse order for footers... and if I find a match...
+ * I need to go back down the list and force breaks for everyone.. in reverse order.. ugh
+ */
 void rlib_handle_break_footers(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean precalculate) {
 	struct rlib_element *e;
 	struct rlib_break_fields *bf;
 
 	if(report->breaks == NULL)
 		return;
-	for(e = report->breaks; e != NULL; e=e->next) {
-		gint dobreak=1;
+	for (e = report->breaks; e != NULL; e = e->next) {
+		gint dobreak = 1;
 		struct rlib_report_break *rb = e->data;
 		struct rlib_element *be;
-		for(be = rb->fields; be != NULL; be=be->next) {
+		for (be = rb->fields; be != NULL; be=be->next) {
 			struct rlib_value rval_tmp;
 			RLIB_VALUE_TYPE_NONE(&rval_tmp);
 			bf = be->data;
-			if(dobreak) {
+			if (dobreak) {
 				if (INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
 					dobreak = 1;
 				} else {
@@ -299,8 +297,8 @@ void rlib_handle_break_footers(rlib *r, struct rlib_part *part, struct rlib_repo
 				dobreak = 0;
 			}
 		}
-		
-		if(dobreak) {
+
+		if (dobreak) {
 			rlib_break_all_below_in_reverse_order(r, part, report, e, precalculate);
 			break;
 		}

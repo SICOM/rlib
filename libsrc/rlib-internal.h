@@ -1043,6 +1043,7 @@ void rlib_free_breaks(rlib *r, struct rlib_element *e);
 void rlib_free_variables(rlib *r, struct rlib_element *e);
 void rlib_free_lines(rlib *r, struct rlib_report_lines *rl);
 void rlib_free_line_elements(rlib *r, struct rlib_element *e);
+void rlib_free_detail(rlib *r, struct rlib_report_detail *d);
 
 /***** PROTOTYPES: pdf.c ******************************************************/
 void rlib_pdf_new_output_filter(rlib *r);

@@ -381,6 +381,15 @@ void rlib_free_variables(rlib *r, struct rlib_element *e) {
 	}
 }
 
+void rlib_free_detail(rlib *r, struct rlib_report_detail *d) {
+	if (d == NULL)
+		return;
+
+	rlib_free_output(r, d->fields);
+	rlib_free_output(r, d->headers);
+	g_free(d);
+}
+
 void rlib_free_report(rlib *r, struct rlib_report *report) {
 	if (report == NULL)
 		return;
@@ -407,9 +416,7 @@ void rlib_free_report(rlib *r, struct rlib_report *report) {
 	rlib_free_output(r, report->report_footer);
 	report->report_footer = NULL;
 	if (report->detail) {
-		rlib_free_output(r, report->detail->fields);
-		rlib_free_output(r, report->detail->headers);
-		g_free(report->detail);
+		rlib_free_detail(r, report->detail);
 		report->detail = NULL;
 	}
 	rlib_free_output(r, report->alternate.nodata);
