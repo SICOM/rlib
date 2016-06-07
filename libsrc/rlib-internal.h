@@ -66,15 +66,17 @@
 
 #define RLIB_MAXIMUM_PAGES_ACROSS	100
 
-#define RLIB_ELEMENT_LITERAL 1
-#define RLIB_ELEMENT_FIELD   2
-#define RLIB_ELEMENT_IMAGE   3
-#define RLIB_ELEMENT_REPORT  4
-#define RLIB_ELEMENT_PART    5
-#define RLIB_ELEMENT_TR      6
-#define RLIB_ELEMENT_TD      7
-#define RLIB_ELEMENT_LOAD    8
-#define RLIB_ELEMENT_BARCODE 9
+typedef enum {
+	RLIB_ELEMENT_LITERAL = 1,
+	RLIB_ELEMENT_FIELD,
+	RLIB_ELEMENT_IMAGE,
+	RLIB_ELEMENT_REPORT,
+	RLIB_ELEMENT_PART,
+	RLIB_ELEMENT_TR,
+	RLIB_ELEMENT_TD,
+	RLIB_ELEMENT_LOAD,
+	RLIB_ELEMENT_BARCODE
+} rlib_element_enum_t;
 
 #define RLIB_FORMAT_PDF 	1
 #define RLIB_FORMAT_HTML	2
@@ -134,7 +136,7 @@ struct rlib_value_stack {
 
 struct rlib_element {
 	struct rlib_element *next;
-	gint type;
+	rlib_element_enum_t type;
 	gpointer data;
 };
 
@@ -291,12 +293,11 @@ struct rlib_report_output {
 };
 
 struct rlib_report_output_array {
-	gint count;
 	struct rlib_from_xml xml_page;
 	gint page;
 	struct rlib_from_xml xml_suppress;
 	gboolean suppress;
-	struct rlib_report_output **data;
+	GSList *chain; /* struct rlib_report_output **data; */
 };
 
 struct rlib_report_horizontal_line {
@@ -397,10 +398,6 @@ struct rlib_report_break {
 struct rlib_report_detail {
 	struct rlib_element *headers;
 	struct rlib_element *fields;
-};
-
-struct rlib_report_alternate {
-	struct rlib_element *nodata;
 };
 
 struct rlib_count_amount {
@@ -618,7 +615,6 @@ struct rlib_chart_header_row {
 };
 
 struct rlib_chart {
-	gboolean have_chart;
 	struct rlib_from_xml xml_name;
 	struct rlib_from_xml xml_title;
 	struct rlib_from_xml xml_cols;
@@ -641,8 +637,8 @@ struct rlib_chart {
 	struct rlib_pcode *label_width_code;
 	struct rlib_pcode *header_row_code;
 
-	struct rlib_chart_header_row header_row;
-	struct rlib_chart_row row;
+	struct rlib_chart_header_row *header_row;
+	struct rlib_chart_row *row;
 };
 
 struct rlib_report {
@@ -692,9 +688,9 @@ struct rlib_report {
 	struct rlib_element *variables;
 
 	struct rlib_element *breaks;
-	struct rlib_report_alternate alternate;
-	struct rlib_graph graph;
-	struct rlib_chart chart;
+	struct rlib_element *alternate;
+	struct rlib_graph *graph;
+	struct rlib_chart *chart;
 	gint mainloop_query;
 
 	struct rlib_pcode *font_size_code;
@@ -710,7 +706,6 @@ struct rlib_report {
 	struct rlib_pcode *suppress_page_header_first_page_code;
 	struct rlib_pcode *suppress_code;
 	struct rlib_pcode *uniquerow_code;
-
 };
 
 #define RLIB_REPORT_TYPE_FILE 1
@@ -1044,6 +1039,10 @@ void rlib_free_variables(rlib *r, struct rlib_element *e);
 void rlib_free_lines(rlib *r, struct rlib_report_lines *rl);
 void rlib_free_line_elements(rlib *r, struct rlib_element *e);
 void rlib_free_detail(rlib *r, struct rlib_report_detail *d);
+void rlib_free_graph(rlib *r, struct rlib_graph *graph);
+void rlib_free_chart_header_row(rlib *r, struct rlib_chart_header_row *header_row);
+void rlib_free_chart_row(rlib *r, struct rlib_chart_row *row);
+void rlib_free_chart(rlib *r, struct rlib_chart *chart);
 
 /***** PROTOTYPES: pdf.c ******************************************************/
 void rlib_pdf_new_output_filter(rlib *r);

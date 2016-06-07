@@ -115,15 +115,15 @@ void rlib_handle_page_footer(rlib *r, struct rlib_part *part, struct rlib_report
 }
 
 gfloat get_output_size(struct rlib_part *part, struct rlib_report *report, struct rlib_report_output_array *roa) {
-	gint j;
-	gfloat total=0;
-	
-	if(roa->suppress == TRUE)
+	GSList *ptr;
+	gfloat total = 0;
+
+	if (roa->suppress == TRUE)
 		return 0;
-	
-	for(j=0;j<roa->count;j++) {
-		struct rlib_report_output *rd = roa->data[j];
-		if(rd->type == RLIB_REPORT_PRESENTATION_DATA_LINE) {
+
+	for (ptr = roa->chain; ptr; ptr = g_slist_next(ptr)) {
+		struct rlib_report_output *rd = ptr->data;
+		if (rd->type == RLIB_REPORT_PRESENTATION_DATA_LINE) {
 			struct rlib_report_lines *rl = rd->data;
 			total += RLIB_GET_LINE(get_font_point(part, report, rl));
 		} else if(rd->type == RLIB_REPORT_PRESENTATION_DATA_HR) {
@@ -332,7 +332,7 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 			rlib_layout_report_output(r, part, report, report->report_header, FALSE, TRUE);
 			OUTPUT(r)->end_report_header(r, part, report);
 			OUTPUT(r)->start_report_no_data(r, part, report);
-			rlib_layout_report_output(r, part, report, report->alternate.nodata, FALSE, TRUE);
+			rlib_layout_report_output(r, part, report, report->alternate, FALSE, TRUE);
 			OUTPUT(r)->end_report_no_data(r, part, report);
 		} else {
 			rlib_navigate_first(r, r->current_result);
@@ -371,7 +371,7 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 				OUTPUT(r)->set_font_point(r, r->font_point);
 			}
 
-			if(report->chart.have_chart) {
+			if (report->chart) {
 				gfloat top;
 				if(OUTPUT(r)->do_graph == TRUE) {
 					top_margin_offset += report_header_advance;
@@ -380,9 +380,9 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 					rlib_layout_report_footer(r, part, report);	
 					top_margin_offset += report->position_top[0] - top;
 				}
-			} else if(report->graph.type_code != NULL) {
+			} else if(report->graph) {
 				gfloat top;
-				if(OUTPUT(r)->do_graph == TRUE) {
+				if (OUTPUT(r)->do_graph == TRUE) {
 					top_margin_offset += report_header_advance;
 					top_margin_offset += rlib_graph(r, part, report, left_margin_offset, &top_margin_offset);
 					top = report->position_top[0];

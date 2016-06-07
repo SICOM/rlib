@@ -198,7 +198,7 @@ static void rlib_graph_label_y_axis(rlib *r, gint side, gboolean for_real, gint 
 
 DLL_EXPORT_SYM gfloat rlib_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left_margin_offset, gfloat *top_margin_offset) {
 	struct rlib_graph_plot *plot;
-	struct rlib_graph *graph = &report->graph;
+	struct rlib_graph *graph = report->graph;
 	GSList *list;
 	gchar axis[MAXSTRLEN], x_axis_label[MAXSTRLEN], legend_label[MAXSTRLEN];
 	gfloat y_value;

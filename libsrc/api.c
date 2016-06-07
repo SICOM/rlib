@@ -491,6 +491,8 @@ DLL_EXPORT_SYM gint rlib_parse(rlib *r) {
 	env = getenv("RLIB_PROFILING");
 	profiling = !(env == NULL || *env == '\0');
 
+	clock_gettime(CLOCK_MONOTONIC, &ts1);
+
 	r->now = time(NULL);
 
 	if (r->format == RLIB_FORMAT_HTML) {

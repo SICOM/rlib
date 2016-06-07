@@ -889,13 +889,13 @@ static void rlib_layout_find_common_properties_in_a_line(rlib *r, struct rlib_li
 static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_output_array *roa, 
 	gint backwards, gint page, gboolean page_header_layout) {
 	struct rlib_element *e=NULL;
-	gint j=0;
 	gfloat margin=0, width=0;
 	gfloat *rlib_position;
 	struct rlib_line_extra_data *extra_data;
 	gint output_count = 0;
 	gfloat my_left_margin;
-	
+	GSList *ptr;
+
 	if(roa == NULL || roa->suppress == TRUE)
 		return 0;
 	
@@ -924,8 +924,8 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 		}	
 	}
 
-	for(j=0;j<roa->count;j++) {
-		struct rlib_report_output *ro = roa->data[j];
+	for (ptr = roa->chain; ptr; ptr = g_slist_next(ptr)) {
+		struct rlib_report_output *ro = ptr->data;
 
 		if(ro->type == RLIB_REPORT_PRESENTATION_DATA_LINE) {
 			struct rlib_report_lines *rl = ro->data;
