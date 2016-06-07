@@ -110,6 +110,7 @@ make
 
 %doc AUTHORS ChangeLog HACKING INSTALL NEWS README README-JPEG doc/book.pdf
 %{_prefix}/bin/rlibc
+%{_prefix}/bin/rlib-parse
 %{_libdir}/libr.so.*
 %{_libdir}/librpdf.so.*
 
