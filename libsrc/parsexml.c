@@ -681,7 +681,7 @@ static struct rlib_chart *parse_chart(rlib *r, xmlNodePtr cur, gint *error) {
 				*error = 1;
 				return NULL;
 			}
-			chart->header_row = parse_chart_header_row(cur);
+			chart->header_row = ptr;
 		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "Row"))) {
 			struct rlib_chart_row *ptr = parse_chart_row(cur);
 			if (chart->row) {
