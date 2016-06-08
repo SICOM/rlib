@@ -32,7 +32,7 @@ if test "$PHP_RLIB" != "no"; then
 	# /usr/bin/grep: /usr/lib64/librpdf.la: No such file or directory
 	LIBRLIB_LIBS="-L../../rpdf/.libs -L../../libsrc/.libs -lr"
 
-	CFLAGS="$LIBRLIB_CFLAGS $CFLAGS $GLIB_CFLAGS"
+	CFLAGS="-Wall -Werror $LIBRLIB_CFLAGS $CFLAGS $GLIB_CFLAGS"
 	LDFLAGS="$LIBRLIB_LIBS $LDFLAGS $GLIB_LIBS"
 
 	PHP_NEW_EXTENSION(rlib, [array_data_source.c environment.c php.c], $ext_shared)

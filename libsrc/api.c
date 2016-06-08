@@ -60,8 +60,6 @@ static void metadata_destroyer(gpointer data) {
 DLL_EXPORT_SYM rlib *rlib_init_with_environment(struct environment_filter *environment) {
 	rlib *r;
 	
-	init_signals();
-
 	r = g_new0(rlib, 1);
 
 	if(environment == NULL)

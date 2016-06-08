@@ -19,7 +19,7 @@
 ## Report bugs to rlib-devel@lists.sourceforge.net
 ##
 ## Process this file with automake to produce Makefile.in
-AM_CFLAGS = -I${top_srcdir}/libsrc $(RLIB_CFLAGS) $(PHP_CFLAGS) $(RLIB_WERROR)
+AM_CFLAGS = -I${top_srcdir}/libsrc $(RLIB_CFLAGS) $(PHP_CFLAGS)
 phplibdir = $(PHP_EXTENSION_DIR)
 phplib_LTLIBRARIES = rlib.la
 rlib_la_SOURCES = environment.c php.c array_data_source.c rlib_php.h

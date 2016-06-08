@@ -21,15 +21,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <signal.h>
 #include <ctype.h>
 #include <stdarg.h>
 #include <time.h>
 #include <math.h>
 #include <config.h>
-#ifdef HAVE_SYS_RESOURCE_H
-#include <sys/resource.h>
-#endif
 #include <locale.h>
 
 #include "rlib-internal.h"
@@ -82,48 +78,6 @@ int locale_codes[] = {
 	LC_IDENTIFICATION,
 	-1
 };
-
-#ifdef HAVE_SYS_RESOURCE_H
-#ifdef ENABLE_CRASH
-static void myFaultHandler(gint signum UNUSED, siginfo_t *si UNUSED, gpointer aptr UNUSED) {
-	struct rlimit rlim;
-	rlogit(NULL, "** NUTS.. WE CRASHED\n");
-	getrlimit (RLIMIT_CORE, &rlim); /* POSSIBLY NOT NECESSARY */
-	rlim.rlim_cur = 1024000000; /* NECESSARY */
-	setrlimit (RLIMIT_CORE, &rlim); /* NECESSARY */
-	signal (SIGQUIT, SIG_DFL); /* KEEP THIS!!!!! */
-	kill (getpid(), SIGQUIT); /* IMPORTANT */
-	exit (5); /* THEORETICALLY IN THEORY THIS WILL NEVER GET CALLED... but lets play it safe */
-}
-#endif
-#endif
-
-static gint useMyHandler = TRUE;
-
-void init_signals(void) {
-#ifdef HAVE_SYS_RESOURCE_H
-#ifdef ENABLE_CRASH
-	struct sigaction sa;
-	if (useMyHandler) {
-		memset(&sa, 0, sizeof(struct sigaction));
-		sa.sa_handler = (void(*)(int))myFaultHandler;
-		sigaction (SIGILL, &sa, NULL);
-		sigaction (SIGBUS, &sa, NULL);
-		sigaction (SIGSEGV, &sa, NULL);
-		sigaction (SIGABRT, &sa, NULL);
-		sigaction (SIGIOT, &sa, NULL);
-		sigaction (SIGTRAP, &sa, NULL);
-		signal (SIGQUIT, SIG_DFL);
-	}
-#endif
-#endif
-}
-
-gint rutil_enableSignalHandler(gint trueorfalse) {
-	gint whatitwas = useMyHandler;
-	useMyHandler = trueorfalse;
-	return whatitwas;
-}
 
 gchar *strlwrexceptquoted (char *s) {
 	gchar c;
