@@ -1,5 +1,5 @@
-# These flags cause something in RPDF to miscompile
-# and PieCharts go missing in PDFs.
+# Add AddressSanitizer and UndefinedBehaviourSanitizer flags
+# to the build. It is much faster than Valgrind.
 
 export ASAN="-fsanitize=address -fno-omit-frame-pointer -lasan"
 export UBSAN="-fsanitize=undefined -fsanitize=shift \
@@ -22,6 +22,7 @@ export SANITIZE="$ASAN $UBSAN -fno-inline -fno-inline-small-functions"
 #export SANITIZE="$ASAN -fno-inline -fno-inline-small-functions"
 #export SANITIZE=""
 
+# These are the flags used by RPM
 export FLAGS="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches   -m64 -mtune=generic"
 
 export CFLAGS="$FLAGS $SANITIZE"

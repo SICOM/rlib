@@ -36,6 +36,8 @@
 
 #define INPUT_PRIVATE(input) (((struct _private *)input->private))
 
+#define UNUSED __attribute__((unused))
+
 struct rlib_php_array_results {
 	char *array_name;
 	zval *zend_value;
@@ -50,15 +52,15 @@ struct _private {
 	int	dummy;
 };
 
-static gint rlib_php_array_input_close(gpointer input_ptr) {
+static gint rlib_php_array_input_close(gpointer input_ptr UNUSED) {
 	return TRUE;
 }
 
-static const gchar* rlib_php_array_get_error(gpointer input_ptr) {
+static const gchar* rlib_php_array_get_error(gpointer input_ptr UNUSED) {
 	return "Hard to make a mistake here.. try checking your names/spellings";
 }
 
-static gint rlib_php_array_first(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_php_array_first(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_php_array_results *result = result_ptr;
 
 	if(result_ptr == NULL) {
@@ -74,7 +76,7 @@ static gint rlib_php_array_first(gpointer input_ptr, gpointer result_ptr) {
 	return TRUE;
 }
 
-static gint rlib_php_array_next(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_php_array_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_php_array_results *result = result_ptr;
 	result->current_row++;
 	result->isdone = FALSE;
@@ -84,7 +86,7 @@ static gint rlib_php_array_next(gpointer input_ptr, gpointer result_ptr) {
 	return FALSE;
 }
 
-static gint rlib_php_array_isdone(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_php_array_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_php_array_results *result = result_ptr;
 
 	if(result == NULL)
@@ -93,7 +95,7 @@ static gint rlib_php_array_isdone(gpointer input_ptr, gpointer result_ptr) {
 	return result->isdone;
 }
 
-static gint rlib_php_array_previous(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_php_array_previous(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_php_array_results *result = result_ptr;
 	result->current_row--;
 	result->isdone = FALSE;
@@ -104,13 +106,13 @@ static gint rlib_php_array_previous(gpointer input_ptr, gpointer result_ptr) {
 	return TRUE;
 }
 
-static gint rlib_php_array_last(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_php_array_last(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_php_array_results *result = result_ptr;
 	result->current_row = result->rows-1;
 	return TRUE;
 }
 
-static gchar * rlib_php_array_get_field_value_as_string(gpointer input_ptr, gpointer result_ptr, gpointer field_ptr) {
+static gchar * rlib_php_array_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_php_array_results *result = result_ptr;
 	int which_field = GPOINTER_TO_INT(field_ptr) - 1;
 	if(result->rows <= 1 || result->current_row >= result->rows)
@@ -119,7 +121,7 @@ static gchar * rlib_php_array_get_field_value_as_string(gpointer input_ptr, gpoi
 	return result->data[(result->current_row*result->cols)+which_field];
 }
 
-static gpointer rlib_php_array_resolve_field_pointer(gpointer input_ptr, gpointer result_ptr, gchar *name) {
+static gpointer rlib_php_array_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) {
 	struct rlib_php_array_results *result = result_ptr;
 	int i;
 
@@ -135,7 +137,7 @@ static gpointer rlib_php_array_resolve_field_pointer(gpointer input_ptr, gpointe
 	return NULL;
 }
 
-static void *php_array_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
+static void *php_array_new_result_from_query(gpointer input_ptr UNUSED, gpointer query_ptr) {
 	struct rlib_query *query = query_ptr;
 	struct rlib_php_array_results *result = emalloc(sizeof(struct rlib_php_array_results));
 	long size;
@@ -228,11 +230,11 @@ static void *php_array_new_result_from_query(gpointer input_ptr, gpointer query_
 	return result;
 }
 
-static gint rlib_php_array_free_input_filter(gpointer input_ptr) {
+static gint rlib_php_array_free_input_filter(gpointer input_ptr UNUSED) {
 	return 0;
 }
 
-static void rlib_php_array_rlib_free_result(gpointer input_ptr, gpointer result_ptr) {
+static void rlib_php_array_rlib_free_result(gpointer input_ptr UNUSED, gpointer result_ptr UNUSED) {
 }
 
 

@@ -419,14 +419,6 @@ AC_RUN_IFELSE(
         AC_DEFINE(ICONV_ISO,["ISO-8859-1"], [ICONV Check])
 )
 
-RLIB_WERROR=""
-AC_ARG_ENABLE([warningfun],
-	[AS_HELP_STRING([--enable-warningfun],[enable more gcc warning flags])],
-	[enable_warningfun="$enableval"],[enable_warningfun=no])
-AS_IF([test x$enable_warningfun = xyes],[RLIB_WERROR="-Werror "])
-AC_SUBST(RLIB_WARNINGS)
-AC_SUBST(RLIB_WERROR)
-
 dnl Windows build is decided automatically by AC_CANONICAL_TARGET above
 AS_IF([test x$enable_win32 = xyes],
 	[ac_save_CFLAGS="$CFLAGS"
@@ -451,9 +443,10 @@ dnl -D_GNU_SOURCE is needed.
 dnl For llabs(), -D_ISOC99_SOURCE is enough,
 dnl but e.g. strcasecmp is a GNU extension.
 
-RLIB_CFLAGS="-D_GNU_SOURCE -Wall -Wextra -Werror $LIBXML_CFLAGS $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $MYSQL_CFLAGS $POSTGRES_CFLAGS $ODBC_CFLAGS $GD_CFLAGS $NO_CYGWIN"
-RLIB_LIBS="$LIBXML_LIBS $LIBGLIB_LIBS $LIBGMODULE_LIBS $ICONVLIBS $GD_LDFLAGS $GD_LIBS $GD_LINK "
+CFLAGS="-D_GNU_SOURCE -Wall -Wextra -Werror"
 
+RLIB_CFLAGS="$LIBXML_CFLAGS $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $MYSQL_CFLAGS $POSTGRES_CFLAGS $ODBC_CFLAGS $GD_CFLAGS $NO_CYGWIN"
+RLIB_LIBS="$LIBXML_LIBS $LIBGLIB_LIBS $LIBGMODULE_LIBS $ICONVLIBS $GD_LDFLAGS $GD_LIBS $GD_LINK "
 AC_SUBST(RLIB_CFLAGS)
 AC_SUBST(RLIB_LIBS)
 
@@ -466,19 +459,6 @@ dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(fcntl.h unistd.h)
 AC_C_CONST
-
-AC_ARG_ENABLE([crash],
-	[AS_HELP_STRING([--disable-crash],[disable crash detection])],
-	[],[enable_crash=yes])
-AS_IF([test x$enable_crash = xyes],
-	[AC_CHECK_HEADERS(sys/resource.h,
-		[AC_DEFINE(HAVE_SYS_RESOURCE_H, 1, [We have standard sys/resource.h])
-		 have_sys_res_h=yes],
-		[have_sys_res_h=no])
-	 AS_IF([test x$have_sys_res_h = xyes],
-		[AC_DEFINE(ENABLE_CRASH,1,[ENABLE CRASH DETECTION])],
-		[AC_MSG_WARN([Crash detection disabled because of missing sys/resource.h.])])
-])
 
 AC_ARG_ENABLE([utf8],
 	[AS_HELP_STRING([--enable-utf8],[enable utf8])],
@@ -522,8 +502,6 @@ rlib-$VERSION:
 
    prefix:                   ${prefix}
    compiler:                 ${CC}
-   Warning Fun:              ${enable_warningfun}
-   Crash detection:          ${enable_crash}
    UTF8 enabled:             ${enable_utf8}
    WIN32 build:              ${enable_win32}
    Documentation:            ${enable_doc}

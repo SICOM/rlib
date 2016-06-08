@@ -22,7 +22,7 @@
 
 if !HAVE_MYSQL_BUILTIN
 
-AM_CFLAGS = $(RLIB_CFLAGS) $(RLIB_WERROR) -I${top_srcdir}/libsrc
+AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
 mysqlincludedir = $(includedir)/rlib
 
 lib_LTLIBRARIES = libr-mysql.la
