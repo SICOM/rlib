@@ -428,10 +428,10 @@ static void rpdf_make_page_stream(gpointer data, gpointer user_data) {
 	}
 
 	g_free(stream);
-	if(pdf->page_data == NULL) {
+	if (pdf->page_data == NULL) {
 		pdf->page_data = g_string_new(result);
 		g_free(result);
-	} else {
+	} else if (result) {
 		g_string_append(pdf->page_data, result);
 		g_free(result);
 	}
@@ -1019,7 +1019,7 @@ DLL_EXPORT_SYM gboolean rpdf_text(struct rpdf *pdf, gdouble x, gdouble y, gdoubl
 	gint count = 0, spot=0, i;
 	static GIConv conv = NULL;
 	gchar *new_text;
-	
+
 	/*
 	 * FIXME:
 	 * Because of this, the generated PDF can only contain
@@ -1033,12 +1033,11 @@ DLL_EXPORT_SYM gboolean rpdf_text(struct rpdf *pdf, gdouble x, gdouble y, gdoubl
 	if(conv != NULL && text != NULL) {
 		gsize foo1;
 		new_text = g_convert_with_iconv(text, strlen(text), conv, &foo1, &foo1, NULL);
-		if(new_text != NULL) {
-		} else {
-			new_text = g_strdup(text);
+		if (new_text == NULL) {
+			new_text = g_strdup(text ? text : "");
 		}
 	} else
-		new_text = g_strdup(text);
+		new_text = g_strdup(text ? text : "");
 
 	stream = g_new0(struct rpdf_stream_text, 1);
 	stream->x = x;

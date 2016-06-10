@@ -389,7 +389,7 @@ gchar *rlib_align_text(rlib *r, gchar **my_rtn, gchar *src, gint align, gint wid
 	}
 
 	if (len > width) {
-		rtn = *my_rtn = g_strdup(src);
+		rtn = *my_rtn = g_strdup(src ? src : "");
 		return rtn;
 	} else {
 		rtn = *my_rtn  = g_malloc(lastidx + 1);
