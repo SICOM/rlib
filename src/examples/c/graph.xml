@@ -10,7 +10,10 @@
 			<HorizontalLine size="4" bgcolor="'black'"/>
 			<HorizontalLine size="10" bgcolor="'green'"/>
 		</Output>
-	</PageHeader>		
+	</PageHeader>
+
+	<BadTagIgnore>
+	</BadTagIgnore>
 
 	<pr>
 		<pd width="100">

@@ -972,8 +972,8 @@ gchar * get_filename(rlib *r, const char *filename, int report_index, gboolean r
 struct rlib_query *rlib_alloc_query_space(rlib *r);
 
 /***** PROTOTYPES: parsexml.c *************************************************/
-struct rlib_part * parse_part_file(rlib *r, gint report_index);
-struct rlib_report_output * report_output_new(gint type, gpointer data);
+struct rlib_part *parse_part_file(rlib *r, gboolean allow_fail, gint report_index);
+struct rlib_report_output *report_output_new(gint type, gpointer data);
 
 /***** PROTOTYPES: pcode.c ****************************************************/
 gint64 rlib_str_to_long_long(rlib *r, gchar *str);

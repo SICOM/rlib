@@ -479,8 +479,7 @@ static gint rlib_execute_queries(rlib *r) {
 	return TRUE;
 }
 
-
-DLL_EXPORT_SYM gint rlib_parse(rlib *r) {
+gint rlib_parse_internal(rlib *r, gboolean allow_fail) {
 	gint i;
 	char *env;
 	gint profiling;
@@ -507,7 +506,7 @@ DLL_EXPORT_SYM gint rlib_parse(rlib *r) {
 
 	xmlKeepBlanksDefault(0);
 	for (i = 0; i < r->parts_count; i++) {
-		r->parts[i] = parse_part_file(r, i);
+		r->parts[i] = parse_part_file(r, allow_fail, i);
 		xmlCleanupParser();
 		if (r->parts[i] == NULL) {
 			r_error(r,"Failed to load a report file [%s]\n", r->reportstorun[i].name);
@@ -528,13 +527,17 @@ DLL_EXPORT_SYM gint rlib_parse(rlib *r) {
 	return 0;
 }
 
+DLL_EXPORT_SYM gint rlib_parse(rlib *r) {
+	return rlib_parse_internal(r, FALSE);
+}
+
 DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 	char *env;
 	gint profiling;
 	struct timespec ts1, ts2;
 
 	if (!r->did_parse) {
-		gint parse = rlib_parse(r);
+		gint parse = rlib_parse_internal(r, TRUE);
 
 		if (parse != 0)
 			return -1;
