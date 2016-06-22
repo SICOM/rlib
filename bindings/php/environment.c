@@ -1,7 +1,8 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
+ *  Updated for PHP 7: Zoltán Böszörményi <zboszormenyi@sicom.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of version 2 of the GNU General Public
@@ -23,46 +24,59 @@
 #include "rlib.h"
 
 static char * rlib_php_resolve_memory_variable(char *name) {
+#if PHP_MAJOR_VERSION < 7
 	void *temp;
-	zval ** data;
+	zval **data;
+#endif
+	zval *result;
+	char *data_result, dstr[1024];
+
 	TSRMLS_FETCH();
 
-	if (zend_hash_find(&EG(symbol_table),name,strlen(name)+1, (void *)&temp)==FAILURE) { 
+#if PHP_MAJOR_VERSION < 7
+	if (zend_hash_find(&EG(symbol_table), name, strlen(name) + 1, (void **)&temp) == FAILURE)
 		return NULL;
+	data = temp;
+	result = *data;
+#else
+	result = zend_hash_str_find(&EG(symbol_table), name, strlen(name));
+	if (result == NULL)
+		return NULL;
+#endif
+
+	memset(dstr, 0, 1024);
+
+	if (Z_TYPE_P(result) == IS_STRING)
+		data_result = Z_STRVAL_P(result);
+	else if (Z_TYPE_P(result) == IS_LONG) {
+		sprintf(dstr, "%ld", Z_LVAL_P(result));
+		data_result = estrdup(dstr);
+	} else if (Z_TYPE_P(result) == IS_DOUBLE) {
+		sprintf(dstr,"%f",Z_DVAL_P(result));
+		data_result = estrdup(dstr);
+	} else if (Z_TYPE_P(result) == IS_NULL) {
+		data_result = estrdup("");
 	} else {
-		char *data_result, dstr[1024];
-		memset(dstr, 0, 1024);
-		data = temp;
-		if( Z_TYPE_PP(data) == IS_STRING )	
-			data_result = Z_STRVAL_PP(data);
-		else if( Z_TYPE_PP(data) == IS_LONG ) {	
-			sprintf(dstr,"%ld",Z_LVAL_PP(data));
-			data_result = estrdup(dstr);
-		} else if( Z_TYPE_PP(data) == IS_DOUBLE ) {	
-			sprintf(dstr,"%f",Z_DVAL_PP(data));
-			data_result = estrdup(dstr);
-		} else if( Z_TYPE_PP(data) == IS_NULL ) {	
-			data_result = estrdup("");
-		} else {
-			sprintf(dstr,"ZEND Z_TYPE %d NOT SUPPORTED",Z_TYPE_PP(data));
-			data_result = estrdup(dstr);
-		}	
-		return data_result;
+		sprintf(dstr, "ZEND Z_TYPE %d NOT SUPPORTED", Z_TYPE_P(result));
+		data_result = estrdup(dstr);
 	}
+	return data_result;
 }
 
 static int rlib_php_write_output(char *data, int len) {
 	long wrote = 0;
 	TSRMLS_FETCH();
-/*
-	PHP Has some odd bug on the LO that doesn't allow you to write more then 15785 at a time.
-*/
-	while(wrote < len) {	
+
+	/*
+	 * PHP Has some odd bug on the LO that doesn't allow you
+	 * to write more then 15785 at a time.
+	 */
+	while (wrote < len) {
 		int size = 4096;
-		
-		if(size+wrote > len)
+
+		if (size + wrote > len)
 			size = len-wrote;
-		
+
 		php_write(data+wrote, size TSRMLS_CC);
 		wrote += size;
 	}
