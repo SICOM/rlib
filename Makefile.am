@@ -37,11 +37,7 @@ pkgconfig_DATA = rlib.pc
 
 if HAVE_PHP
 
-phpini1dir = $(sysconfdir)/php.d
-phpini1_DATA = rlib.ini
-
-phpini2dir = $(sysconfdir)/php-zts.d
-phpini2_DATA = rlib.ini
+phpini_DATA = rlib.ini
 
 PHP_DIRS = bindings/php
 

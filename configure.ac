@@ -284,7 +284,16 @@ AM_CONDITIONAL(HAVE_ODBC_BUILTIN, test x$enable_built_in_odbc = xyes)
 AC_ARG_ENABLE([php],
 	[AS_HELP_STRING([--disable-php],[disable php frontend])],
 	[],[enable_php=yes])
+AS_IF([test x$enable_php = xyes],
+	[AC_PATH_PROG(PHP_CONFIG,php-config,no)
+	 AS_IF([test $PHP_CONFIG = xno],
+		[AC_MSG_ERROR([php-config is not found])])
+	 AC_PROG_SED
+	 phpinidir=`$PHP_CONFIG --configure-options | $SED 's/.*with-config-file-scan-dir=\([[^ ]]*\).*/\1/'`
+	 phpversion=`$PHP_CONFIG --version`
+	])
 AM_CONDITIONAL(HAVE_PHP, test x$enable_php = xyes)
+AC_SUBST(phpinidir)
 
 AC_ARG_VAR([GREP], [Name and path of a GNU grep binary.])
 AC_PATH_PROG([GREP], [grep], [grep])
@@ -520,6 +529,8 @@ rlib-$VERSION:
 	 
    BINDINGS:
     PHP:                     ${enable_php}
+      PHP version:           ${phpversion}
+      PHP ini directory:     ${phpinidir}
     PYTHON:                  ${enable_python}
      PYTHON version:         ${PYTHON_VERSION}
      PYTHON script dir:      ${pythondir}
