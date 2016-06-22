@@ -96,11 +96,14 @@ autoreconf -vif -Wall
 %configure --enable-utf8 --enable-mysql --enable-postgres --with-odbc
 
 %build
-make
+make %{?_smp_mflags} CFLAGS="$RPM_OPT_FLAGS" LDFLAGS="$RPM_LD_FLAGS"
 
 %install
 [ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf $RPM_BUILD_ROOT
 %make_install
+
+mkdir $RPM_BUILD_ROOT%{_sysconfdir}/php-zts.d
+cp $RPM_BUILD_ROOT%{_sysconfdir}/php.d/rlib.ini $RPM_BUILD_ROOT%{_sysconfdir}/php-zts.d
 
 %clean
 [ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf $RPM_BUILD_ROOT
