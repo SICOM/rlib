@@ -17,30 +17,28 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#include <config.h>
 
 #include <stdio.h>
+#include <string.h>
+ 
 #include <rlib.h>
-#include <rlib_input.h>
 
 int main(int argc, char **argv) {
-	const char *hostname, *username, *password, *database;
 	rlib *r;
+	int ret;
 
-	hostname = "localhost";
-	username = "rlib";
-	password = "rlib";
-	database = "rlib";
+	if (argc != 2) {
+		printf("Usage:\n");
+		printf("%s report.xml\n", argv[0]);
+		return 0;
+	}
 
 	r = rlib_init();
-	if(rlib_add_datasource_mysql(r, "local_mysql", hostname, username, password, database) < 0) {
-		fprintf(stderr, "Could not connect to MariaDB/MySQL Database\n");
-		return 1;
-	}
-	rlib_add_query_as(r, "local_mysql", "select * FROM products", "products");
-	rlib_add_report(r, "products.xml");
-	rlib_set_output_format(r, RLIB_FORMAT_PDF);
-	rlib_execute(r);
-	rlib_spool(r);
+	rlib_add_report(r, argv[1]);
+	ret = rlib_parse(r);
+	printf("Parsing %s %s\n", argv[1], (ret ? "FAILED" : "was successful"));
 	rlib_free(r);
-	return 0;
+
+	return !!ret;
 }

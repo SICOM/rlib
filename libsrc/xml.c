@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h> 
 
-#include "config.h"
+#include <config.h>
 #include "rlib-internal.h"
 #include "pcode.h"
 
@@ -36,7 +36,7 @@ struct _private {
 };
 
 
-static gfloat xml_get_string_width(rlib *r, const gchar *text) {
+static gfloat xml_get_string_width(rlib *r UNUSED, const gchar *text UNUSED) {
 	return 1;
 }
 
@@ -50,7 +50,7 @@ const gchar * rlib_xml_value_get_type_as_str(struct rlib_value *v) {
 	return NULL;
 }
  
-static void xml_print_text(rlib *r, gfloat left_origin, gfloat bottom_origin, const gchar *text, gint backwards, struct rlib_line_extra_data *extra_data) {
+static void xml_print_text(rlib *r, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, const gchar *text, gint backwards UNUSED, struct rlib_line_extra_data *extra_data) {
 	gchar *escaped = g_markup_escape_text(text, strlen(text));
 	const gchar *field_type = NULL;
 
@@ -64,17 +64,15 @@ static void xml_print_text(rlib *r, gfloat left_origin, gfloat bottom_origin, co
 		g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],"color=\"#%02x%02x%02x\" ", (gint)(extra_data->color.r*0xFF), (gint)(extra_data->color.g*0xFF), (gint)(extra_data->color.b*0xFF));
 	if (field_type)
 		g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],"type=\"%s\" ", field_type);
-		
 	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],">%s</data>\n", escaped);
 	g_free(escaped);
 }
 
 
-static void xml_start_new_page(rlib *r, struct rlib_part *part) {
-}
+static void xml_start_new_page(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
 
-static void xml_init_end_page(rlib *r) {}
-static void xml_finalize_private(rlib *r) {}
+static void xml_init_end_page(rlib *r UNUSED) {}
+static void xml_finalize_private(rlib *r UNUSED) {}
 
 static void xml_spool_private(rlib *r) {
 	ENVIRONMENT(r)->rlib_write_output(OUTPUT_PRIVATE(r)->whole_report->str, OUTPUT_PRIVATE(r)->whole_report->len);
@@ -104,85 +102,82 @@ static void xml_end_part(rlib *r, struct rlib_part *part) {
 	int i;
 
 	g_string_append(OUTPUT_PRIVATE(r)->whole_report, "<part>\n");
-	for(i=0;i<part->pages_across;i++) {
+	for (i = 0; i < part->pages_across; i++) {
 		g_string_append_len(OUTPUT_PRIVATE(r)->whole_report, OUTPUT_PRIVATE(r)->top_of_page[i]->str, OUTPUT_PRIVATE(r)->top_of_page[i]->len);
 		g_string_append_len(OUTPUT_PRIVATE(r)->whole_report, OUTPUT_PRIVATE(r)->bottom_of_page[i]->str, OUTPUT_PRIVATE(r)->bottom_of_page[i]->len);
-		
+
 		g_string_free(OUTPUT_PRIVATE(r)->top_of_page[i], TRUE);
 		g_string_free(OUTPUT_PRIVATE(r)->bottom_of_page[i], TRUE);
 	}
 	g_free(OUTPUT_PRIVATE(r)->top_of_page);
 	g_free(OUTPUT_PRIVATE(r)->bottom_of_page);
 	g_string_append(OUTPUT_PRIVATE(r)->whole_report, "</part>\n");
-	
 }
 
 
-static void xml_start_report(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+static void xml_start_report(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {
 	//Doesn't work pages across
 	//g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<report>");
 }
 
-static void xml_end_report(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+static void xml_end_report(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {
 	//Doesn't work pages across
 	//g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</report>");
 }
 
-static void xml_start_report_field_headers(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+static void xml_start_report_field_headers(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<field_headers>\n");
 }
 
-static void xml_end_report_field_headers(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+static void xml_end_report_field_headers(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</field_headers>\n");
 }
 
-static void xml_start_report_field_details(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+static void xml_start_report_field_details(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<field_details>\n");
 }
 
-static void xml_end_report_field_details(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+static void xml_end_report_field_details(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</field_details>\n");
 }
 
-static void xml_start_report_line(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void xml_end_report_line(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
+static void xml_start_report_line(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void xml_end_report_line(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 
-
-static void xml_start_report_header(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+static void xml_start_report_header(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<report_header>\n");
 }
 
-static void xml_end_report_header(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+static void xml_end_report_header(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</report_header>\n");
 }
 
-static void xml_start_report_footer(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+static void xml_start_report_footer(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<report_footer>\n");
 }
 
-static void xml_end_report_footer(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+static void xml_end_report_footer(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</report_footer>\n");
 }
 
-
-static void xml_start_part_tr(rlib *r, struct rlib_part *part) {
+static void xml_start_part_tr(rlib *r, struct rlib_part *part UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<tr>\n");
 }
 
-static void xml_end_part_tr(rlib *r, struct rlib_part *part) {
+static void xml_end_part_tr(rlib *r, struct rlib_part *part UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</tr>\n");
 }
 
-static void xml_start_part_table(rlib *r, struct rlib_part *part) {
+static void xml_start_part_table(rlib *r, struct rlib_part *part UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<table>\n");
 }
 
-static void xml_end_part_table(rlib *r, struct rlib_part *part) {
+static void xml_end_part_table(rlib *r, struct rlib_part *part UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</table>\n");
 }
 
 
-static void xml_start_part_td(rlib *r, struct rlib_part *part, gfloat width, gfloat height) {
+static void xml_start_part_td(rlib *r, struct rlib_part *part UNUSED, gfloat width, gfloat height) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<td ");
 	if (width)
 		g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "width=\"%f\" ", width);
@@ -191,96 +186,95 @@ static void xml_start_part_td(rlib *r, struct rlib_part *part, gfloat width, gfl
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], ">");
 }
 
-static void xml_end_part_td(rlib *r, struct rlib_part *part) {
+static void xml_end_part_td(rlib *r, struct rlib_part *part UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</td>\n");
 }
 
 
-static void xml_start_part_pages_across(rlib *r, struct rlib_part *part, gfloat left_margin, gfloat top_margin, int width, int height, int border_width, struct rlib_rgb *color) {}
+static void xml_start_part_pages_across(rlib *r UNUSED, struct rlib_part *part UNUSED, gfloat left_margin UNUSED, gfloat top_margin UNUSED, int width UNUSED, int height UNUSED, int border_width UNUSED, struct rlib_rgb *color UNUSED) {}
 
-static void xml_end_part_pages_across(rlib *r, struct rlib_part *part) {}
+static void xml_end_part_pages_across(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
 
-static void xml_start_line(rlib *r, gint backwards) {
+static void xml_start_line(rlib *r, gint backwards UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<line>\n");
 }
 
-static void xml_end_line(rlib *r, int backwards) {
+static void xml_end_line(rlib *r, int backwards UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</line>\n");
 }
 
-static void xml_start_output_section(rlib *r, struct rlib_report_output_array *roa) {
+static void xml_start_output_section(rlib *r, struct rlib_report_output_array *roa UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<output>\n");
 }
 
-static void xml_end_output_section(rlib *r, struct rlib_report_output_array *roa) {
+static void xml_end_output_section(rlib *r, struct rlib_report_output_array *roa UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</output>\n");
 }
 
-static void xml_start_evil_csv(rlib *r) {}
-static void xml_end_evil_csv(rlib *r) {}
+static void xml_start_evil_csv(rlib *r UNUSED) {}
+static void xml_end_evil_csv(rlib *r UNUSED) {}
 
-static void xml_start_part_header(rlib *r, struct rlib_part *part) {
+static void xml_start_part_header(rlib *r, struct rlib_part *part UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<part_header>\n");
 }
 
-static void xml_end_part_header(rlib *r, struct rlib_part *part) {
+static void xml_end_part_header(rlib *r, struct rlib_part *part UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</part_header>\n");	
 }
 
-static void xml_start_part_page_header(rlib *r, struct rlib_part *part) {
+static void xml_start_part_page_header(rlib *r, struct rlib_part *part UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<part_page_header>\n");
 }
 
-static void xml_end_part_page_header(rlib *r, struct rlib_part *part) {
+static void xml_end_part_page_header(rlib *r, struct rlib_part *part UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</part_page_header>\n");
 }
 
-
-static void xml_start_part_page_footer(rlib *r, struct rlib_part *part) {
+static void xml_start_part_page_footer(rlib *r, struct rlib_part *part UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<part_page_footer>\n");
 }
 
-static void xml_end_part_page_footer(rlib *r, struct rlib_part *part) {
+static void xml_end_part_page_footer(rlib *r, struct rlib_part *part UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</part_page_footer>\n");
 }
 
-static void xml_start_report_page_footer(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+static void xml_start_report_page_footer(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<report_page_footer>\n");
 }
 
-static void xml_end_report_page_footer(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+static void xml_end_report_page_footer(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</report_page_footer>\n");
 }
 
-static void xml_start_report_break_header(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_break *rb) {
+static void xml_start_report_break_header(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, struct rlib_report_break *rb) {
 	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<break_header name=\"%s\">\n", rb->xml_name.xml);
 }
 
-static void xml_end_report_break_header(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_break *rb) {
+static void xml_end_report_break_header(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, struct rlib_report_break *rb UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</break_header>\n");
 }
 
-static void xml_start_report_break_footer(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_break *rb) {
+static void xml_start_report_break_footer(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, struct rlib_report_break *rb) {
 	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<break_footer name=\"%s\">\n", rb->xml_name.xml);
 }
 
-static void xml_end_report_break_footer(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_break *rb) {
+static void xml_end_report_break_footer(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, struct rlib_report_break *rb UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</break_footer>\n");
 }
 
-static void xml_start_report_no_data(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+static void xml_start_report_no_data(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<no_data>\n");
 }
 
-static void xml_end_report_no_data(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+static void xml_end_report_no_data(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</no_data>\n");
 }
 
-static void xml_start_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left, gfloat top, gfloat width, gfloat height, gboolean x_axis_labels_are_under_tick) {
+static void xml_start_graph(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, gfloat left UNUSED, gfloat top UNUSED, gfloat width, gfloat height, gboolean x_axis_labels_are_under_tick UNUSED) {
 	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<graph width=\"%f\" height=\"%f\">\n", width, height);	
 }
 
-static void xml_end_graph(rlib *r, struct rlib_part *part, struct rlib_report *report) {
+static void xml_end_graph(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</graph>\n");		
 }
 
@@ -297,7 +291,7 @@ static void xml_graph_y_axis_title(rlib *r, gchar side, gchar *title) {
 	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<y_axis_title side=\"%s\">%s</y_axis_title>\n", side == RLIB_SIDE_LEFT ? "left" : "right", title);		
 }
 
-static void xml_graph_plot_line(rlib *r, gchar side, gint iteration, gfloat p1_height, gfloat p1_last_height, gfloat p2_height, gfloat p2_last_height, struct rlib_rgb * color, gfloat value, gchar *label, gint row_count) {
+static void xml_graph_plot_line(rlib *r, gchar side, gint iteration, gfloat p1_height, gfloat p1_last_height, gfloat p2_height, gfloat p2_last_height, struct rlib_rgb * color, gfloat value, gchar *label, gint row_count UNUSED) {
 	gchar *escaped_label = g_markup_escape_text(label, strlen(label));
 
 	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], 
@@ -330,19 +324,16 @@ static void xml_graph_plot_bar(rlib *r, gchar side, gint iteration, gint plot, g
 }
 
 static void xml_graph_set_limits(rlib *r, gchar side, gdouble min, gdouble max, gdouble origin) {
-	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<limits side=\"%s\" min=\"%f\" max=\"%f\" origin=\"%f\"/>\n", 
-		side == RLIB_SIDE_LEFT ? "left" : "right", min, max, origin);		
-	
+	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<limits side=\"%s\" min=\"%f\" max=\"%f\" origin=\"%f\"/>\n",
+		side == RLIB_SIDE_LEFT ? "left" : "right", min, max, origin);
 }
 
 static void xml_graph_do_grid(rlib *r, gboolean just_a_box) {
 	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<grid draw_lines=\"%s\"/>\n", just_a_box ? "false" : "true");		
-	
 }
 
 static void xml_graph_set_x_iterations(rlib *r, gint iterations) {
 	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<x_iterations>%d</x_iterations>\n", iterations);		
-	
 }
 
 static void xml_graph_tick_y(rlib *r, gint iterations) {
@@ -358,14 +349,7 @@ static void xml_graph_label_y(rlib *r, gchar side, gint iteration, gchar *label)
 	side == RLIB_SIDE_LEFT ? "left" : "right", iteration, label);		
 }
 
-
-
-static void xml_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *delayed_data, int backwards, int rval_type) {
-}
-
-
-
-static void xml_end_page(rlib *r, struct rlib_part *part) {
+static void xml_end_page(rlib *r, struct rlib_part *part UNUSED) {
 	r->current_page_number++;
 	r->current_line_number = 1;
 }
@@ -385,48 +369,46 @@ static long xml_get_output_length(rlib *r) {
 	return OUTPUT_PRIVATE(r)->whole_report->len;
 }
 
-static void xml_set_working_page(rlib *r, struct rlib_part *part, int page) {
+static void xml_set_working_page(rlib *r, struct rlib_part *part UNUSED, int page) {
 	OUTPUT_PRIVATE(r)->page_number = page;
 }
 
-static void xml_set_fg_color(rlib *r, gfloat red, gfloat green, gfloat blue) {}
-static void xml_set_bg_color(rlib *r, gfloat red, gfloat green, gfloat blue) {}
-static void xml_hr(rlib *r, gint backwards, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall, 
-struct rlib_rgb *color, gfloat indent, gfloat length) {}
-static void xml_start_draw_cell_background(rlib *r, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall, 
-struct rlib_rgb *color) {}
-static void xml_end_draw_cell_background(rlib *r) {}
-static void xml_start_boxurl(rlib *r, struct rlib_part * part, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall, gchar *url, gint backwards) {}
-static void xml_end_boxurl(rlib *r, gint backwards) {}
-static void xml_background_image(rlib *r, gfloat left_origin, gfloat bottom_origin, gchar *nname, gchar *type, gfloat nwidth, gfloat nheight) {}
-static void xml_set_font_point(rlib *r, gint point) {}
-static void xml_set_raw_page(rlib *r, struct rlib_part *part, gint page) {}
-static void xml_start_bold(rlib *r) {}
-static void xml_end_bold(rlib *r) {}
-static void xml_start_italics(rlib *r) {}
-static void xml_end_italics(rlib *r) {}
+static void xml_set_fg_color(rlib *r UNUSED, gfloat red UNUSED, gfloat green UNUSED, gfloat blue UNUSED) {}
+static void xml_set_bg_color(rlib *r UNUSED, gfloat red UNUSED, gfloat green UNUSED, gfloat blue UNUSED) {}
+static void xml_hr(rlib *r UNUSED, gint backwards UNUSED, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gfloat how_long UNUSED, gfloat how_tall UNUSED, 
+struct rlib_rgb *color UNUSED, gfloat indent UNUSED, gfloat length UNUSED) {}
+static void xml_start_draw_cell_background(rlib *r UNUSED, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gfloat how_long UNUSED, gfloat how_tall UNUSED, struct rlib_rgb *color UNUSED) {}
+static void xml_end_draw_cell_background(rlib *r UNUSED) {}
+static void xml_start_boxurl(rlib *r UNUSED, struct rlib_part * part UNUSED, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gfloat how_long UNUSED, gfloat how_tall UNUSED, gchar *url UNUSED, gint backwards UNUSED) {}
+static void xml_end_boxurl(rlib *r UNUSED, gint backwards UNUSED) {}
+static void xml_background_image(rlib *r UNUSED, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gchar *nname UNUSED, gchar *type UNUSED, gfloat nwidth UNUSED, gfloat nheight UNUSED) {}
+static void xml_set_font_point(rlib *r UNUSED, gint point UNUSED) {}
+static void xml_set_raw_page(rlib *r UNUSED, struct rlib_part *part UNUSED, gint page UNUSED) {}
+static void xml_start_bold(rlib *r UNUSED) {}
+static void xml_end_bold(rlib *r UNUSED) {}
+static void xml_start_italics(rlib *r UNUSED) {}
+static void xml_end_italics(rlib *r UNUSED) {}
 
-static void xml_graph_hint_label_x(rlib *r, gchar *label) {}
-static void xml_graph_hint_label_y(rlib *r, gchar side, gchar *label) {}
-static void xml_graph_tick_x(rlib *r) {}
+static void xml_graph_hint_label_x(rlib *r UNUSED, gchar *label UNUSED) {}
+static void xml_graph_hint_label_y(rlib *r UNUSED, gchar side UNUSED, gchar *label UNUSED) {}
+static void xml_graph_tick_x(rlib *r UNUSED) {}
 
-static void xml_graph_set_data_plot_count(rlib *r, gint count) {}
-static void xml_graph_hint_legend(rlib *r, gchar *label) {}
-static void xml_graph_draw_legend(rlib *r) {}
-static void xml_graph_draw_legend_label(rlib *r, gint iteration, gchar *label, struct rlib_rgb *color, gboolean is_line) {}
-static void xml_graph_draw_line(rlib *r, gfloat x, gfloat y, gfloat new_x, gfloat new_y, struct rlib_rgb *color) {}
-static void xml_graph_set_name(rlib *r, gchar *name) {}
-static void xml_graph_set_legend_bg_color(rlib *r, struct rlib_rgb *rgb) {}
-static void xml_graph_set_legend_orientation(rlib *r, gint orientation) {}
-static void xml_graph_set_draw_x_y(rlib *r, gboolean draw_x, gboolean draw_y) {}
-static void xml_graph_set_bold_titles(rlib *r, gboolean bold_titles) {}
-static void xml_graph_set_grid_color(rlib *r, struct rlib_rgb *rgb) {}
-static void xml_graph_set_minor_ticks(rlib *r, gboolean *minor_ticks) {}
+static void xml_graph_set_data_plot_count(rlib *r UNUSED, gint count UNUSED) {}
+static void xml_graph_hint_legend(rlib *r UNUSED, gchar *label UNUSED) {}
+static void xml_graph_draw_legend(rlib *r UNUSED) {}
+static void xml_graph_draw_legend_label(rlib *r UNUSED, gint iteration UNUSED, gchar *label UNUSED, struct rlib_rgb *color UNUSED, gboolean is_line UNUSED) {}
+static void xml_graph_draw_line(rlib *r UNUSED, gfloat x UNUSED, gfloat y UNUSED, gfloat new_x UNUSED, gfloat new_y UNUSED, struct rlib_rgb *color UNUSED) {}
+static void xml_graph_set_name(rlib *r UNUSED, gchar *name UNUSED) {}
+static void xml_graph_set_legend_bg_color(rlib *r UNUSED, struct rlib_rgb *rgb UNUSED) {}
+static void xml_graph_set_legend_orientation(rlib *r UNUSED, gint orientation UNUSED) {}
+static void xml_graph_set_draw_x_y(rlib *r UNUSED, gboolean draw_x UNUSED, gboolean draw_y UNUSED) {}
+static void xml_graph_set_bold_titles(rlib *r UNUSED, gboolean bold_titles UNUSED) {}
+static void xml_graph_set_grid_color(rlib *r UNUSED, struct rlib_rgb *rgb UNUSED) {}
+static void xml_graph_set_minor_ticks(rlib *r UNUSED, gboolean *minor_ticks UNUSED) {}
 
 void rlib_xml_new_output_filter(rlib *r) {
-	OUTPUT(r) = g_malloc(sizeof(struct output_filter));
-	r->o->private = g_malloc(sizeof(struct _private));
-	memset(OUTPUT_PRIVATE(r), 0, sizeof(struct _private));
+	OUTPUT(r) = g_malloc0(sizeof(struct output_filter));
+	r->o->private = g_malloc0(sizeof(struct _private));
 	
 	OUTPUT(r)->do_align = TRUE;
 	OUTPUT(r)->do_breaks = TRUE;
@@ -439,7 +421,8 @@ void rlib_xml_new_output_filter(rlib *r) {
 	OUTPUT(r)->print_text = xml_print_text;
 	OUTPUT(r)->set_fg_color = xml_set_fg_color;
 	OUTPUT(r)->set_bg_color = xml_set_bg_color;
-	OUTPUT(r)->print_text_delayed = xml_print_text_delayed;	
+	/* Fix a leak in layout.c for delayed variables */
+	OUTPUT(r)->print_text_delayed = NULL;
 	OUTPUT(r)->hr = xml_hr;
 	OUTPUT(r)->start_draw_cell_background = xml_start_draw_cell_background;
 	OUTPUT(r)->end_draw_cell_background = xml_end_draw_cell_background;

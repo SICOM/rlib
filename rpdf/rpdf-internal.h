@@ -27,8 +27,6 @@
 
 #define RPDF_MAX_CHARS 256
 
-#define DEGREE_2_RAD(x) (x*M_PI/180.0)
-
 struct _rpdf_paper {
 	gint type;
 	gint x;
@@ -192,24 +190,24 @@ struct rpdf {
 	gchar *author;
 	gchar *keywords;
 	gchar *creator;
-	
+
 	gint current_page;
 	gint page_count;
 	gint font_count;
 	gint annot_count;
 	gint image_count;
-	
-	gint size;
+
+	guint size;
 	gchar *out_buffer;
 	gboolean has_images;
 	gint object_count;
 	GSList *objects; 
 	GSList *xref;
 	GHashTable *fonts;
-	
+
 	GSList **page_contents;
 	struct rpdf_page_info **page_info;
-	
+
 	gboolean text_on;
 	GString *page_data;
 	GHashTable *page_fonts;

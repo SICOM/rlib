@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -21,15 +21,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <signal.h>
 #include <ctype.h>
 #include <stdarg.h>
 #include <time.h>
 #include <math.h>
-#include "config.h"
-#ifdef HAVE_SYS_RESOURCE_H
-#include <sys/resource.h>
-#endif
+#include <config.h>
 #include <locale.h>
 
 #include "rlib-internal.h"
@@ -83,48 +79,6 @@ int locale_codes[] = {
 	-1
 };
 
-#ifdef HAVE_SYS_RESOURCE_H
-#ifdef ENABLE_CRASH
-static void myFaultHandler (gint signum, siginfo_t *si, gpointer aptr) {
-	struct rlimit rlim;
-	rlogit(NULL, "** NUTS.. WE CRASHED\n");
-	getrlimit (RLIMIT_CORE, &rlim); /* POSSIBLY NOT NECESSARY */
-	rlim.rlim_cur = 1024000000; /* NECESSARY */
-	setrlimit (RLIMIT_CORE, &rlim); /* NECESSARY */
-	signal (SIGQUIT, SIG_DFL); /* KEEP THIS!!!!! */
-	kill (getpid(), SIGQUIT); /* IMPORTANT */
-	exit (5); /* THEORETICALLY IN THEORY THIS WILL NEVER GET CALLED... but lets play it safe */
-}
-#endif
-#endif
-
-static gint useMyHandler = TRUE;
-
-void init_signals(void) {
-#ifdef HAVE_SYS_RESOURCE_H
-#ifdef ENABLE_CRASH
-	struct sigaction sa;
-	if (useMyHandler) {
-		memset(&sa, 0, sizeof(struct sigaction));
-		sa.sa_handler = (void(*)(int))myFaultHandler;
-		sigaction (SIGILL, &sa, NULL);
-		sigaction (SIGBUS, &sa, NULL);
-		sigaction (SIGSEGV, &sa, NULL);
-		sigaction (SIGABRT, &sa, NULL);
-		sigaction (SIGIOT, &sa, NULL);
-		sigaction (SIGTRAP, &sa, NULL);
-		signal (SIGQUIT, SIG_DFL);
-	}
-#endif
-#endif
-}
-
-gint rutil_enableSignalHandler(gint trueorfalse) {
-	gint whatitwas = useMyHandler;
-	useMyHandler = trueorfalse;
-	return whatitwas;
-}
-
 gchar *strlwrexceptquoted (char *s) {
 	gchar c;
 	gchar *ptr = s;
@@ -176,8 +130,9 @@ static void local_rlogit(rlib *r, const gchar *message) {
 
 		/* escape '&','<','>' as HTML character entities */
 		char *htmlEncoded=(char *)malloc(strlen(message)*5+1); /* 5 times the original length is the worst-case-scenario: replacing '&' with "&amp;" */
-		int i,h=0;
-		for(i=0;i<strlen(message);++i) {
+		guint i;
+		int h = 0;
+		for (i = 0; i < strlen(message); ++i) {
 			switch(message[i]) {
 				case '&':
 					htmlEncoded[h++]='&';
@@ -219,7 +174,7 @@ DLL_EXPORT_SYM void rlib_setmessagewriter(void (*msgwriter)(rlib *r, const gchar
 	logMessage = msgwriter;
 }
 
-void rlogit(rlib *r, const gchar *fmt, ...) {
+DLL_EXPORT_SYM void rlogit(rlib *r, const gchar *fmt, ...) {
 	va_list vl;
 	gchar *result = NULL;
 
@@ -234,7 +189,7 @@ void rlogit(rlib *r, const gchar *fmt, ...) {
 }
 
 
-void r_error(rlib *r, const char *fmt, ...) {
+DLL_EXPORT_SYM void r_error(rlib *r, const char *fmt, ...) {
 	va_list vl;
 	gchar *result = NULL;
 
@@ -249,8 +204,8 @@ void r_error(rlib *r, const char *fmt, ...) {
 }
 
 
+DLL_EXPORT_SYM void r_info(rlib *r, const gchar *fmt, ...) {
 #if ! DISABLERINFO
-void r_info(rlib *r, const gchar *fmt, ...) {
 	va_list vl;
 	gchar *result = NULL;
 
@@ -261,13 +216,13 @@ void r_info(rlib *r, const gchar *fmt, ...) {
 		logMessage(r, result);
 		g_free(result);
 	}
+#endif
 	return;
 }
-#endif
 
 
+DLL_EXPORT_SYM void r_debug(rlib *r, const gchar *fmt, ...) {
 #if ! DISABLERDEBUG
-void r_debug(rlib *r, const gchar *fmt, ...) {
 	va_list vl;
 	gchar *result = NULL;
 
@@ -278,12 +233,12 @@ void r_debug(rlib *r, const gchar *fmt, ...) {
 		logMessage(r, result);
 		g_free(result);
 	}
+#endif
 	return;
 }
-#endif
 
 
-void r_warning(rlib *r, const gchar *fmt, ...) {
+DLL_EXPORT_SYM void r_warning(rlib *r, const gchar *fmt, ...) {
 	va_list vl;
 	gchar *result = NULL;
 

@@ -28,7 +28,7 @@
 #include <time.h>
 #include <locale.h>
 
-#include "config.h"
+#include <config.h>
 
 #ifdef RLIB_HAVE_MONETARY_H 
 #include <monetary.h>
@@ -82,7 +82,7 @@ gint rlib_format_number(rlib *r, gchar **dest, const gchar *fmt, gint64 x) {
 	return TRUE;
 }
 
-static gint rlib_string_sprintf(rlib *r, gchar **dest, gchar *fmtstr, struct rlib_value *rval) {
+static gint string_sprintf(gchar **dest, gchar *fmtstr, struct rlib_value *rval) {
 	gchar *value = RLIB_VALUE_GET_AS_STRING(rval);
 	*dest = g_strdup_printf(fmtstr, value);
 	return TRUE;
@@ -207,7 +207,7 @@ gint rlib_number_sprintf(rlib *r, gchar **woot_dest, gchar *fmtstr, const struct
 	return slen;
 }
 
-static gint rlib_format_string_default(rlib *r, struct rlib_report_field *rf, struct rlib_value *rval, gchar **dest) {
+static gint rlib_format_string_default(rlib *r, struct rlib_value *rval, gchar **dest) {
 	if(RLIB_VALUE_IS_NUMBER(rval)) {
 		*dest = g_strdup_printf("%" PRId64, RLIB_FXP_TO_NORMAL_LONG_LONG(RLIB_VALUE_GET_AS_NUMBER(rval)));
 	} else if(RLIB_VALUE_IS_STRING(rval)) {
@@ -233,7 +233,7 @@ gint rlib_format_string(rlib *r, gchar **dest, struct rlib_report_field *rf, str
 	if(r->special_locale != NULL) 
 		setlocale(LC_ALL, r->special_locale);
 	if(rf->xml_format.xml == NULL) {
-		rlib_format_string_default(r, rf, rval, dest);
+		rlib_format_string_default(r, rval, dest);
 	} else {
 		gchar *formatstring;
 		struct rlib_value rval_fmtstr2, *rval_fmtstr;
@@ -247,7 +247,7 @@ gint rlib_format_string(rlib *r, gchar **dest, struct rlib_report_field *rf, str
 		} else {
 			formatstring = RLIB_VALUE_GET_AS_STRING(rval_fmtstr);
 			if(formatstring == NULL) {
-				rlib_format_string_default(r, rf, rval, dest);
+				rlib_format_string_default(r, rval, dest);
 			} else {
 				if (*formatstring == '!') {
 					gboolean result;
@@ -333,7 +333,7 @@ gint rlib_format_string(rlib *r, gchar **dest, struct rlib_report_field *rf, str
 								}
 							} else if (tchar == 's') {
 								if(RLIB_VALUE_IS_STRING(rval)) {
-									rlib_string_sprintf(r, dest, fmtstr, rval);
+									string_sprintf(dest, fmtstr, rval);
 									formatted_it = TRUE;
 								} else {
 									*dest = g_strdup_printf("!ERR_F_S");
@@ -389,7 +389,7 @@ gchar *rlib_align_text(rlib *r, gchar **my_rtn, gchar *src, gint align, gint wid
 	}
 
 	if (len > width) {
-		rtn = *my_rtn = g_strdup(src);
+		rtn = *my_rtn = g_strdup(src ? src : "");
 		return rtn;
 	} else {
 		rtn = *my_rtn  = g_malloc(lastidx + 1);
@@ -433,7 +433,7 @@ gchar *rlib_align_text(rlib *r, gchar **my_rtn, gchar *src, gint align, gint wid
 	return rtn;
 }
 
-GSList * rlib_format_split_string(rlib *r, gchar *data, gint width, gint max_lines, gchar new_line, gchar space, gint *line_count) {
+GSList *format_split_string(gchar *data, gint width, gchar new_line, gchar space, gint *line_count) {
 	gint slen;
 	gint spot = 0;
 	gint end = 0;

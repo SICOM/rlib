@@ -23,8 +23,11 @@ static char *rlib_interface_version="0.1.0";
 
 #include "rlib.h"
 #include "rlib_input.h"
+#include "pcode.h"
 
 #define INPUT_PRIVATE(input) (((struct _private *)input->private))
+
+#define UNUSED __attribute__((unused))
 
 static char rlibmodule__doc__[] = "\
 RLIB is a report generation library/language.\n\
@@ -115,7 +118,7 @@ rlib_dealloc(register RLIBObject *rp)
 }
 
 static int
-implement_function_call(rlib *rlib_ptr,  struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, void *user_data) {
+implement_function_call(rlib *rlib_ptr,  struct rlib_pcode *code UNUSED, struct rlib_value_stack *vs, struct rlib_value *this_field_value UNUSED, void *user_data) {
 	PyObject 	*arglist;
 	PyObject 	*retval;
 	func_chain	*fp = user_data;
@@ -166,7 +169,7 @@ implement_function_call(rlib *rlib_ptr,  struct rlib_pcode *code, struct rlib_va
 
 
 static int
-implement_signal_call(rlib *rlib_ptr,  void *user_data) {
+implement_signal_call(rlib *rlib_ptr UNUSED,  void *user_data) {
 	signal_chain	*sp = user_data;
 	PyObject	*retval;
 	
@@ -220,30 +223,28 @@ static void rlib_python_free(rlib *r) {
 
 static struct environment_filter *rlib_python_new_environment() {
 	struct environment_filter *ef;
-        ef = g_malloc(sizeof(struct environment_filter));
-        ef->rlib_resolve_memory_variable = rlib_python_resolve_memory_variable;
-        ef->rlib_write_output = rlib_python_write_output;
-        ef->free = rlib_python_free;
+	ef = g_malloc(sizeof(struct environment_filter));
+	ef->rlib_resolve_memory_variable = rlib_python_resolve_memory_variable;
+	ef->rlib_write_output = rlib_python_write_output;
+	ef->free = rlib_python_free;
 	return ef;
 }
 
 struct rlib_python_array_results {
-        char 	*array_name;
-        int	cols;
-        int	rows;
-        int	isdone;
-        char	**data;
-        int	current_row;
+	char *array_name;
+	int	cols;
+	int	rows;
+	int	isdone;
+	char **data;
+	int	current_row;
 };
 
 struct _private {
-	PyObject	*localarray;
+	PyObject *localarray;
 	struct rlib_python_array_results *lastresult;
 };
 
-static PyObject *
-rlib_python_array_locate(char *name)
-{
+static PyObject *rlib_python_array_locate(char *name) {
 	PyObject	*moduledict = PyImport_GetModuleDict();
 	PyObject	*mainmodule;
 	PyObject	*dict;
@@ -266,26 +267,28 @@ rlib_python_array_locate(char *name)
 	return PySequence_Fast(array, "array is of incorrect type");
 }
 
-void * rlib_python_array_new_result_from_query(gpointer input_ptr, gchar *query) {
+void *rlib_python_array_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	struct input_filter *input = input_ptr;
-        struct rlib_python_array_results *result;
-	PyObject	*outerlist;
-	PyObject	*innerlist;
-	PyObject	*element;
-        int 		row=0, col=0;
-        int 		total_size;
-        char 		*data_result;
-        char		dstr[64];
+	struct rlib_query *query = query_ptr;
+	struct rlib_python_array_results *result;
+	PyObject *outerlist;
+	PyObject *innerlist;
+	PyObject *element;
+	int row = 0, col = 0;
+	int total_size;
+	char *data_result;
+	char dstr[64];
 
 	memset(dstr, 0, sizeof(dstr));
 
 	result = PyMem_Malloc(sizeof(struct rlib_python_array_results));
 	if (result == NULL)
 		return PyErr_NoMemory();
-        memset(result, 0, sizeof(struct rlib_python_array_results));
-        result->array_name = query;
 
-	outerlist = rlib_python_array_locate(query);
+	memset(result, 0, sizeof(struct rlib_python_array_results));
+	result->array_name = query->sql;
+
+	outerlist = rlib_python_array_locate(query->sql);
 	if (outerlist == NULL) {
 		PyMem_Free(result);
 		return NULL;
@@ -303,12 +306,13 @@ void * rlib_python_array_new_result_from_query(gpointer input_ptr, gchar *query)
 		PyErr_SetString(RLIBError, "sub-elements of array must be of type list or tuple"); /* Fixme: use type error exception */
 		return NULL;
 	}
-        result->cols = PySequence_Fast_GET_SIZE(innerlist);
 
-        total_size = result->rows * result->cols * sizeof(char *);
-        result->data = PyMem_Malloc(total_size);
+	result->cols = PySequence_Fast_GET_SIZE(innerlist);
+
+	total_size = result->rows * result->cols * sizeof(char *);
+	result->data = PyMem_Malloc(total_size);
 	memset(result->data, 0, total_size);
-        for (row=0; row < result->rows; row++) {
+	for (row = 0; row < result->rows; row++) {
 		innerlist = PySequence_Fast(PySequence_Fast_GET_ITEM(outerlist, row), "sub-elements of array must be of type list or tuple");
 		if (innerlist == NULL) {
 			Py_DECREF(outerlist);
@@ -317,7 +321,8 @@ void * rlib_python_array_new_result_from_query(gpointer input_ptr, gchar *query)
 			PyMem_Free(result);
 			return NULL;
 		}
-                for (col=0; col < result->cols; col++) {
+
+		for (col = 0; col < result->cols; col++) {
 			element = PySequence_Fast_GET_ITEM(innerlist, col);
 			if (element == NULL) {
 				Py_DECREF(innerlist);
@@ -328,38 +333,39 @@ void * rlib_python_array_new_result_from_query(gpointer input_ptr, gchar *query)
 				PyErr_SetString(RLIBError, "array dimensions must be uniform"); /* Fixme: use type error exception */
 				return NULL;
 			}
-                        if( PyString_Check(element) )
-                                data_result = strdup(PyString_AsString(element));
-                        else if( PyInt_Check(element) ) {
-                                sprintf(dstr,"%ld",PyInt_AsLong(element));
-                                data_result = strdup(dstr);
-                        } else if( PyFloat_Check(element) ) {
-                                sprintf(dstr,"%f",PyFloat_AsDouble(element));
-                                data_result = strdup(dstr);
-                        } else if( element == Py_None ) {
-                                data_result = strdup("");
-                        } else {
-				PyObject	*tp = PyObject_Type(element);
-				PyObject	*rp;
+
+			if (PyString_Check(element))
+				data_result = strdup(PyString_AsString(element));
+			else if (PyInt_Check(element)) {
+				sprintf(dstr,"%ld",PyInt_AsLong(element));
+				data_result = strdup(dstr);
+			} else if (PyFloat_Check(element)) {
+				sprintf(dstr,"%f",PyFloat_AsDouble(element));
+				data_result = strdup(dstr);
+			} else if (element == Py_None) {
+				data_result = strdup("");
+			} else {
+				PyObject *tp = PyObject_Type(element);
+				PyObject *rp;
 				rp = PyObject_Repr(tp);
-                                sprintf(dstr,"TYPE %s NOT SUPPORTED",PyString_AsString(rp));
+
+				sprintf(dstr,"TYPE %s NOT SUPPORTED",PyString_AsString(rp));
 				Py_XDECREF(rp);
 				Py_XDECREF(tp);
-                                data_result = strdup(dstr);
-                        }
-                        result->data[(row * result->cols)+col] = data_result;
-                }
+				data_result = strdup(dstr);
+			}
+			result->data[(row * result->cols)+col] = data_result;
+		}
 		Py_DECREF(innerlist);
-        }
-        return result;
+	}
+	return result;
 }
 
-
-
-static gint rlib_python_array_input_close(gpointer input_ptr) {
-        return TRUE;
+static gint rlib_python_array_input_close(gpointer input_ptr UNUSED) {
+	return TRUE;
 }
-static gint rlib_python_array_first(gpointer input_ptr, gpointer result_ptr) {
+
+static gint rlib_python_array_first(gpointer input_ptr UNUSED, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
         result->current_row = 1;
         if(result->rows <= 1) {
@@ -370,7 +376,7 @@ static gint rlib_python_array_first(gpointer input_ptr, gpointer result_ptr) {
         return TRUE;
 }
 
-static gint rlib_python_array_next(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
 	result->current_row++;
 	result->isdone = FALSE;
@@ -381,12 +387,12 @@ static gint rlib_python_array_next(gpointer input_ptr, gpointer result_ptr) {
 	return FALSE;
 }
 
-static gint rlib_python_array_isdone(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
         return result->isdone;
 }
 
-static gint rlib_python_array_previous(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_previous(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_python_array_results *result = result_ptr;
 	result->current_row--;
 	result->isdone = FALSE;
@@ -395,13 +401,13 @@ static gint rlib_python_array_previous(gpointer input_ptr, gpointer result_ptr) 
 	result->current_row = 0;
 	return FALSE;
 }
-static gint rlib_python_array_last(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_last(gpointer input_ptr UNUSED, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
         result->current_row = result->rows-1;
         return TRUE;
 }
 
-static gchar * rlib_python_array_get_field_value_as_string(gpointer input_ptr, gpointer result_ptr, gpointer field_ptr) {
+static gchar * rlib_python_array_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
         struct rlib_python_array_results *result = result_ptr;
         int which_field = GPOINTER_TO_INT(field_ptr) - 1;
         if(result->rows <= 1)
@@ -410,7 +416,7 @@ static gchar * rlib_python_array_get_field_value_as_string(gpointer input_ptr, g
         return result->data[(result->current_row*result->cols)+which_field];
 }
 
-static gpointer rlib_python_array_resolve_field_pointer(gpointer input_ptr, gpointer result_ptr, gchar *name) {
+static gpointer rlib_python_array_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) {
         struct rlib_python_array_results *result = result_ptr;
         int i;
         for(i=0;i<result->cols;i++) {
@@ -700,7 +706,7 @@ method_add_resultset_follower_n_to_1(PyObject *self, PyObject *_args) {
 
 static char method_execute__doc__[] = "execute() -> None";
 static PyObject *
-method_execute(PyObject *self, PyObject *_args) {
+method_execute(PyObject *self, PyObject *_args UNUSED) {
 	RLIBObject	*rp = (RLIBObject *)self;
 	long		result;
 
@@ -821,7 +827,7 @@ method_graph_set_x_minor_tick_by_location(PyObject *self, PyObject *_args) {
 
 static char method_query_refresh__doc__[] = "query_refresh() -> None";
 static PyObject *
-method_query_refresh(PyObject *self, PyObject *_args) {
+method_query_refresh(PyObject *self, PyObject *_args UNUSED) {
 	RLIBObject	*rp = (RLIBObject *)self;
 
 	check_rlibobject_open(rp);
@@ -1018,7 +1024,7 @@ method_signal_connect_string(PyObject *self, PyObject *_args) {
 static char method_spool__doc__[] = "spool() -> None\n\
 Send the report output to stdout, useful for CGI scripts.";
 static PyObject *
-method_spool(PyObject *self, PyObject *_args) {
+method_spool(PyObject *self, PyObject *_args UNUSED) {
 	RLIBObject	*rp = (RLIBObject *)self;
 	long		result;
 
@@ -1064,7 +1070,7 @@ static PyMethodDef rlib_methods[] = {
 	{"signal_connect", 		method_signal_connect,			METH_VARARGS, method_signal_connect__doc__},
 	{"signal_connect_string", 	method_signal_connect_string,		METH_VARARGS, method_signal_connect_string__doc__},
 	{"spool", 			method_spool,				METH_NOARGS,  method_spool__doc__},
-	{NULL, NULL}	/* sentinel */
+	{NULL, NULL, 0, NULL}	/* sentinel */
 };
 
 static PyObject *
@@ -1075,43 +1081,14 @@ rlib_getattr(RLIBObject *rp, char *name)
 
 static PyTypeObject RLIBType = {
 	PyObject_HEAD_INIT(NULL) 0,
-	"rlib.Rlib",
-	sizeof(RLIBObject),
-	0,
-	(destructor)rlib_dealloc,		/* tp_dealloc*/
-	0,					/* tp_print*/
-	(getattrfunc)rlib_getattr,		/* tp_getattr*/
-	0,					/* tp_setattr*/
-	0,					/* tp_compare*/
-	0,					/* tp_repr*/
-	0,					/* tp_as_number*/
-	0,					/* tp_as_sequence*/
-	0,					/* tp_as_mapping*/
-	0,					/* tp_hash*/
-	0,					/* tp_call*/
-	0,					/* tp_str*/
-	0,					/* tp_getattro*/
-	0,					/* tp_setattro*/
-	0,					/* tp_as_buffer*/
-	Py_TPFLAGS_DEFAULT,			/* tp_flags*/
-	rlib_object__doc__,			/* tp_doc*/
-	0,		               		/* tp_traverse */
-	0,		               		/* tp_clear */
-	0,		               		/* tp_richcompare */
-	0,		               		/* tp_weaklistoffset */
-	0,		               		/* tp_iter */
-	0,		               		/* tp_iternext */
-	rlib_methods,		             	/* tp_methods */
-	0,             				/* tp_members */
-	0,                         		/* tp_getset */
-	0,                         		/* tp_base */
-	0,                         		/* tp_dict */
-	0,                         		/* tp_descr_get */
-	0,                         		/* tp_descr_set */
-	0,                         		/* tp_dictoffset */
-	(initproc)0,				/* tp_init */
-	0,                         		/* tp_alloc */
-	newrlibobject,	                 		/* tp_new */
+	.tp_name = "rlib.Rlib",
+	.tp_basicsize = sizeof(RLIBObject),
+	.tp_dealloc = (destructor)rlib_dealloc,
+	.tp_getattr = (getattrfunc)rlib_getattr,
+	.tp_flags = Py_TPFLAGS_DEFAULT,
+	.tp_doc = rlib_object__doc__,
+	.tp_methods = rlib_methods,
+	.tp_new = newrlibobject,
 };
 
 /* ----------------------------------------------------------------- */
@@ -1121,7 +1098,7 @@ mysql_report(hostname, username, password, database, xmlfilename, sqlquery, outp
 Generate a mysql report and send it to standard out.\n\
 ";
 static PyObject *
-rlibmysql_report(PyObject *self, PyObject *_args)
+rlibmysql_report(PyObject *self UNUSED, PyObject *_args)
 {
 	rlib *r;
 	char	*hostname, *username, *password, *database, *xmlfile, *sqlquery, *oformat;
@@ -1152,7 +1129,7 @@ Create an instance of a Rlib report object.\n\
 ";
 
 static PyObject *
-rlibopen(PyObject *self, PyObject *args)
+rlibopen(PyObject *self UNUSED, PyObject *args)
 {
     if (!PyArg_ParseTuple(args, ":open"))
         return NULL;
@@ -1164,7 +1141,7 @@ postgres_report(connectionstring, xmlfilename, sqlquery, outputformat) -> 0\n\
 Generate a PostgreSQL report and send it to standard out.\n\
 ";
 static PyObject *
-rlibpostgres_report(PyObject *self, PyObject *_args)
+rlibpostgres_report(PyObject *self UNUSED, PyObject *_args)
 {
 	rlib *r;
 	char	*connstr, *xmlfile, *sqlquery, *oformat;

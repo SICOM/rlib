@@ -27,7 +27,7 @@
 #include <time.h>
 #include <ctype.h>
 #include <inttypes.h>
-#include "config.h"
+#include <config.h>
 
 #include "rlib-internal.h"
 #include "pcode.h"
@@ -135,43 +135,21 @@ void rlib_pcode_find_index(rlib *r) {
 	}
 }
 
-DLL_EXPORT_SYM void rlib_pcode_free(struct rlib_pcode *code) {
-	gint i=0;
+static void rlib_free_operand(rlib *r, struct rlib_pcode_operand *o);
 
-	if(code == NULL)
+DLL_EXPORT_SYM void rlib_pcode_free(rlib *r, struct rlib_pcode *code) {
+	gint i = 0;
+
+	if (code == NULL)
 		return;
 
-	for(i=0;i<code->count;i++) {
-		if(code->instructions[i].instruction == PCODE_PUSH) {
-			struct rlib_pcode_operand *o = code->instructions[i].value;
-			switch (o->type)
-			{
-				case OPERAND_STRING:
-				case OPERAND_NUMBER:
-				case OPERAND_DATE:
-				case OPERAND_FIELD:
-				case OPERAND_MEMORY_VARIABLE:
-					g_free(o->value);
-					break;
-
-				case OPERAND_IIF:
-				{
-					struct rlib_pcode_if *rpif = o->value;
-					rlib_pcode_free(rpif->evaulation);
-					rlib_pcode_free(rpif->true);
-					rlib_pcode_free(rpif->false);
-					g_free(rpif);
-					break;
-				}
-
-				case OPERAND_VARIABLE:
-				case OPERAND_RLIB_VARIABLE:
-				case OPERAND_METADATA:
-				default:
-					break;
-			}
-			g_free(o);
+	for (i = 0; i < code->count; i++) {
+		struct rlib_pcode_instruction *instruction = code->instructions[i];
+		if (instruction->instruction == PCODE_PUSH) {
+			if (instruction->value_allocated)
+				rlib_free_operand(r, instruction->value);
 		}
+		g_free(instruction);
 	}
 	g_free(code->instructions);
 	g_free(code);
@@ -183,7 +161,7 @@ struct rlib_operator_stack {
 	struct rlib_pcode_operator *op[200];
 };
 
-static struct rlib_pcode_operator * rlib_find_operator(rlib *r, gchar *ptr, struct rlib_operator_stack *os, struct rlib_pcode *p, int have_operand) {
+static struct rlib_pcode_operator *rlib_find_operator(rlib *r, gchar *ptr, struct rlib_pcode *p, int have_operand) {
 	gint len = strlen(ptr);
 	gint result;
 	struct rlib_pcode_operator *op;
@@ -239,15 +217,29 @@ void rlib_pcode_init(struct rlib_pcode *p) {
 	p->instructions = NULL;
 }
 
-gint rlib_pcode_add(struct rlib_pcode *p, struct rlib_pcode_instruction *i) {
-	p->instructions = g_try_realloc(p->instructions, sizeof(struct rlib_pcode_instruction) * (p->count + 1));
-	p->instructions[p->count++] = *i;
+/* This is must be called with the 3rd argument coming from rlib_new_pcode_instruction() */
+gint rlib_pcode_add(rlib *r, struct rlib_pcode *p, struct rlib_pcode_instruction *i) {
+	struct rlib_pcode_instruction **iptr = g_try_realloc(p->instructions, sizeof(struct rlib_pcode_instruction *) * (p->count + 1));
+
+	if (iptr == NULL) {
+		r_error(r, "rlib_pcode_add: Out of memory!\n");
+		return -1;
+	}
+
+	p->instructions = iptr;
+	p->instructions[p->count++] = i;
 	return 0;
 }
 
-struct rlib_pcode_instruction * rlib_new_pcode_instruction(struct rlib_pcode_instruction *rpi, gint instruction, gpointer value) {
+static struct rlib_pcode_instruction *rlib_new_pcode_instruction(gint instruction, gpointer value, gboolean allocated) {
+	struct rlib_pcode_instruction *rpi = g_new0(struct rlib_pcode_instruction, 1);
+
+	if (rpi == NULL)
+		return NULL;
+
 	rpi->instruction = instruction;
 	rpi->value = value;
+	rpi->value_allocated = allocated;
 	return rpi;
 }
 
@@ -388,7 +380,7 @@ struct rlib_pcode_operand * rlib_new_operand(rlib *r, struct rlib_part *part, st
 	} else if((memresult = rlib_resolve_memory_variable(r, str))) {
 		o->type = OPERAND_MEMORY_VARIABLE;
 		o->value = g_strdup(memresult);
-	} else if((rvar = rlib_resolve_rlib_variable(r, str))) {
+	} else if((rvar = resolve_rlib_variable(str))) {
 		o->type = OPERAND_RLIB_VARIABLE;
 		o->value = GINT_TO_POINTER(rvar);
 	} else if(r != NULL && (metadata = g_hash_table_lookup(r->input_metadata, str)) != NULL && look_at_metadata == TRUE) {
@@ -402,13 +394,46 @@ struct rlib_pcode_operand * rlib_new_operand(rlib *r, struct rlib_part *part, st
 		o->value = rf;
 	} else {
 		const gchar *err = "BAD_OPERAND";
-		gchar *newstr = g_malloc(r_strlen(err)+1);
+		gchar *newstr = g_malloc(r_strlen(err) + 1);
 		strcpy(newstr, err);
 		o->type = OPERAND_STRING;
 		o->value = newstr;
 		r_error(r, "Line: %d Unrecognized operand [%s]\n The Expression Was [%s]\n", line_number, str, infix);
 	}
 	return o;
+}
+
+
+static void rlib_free_operand(rlib *r, struct rlib_pcode_operand *o) {
+	switch (o->type) {
+	case OPERAND_STRING:
+	case OPERAND_DATE:
+	case OPERAND_NUMBER:
+	case OPERAND_MEMORY_VARIABLE:
+	case OPERAND_FIELD:
+		g_free(o->value);
+		break;
+
+	case OPERAND_IIF:
+	{
+		struct rlib_pcode_if *rpif = o->value;
+		rlib_pcode_free(r, rpif->evaluation);
+		rlib_pcode_free(r, rpif->true);
+		rlib_pcode_free(r, rpif->false);
+		g_free(rpif);
+		break;
+	}
+
+	case OPERAND_VARIABLE:
+	case OPERAND_RLIB_VARIABLE:
+	case OPERAND_METADATA:
+		break;
+	default:
+		r_error(r, "rlib_free_operand: unknown operand type: %d\n", o->type);
+		break;
+	}
+
+	g_free(o);
 }
 
 
@@ -419,8 +444,8 @@ void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, gint offset) {
 		for(j=0;j<offset*5;j++)
 			rlogit(r, " ");
 		rlogit(r, "DUMP: ");
-		if(p->instructions[i].instruction == PCODE_PUSH) {
-			struct rlib_pcode_operand *o = p->instructions[i].value;
+		if(p->instructions[i]->instruction == PCODE_PUSH) {
+			struct rlib_pcode_operand *o = p->instructions[i]->value;
 			rlogit(r, "PUSH: ");
 			if(o->type == OPERAND_NUMBER)
 				rlogit(r, "%" PRId64, *((gint64 *)o->value));
@@ -443,7 +468,7 @@ void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, gint offset) {
 			} else if(o->type == OPERAND_IIF) {
 				struct rlib_pcode_if *rpi = o->value;
 				rlogit(r, "*IFF EXPRESSION EVAULATION:\n");
-				rlib_pcode_dump(r, rpi->evaulation, offset+1);
+				rlib_pcode_dump(r, rpi->evaluation, offset+1);
 				rlogit(r, "*IFF EXPRESSION TRUE:\n");
 				rlib_pcode_dump(r, rpi->true, offset+1);
 				rlogit(r, "*IFF EXPRESSION FALSE:\n");
@@ -452,8 +477,8 @@ void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, gint offset) {
 
 			}
 
-		} else if(p->instructions[i].instruction == PCODE_EXECUTE) {
-			struct rlib_pcode_operator *o = p->instructions[i].value;
+		} else if(p->instructions[i]->instruction == PCODE_EXECUTE) {
+			struct rlib_pcode_operator *o = p->instructions[i]->value;
 			rlogit(r, "EXECUTE: %s", o->tag);
 		}
 		rlogit(r, "\n");
@@ -515,22 +540,21 @@ gint operator_stack_is_all_less(struct rlib_operator_stack *os, struct rlib_pcod
 	return TRUE;
 }
 
-void popopstack(struct rlib_pcode *p, struct rlib_operator_stack *os, struct rlib_pcode_operator *op) {
+void popopstack(rlib *r, struct rlib_pcode *p, struct rlib_operator_stack *os, struct rlib_pcode_operator *op) {
 	struct rlib_pcode_operator *o;
-	struct rlib_pcode_instruction rpi;
-	if(op != NULL && (op->tag[0] == ')' || op->tag[0] == ',')) {
-		while((o=operator_stack_peek(os))) {
-			if(o->is_op == TRUE) {
-				if(op->tag[0] != ',') {
-					rlib_pcode_add(p, rlib_new_pcode_instruction(&rpi, PCODE_EXECUTE, o));
+	if (op != NULL && (op->tag[0] == ')' || op->tag[0] == ',')) {
+		while ((o = operator_stack_peek(os))) {
+			if (o->is_op == TRUE) {
+				if (op->tag[0] != ',') {
+					rlib_pcode_add(r, p, rlib_new_pcode_instruction(PCODE_EXECUTE, o, FALSE));
 				} else {
-					if(o->is_function == FALSE) {
-						rlib_pcode_add(p, rlib_new_pcode_instruction(&rpi, PCODE_EXECUTE, o));
+					if (o->is_function == FALSE) {
+						rlib_pcode_add(r, p, rlib_new_pcode_instruction(PCODE_EXECUTE, o, FALSE));
 					}
 				}
 			}
-			if(o->tag[0] == '(' || o->is_function == TRUE) {
-				if(op->tag[0] != ',') /* NEED TO PUT THE ( or FUNCTION back on the stack cause it takes more then 1 paramater */
+			if (o->tag[0] == '(' || o->is_function == TRUE) {
+				if (op->tag[0] != ',') /* NEED TO PUT THE ( or FUNCTION back on the stack cause it takes more then 1 paramater */
 					operator_stack_pop(os);
 				break;
 			}
@@ -538,13 +562,13 @@ void popopstack(struct rlib_pcode *p, struct rlib_operator_stack *os, struct rli
 		}
 	} else {
 //r_error(NULL, "#################### OP IS [%s]\n", op->tag);
-		while((o=operator_stack_peek(os))) {
-			if(o->tag[0] == '(' || o->is_function == TRUE) {
+		while ((o = operator_stack_peek(os))) {
+			if (o->tag[0] == '(' || o->is_function == TRUE) {
 				break;
 			}
-			if(o->is_op == TRUE) {
+			if (o->is_op == TRUE) {
 //r_error(NULL, "@@@@@@@@@@@@@@@@@@@ ADDING [%s]\n", o->tag);
-				rlib_pcode_add(p, rlib_new_pcode_instruction(&rpi, PCODE_EXECUTE, o));
+				rlib_pcode_add(r, p, rlib_new_pcode_instruction(PCODE_EXECUTE, o, FALSE));
 			}
 			operator_stack_pop(os);
 		}
@@ -553,18 +577,15 @@ void popopstack(struct rlib_pcode *p, struct rlib_operator_stack *os, struct rli
 
 static void forcepopstack(rlib *r, struct rlib_pcode *p, struct rlib_operator_stack *os) {
 	struct rlib_pcode_operator *o;
-	struct rlib_pcode_instruction rpi;
-	while((o=operator_stack_pop(os))) {
-		if(o->is_op == TRUE) {
+	while ((o = operator_stack_pop(os))) {
+		if (o->is_op == TRUE) {
 //r_error(r, "forcepopstack:: Forcing [%s] Off the Stack\n", o->tag);
-			rlib_pcode_add(p, rlib_new_pcode_instruction(&rpi, PCODE_EXECUTE, o));
+			rlib_pcode_add(r, p, rlib_new_pcode_instruction(PCODE_EXECUTE, o, FALSE));
 		}
 	}
-
-
 }
 
-void smart_add_pcode(struct rlib_pcode *p, struct rlib_operator_stack *os, struct rlib_pcode_operator *op) {
+void smart_add_pcode(rlib *r, struct rlib_pcode *p, struct rlib_operator_stack *os, struct rlib_pcode_operator *op) {
 //r_error(NULL, "smart_add_pcode:: Adding [%s]\n", op->tag);
 
 	if(operator_stack_is_all_less(os, op)) {
@@ -572,7 +593,7 @@ void smart_add_pcode(struct rlib_pcode *p, struct rlib_operator_stack *os, struc
 		operator_stack_push(os, op);
 	} else {
 //r_error(NULL, "\tsmart_add_pcode:: POP AND PUSH [%s]\n", op->tag);
-		popopstack(p, os, op);
+		popopstack(r, p, os, op);
 		operator_stack_push(os, op);
 	}
 }
@@ -599,12 +620,11 @@ DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part
 	struct rlib_pcode_operator *op;
 	struct rlib_pcode *pcodes;
 	struct rlib_operator_stack os;
-	struct rlib_pcode_instruction rpi;
 
 	if(infix == NULL || infix[0] == '\0' || !strcmp(infix, ""))
 		return NULL;
 
-	pcodes = g_malloc(sizeof(struct rlib_pcode));
+	pcodes = g_new0(struct rlib_pcode, 1);
 
 	rlib_pcode_init(pcodes);
 	pcodes->infix_string = infix;
@@ -633,12 +653,12 @@ DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part
 				break;
 		}
 
-		if(!instr && !indate && (op=rlib_find_operator(r, moving_ptr, &os, pcodes, moving_ptr != op_pointer))) {
+		if(!instr && !indate && (op = rlib_find_operator(r, moving_ptr, pcodes, moving_ptr != op_pointer))) {
 			if(moving_ptr != op_pointer) {
 				memcpy(operand, op_pointer, moving_ptr - op_pointer);
 				operand[moving_ptr - op_pointer] = '\0';
-				if(operand[0] != ')') {
-					rlib_pcode_add(pcodes, rlib_new_pcode_instruction(&rpi, PCODE_PUSH, rlib_new_operand(r, part, report, operand, infix, line_number, look_at_metadata)));
+				if (operand[0] != ')') {
+					rlib_pcode_add(r, pcodes, rlib_new_pcode_instruction(PCODE_PUSH, rlib_new_operand(r, part, report, operand, infix, line_number, look_at_metadata), TRUE));
 				}
 /*				op_pointer += moving_ptr - op_pointer;
             How about just: */
@@ -650,16 +670,16 @@ DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part
 				move_pointers = FALSE;
 			} else {
 				found_op_last = TRUE;
-/*
+				/*
 				IIF (In Line If's) Are a bit more complicated.  We need to swallow up the whole string like "IIF(1<2,true part, false part)"
 				And then idetify all the 3 inner parts, then pass in recursivly to our selfs and populate rlib_pcode_if and smaet_add_pcode that
-*/
-				if(op->opnum == OP_IIF) {
+				*/
+				if (op->opnum == OP_IIF) {
 					gint in_a_string = FALSE;
 					gint pcount=1;
 					gint ccount=0;
 					gchar *save_ptr, *iif, *save_iif;
-					gchar *evaulation, *true=NULL, *false=NULL;
+					gchar *evaluation, *true=NULL, *false=NULL;
 					struct rlib_pcode_if *rpif;
 					struct rlib_pcode_operand *o;
 					gchar in_a_string_in_a_iif = FALSE;
@@ -683,7 +703,7 @@ DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part
 					iif[moving_ptr-save_ptr] = '\0';
 					memcpy(iif, save_ptr, moving_ptr-save_ptr);
 					iif[moving_ptr-save_ptr-1] = '\0';
-					evaulation = iif;
+					evaluation = iif;
 					while (*iif) {
 						if(in_a_string_in_a_iif == FALSE) {
 							if (*iif == '(')
@@ -705,29 +725,29 @@ DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part
 						}
 						iif++;
 					}
-					rpif = g_malloc(sizeof(struct rlib_pcode_if));
-					rpif->evaulation = rlib_infix_to_pcode(r, part, report, evaulation, line_number, look_at_metadata);
+					rpif = g_new0(struct rlib_pcode_if, 1);
+					rpif->evaluation = rlib_infix_to_pcode(r, part, report, evaluation, line_number, look_at_metadata);
 					rpif->true = rlib_infix_to_pcode(r, part, report, true, line_number, look_at_metadata);
 					rpif->false = rlib_infix_to_pcode(r, part, report, false, line_number, look_at_metadata);
 					rpif->str_ptr = iif;
-					smart_add_pcode(pcodes, &os, op);
+					smart_add_pcode(r, pcodes, &os, op);
 					o = g_malloc(sizeof(struct rlib_pcode_operand));
 					o->type = OPERAND_IIF;
 					o->value = rpif;
-					rlib_pcode_add(pcodes, rlib_new_pcode_instruction(&rpi, PCODE_PUSH, o));
-					if(1) {
+					rlib_pcode_add(r, pcodes, rlib_new_pcode_instruction(PCODE_PUSH, o, TRUE));
+					if (1) {
 						struct rlib_pcode_operator *ox;
-						ox=operator_stack_pop(&os);
-						rlib_pcode_add(pcodes, rlib_new_pcode_instruction(&rpi, PCODE_EXECUTE, ox));
+						ox = operator_stack_pop(&os);
+						rlib_pcode_add(r, pcodes, rlib_new_pcode_instruction(PCODE_EXECUTE, ox, FALSE));
 					}
 					moving_ptr-=1;
 					op_pointer = moving_ptr;
 					move_pointers = FALSE;
 					g_free(save_iif);
 				} else {
-					smart_add_pcode(pcodes, &os, op);
+					smart_add_pcode(r, pcodes, &os, op);
 					last_op_was_function = op->is_function;
-					if(op->tag[0] == ')')
+					if (op->tag[0] == ')')
 						last_op_was_function = TRUE;
 					move_pointers = TRUE;
 				}
@@ -739,11 +759,13 @@ DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part
 		} else
 			moving_ptr++;
 	}
-	if((moving_ptr != op_pointer)) {
+	if ((moving_ptr != op_pointer)) {
 		memcpy(operand, op_pointer, moving_ptr - op_pointer);
 		operand[moving_ptr - op_pointer] = '\0';
-		if(operand[0] != ')') {
-			rlib_pcode_add(pcodes, rlib_new_pcode_instruction(&rpi, PCODE_PUSH, rlib_new_operand(r, part, report, operand, infix, line_number, look_at_metadata)));
+		if (operand[0] != ')') {
+			struct rlib_pcode_operand *op = rlib_new_operand(r, part, report, operand, infix, line_number, look_at_metadata);
+			struct rlib_pcode_instruction *in = rlib_new_pcode_instruction(PCODE_PUSH, op, TRUE);
+			rlib_pcode_add(r, pcodes, in);
 		}
 	}
 	forcepopstack(r, pcodes, &os);
@@ -849,27 +871,26 @@ DLL_EXPORT_SYM struct rlib_value * rlib_value_new_error(struct rlib_value *rval)
 /*
 	The RLIB SYMBOL TABLE is a bit commplicated because of all the datasources and internal variables
 */
-struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, struct rlib_pcode_operand *o,
-struct rlib_value *this_field_value) {
+struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, struct rlib_pcode_operand *o, struct rlib_value *this_field_value) {
 	struct rlib_report_variable *rv = NULL;
 
-	if(o->type == OPERAND_NUMBER) {
+	if (o->type == OPERAND_NUMBER) {
 		return rlib_value_new(rval, RLIB_VALUE_NUMBER, FALSE, o->value);
-	} else if(o->type == OPERAND_STRING) {
+	} else if (o->type == OPERAND_STRING) {
 		return rlib_value_new(rval, RLIB_VALUE_STRING, FALSE, o->value);
-	} else if(o->type == OPERAND_DATE) {
+	} else if (o->type == OPERAND_DATE) {
 		return rlib_value_new(rval, RLIB_VALUE_DATE, FALSE, o->value);
-	} else if(o->type == OPERAND_FIELD) {
+	} else if (o->type == OPERAND_FIELD) {
 		return rlib_value_new(rval, RLIB_VALUE_STRING, TRUE, rlib_resolve_field_value(r, o->value));
-	} else if(o->type == OPERAND_METADATA) {
+	} else if (o->type == OPERAND_METADATA) {
 		struct rlib_metadata *metadata = o->value;
 		*rval = metadata->rval_formula;
 		return rval;
-	} else if(o->type == OPERAND_MEMORY_VARIABLE) {
+	} else if (o->type == OPERAND_MEMORY_VARIABLE) {
 		return rlib_value_new(rval, RLIB_VALUE_STRING, FALSE, o->value);
-	} else if(o->type == OPERAND_RLIB_VARIABLE) {
+	} else if (o->type == OPERAND_RLIB_VARIABLE) {
 		gint type = ((long)o->value);
-		if(type == RLIB_RLIB_VARIABLE_PAGENO) {
+		if (type == RLIB_RLIB_VARIABLE_PAGENO) {
 			gint64 pageno = r->current_page_number*RLIB_DECIMAL_PRECISION;
 			return rlib_value_new_number(rval, pageno);
 		} else if(type == RLIB_RLIB_VARIABLE_TOTPAGES) {
@@ -935,12 +956,12 @@ struct rlib_value *this_field_value) {
 gint execute_pcode(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gboolean show_stack_errors) {
 	gint i;
 	for(i=0;i<code->count;i++) {
-		if(code->instructions[i].instruction == PCODE_PUSH) {
-			struct rlib_pcode_operand *o = code->instructions[i].value;
+		if(code->instructions[i]->instruction == PCODE_PUSH) {
+			struct rlib_pcode_operand *o = code->instructions[i]->value;
 			struct rlib_value rval;
 			rlib_value_stack_push(r, vs, rlib_operand_get_value(r, &rval, o, this_field_value));
 		} else { /*Execute*/
-			struct rlib_pcode_operator *o = code->instructions[i].value;
+			struct rlib_pcode_operator *o = code->instructions[i]->value;
 			if(o->execute != NULL) {
 				if(o->execute(r, code, vs, this_field_value, o->user_data) == FALSE) {
 					r_error(r, "Line: %d - PCODE Execution Error: [%s] %s Didn't Work \n",code->line_number, code->infix_string,o->tag);
@@ -961,7 +982,7 @@ gint execute_pcode(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs
 DLL_EXPORT_SYM struct rlib_value * rlib_execute_pcode(rlib *r, struct rlib_value *rval, struct rlib_pcode *code, struct rlib_value *this_field_value) {
 	struct rlib_value_stack value_stack;
 
-	if(code == NULL)
+	if (code == NULL)
 		return NULL;
 
 	rlib_value_stack_init(&value_stack);

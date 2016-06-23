@@ -22,7 +22,7 @@
 #include <time.h>
 #include <string.h>
 
-#include "config.h"
+#include <config.h>
 #include "util.h"
 #include "datetime.h"
 #include "rlib-internal.h"

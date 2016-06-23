@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -21,7 +21,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "config.h"
+#include <config.h>
 #include "rlib-internal.h"
 #include "pcode.h"
 #include "rlib_input.h"
@@ -37,7 +37,7 @@
 	In this case r.pageno
 
 */
-gint rlib_resolve_rlib_variable(rlib *r, gchar *name) {
+gint resolve_rlib_variable(gchar *name) {
 	if(r_strlen(name) >= 3 && name[0] == 'r' && name[1] == '.') {
 		name += 2;
 		if(!strcmp(name, "pageno"))
@@ -88,9 +88,9 @@ gchar * rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 
 gint rlib_lookup_result(rlib *r, gchar *name) {
 	gint i;
-	for(i=0;i<r->queries_count;i++) {
-		if(r->results[i]->name != NULL) {
-			if(!strcmp(r->results[i]->name, name))
+	for (i = 0; i < r->queries_count; i++) {
+		if (r->results[i]->name != NULL) {
+			if (!strcmp(r->results[i]->name, name))
 				return i;
 		}
 	}
@@ -102,9 +102,12 @@ gint rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gint *r
 	gint found = FALSE;
 	gchar *right_side = NULL, *result_name = NULL;
 
+	if (r->results == NULL)
+		return FALSE;
+
 	resultset = r->current_result;
 	right_side = memchr(name, '.', r_strlen(name));
-	if(right_side != NULL) {
+	if (right_side != NULL) {
 		gint t;
 		result_name = g_malloc(r_strlen(name) - r_strlen(right_side) + 1);
 		memcpy(result_name, name, r_strlen(name) - r_strlen(right_side));
@@ -112,18 +115,19 @@ gint rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gint *r
 		right_side++;
 		name = right_side;
 		t = rlib_lookup_result(r, result_name);
-		if(t >= 0) {
+		if (t >= 0) {
 			found = TRUE;
 			resultset = t;
 		} else {
 			if(!isdigit((int)*result_name)) {
 				r_error(r, "rlib_resolve_namevalue: INVALID RESULT SET %s, name was [%s]\n", result_name, name);
+				g_free(result_name);
 				return FALSE;
 			}
-		}		
+		}
 	}
 	*rtn_field = INPUT(r, resultset)->resolve_field_pointer(INPUT(r, resultset), r->results[resultset]->result, name);
-	
+
 	if(*rtn_field != NULL)
 		found = TRUE;
 	else {
@@ -133,9 +137,8 @@ gint rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gint *r
 			r_error(r, "The field [%s.%s] does not exist\n", result_name, name);
 	}
 	*rtn_resultset = resultset;
-	
-	if(result_name != NULL)
-		g_free(result_name);
+
+	g_free(result_name);
 	
 	return found;
 }
@@ -198,8 +201,7 @@ static void rlib_variable_resolve_pcode(rlib *r, struct rlib_part *part, struct 
 	} else {
 		rv->precalculate = FALSE;
 	}
-	rlib_pcode_free(code);
-
+	rlib_pcode_free(r, code);
 
 	rv->precalculated_values = NULL;
 }
@@ -243,31 +245,31 @@ static void rlib_barcode_resolve_pcode(rlib *r, struct rlib_part *part, struct r
 
 
 static void rlib_resolve_fields2(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_output_array *roa) {
-	gint j;
+	GSList *ptr;
 	struct rlib_element *e;
 	
-	if(roa == NULL)
+	if (roa == NULL)
 		return;
 		
-	if(roa->xml_page.xml != NULL)
+	if (roa->xml_page.xml != NULL)
 		roa->page = atol((char *)roa->xml_page.xml);
 	else
 		roa->page = -1;
 
-	if(roa->xml_suppress.xml != NULL) {
+	if (roa->xml_suppress.xml != NULL) {
 		struct rlib_pcode *code = rlib_infix_to_pcode(r, part, report, (gchar *)roa->xml_suppress.xml, roa->xml_suppress.line, TRUE);
 		roa->suppress = atol((char *)roa->xml_suppress.xml);
-		if(rlib_execute_as_boolean(r, code, &roa->suppress) == FALSE)
+		if (rlib_execute_as_boolean(r, code, &roa->suppress) == FALSE)
 			roa->suppress = FALSE;
-		rlib_pcode_free(code);
+		rlib_pcode_free(r, code);
 	} else
 		roa->suppress = FALSE;
 
 	
-	for(j=0;j<roa->count;j++) {
-		struct rlib_report_output *ro = roa->data[j];
-		
-		if(ro->type == RLIB_REPORT_PRESENTATION_DATA_LINE) {
+	for (ptr = roa->chain; ptr; ptr = g_slist_next(ptr)) {
+		struct rlib_report_output *ro = ptr->data;
+
+		if (ro->type == RLIB_REPORT_PRESENTATION_DATA_LINE) {
 			struct rlib_report_lines *rl = ro->data;	
 			e = rl->e;
 			rl->bgcolor_code = rlib_infix_to_pcode(r, part, report, (gchar *)rl->xml_bgcolor.xml, rl->xml_bgcolor.line, TRUE);
@@ -276,7 +278,7 @@ static void rlib_resolve_fields2(rlib *r, struct rlib_part *part, struct rlib_re
 			rl->bold_code = rlib_infix_to_pcode(r, part, report, (gchar *)rl->xml_bold.xml, rl->xml_bold.line, TRUE);
 			rl->italics_code = rlib_infix_to_pcode(r, part, report, (gchar *)rl->xml_italics.xml, rl->xml_italics.line, TRUE);
 
-			for(; e != NULL; e=e->next) {
+			for (; e != NULL; e = e->next) {
 				if(e->type == RLIB_ELEMENT_FIELD) {
 					rlib_field_resolve_pcode(r, part, report, ((struct rlib_report_field *)e->data));
 				} else if(e->type == RLIB_ELEMENT_LITERAL) {
@@ -297,28 +299,27 @@ static void rlib_resolve_fields2(rlib *r, struct rlib_part *part, struct rlib_re
 
 static void rlib_resolve_outputs(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e) {
 	struct rlib_report_output_array *roa;
-	for(; e != NULL; e=e->next) {
+	for(; e != NULL; e = e->next) {
 		roa = e->data;
 		rlib_resolve_fields2(r, part, report, roa);
-	}			
-
+	}
 }
 
 /*
-	Report variables are refereced as v.whatever
-	but when created in the <variables/> section they use there normal name.. ie.. whatever
-*/
-struct rlib_report_variable *rlib_resolve_variable(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *name) {
+ * Report variables are refereced as v.whatever
+ * but when created in the <variables/> section they use there normal name.. ie.. whatever
+ */
+struct rlib_report_variable *rlib_resolve_variable(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report, gchar *name) {
 	struct rlib_element *e;
-	if(report == NULL && part != NULL)
+	if (report == NULL && part != NULL)
 		report = part->only_report;
-	if(report == NULL)
+	if (report == NULL)
 		return NULL;
-	if(r_strlen(name) >= 3 && name[0] == 'v' && name[1] == '.') {
+	if (r_strlen(name) >= 3 && name[0] == 'v' && name[1] == '.') {
 		name += 2;
-		for(e = report->variables; e != NULL; e=e->next) {
+		for (e = report->variables; e != NULL; e = e->next) {
 			struct rlib_report_variable *rv = e->data;
-		if(!strcmp(name, (char *)rv->xml_name.xml))
+		if (!strcmp(name, (char *)rv->xml_name.xml))
 			return rv;
 		}	
 		rlogit(r, "rlib_resolve_variable: Could not find [%s]\n", name);
@@ -334,7 +335,10 @@ int is_true_str(const gchar *str) {
 void rlib_resolve_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_graph *graph) {
 	struct rlib_graph_plot *plot;
 	GSList *list;
-	
+
+	if (graph == NULL)
+		return;
+
 	graph->name_code = rlib_infix_to_pcode(r, part, report, (gchar *)graph->xml_name.xml, graph->xml_name.line, TRUE);
 	graph->type_code = rlib_infix_to_pcode(r, part, report, (gchar *)graph->xml_type.xml, graph->xml_type.line, TRUE);
 	graph->subtype_code = rlib_infix_to_pcode(r, part, report, (gchar *)graph->xml_subtype.xml, graph->xml_subtype.line, TRUE);
@@ -366,9 +370,9 @@ void rlib_resolve_graph(rlib *r, struct rlib_part *part, struct rlib_report *rep
 }
 
 void rlib_resolve_chart(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_chart *chart) {
-	struct rlib_chart_header_row *header_row;
-	struct rlib_chart_row *row;
-	
+	if (chart == NULL)
+		return;
+
 	chart->name_code = rlib_infix_to_pcode(r, part, report, (gchar *)chart->xml_name.xml, chart->xml_name.line, TRUE);
 	chart->title_code = rlib_infix_to_pcode(r, part, report, (gchar *)chart->xml_title.xml, chart->xml_title.line, TRUE);
 	chart->cols_code = rlib_infix_to_pcode(r, part, report, (gchar *)chart->xml_cols.xml, chart->xml_cols.line, TRUE);
@@ -380,22 +384,26 @@ void rlib_resolve_chart(rlib *r, struct rlib_part *part, struct rlib_report *rep
 	chart->label_width_code = rlib_infix_to_pcode(r, part, report, (gchar *)chart->xml_label_width.xml, chart->xml_label_width.line, TRUE);
 	chart->header_row_code = rlib_infix_to_pcode(r, part, report, (gchar *)chart->xml_header_row.xml, chart->xml_header_row.line, TRUE);
 
-	header_row = &chart->header_row;
+	if (chart->header_row) {
+		struct rlib_chart_header_row *header_row = chart->header_row;
 
-	header_row->query_code = rlib_infix_to_pcode(r, part, report, (gchar *)header_row->xml_query.xml, header_row->xml_query.line, TRUE);
-	header_row->field_code = rlib_infix_to_pcode(r, part, report, (gchar *)header_row->xml_field.xml, header_row->xml_field.line, TRUE);
-	header_row->colspan_code = rlib_infix_to_pcode(r, part, report, (gchar *)header_row->xml_colspan.xml, header_row->xml_colspan.line, TRUE);
+		header_row->query_code = rlib_infix_to_pcode(r, part, report, (gchar *)header_row->xml_query.xml, header_row->xml_query.line, TRUE);
+		header_row->field_code = rlib_infix_to_pcode(r, part, report, (gchar *)header_row->xml_field.xml, header_row->xml_field.line, TRUE);
+		header_row->colspan_code = rlib_infix_to_pcode(r, part, report, (gchar *)header_row->xml_colspan.xml, header_row->xml_colspan.line, TRUE);
+	}
 
-	row = &chart->row;
+	if (chart->row) {
+		struct rlib_chart_row *row = chart->row;
 
-	row->row_code = rlib_infix_to_pcode(r, part, report, (gchar *)row->xml_row.xml, row->xml_row.line, TRUE);
-	row->bar_start_code = rlib_infix_to_pcode(r, part, report, (gchar *)row->xml_bar_start.xml, row->xml_bar_start.line, TRUE);
-	row->bar_end_code = rlib_infix_to_pcode(r, part, report, (gchar *)row->xml_bar_end.xml, row->xml_bar_end.line, TRUE);
-	row->label_code = rlib_infix_to_pcode(r, part, report, (gchar *)row->xml_label.xml, row->xml_label.line, TRUE);
-	row->bar_label_code = rlib_infix_to_pcode(r, part, report, (gchar *)row->xml_bar_label.xml, row->xml_bar_label.line, TRUE);
+		row->row_code = rlib_infix_to_pcode(r, part, report, (gchar *)row->xml_row.xml, row->xml_row.line, TRUE);
+		row->bar_start_code = rlib_infix_to_pcode(r, part, report, (gchar *)row->xml_bar_start.xml, row->xml_bar_start.line, TRUE);
+		row->bar_end_code = rlib_infix_to_pcode(r, part, report, (gchar *)row->xml_bar_end.xml, row->xml_bar_end.line, TRUE);
+		row->label_code = rlib_infix_to_pcode(r, part, report, (gchar *)row->xml_label.xml, row->xml_label.line, TRUE);
+		row->bar_label_code = rlib_infix_to_pcode(r, part, report, (gchar *)row->xml_bar_label.xml, row->xml_bar_label.line, TRUE);
 
-	row->bar_color_code = rlib_infix_to_pcode(r, part, report, (gchar *)row->xml_bar_color.xml, row->xml_bar_color.line, TRUE);
-	row->bar_label_color_code = rlib_infix_to_pcode(r, part, report, (gchar *)row->xml_bar_label_color.xml, row->xml_bar_label_color.line, TRUE);
+		row->bar_color_code = rlib_infix_to_pcode(r, part, report, (gchar *)row->xml_bar_color.xml, row->xml_bar_color.line, TRUE);
+		row->bar_label_color_code = rlib_infix_to_pcode(r, part, report, (gchar *)row->xml_bar_label_color.xml, row->xml_bar_label_color.line, TRUE);
+	}
 }
 
 void rlib_resolve_report_fields(rlib *r, struct rlib_part *part, struct rlib_report *report) {
@@ -409,8 +417,8 @@ void rlib_resolve_report_fields(rlib *r, struct rlib_part *part, struct rlib_rep
 
 		}
 	}
-	
-	rlib_init_variables(r, report);
+
+	init_variables(report);
 	rlib_process_expression_variables(r, report);
 	
 	report->orientation = RLIB_ORIENTATION_PORTRAIT;
@@ -450,12 +458,14 @@ void rlib_resolve_report_fields(rlib *r, struct rlib_part *part, struct rlib_rep
 	rlib_resolve_outputs(r, part, report, report->page_header);
 	rlib_resolve_outputs(r, part, report, report->page_footer);
 	rlib_resolve_outputs(r, part, report, report->report_footer);
-	rlib_resolve_outputs(r, part, report, report->detail.fields);
-	rlib_resolve_outputs(r, part, report, report->detail.headers);
-	rlib_resolve_outputs(r, part, report, report->alternate.nodata);
+	if (report->detail) {
+		rlib_resolve_outputs(r, part, report, report->detail->fields);
+		rlib_resolve_outputs(r, part, report, report->detail->headers);
+	}
+	rlib_resolve_outputs(r, part, report, report->alternate);
 
-	rlib_resolve_graph(r, part, report, &report->graph);
-	rlib_resolve_chart(r, part, report, &report->chart);
+	rlib_resolve_graph(r, part, report, report->graph);
+	rlib_resolve_chart(r, part, report, report->chart);
 
 	if(report->breaks != NULL) {
 		for(e = report->breaks; e != NULL; e=e->next) {
@@ -511,7 +521,7 @@ void rlib_resolve_part_fields(rlib *r, struct rlib_part *part) {
 	part->left_margin_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_left_margin.xml, part->xml_left_margin.line, TRUE);
 	part->bottom_margin = RLIB_DEFAULT_BOTTOM_MARGIN;
 	part->bottom_margin_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_bottom_margin.xml, part->xml_bottom_margin.line, TRUE);
-	part->paper = rlib_layout_get_paper(r, RLIB_PAPER_LETTER);
+	part->paper = layout_get_paper(RLIB_PAPER_LETTER);
 	part->paper_type_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_paper_type.xml, part->xml_paper_type.line, TRUE);
 	part->pages_across = 1;
 	part->pages_across_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_pages_across.xml, part->xml_pages_across.line, TRUE);
@@ -521,7 +531,6 @@ void rlib_resolve_part_fields(rlib *r, struct rlib_part *part) {
 	part->suppress_page_header_first_page_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_suppress_page_header_first_page.xml, part->xml_suppress_page_header_first_page.line, TRUE);
 	part->suppress = FALSE;
 	part->suppress_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_suppress.xml, part->xml_suppress.line, TRUE);
-
 
 	if (rlib_execute_as_float(r, part->pages_across_code, &f))
 		part->pages_across = f;
@@ -549,7 +558,7 @@ gchar * rlib_resolve_memory_variable(rlib *r, gchar *name) {
 	return NULL;
 }
 
-void resolve_metadata(gpointer name, gpointer value, gpointer user_data) {
+void resolve_metadata(gpointer name UNUSED, gpointer value, gpointer user_data) {
 	struct rlib_metadata *metadata = value;
 	metadata->formula_code = rlib_infix_to_pcode(user_data, NULL, NULL, (gchar *)metadata->xml_formula.xml, metadata->xml_formula.line, FALSE);
 	RLIB_VALUE_TYPE_NONE(&metadata->rval_formula);
@@ -559,7 +568,7 @@ void rlib_resolve_metadata(rlib *r) {
 	g_hash_table_foreach(r->input_metadata, resolve_metadata, r);
 }
 
-void process_metadata(gpointer name, gpointer value, gpointer user_data) {
+void process_metadata(gpointer name UNUSED, gpointer value, gpointer user_data) {
 	struct rlib_metadata *metadata = value;
 	rlib_value_free(&metadata->rval_formula);
 	rlib_execute_pcode(user_data, &metadata->rval_formula, metadata->formula_code, NULL);

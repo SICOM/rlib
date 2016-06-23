@@ -20,11 +20,17 @@
 ##
 ## Process this file with automake to produce Makefile.in
 
-noinst_PROGRAMS = example relpth1 relpth2 srcpth relprt
+noinst_PROGRAMS = \
+	example_mysql example_pg example_odbc \
+	relpth1 relpth2 srcpth relprt graph
 
 AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
 
-example_LDADD = $(top_builddir)/libsrc/libr.la
+example_mysql_LDADD = $(top_builddir)/libsrc/libr.la
+
+example_pg_LDADD = $(top_builddir)/libsrc/libr.la
+
+example_odbc_LDADD = $(top_builddir)/libsrc/libr.la
 
 relpth1_LDADD = $(top_builddir)/libsrc/libr.la
 
@@ -33,6 +39,8 @@ relpth2_LDADD = $(top_builddir)/libsrc/libr.la
 srcpth_LDADD = $(top_builddir)/libsrc/libr.la
 
 relprt_LDADD = $(top_builddir)/libsrc/libr.la
+
+graph_LDADD = $(top_builddir)/libsrc/libr.la
 
 noinst_SCRIPTS = products.xml
 

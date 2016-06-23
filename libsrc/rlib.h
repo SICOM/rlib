@@ -75,7 +75,7 @@ struct environment_filter {
 
 struct rlib_pcode {
 	gint count;
-	struct rlib_pcode_instruction *instructions;
+	struct rlib_pcode_instruction **instructions;
 	gchar *infix_string;
 	gint line_number;
 };
@@ -162,10 +162,12 @@ gint rlib_add_datasource_odbc(rlib *r, const gchar *input_name, const gchar *sou
 	const gchar *user, const gchar *password);
 gint rlib_add_datasource_xml(rlib *r, const gchar *input_name);
 gint rlib_add_datasource_csv(rlib *r, const gchar *input_name);
+gint rlib_add_datasource_array(rlib *r, const gchar *input_name);
 
 /* Query definition */
 gint rlib_add_query_as(rlib *r, const gchar *input_name, const gchar *sql, const gchar *name);
 gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name);
+gint rlib_add_query_array_as(rlib *r, const gchar *input_source, gpointer array, gint rows, gint cols, const gchar *name);
 
 /* Report XML definition */
 gint rlib_add_search_path(rlib *r, const gchar *path);
@@ -181,6 +183,7 @@ gint rlib_set_locale(rlib *r, gchar *locale);
 void rlib_set_output_encoding(rlib *r, const char *encoding);
 gint rlib_set_datasource_encoding(rlib *r, gchar *input_name, gchar *encoding);
 gint rlib_execute(rlib *r);
+gint rlib_parse(rlib *);
 gchar * rlib_get_content_type_as_text(rlib *r);
 gint rlib_spool(rlib *r);
 gchar *rlib_get_output(rlib *r);
@@ -213,10 +216,17 @@ struct rlib_value * rlib_value_new_error(struct rlib_value *rval);
 gint rlib_value_free(struct rlib_value *rval);
 struct rlib_pcode *rlib_infix_to_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *infix, gint line_number, gboolean look_at_metadata);
 struct rlib_value *rlib_execute_pcode(rlib *r, struct rlib_value *rval, struct rlib_pcode *code, struct rlib_value *this_field_value);
-void rlib_pcode_free(struct rlib_pcode *code);
+void rlib_pcode_free(rlib *r, struct rlib_pcode *code);
 
 /* Graphing */
 gfloat rlib_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left_margin_offset, gfloat *top_margin_offset);
 gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left_margin_offset, gfloat *top_margin_offset);
+
+/* Console messages */
+void rlogit(rlib *r, const gchar *fmt, ...);
+void r_debug(rlib *r, const gchar *fmt, ...);
+void r_info(rlib *r, const gchar *fmt, ...);
+void r_warning(rlib *r, const gchar *fmt, ...);
+void r_error(rlib *r, const gchar *fmt, ...);
 
 #endif /* RLIB_H_ */

@@ -31,7 +31,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "config.h"
+#include <config.h>
 #include "rlib-internal.h"
 
 #define GOOD_CONTRAST_THRESHOLD 0.5

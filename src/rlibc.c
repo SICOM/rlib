@@ -25,7 +25,7 @@
 #include <rlib.h>
 #include <rlib_input.h>
 
-int main(int argc, char **argv) {
+int main(void) {
 /*	char *filename;
 	char buf[MAXSTRLEN];
 	struct rlib_report *rep;

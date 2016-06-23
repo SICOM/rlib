@@ -29,14 +29,16 @@
 #include <string.h>
 #include "rpdf.h"
 
-static void callback_test(gchar *data, gint len, gpointer user_data) {
+#define UNUSED __attribute__((unused))
+
+static void callback_test(gchar *data, gint len UNUSED, gpointer user_data UNUSED) {
 	sprintf(data, "IT WORKED!");
 }
 
-int main(int argc, char **argv) {
+int main(void) {
 	ssize_t	byteswritten;
-	size_t	pos;
-	gint pdf_size;
+	size_t pos;
+	guint pdf_size;
 	char *buf;
 
 	struct rpdf *pdf = rpdf_new();

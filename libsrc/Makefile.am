@@ -21,7 +21,37 @@
 ## Process this file with automake to produce Makefile.in
 
 if HAVE_GD
-GD_FILES=gdFontMedium.c gdFontMedium.h
+GD_FILES = gdFontMedium.c gdFontMedium.h
+endif
+
+if HAVE_MYSQL_BUILTIN
+
+MYSQL_SOURCE = mysql_data_source.c
+mysql_data_source.c: $(top_srcdir)/inputs/mysql/mysql.c
+	$(LN_S) $< $@
+
+MYSQL_INPUT_LIBS = $(MYSQL_LIBS)
+
+endif
+
+if HAVE_POSTGRES_BUILTIN
+
+POSTGRES_SOURCE = postgres_data_source.c
+postgres_data_source.c: $(top_srcdir)/inputs/postgres/postgres.c
+	$(LN_S) $< $@
+
+POSTGRES_INPUT_LIBS = $(POSTGRES_LIBS)
+
+endif
+
+if HAVE_ODBC_BUILTIN
+
+ODBC_SOURCE = odbc_data_source.c
+odbc_data_source.c: $(top_srcdir)/inputs/odbc/odbc.c
+	$(LN_S) $< $@
+
+ODBC_INPUT_LIBS = $(ODBC_LIBS)
+
 endif
 
 lib_LTLIBRARIES = libr.la
@@ -31,9 +61,17 @@ libr_la_SOURCES = parsexml.c reportgen.c layout.c graphing.c api.c \
 	csv.c environment.c free.c navigation.c axis.c \
 	xml_data_source.c csv_data_source.c rlib_langinfo.c rlib_input.h \
 	pcode.h rlib.h charencoder.c charencoder.h rlib_gd.h \
-	rlib_langinfo.h barcode.c datetime.c datetime.h value.c value.h $(GD_FILES)
+	rlib_langinfo.h barcode.c datetime.c datetime.h value.c value.h $(GD_FILES) \
+	array_data_source.c $(MYSQL_SOURCE) $(POSTGRES_SOURCE) $(ODBC_SOURCE)
 
-libr_la_LIBADD = $(RLIB_LIBS) $(top_builddir)/rpdf/librpdf.la
+CLEANFILES = $(MYSQL_SOURCE) $(POSTGRES_SOURCE) $(ODBC_SOURCE)
+
+libr_la_LIBADD = \
+	$(RLIB_LIBS) \
+	$(MYSQL_INPUT_LIBS) \
+	$(POSTGRES_INPUT_LIBS) \
+	$(ODBC_INPUT_LIBS) \
+	$(top_builddir)/rpdf/librpdf.la
 
 DEF_FILE=libr.def
 IMPLIB_FILE=libr.a
@@ -48,7 +86,7 @@ libr_la_LDFLAGS = \
 rlibincludedir = $(includedir)/rlib
 rlibinclude_HEADERS = rlib.h rlib_input.h
 
-AM_CFLAGS = $(CFLAG_VISIBILITY) $(RLIB_CFLAGS) $(RLIB_WERROR) -I$(top_srcdir)/rpdf
+AM_CFLAGS = $(CFLAG_VISIBILITY) $(RLIB_CFLAGS) -I$(top_srcdir)/rpdf
 
 EXTRA_DIST = rlib.i generate_bindings.sh \
 	charencoder.h datetime.h util.h value.h pcode.h

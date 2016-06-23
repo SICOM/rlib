@@ -20,7 +20,7 @@ dnl Report bugs to rlib-devel@lists.sourceforge.net
 dnl
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([rlib],[2.0.10],[http://bugzilla.sicompos.com])
+AC_INIT([rlib],[2.0.11],[http://bugzilla.sicompos.com])
 AC_CANONICAL_TARGET
 AC_CONFIG_SRCDIR(libsrc/rlib.h)
 AC_CONFIG_MACRO_DIR([m4])
@@ -35,12 +35,13 @@ AC_SUBST(RLIB_VERSION)
 
 RLIB_LT_CURRENT=4
 RLIB_LT_AGE=3
-RLIB_LT_REVISION=10
+RLIB_LT_REVISION=11
 AC_SUBST(RLIB_LT_CURRENT)
 AC_SUBST(RLIB_LT_REVISION)
 AC_SUBST(RLIB_LT_AGE)
 
 dnl Checks for programs.
+AC_LIB_RPATH
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_INSTALL
@@ -48,6 +49,7 @@ AC_PROG_MAKE_SET
 AC_PROG_LN_S
 AM_PROG_AR
 LT_INIT([dlopen disable-static win32-dll])
+LT_OUTPUT
 
 dnl AC_LIBLTDL_CONVENIENCE
 AC_SUBST(INCLTDL)
@@ -64,18 +66,15 @@ AS_IF([test x$gl_cv_cc_visibility = xyes],
 )
 
 dnl These linker flags would ensure that no symbols are missing
-dnl from libraries and language bindings. However, this makes
-dnl the PHP binding fail to build. Let's carry these as inactive
-dnl for now, until the PHP binding is rewritten to use phpize and
-dnl its own config.m4
-dnl
-dnl AC_TRY_LINK_FLAG([-Wl,--no-undefined],[ac_cv_Wl_no_undefined])
-dnl AC_TRY_LINK_FLAG([-Wl,-z,defs],[ac_cv_Wl_z_defs])
-dnl AC_TRY_LINK_FLAG([-Wl,--as-needed],[ac_cv_Wl_as_needed])
-dnl AC_TRY_LINK_FLAG([-Wl,--no-allow-shlib-undefined],[ac_cv_Wl_no_allow_shlib_undefined])
-dnl AC_TRY_LINK_FLAG([-Wl,--no-copy-dt-needed-entries],[ac_cv_Wl_no_copy_dt_needed_entries])
-dnl AS_IF([test x$ac_cv_Wl_no_copy_dt_needed_entries = xno],
-dnl 	[AC_TRY_LINK_FLAG([-Wl,--no-add-needed],[ac_cv_Wl_no_add_needed])])
+dnl from libraries and language bindings.
+
+AC_TRY_LINK_FLAG([-Wl,--no-undefined],[ac_cv_Wl_no_undefined])
+AC_TRY_LINK_FLAG([-Wl,-z,defs],[ac_cv_Wl_z_defs])
+AC_TRY_LINK_FLAG([-Wl,--as-needed],[ac_cv_Wl_as_needed])
+AC_TRY_LINK_FLAG([-Wl,--no-allow-shlib-undefined],[ac_cv_Wl_no_allow_shlib_undefined])
+AC_TRY_LINK_FLAG([-Wl,--no-copy-dt-needed-entries],[ac_cv_Wl_no_copy_dt_needed_entries])
+AS_IF([test x$ac_cv_Wl_no_copy_dt_needed_entries = xno],
+	[AC_TRY_LINK_FLAG([-Wl,--no-add-needed],[ac_cv_Wl_no_add_needed])])
 
 dnl Checks for libraries.
 AC_CHECK_LIB(c, exit)
@@ -86,7 +85,7 @@ AC_CHECK_HEADER([zlib.h],
 		enable_compressed_pdf=no)],
 	[enable_compressed_pdf=no])
 AS_IF([test x$enable_compressed_pdf = xyes],
-	[AC_DEFINE([RPDF_COMPRESS_STREAM], [], [RPDF can compress streams])
+	[AC_DEFINE([RPDF_COMPRESS_STREAM], [1], [RPDF can compress streams])
 	 ZLIB_LIBS="-lz"])
 AC_SUBST(ZLIB_LIBS)
 
@@ -155,7 +154,6 @@ esac
 AM_CONDITIONAL(WIN32, test x$enable_win32 = "xyes")
 AC_SUBST(EXTRA_LDFLAGS)
 
-
 AC_ARG_ENABLE([mysql],
 	[AS_HELP_STRING([--disable-mysql],[disable mysql backend])],,enable_mysql=yes)
 AS_IF([test x$enable_mysql = xyes],[
@@ -168,12 +166,20 @@ AS_IF([test x$enable_mysql = xyes],[
 	MYSQL_CFLAGS=${MYSQL_CLIENT_CFLAGS}
 	AC_SUBST(MYSQL_CFLAGS)
 	MYSQL_LIBS=${MYSQL_CLIENT_LIBS}
-	AC_SUBST(MYSQL_LIBS)])
+	AC_SUBST(MYSQL_LIBS)
+	AC_DEFINE(HAVE_MYSQL, [1], [have mysql datasource])])
 AM_CONDITIONAL(HAVE_MYSQL, test x$enable_mysql = xyes)
+AS_IF([test x$enable_mysql = xyes],
+	[AC_ARG_ENABLE([built-in-mysql],
+		[AS_HELP_STRING([--enable-built-in-mysql],[build mysql input datasource into libr.so])],
+		[AC_DEFINE(HAVE_MYSQL_BUILTIN, 1, [build mysql input datasource into libr.so])],
+		[enable_built_in_mysql=no])],
+	[enable_built_in_mysql=no])
+AM_CONDITIONAL(HAVE_MYSQL_BUILTIN, test x$enable_built_in_mysql = xyes)
 
 AC_ARG_ENABLE([postgres],
 	[AS_HELP_STRING([--disable-postgres],[disable postgres backend])],,enable_postgres=yes)
-PKG_CHECK_MODULES(POSTGRES, libpq, [],
+PKG_CHECK_MODULES(POSTGRES, libpq, [AC_DEFINE(HAVE_POSTGRES,1,[Build with POSTGRES support])],
 	[case "$target" in
 	 *-*-cygwin*|*-*-mingw*)
 		PG_CONFIG=pg_config.exe
@@ -197,6 +203,13 @@ PKG_CHECK_MODULES(POSTGRES, libpq, [],
 AC_SUBST(POSTGRES_CFLAGS)
 AC_SUBST(POSTGRES_LIBS)
 AM_CONDITIONAL(HAVE_POSTGRES, test x$enable_postgres = xyes)
+AS_IF([test x$enable_postgres = xyes],
+	[AC_ARG_ENABLE([built-in-postgres],
+		[AS_HELP_STRING([--enable-built-in-postgres],[build postgres input datasource into libr.so])],
+		[AC_DEFINE(HAVE_POSTGRES_BUILTIN, 1, [build postgres input datasource into libr.so])],
+		[enable_built_in_postgres=no])],
+	[enable_built_in_postgres=no])
+AM_CONDITIONAL(HAVE_POSTGRES_BUILTIN, test x$enable_built_in_postgres = xyes)
 
 dnl .. ODBC checking borrowed from libgda
 ODBC_CFLAGS=""
@@ -204,8 +217,8 @@ ODBC_LIBS=""
 enable_odbc=yes
 AC_ARG_WITH([odbc],
 	[AS_HELP_STRING([--with-odbc=<directory>],[use ODBC libraries in <directory>])],
-	[AS_IF([test x$withval = xno],[enable_odbc=false],[test x$withval = xyes],[dir="$libdir"],[dir=$withval])],
-	[])
+	[AS_IF([test x$withval = xno],[enable_odbc=no],[test x$withval = xyes],[dir="$libdir"],[dir=$withval])],
+	[enable_odbc=yes])
 AS_IF([test x$enable_odbc = xyes],
 	[AS_IF([test x$enable_win32 = xyes],
 		[AC_MSG_CHECKING([whether <sql.h> needs  <windows.h>])
@@ -260,23 +273,27 @@ AS_IF([test x$enable_odbc = xyes],
 AM_CONDITIONAL(HAVE_ODBC, test x$enable_odbc = xyes)
 AC_SUBST(ODBC_CFLAGS)
 AC_SUBST(ODBC_LIBS)
-
+AS_IF([test x$enable_odbc = xyes],
+	[AC_ARG_ENABLE([built-in-odbc],
+		[AS_HELP_STRING([--enable-built-in-odbc],[build odbc input datasource into libr.so])],
+		[AC_DEFINE(HAVE_ODBC_BUILTIN, 1, [build odbc input datasource into libr.so])],
+		[enable_built_in_odbc=no])],
+	[enable_built_in_odbc=no])
+AM_CONDITIONAL(HAVE_ODBC_BUILTIN, test x$enable_built_in_odbc = xyes)
 
 AC_ARG_ENABLE([php],
 	[AS_HELP_STRING([--disable-php],[disable php frontend])],
 	[],[enable_php=yes])
-PHP_CFLAGS=""
-PHP_EXTENSION_DIR=""
 AS_IF([test x$enable_php = xyes],
-	[AC_PATH_PROG(PHP_CONFIG, php-config, no)
-	 AS_IF([test x$PHP_CONFIG = xno],
-		[enable_php=no
-		 echo "*** WARNING: PHP NOT FOUND IN PATH.  RLIB WILL NOT BE COMPILED WITH SUPPORT FOR IT"],
-		[PHP_CFLAGS=`$PHP_CONFIG --includes`
-		 PHP_EXTENSION_DIR=`$PHP_CONFIG --extension-dir`])])
-AC_SUBST(PHP_CFLAGS)
-AC_SUBST(PHP_EXTENSION_DIR)
+	[AC_PATH_PROG(PHP_CONFIG,php-config,no)
+	 AS_IF([test $PHP_CONFIG = xno],
+		[AC_MSG_ERROR([php-config is not found])])
+	 AC_PROG_SED
+	 phpinidir=`$PHP_CONFIG --configure-options | $SED 's/.*with-config-file-scan-dir=\([[^ ]]*\).*/\1/'`
+	 phpversion=`$PHP_CONFIG --version`
+	])
 AM_CONDITIONAL(HAVE_PHP, test x$enable_php = xyes)
+AC_SUBST(phpinidir)
 
 AC_ARG_VAR([GREP], [Name and path of a GNU grep binary.])
 AC_PATH_PROG([GREP], [grep], [grep])
@@ -411,14 +428,6 @@ AC_RUN_IFELSE(
         AC_DEFINE(ICONV_ISO,["ISO-8859-1"], [ICONV Check])
 )
 
-RLIB_WERROR=""
-AC_ARG_ENABLE([warningfun],
-	[AS_HELP_STRING([--enable-warningfun],[enable more gcc warning flags])],
-	[enable_warningfun="$enableval"],[enable_warningfun=no])
-AS_IF([test x$enable_warningfun = xyes],[RLIB_WERROR="-Werror "])
-AC_SUBST(RLIB_WARNINGS)
-AC_SUBST(RLIB_WERROR)
-
 dnl Windows build is decided automatically by AC_CANONICAL_TARGET above
 AS_IF([test x$enable_win32 = xyes],
 	[ac_save_CFLAGS="$CFLAGS"
@@ -443,13 +452,14 @@ dnl -D_GNU_SOURCE is needed.
 dnl For llabs(), -D_ISOC99_SOURCE is enough,
 dnl but e.g. strcasecmp is a GNU extension.
 
-RLIB_CFLAGS="-D_GNU_SOURCE -Wall -Wchar-subscripts $LIBXML_CFLAGS $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $MYSQL_CFLAGS $POSTGRES_CFLAGS $ODBC_CFLAGS $GD_CFLAGS $NO_CYGWIN"
-RLIB_LIBS="$LIBXML_LIBS $LIBGLIB_LIBS $LIBGMODULE_LIBS $ICONVLIBS $GD_LDFLAGS $GD_LIBS $GD_LINK "
+CFLAGS="-D_GNU_SOURCE -Wall -Wextra -Werror"
 
+RLIB_CFLAGS="$LIBXML_CFLAGS $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $MYSQL_CFLAGS $POSTGRES_CFLAGS $ODBC_CFLAGS $GD_CFLAGS $NO_CYGWIN"
+RLIB_LIBS="$LIBXML_LIBS $LIBGLIB_LIBS $LIBGMODULE_LIBS $ICONVLIBS $GD_LDFLAGS $GD_LIBS $GD_LINK "
 AC_SUBST(RLIB_CFLAGS)
 AC_SUBST(RLIB_LIBS)
 
-RPDF_CFLAGS="-D_GNU_SOURCE -Wall $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $NO_CYGWIN"
+RPDF_CFLAGS="-D_GNU_SOURCE -Wall -Wextra -Werror $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $NO_CYGWIN"
 RPDF_LIBS="$LIBGLIB_LIBS $LIBGMODULE_LIBS $ZLIB_LIBS"
 AC_SUBST(RPDF_CFLAGS)
 AC_SUBST(RPDF_LIBS)
@@ -458,19 +468,6 @@ dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(fcntl.h unistd.h)
 AC_C_CONST
-
-AC_ARG_ENABLE([crash],
-	[AS_HELP_STRING([--disable-crash],[disable crash detection])],
-	[],[enable_crash=yes])
-AS_IF([test x$enable_crash = xyes],
-	[AC_CHECK_HEADERS(sys/resource.h,
-		[AC_DEFINE(HAVE_SYS_RESOURCE_H, 1, [We have standard sys/resource.h])
-		 have_sys_res_h=yes],
-		[have_sys_res_h=no])
-	 AS_IF([test x$have_sys_res_h = xyes],
-		[AC_DEFINE(ENABLE_CRASH,1,[ENABLE CRASH DETECTION])],
-		[AC_MSG_WARN([Crash detection disabled because of missing sys/resource.h.])])
-])
 
 AC_ARG_ENABLE([utf8],
 	[AS_HELP_STRING([--enable-utf8],[enable utf8])],
@@ -492,7 +489,6 @@ src/examples/java/Makefile
 src/examples/perl/Makefile
 src/examples/csharp/Makefile
 bindings/Makefile
-bindings/php/Makefile
 bindings/python/Makefile
 bindings/perl/Makefile
 bindings/java/Makefile
@@ -515,16 +511,14 @@ rlib-$VERSION:
 
    prefix:                   ${prefix}
    compiler:                 ${CC}
-   Warning Fun:              ${enable_warningfun}
-   Crash detection:          ${enable_crash}
-   UTF8 disabled:            ${enable_utf8}
+   UTF8 enabled:             ${enable_utf8}
    WIN32 build:              ${enable_win32}
    Documentation:            ${enable_doc}
 
    INPUTS:
-    MYSQL:                   ${enable_mysql}
-    POSTGRES:                ${enable_postgres}
-    ODBC:                    ${enable_odbc}
+    MYSQL:                   ${enable_mysql} built-in: ${enable_built_in_mysql}
+    POSTGRES:                ${enable_postgres} built-in: ${enable_built_in_postgres}
+    ODBC:                    ${enable_odbc} built-in: ${enable_built_in_odbc}
 
    COMPRESSION:
     PDF:                     ${enable_compressed_pdf}
@@ -535,7 +529,8 @@ rlib-$VERSION:
 	 
    BINDINGS:
     PHP:                     ${enable_php}
-     PHP entension dir:      ${PHP_EXTENSION_DIR}
+      PHP version:           ${phpversion}
+      PHP ini directory:     ${phpinidir}
     PYTHON:                  ${enable_python}
      PYTHON version:         ${PYTHON_VERSION}
      PYTHON script dir:      ${pythondir}

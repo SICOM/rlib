@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -90,7 +90,7 @@ gboolean rpdf_fill(struct rpdf *pdf);
 gboolean rpdf_setrgbcolor(struct rpdf *pdf, gdouble r, gdouble g, gdouble b);
 gdouble rpdf_text_width(struct rpdf *pdf, const gchar *text);
 gint rpdf_arc(struct rpdf *pdf, gdouble x, gdouble y, gdouble radius, gdouble start_angle, gdouble end_angle);
-gchar *rpdf_get_buffer(struct rpdf *pdf, gint *length);
+gchar *rpdf_get_buffer(struct rpdf *pdf, guint *length);
 void rpdf_free(struct rpdf *pdf);
 
 #endif /* _RPDF_H_ */

@@ -1037,6 +1037,20 @@ SWIGEXPORT jfloat JNICALL Java_rlibJNI_rlib_1graph(JNIEnv *jenv, jclass jcls, jl
 }
 
 
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1parse(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+  jint jresult = 0 ;
+  rlib *arg1 = (rlib *) 0 ;
+  int result;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = *(rlib **)&jarg1; 
+  result = (int)rlib_parse(arg1);
+  jresult = (jint)result; 
+  return jresult;
+}
+
+
 #ifdef __cplusplus
 }
 #endif

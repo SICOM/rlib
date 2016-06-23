@@ -20,7 +20,7 @@
  
 #include <rlib.h>
 
-int main(int argc, char **argv) {
+int main(void) {
 	rlib *r;
 
 	r = rlib_init();

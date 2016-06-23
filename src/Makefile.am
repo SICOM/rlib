@@ -23,14 +23,16 @@
 AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
 
 if HAVE_MYSQL
-EXAMPLES=examples
+EXAMPLES = examples
 endif
 
 SUBDIRS = \
 	$(EXAMPLES) 
 
-bin_PROGRAMS = rlibc
+bin_PROGRAMS = rlibc rlib-parse
 
-rlibc_SOURCES= rlibc.c
+rlibc_SOURCES = rlibc.c
 rlibc_LDADD = $(top_builddir)/libsrc/libr.la $(RLIB_LIBS)
 
+rlib_parse_SOURCES = rlib-parse.c
+rlib_parse_LDADD = $(top_builddir)/libsrc/libr.la

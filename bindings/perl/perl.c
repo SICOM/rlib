@@ -3466,6 +3466,34 @@ XS(_wrap_rlib_graph) {
 }
 
 
+XS(_wrap_rlib_parse) {
+  {
+    rlib *arg1 = (rlib *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    int result;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: rlib_parse(r);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_rlib, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_parse" "', argument " "1"" of type '" "rlib *""'"); 
+    }
+    arg1 = (rlib *)(argp1);
+    result = (int)rlib_parse(arg1);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
@@ -3554,6 +3582,7 @@ static swig_command_info swig_commands[] = {
 {"rlibc::rlib_graph_set_x_minor_tick", _wrap_rlib_graph_set_x_minor_tick},
 {"rlibc::rlib_graph_set_x_minor_tick_by_location", _wrap_rlib_graph_set_x_minor_tick_by_location},
 {"rlibc::rlib_graph", _wrap_rlib_graph},
+{"rlibc::rlib_parse", _wrap_rlib_parse},
 {0,0}
 };
 /* -----------------------------------------------------------------------------

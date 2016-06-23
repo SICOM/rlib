@@ -44,22 +44,22 @@
 #define CODESET _NL_CTYPE_CODESET_NAME
 #endif
 
-static void string_destroyer (gpointer data) {
+static void string_destroyer(gpointer data) {
 	g_free(data);
 }
 
-static void metadata_destroyer (gpointer data) {
+static void metadata_destroyer(gpointer data) {
 	struct rlib_metadata *metadata = data;
+	rlib *r = metadata->r;
 	rlib_value_free(&metadata->rval_formula);
-	rlib_pcode_free(metadata->formula_code);
+	rlib_pcode_free(r, metadata->formula_code);
+	xmlFree(metadata->xml_formula.xml);
 	g_free(data);
 }
 
-DLL_EXPORT_SYM rlib * rlib_init_with_environment(struct environment_filter *environment) {
+DLL_EXPORT_SYM rlib *rlib_init_with_environment(struct environment_filter *environment) {
 	rlib *r;
 	
-	init_signals();
-
 	r = g_new0(rlib, 1);
 
 	if(environment == NULL)
@@ -83,48 +83,124 @@ DLL_EXPORT_SYM rlib * rlib_init_with_environment(struct environment_filter *envi
 	return r;
 }
 
-
 DLL_EXPORT_SYM rlib *rlib_init(void) {
 	return rlib_init_with_environment(NULL);
 }
 
-static void rlib_alloc_query_space(rlib *r) {
-	if(r->queries_count == 0) {
+struct rlib_query *rlib_alloc_query_space(rlib *r) {
+	struct rlib_query *query = NULL;
+	struct rlib_results *result = NULL;
+
+	if (r->queries_count == 0) {
 		r->queries = g_malloc((r->queries_count + 1) * sizeof(gpointer));
 		r->results = g_malloc((r->queries_count + 1) * sizeof(gpointer));		
+
+		if (r->queries == NULL || r->results == NULL) {
+			g_free(r->queries);
+			g_free(r->results);
+			r_error(r, "rlib_alloc_query_space: Out of memory!\n");
+			return NULL;
+		}
 	} else {
-		r->queries = g_realloc(r->queries, (r->queries_count + 1) * sizeof(void *));
-		r->results = g_realloc(r->results, (r->queries_count + 1) * sizeof(void *));
+		struct rlib_query **queries;
+		struct rlib_results **results;
+
+		queries = g_realloc(r->queries, (r->queries_count + 1) * sizeof(void *));
+		if (queries == NULL) {
+			r_error(r, "rlib_alloc_query_space: Out of memory!\n");
+			return NULL;
+		}
+
+		results = g_realloc(r->results, (r->queries_count + 1) * sizeof(void *));
+		if (results == NULL) {
+			r_error(r, "rlib_alloc_query_space: Out of memory!\n");
+			return NULL;
+		}
+
+		r->queries = queries;
+		r->results = results;
 	}
-	r->queries[r->queries_count] = g_malloc0(sizeof(struct rlib_queries));
-	r->results[r->queries_count] = g_malloc0(sizeof(struct rlib_results));
+
+	query = g_malloc0(sizeof(struct rlib_query));
+	result = g_malloc0(sizeof(struct rlib_results));
+
+	if (query == NULL || result == NULL) {
+		g_free(query);
+		g_free(result);
+		r_error(r, "rlib_alloc_query_space: Out of memory!\n");
+		return NULL;
+	}
+
+	r->queries[r->queries_count] = query;
+	r->results[r->queries_count] = result;
+
+	r->queries_count++;
+
+	return query;
 }
 
-DLL_EXPORT_SYM gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name) {
+static struct rlib_query *add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name) {
 	gint i;
 
-	rlib_alloc_query_space(r);
-	r->queries[r->queries_count]->sql = sql;
-	r->queries[r->queries_count]->name = g_strdup(name);
-	for(i=0;i<r->inputs_count;i++) {
-		if(!strcmp(r->inputs[i].name, input_source)) {
-			r->queries[r->queries_count]->input = r->inputs[i].input;
-			r->queries_count++;
-			return r->queries_count;
+	for (i = 0; i < r->inputs_count; i++) {
+		if (!strcmp(r->inputs[i].name, input_source)) {
+			gchar *name_copy;
+			struct rlib_query *query;
+
+			name_copy = g_strdup(name);
+			if (name_copy == NULL) {
+				r_error(r, "rlib_add_query_pointer_as: Out of memory!\n");
+				return NULL;
+			}
+
+			query = rlib_alloc_query_space(r);
+			if (query == NULL) {
+				g_free(name_copy);
+				return NULL;
+			}
+
+			query->sql = sql;
+			query->name = name_copy;
+			query->input = r->inputs[i].input;
+
+			return query;
 		}
 	}
 
-	r_error(r, "rlib_add_query_as: Could not find input source [%s]!\n", input_source);
-	return -1;
+	r_error(r, "add_query_pointer_as: Could not find input source [%s]!\n", input_source);
+	return NULL;
+}
+
+DLL_EXPORT_SYM gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name) {
+	struct rlib_query *query = add_query_pointer_as(r, input_source, sql, name);
+
+	if (query == NULL)
+		return -1;
+
+	return r->queries_count;
 }
 
 DLL_EXPORT_SYM gint rlib_add_query_as(rlib *r, const gchar *input_source, const gchar *sql, const gchar *name) {
-	return rlib_add_query_pointer_as(r, input_source, g_strdup(sql), name);
+	gchar *sql_copy = g_strdup(sql);
+	struct rlib_query *query;
+
+	if (sql_copy == NULL)
+		return -1;
+
+	query = add_query_pointer_as(r, input_source, sql_copy, name);
+	if (query == NULL) {
+		free(sql_copy);
+		return -1;
+	}
+
+	query->sql_allocated = 1;
+
+	return r->queries_count;
 }
 
 DLL_EXPORT_SYM gint rlib_add_report(rlib *r, const gchar *name) {
 	gchar *tmp;
-	int i, found_dir_sep = 0, last_dir_sep;
+	int i, found_dir_sep = 0, last_dir_sep = 0;
 
 	if (r->parts_count > RLIB_MAXIMUM_REPORTS - 1)
 		return -1;
@@ -143,12 +219,12 @@ DLL_EXPORT_SYM gint rlib_add_report(rlib *r, const gchar *name) {
 		}
 	}
 	if (found_dir_sep) {
-		r->reportstorun[r->parts_count].name = strdup(tmp + last_dir_sep + 1);
+		r->reportstorun[r->parts_count].name = g_strdup(tmp + last_dir_sep + 1);
 		tmp[last_dir_sep] = '\0';
 		r->reportstorun[r->parts_count].dir = tmp;
 	} else {
 		r->reportstorun[r->parts_count].name = tmp;
-		r->reportstorun[r->parts_count].dir = strdup("");
+		r->reportstorun[r->parts_count].dir = g_strdup("");
 	}
 	r->reportstorun[r->parts_count].type = RLIB_REPORT_TYPE_FILE;
 	r->parts_count++;
@@ -244,7 +320,6 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 	if (len >= 2) {
 		if (tolower(filename[0]) >= 'a' && tolower(filename[0]) <= 'z' &&
 				filename[1] == ':') {
-			r_info(r, "get_filename: Absolute file name with drive label: %s\n", filename);
 			return g_strdup(filename);
 		}
 	}
@@ -254,7 +329,6 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 	 * unconditionally for Un*xes.
 	 */
 	if (filename[0] == '/') {
-		r_info(r, "get_filename: Absolute file name: %s\n", filename);
 		return g_strdup(filename);
 	}
 
@@ -266,7 +340,6 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 		if (have_report_dir) {
 			file = g_strdup_printf("%s/%s", r->reportstorun[report_index].dir, filename);
 			if (stat(file, &st) == 0) {
-				r_info(r, "get_filename: File found relative to the report: %s, full path: %s\n", filename, file);
 				return file;
 			}
 			g_free(file);
@@ -277,7 +350,6 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 			if (have_report_dir) {
 				file = g_strdup_printf("%s/%s", r->reportstorun[ri].dir, filename);
 				if (stat(file, &st) == 0) {
-					r_info(r, "get_filename: File found relative to the report: %s, full path: %s\n", filename, file);
 					return file;
 				}
 				g_free(file);
@@ -314,7 +386,6 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 				if (have_report_dir) {
 					file = g_strdup_printf("%s/%s/%s", r->reportstorun[report_index].dir, search_path, filename);
 					if (stat(file, &st) == 0) {
-						r_info(r, "get_filename: File found in search path relative to report XML: %s, full path: %s\n", search_path, file);
 						return file;
 					}
 					g_free(file);
@@ -325,7 +396,6 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 					if (have_report_dir) {
 						file = g_strdup_printf("%s/%s/%s", r->reportstorun[ri].dir, search_path, filename);
 						if (stat(file, &st) == 0) {
-							r_info(r, "get_filename: File found in search path relative to report XML: %s, full path: %s\n", search_path, file);
 							return file;
 						}
 						g_free(file);
@@ -337,7 +407,6 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 		file = g_strdup_printf("%s/%s", search_path, filename);
 
 		if (stat(file, &st) == 0) {
-			r_info(r, "get_filename: File found in search path: %s, full path: %s\n", search_path, file);
 			return file;
 		}
 
@@ -361,30 +430,46 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 	} else
 		file = g_strdup(filename);
 
-	if (stat(file, &st) == 0)
-		r_info(r, "get_filename: File found: %s\n", file);
-	else
-		r_info(r, "get_filename: File not found, expect errors. Filename: %s\n", file);
-
 	return file;
 }
 
 static gint rlib_execute_queries(rlib *r) {
 	gint i;
+	char *env;
+	gint profiling;
 
-	for(i=0;i<r->queries_count;i++) {
+	env = getenv("RLIB_PROFILING");
+	profiling = !(env == NULL || *env == '\0');
+
+	for (i = 0; i < r->queries_count; i++) {
 		r->results[i]->input = NULL;
 		r->results[i]->result = NULL;
 	}
 
-	for(i=0;i<r->queries_count;i++) {
-
+	for (i = 0; i < r->queries_count; i++) {
+		struct timespec ts1, ts2;
 		r->results[i]->input = r->queries[i]->input;
 		r->results[i]->name =  r->queries[i]->name;
-		r->results[i]->result = INPUT(r,i)->new_result_from_query(INPUT(r,i), r->queries[i]->sql);
+		clock_gettime(CLOCK_MONOTONIC, &ts1);
+		r->results[i]->result = INPUT(r,i)->new_result_from_query(INPUT(r,i), r->queries[i]);
+		clock_gettime(CLOCK_MONOTONIC, &ts2);
+		if (profiling) {
+			gchar *name = NULL;
+			int j;
+			long diff = (ts2.tv_sec - ts1.tv_sec) * 1000000 + (ts2.tv_nsec - ts1.tv_nsec) / 1000;
+
+			for (j = 0; j < r->inputs_count; j++) {
+				if (r->inputs[j].input == r->results[i]->input) {
+					name = r->inputs[j].name;
+					break;
+				}
+			}
+			r_warning(r, "rlib_execute_queries: executing query %s:%s took %ld microseconds\n",
+						(name ? name : "<unknown>"), r->results[i]->name, diff);
+		}
 		r->results[i]->next_failed = FALSE;
 		r->results[i]->navigation_failed = FALSE;
-		if(r->results[i]->result == NULL) {
+		if (r->results[i]->result == NULL) {
 			r_error(r, "Failed To Run A Query [%s]: %s\n", r->queries[i]->sql, INPUT(r,i)->get_error(INPUT(r,i)));
 			return FALSE;
 		} else {
@@ -394,28 +479,34 @@ static gint rlib_execute_queries(rlib *r) {
 	return TRUE;
 }
 
-DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
+gint rlib_parse_internal(rlib *r, gboolean allow_fail) {
 	gint i;
+	char *env;
+	gint profiling;
+	struct timespec ts1, ts2;
+
+	if (r->did_parse)
+		return 0;
+
+	env = getenv("RLIB_PROFILING");
+	profiling = !(env == NULL || *env == '\0');
+
+	clock_gettime(CLOCK_MONOTONIC, &ts1);
+
 	r->now = time(NULL);
 
-	if(r->format == RLIB_FORMAT_HTML) {
+	if (r->format == RLIB_FORMAT_HTML) {
 		gchar *param;
-		rlib_html_new_output_filter(r);
 		param = g_hash_table_lookup(r->output_parameters, "debugging");
 		if(param != NULL && strcmp(param, "yes") == 0)
-			r->html_debugging = TRUE; 	
-	} 
-
-	if(r->queries_count < 1) {
-		r_warning(r,"Warning: No queries added to report\n");
-	} else
-		rlib_execute_queries(r);
+			r->html_debugging = TRUE;
+	}
 
 	LIBXML_TEST_VERSION
 
 	xmlKeepBlanksDefault(0);
 	for (i = 0; i < r->parts_count; i++) {
-		r->parts[i] = parse_part_file(r, i);
+		r->parts[i] = parse_part_file(r, allow_fail, i);
 		xmlCleanupParser();
 		if (r->parts[i] == NULL) {
 			r_error(r,"Failed to load a report file [%s]\n", r->reportstorun[i].name);
@@ -423,13 +514,74 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 		}
 	}
 
+	clock_gettime(CLOCK_MONOTONIC, &ts2);
+
+	if (profiling) {
+		long diff = (ts2.tv_sec - ts1.tv_sec) * 1000000 + (ts2.tv_nsec - ts1.tv_nsec) / 1000;
+
+		r_warning(r, "rlib_parse: parsing the report took %ld microseconds\n", diff);
+	}
+
+	r->did_parse = TRUE;
+
+	return 0;
+}
+
+DLL_EXPORT_SYM gint rlib_parse(rlib *r) {
+	return rlib_parse_internal(r, FALSE);
+}
+
+DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
+	char *env;
+	gint profiling;
+	struct timespec ts1, ts2;
+
+	if (!r->did_parse) {
+		gint parse = rlib_parse_internal(r, TRUE);
+
+		if (parse != 0)
+			return -1;
+	}
+
+	env = getenv("RLIB_PROFILING");
+	profiling = !(env == NULL || *env == '\0');
+
+	r->now = time(NULL);
+
+	if (r->queries_count < 1) {
+		r_warning(r,"Warning: No queries added to report\n");
+	} else {
+		clock_gettime(CLOCK_MONOTONIC, &ts1);
+
+		rlib_execute_queries(r);
+
+		clock_gettime(CLOCK_MONOTONIC, &ts2);
+
+		if (profiling) {
+			long diff = (ts2.tv_sec - ts1.tv_sec) * 1000000 + (ts2.tv_nsec - ts1.tv_nsec) / 1000;
+
+			r_warning(r, "rlib_execute: running the queries took %ld microseconds\n", diff);
+		}
+	}
+
+	clock_gettime(CLOCK_MONOTONIC, &ts1);
+
 	rlib_resolve_metadata(r);
 	rlib_resolve_followers(r);
 
 	rlib_make_report(r);
-	
+
 	rlib_finalize(r);
 	r->did_execute = TRUE;
+
+	clock_gettime(CLOCK_MONOTONIC, &ts2);
+
+	if (profiling) {
+		long diff = (ts2.tv_sec - ts1.tv_sec) * 1000000 + (ts2.tv_nsec - ts1.tv_nsec) / 1000;
+
+		r_warning(r, "rlib_execute: creating report took %ld microseconds\n", diff);
+	}
+
 	return 0;
 }
 
@@ -486,14 +638,14 @@ DLL_EXPORT_SYM gint rlib_add_resultset_follower_n_to_1(rlib *r, gchar *leader, g
 	gint ptr_leader = -1, ptr_follower = -1;
 	gint x;
 
-	if(r->resultset_followers_count > (RLIB_MAXIMUM_FOLLOWERS-1)) {
+	if (r->resultset_followers_count > (RLIB_MAXIMUM_FOLLOWERS - 1)) {
 		return -1;
 	}
 
-	for(x=0;x<r->queries_count;x++) {
-		if(!strcmp(r->queries[x]->name, leader))
+	for (x = 0; x < r->queries_count; x++) {
+		if (!strcmp(r->queries[x]->name, leader))
 			ptr_leader = x;
-		if(!strcmp(r->queries[x]->name, follower))
+		if (!strcmp(r->queries[x]->name, follower))
 			ptr_follower = x;
 	}
 	
@@ -524,7 +676,7 @@ DLL_EXPORT_SYM gint rlib_add_resultset_follower(rlib *r, gchar *leader, gchar *f
 DLL_EXPORT_SYM gint rlib_set_output_format_from_text(rlib *r, gchar *name) {
 	r->format = rlib_format_get_number(name);
 
-	if(r->format == -1)
+	if (r->format == -1)
 		r->format = RLIB_FORMAT_TXT;
 	return 0;
 }
@@ -609,7 +761,7 @@ DLL_EXPORT_SYM gint rlib_set_locale(rlib *r, gchar *locale) {
 	return TRUE;
 }
 
-DLL_EXPORT_SYM gchar * rlib_bindtextdomain(rlib *r, gchar *domainname, gchar *dirname) {
+DLL_EXPORT_SYM gchar * rlib_bindtextdomain(rlib *r UNUSED, gchar *domainname, gchar *dirname) {
 	return bindtextdomain(domainname, dirname);
 }
 
@@ -686,8 +838,7 @@ DLL_EXPORT_SYM gint rlib_graph_add_bg_region(rlib *r, gchar *graph_name, gchar *
 	return TRUE;
 }
 
-DLL_EXPORT_SYM gint rlib_graph_clear_bg_region(rlib *r, gchar *graph_name) {
-
+DLL_EXPORT_SYM gint rlib_graph_clear_bg_region(rlib *r UNUSED, gchar *graph_name UNUSED) {
 	return TRUE;
 }
 

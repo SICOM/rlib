@@ -1,0 +1,34 @@
+# Add AddressSanitizer and UndefinedBehaviourSanitizer flags
+# to the build. It is much faster than Valgrind.
+
+export ASAN="-fsanitize=address -fno-omit-frame-pointer -lasan"
+export UBSAN="-fsanitize=undefined -fsanitize=shift \
+	-fsanitize=integer-divide-by-zero \
+	-fsanitize=unreachable -fsanitize=vla-bound \
+	-fsanitize=null -fsanitize=return \
+	-fsanitize=signed-integer-overflow \
+	-fsanitize=bounds \
+	-fsanitize=alignment -fsanitize=object-size \
+	-fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow \
+	-fsanitize=nonnull-attribute -fsanitize=returns-nonnull-attribute \
+	-fsanitize=bool -fsanitize=enum \
+	-fbounds-check -lubsan \
+"
+# This requires an authentic Intel CPU with MPX support and
+# libmpx/libmpxwrappers libraries
+export PTRBOUNDS="-fcheck-pointer-bounds -mmpx"
+
+export SANITIZE="$ASAN $UBSAN -fno-inline -fno-inline-small-functions"
+#export SANITIZE="$ASAN -fno-inline -fno-inline-small-functions"
+#export SANITIZE=""
+
+# These are the flags used by RPM
+export FLAGS="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches   -m64 -mtune=generic"
+
+export CFLAGS="$FLAGS $SANITIZE"
+export CXXFLAGS="$FLAGS $SANITIZE"
+export LDFLAGS="$FLAGS $SANITIZE"
+
+# Run any of the C examples with the following:
+#    cd src/examples/c
+#    ASAN_OPTIONS=fast_unwind_on_malloc=0 ./example

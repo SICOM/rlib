@@ -19,27 +19,17 @@
  */
 
 #include <config.h>
+
 #include <string.h>
 #include <gmodule.h>
 
-#include "config.h"
 #include "rlib-internal.h"
 #include "rlib_input.h"
 
-typedef struct {
-	union {
-		gpointer ptr;
-		gpointer (*new_input_filter)(struct rlib *);
-	} filter;
-	union {
-		gpointer ptr;
-		gpointer (*mysql_connect)(gpointer, const gchar *, const gchar *, const gchar *, const gchar*, const gchar *);
-		gpointer (*postgres_connect)(gpointer, const gchar *);
-		gpointer (*odbc_connect)(gpointer, const gchar *, const gchar *, const gchar *);
-	} connect;
-} datasource_t;
-
 DLL_EXPORT_SYM gint rlib_add_datasource(rlib *r, const gchar *input_name, struct input_filter *input) {
+	if (r->inputs_count == MAX_INPUT_FILTERS)
+		return -1;
+
 	r->inputs[r->inputs_count].input = input;
 	r->inputs[r->inputs_count].name = g_strdup(input_name);
 	r->inputs[r->inputs_count].handle = NULL;
@@ -48,105 +38,315 @@ DLL_EXPORT_SYM gint rlib_add_datasource(rlib *r, const gchar *input_name, struct
 	return 0;
 }
 
-static gint rlib_add_datasource_mysql_private(rlib *r,
-								const gchar *input_name,
-								const gchar *database_group,
-								const gchar *database_host,
-								const gchar *database_user,
-								const gchar *database_password,
-								const gchar *database_database) {
+/*
+ * For historical reasons, the port is omitted.
+ * Now we support "host:port" notation in the host string.
+ */
+DLL_EXPORT_SYM gint rlib_add_datasource_mysql(rlib *r UNUSED, const gchar *input_name UNUSED, const gchar *database_host, const gchar *database_user UNUSED, const gchar *database_password UNUSED, const gchar *database_database UNUSED) {
+#ifndef HAVE_MYSQL
+	return -1;
+#else
+#ifndef HAVE_MYSQL_BUILTIN
 	GModule* handle;
-	datasource_t	ds;
-	gpointer mysql;
+	gpointer (*new_input_filter)(struct rlib *);
+#endif
+	struct input_filter *input;
+	gchar *name_copy;
+	guint port = 3306;
+	gchar *host_copy;
+	gint retval;
 
+	if (r->inputs_count == MAX_INPUT_FILTERS)
+		return -1;
+
+	name_copy = g_strdup(input_name);
+	if (name_copy == NULL) {
+		r_error(r, "rlib_add_datasource_mysql_private: Out of memory!\n");
+		return -1;
+	}
+
+#ifndef HAVE_MYSQL_BUILTIN
 	handle = g_module_open("libr-mysql", 2);
 	if (!handle) {
+		g_free(name_copy);
 		r_error(r,"Could Not Load MYSQL Input [%s]\n", g_module_error());
 		return -1;
 	}
 
-	g_module_symbol(handle, "rlib_mysql_new_input_filter", &ds.filter.ptr);
-	g_module_symbol(handle, "rlib_mysql_real_connect", &ds.connect.ptr);
-	r->inputs[r->inputs_count].input = ds.filter.new_input_filter(r);
-	mysql = ds.connect.mysql_connect(r->inputs[r->inputs_count].input, database_group, database_host, database_user, 
-		database_password, database_database);
+	if (!g_module_symbol(handle, "new_input_filter", (gpointer)&new_input_filter)) {
+		g_free(name_copy);
+		r_error(r, "Could Not Load MYSQL Input [%s]\n", g_module_error());
+		return -1;
+	}
 
-	if(mysql == NULL) {
+	input = new_input_filter(r);
+#else
+	input = rlib_mysql_new_input_filter(r);
+#endif
+	if (input == NULL) {
+		g_free(name_copy);
+		return -1;
+	}
+
+	if (database_host) {
+		char *tmp, *port_s;
+		host_copy = g_strdup(database_host);
+		tmp = strchr(host_copy, ':');
+		if (tmp) {
+			*tmp = '\0';
+			port_s = tmp + 1;
+			port = atoi(port_s);
+		}
+	} else
+		host_copy = NULL;
+
+	retval = input->connect_with_credentials(input, host_copy, port, database_user, database_password, database_database);
+
+	g_free(host_copy);
+
+	if (retval == -1) {
+		g_free(name_copy);
+		input->free(input);
 		r_error(r,"ERROR: Could not connect to MYSQL\n");
 		return -1;
 	}
-	
-	r->inputs[r->inputs_count].name = g_strdup(input_name);
+
+	r->inputs[r->inputs_count].name = name_copy;
+	r->inputs[r->inputs_count].input = input;
+#ifndef HAVE_MYSQL_BUILTIN
 	r->inputs[r->inputs_count].handle = handle;
+#else
+	r->inputs[r->inputs_count].handle = NULL;
+#endif
 	r->inputs[r->inputs_count].input->info.encoder = NULL;
 	r->inputs_count++;
 
-	return 0;	
+	return 0;
+#endif
 }
 
-DLL_EXPORT_SYM gint rlib_add_datasource_mysql(rlib *r, const gchar *input_name, const gchar *database_host, const gchar *database_user, const gchar *database_password, 
-const gchar *database_database) {
-	return rlib_add_datasource_mysql_private(r, input_name, NULL, database_host, database_user, database_password, database_database);
-}
-
-DLL_EXPORT_SYM gint rlib_add_datasource_mysql_from_group(rlib *r, const gchar *input_name, const gchar *group) {
-	return rlib_add_datasource_mysql_private(r, input_name, group, NULL, NULL, NULL, NULL);
-}
-
-DLL_EXPORT_SYM gint rlib_add_datasource_postgres(rlib *r, const gchar *input_name, const gchar *conn) {
+DLL_EXPORT_SYM gint rlib_add_datasource_mysql_from_group(rlib *r UNUSED, const gchar *input_name UNUSED, const gchar *group UNUSED) {
+#ifndef HAVE_MYSQL
+	return -1;
+#else
+#ifndef HAVE_MYSQL_BUILTIN
 	GModule* handle;
-	datasource_t ds;
-	gpointer postgres;
+	gpointer (*new_input_filter)(struct rlib *);
+#endif
+	struct input_filter *input;
+	gchar *name_copy;
+	gint retval;
 
+	if (r->inputs_count == MAX_INPUT_FILTERS)
+		return -1;
+
+	name_copy = g_strdup(input_name);
+	if (name_copy == NULL) {
+		r_error(r, "rlib_add_datasource_mysql_private: Out of memory!\n");
+		return -1;
+	}
+
+#ifndef HAVE_MYSQL_BUILTIN
+	handle = g_module_open("libr-mysql", 2);
+	if (!handle) {
+		g_free(name_copy);
+		r_error(r,"Could Not Load MYSQL Input [%s]\n", g_module_error());
+		return -1;
+	}
+
+	if (!g_module_symbol(handle, "new_input_filter", (gpointer)&new_input_filter)) {
+		g_free(name_copy);
+		r_error(r, "Could Not Load MYSQL Input [%s]\n", g_module_error());
+		return -1;
+	}
+
+	input = new_input_filter(r);
+#else
+	input = rlib_mysql_new_input_filter(r);
+#endif
+	if (input == NULL) {
+		g_free(name_copy);
+		return -1;
+	}
+
+	retval = input->connect_with_connstr(input, group);
+	if (retval == -1) {
+		g_free(name_copy);
+		input->free(input);
+		r_error(r,"ERROR: Could not connect to MYSQL\n");
+		return -1;
+	}
+
+	r->inputs[r->inputs_count].name = name_copy;
+	r->inputs[r->inputs_count].input = input;
+#ifndef HAVE_MYSQL_BUILTIN
+	r->inputs[r->inputs_count].handle = handle;
+#else
+	r->inputs[r->inputs_count].handle = NULL;
+#endif
+	r->inputs[r->inputs_count].input->info.encoder = NULL;
+	r->inputs_count++;
+
+	return 0;
+#endif
+}
+
+DLL_EXPORT_SYM gint rlib_add_datasource_postgres(rlib *r UNUSED, const gchar *input_name UNUSED, const gchar *conn UNUSED) {
+#ifndef HAVE_POSTGRES
+	return -1;
+#else
+#ifndef HAVE_POSTGRES_BUILTIN
+	GModule* handle;
+	gpointer (*new_input_filter)(struct rlib *);
+#endif
+	gchar *name_copy;
+	struct input_filter *input;
+	gint retval;
+
+	if (r->inputs_count == MAX_INPUT_FILTERS)
+		return -1;
+
+	name_copy = g_strdup(input_name);
+	if (name_copy == NULL) {
+		r_error(r, "rlib_add_datasource_postgres: Out of memory!\n");
+		return -1;
+	}
+
+#ifndef HAVE_POSTGRES_BUILTIN
 	handle = g_module_open("libr-postgres", 2);
 	if (!handle) {
+		g_free(name_copy);
 		r_error(r,"Could Not Load POSTGRES Input [%s]\n", g_module_error());
 		return -1;
 	}
-	g_module_symbol(handle, "rlib_postgres_new_input_filter", &ds.filter.ptr);
-	g_module_symbol(handle, "rlib_postgres_connect", &ds.connect.ptr);
-	r->inputs[r->inputs_count].input = ds.filter.new_input_filter(r);
-	postgres = ds.connect.postgres_connect(r->inputs[r->inputs_count].input, conn);
-	if(postgres == NULL) {
+
+	if (!g_module_symbol(handle, "new_input_filter", (gpointer)&new_input_filter)) {
+		g_free(name_copy);
+		r_error(r, "Could Not Load POSTGRES Input [%s]\n", g_module_error());
+		return -1;
+	}
+
+	input = new_input_filter(r);
+#else
+	input = rlib_postgres_new_input_filter(r);
+#endif
+	if (input == NULL) {
+		g_free(name_copy);
+		return -1;
+	}
+
+	retval = input->connect_with_connstr(input, conn);
+
+	if (retval == -1) {
+		g_free(name_copy);
+		input->free(input);
 		r_error(r,"ERROR: Could not connect to POSTGRES\n");
 		return -1;
 	}
-	r->inputs[r->inputs_count].name = g_strdup(input_name);
+
+	r->inputs[r->inputs_count].name = name_copy;
+	r->inputs[r->inputs_count].input = input;
+#ifndef HAVE_POSTGRES_BUILTIN
 	r->inputs[r->inputs_count].handle = handle;
+#else
+	r->inputs[r->inputs_count].handle = NULL;
+#endif
 	r->inputs[r->inputs_count].input->info.encoder = NULL;
 	r->inputs_count++;
+
 	return 0;
+#endif
 }
 
-DLL_EXPORT_SYM gint rlib_add_datasource_odbc(rlib *r, const gchar *input_name, const gchar *source, const gchar *user, const gchar *password) {
+DLL_EXPORT_SYM gint rlib_add_datasource_odbc(rlib *r UNUSED, const gchar *input_name UNUSED, const gchar *source UNUSED, const gchar *user UNUSED, const gchar *password UNUSED) {
+#ifndef HAVE_ODBC
+	return -1;
+#else
+#ifndef HAVE_ODBC_BUILTIN
 	GModule* handle;
-	datasource_t ds;
-	gpointer odbc;
-	
+	gpointer (*new_input_filter)(struct rlib *);
+#endif
+	gchar *name_copy;
+	struct input_filter *input;
+	gint retval;
+
+	if (r->inputs_count == MAX_INPUT_FILTERS)
+		return -1;
+
+	name_copy = g_strdup(input_name);
+	if (name_copy == NULL) {
+		r_error(r, "rlib_add_datasource_odbc: Out of memory!\n");
+		return -1;
+	}
+
+#ifndef HAVE_ODBC_BUILTIN
 	handle = g_module_open("libr-odbc", 2);
 	if (!handle) {
+		g_free(name_copy);
 		r_error(r,"Could Not Load ODBC Input [%s]\n", g_module_error());
 		return -1;
 	}
-	g_module_symbol(handle, "rlib_odbc_new_input_filter", &ds.filter.ptr);
-	g_module_symbol(handle, "rlib_odbc_connect", &ds.connect.ptr);
-	r->inputs[r->inputs_count].input = ds.filter.new_input_filter(r);
-	odbc = ds.connect.odbc_connect(r->inputs[r->inputs_count].input, source, user, password);
-	r->inputs[r->inputs_count].name = g_strdup(input_name);
-	if(odbc == NULL) {
+
+	if (!g_module_symbol(handle, "new_input_filter", (gpointer)&new_input_filter)) {
+		g_free(name_copy);
+		r_error(r, "Could Not Load ODBC Input [%s]\n", g_module_error());
+		return -1;
+	}
+
+	input = new_input_filter(r);
+#else
+	input = rlib_odbc_new_input_filter(r);
+#endif
+	if (input == NULL) {
+		g_free(name_copy);
+		return -1;
+	}
+
+	retval = input->connect_local_with_credentials(input, source, user, password);
+	if (retval == -1) {
+		g_free(name_copy);
+		input->free(input);
 		r_error(r,"ERROR: Could not connect to ODBC\n");
 		return -1;
 	}
+
+	r->inputs[r->inputs_count].name = name_copy;
+	r->inputs[r->inputs_count].input = input;
+#ifndef HAVE_ODBC_BUILTIN
 	r->inputs[r->inputs_count].handle = handle;
+#else
+	r->inputs[r->inputs_count].handle = NULL;
+#endif
 	r->inputs[r->inputs_count].input->info.encoder = NULL;
 	r->inputs_count++;
+
 	return 0;
+#endif
 }
 
 DLL_EXPORT_SYM gint rlib_add_datasource_xml(rlib *r, const gchar *input_name) {
-	r->inputs[r->inputs_count].input = rlib_xml_new_input_filter(r);
-	rlib_xml_connect(r->inputs[r->inputs_count].input);
+	struct input_filter *input;
+	gchar *name_copy;
+
+	if (r->inputs_count == MAX_INPUT_FILTERS)
+		return -1;
+
+	name_copy = g_strdup(input_name);
+	if (name_copy == NULL) {
+		r_error(r, "rlib_add_datasource_xml: Out of memory!\n");
+		return -1;
+	}
+
+	input = rlib_xml_new_input_filter(r);
+	if (input == NULL) {
+		g_free(name_copy);
+		return -1;
+	}
+
+	/* No need to connect the datasource */
+
 	r->inputs[r->inputs_count].name = g_strdup(input_name);
+	r->inputs[r->inputs_count].input = input;
 	r->inputs[r->inputs_count].handle = NULL;
 	r->inputs[r->inputs_count].input->info.encoder = NULL;
 	r->inputs_count++;
@@ -154,9 +354,28 @@ DLL_EXPORT_SYM gint rlib_add_datasource_xml(rlib *r, const gchar *input_name) {
 }
 
 DLL_EXPORT_SYM gint rlib_add_datasource_csv(rlib *r, const gchar *input_name) {
-	r->inputs[r->inputs_count].input = rlib_csv_new_input_filter(r);
-	rlib_csv_connect(r->inputs[r->inputs_count].input);
-	r->inputs[r->inputs_count].name = g_strdup(input_name);
+	struct input_filter *input;
+	gchar *name_copy;
+
+	if (r->inputs_count == MAX_INPUT_FILTERS)
+		return -1;
+
+	name_copy = g_strdup(input_name);
+	if (name_copy == NULL) {
+		r_error(r, "rlib_add_datasource_xml: Out of memory!\n");
+		return -1;
+	}
+
+	input = rlib_csv_new_input_filter(r);
+	if (input == NULL) {
+		g_free(name_copy);
+		return -1;
+	}
+
+	/* No need to connect the datasource */
+
+	r->inputs[r->inputs_count].input = input;
+	r->inputs[r->inputs_count].name = name_copy;
 	r->inputs[r->inputs_count].handle = NULL;
 	r->inputs[r->inputs_count].input->info.encoder = NULL;
 	r->inputs_count++;

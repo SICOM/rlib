@@ -28,7 +28,7 @@
  
 #include <stdlib.h>
 #include <string.h>
-#include "config.h"
+#include <config.h>
 
 #include <math.h>
 
@@ -101,7 +101,7 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 	gint cell_height_padding = -1;
 	gint chart_width = 600;
 	gint chart_height = 400;
-	struct rlib_chart *chart = &report->chart;
+	struct rlib_chart *chart = report->chart;
 	gint header_row_result_num;
 	gint width_offset;
 	gint iteration_count = 0;
@@ -173,7 +173,7 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 	if (rows > MAX_ROWS)
 		rows = MAX_ROWS;
 
-	top_margin =  rlib_layout_get_next_line_by_font_point(r, part, part->position_top[0] + (*top_margin_offset) + report->top_margin, 0);
+	top_margin =  layout_get_next_line_by_font_point(part, part->position_top[0] + (*top_margin_offset) + report->top_margin, 0);
 	bottom_margin = part->paper->width / RLIB_PDF_DPI - part->position_bottom[0];
 
 	chart_size = rows;
@@ -190,7 +190,7 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 	if(!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
 		while(1) {
 			label[0] = 0;
-			if (rlib_execute_as_string(r, chart->row.label_code, label, MAXSTRLEN))
+			if (rlib_execute_as_string(r, chart->row->label_code, label, MAXSTRLEN))
 				OUTPUT(r)->graph_hint_label_y(r, RLIB_SIDE_LEFT, label);
 			if(rlib_navigate_next(r, r->current_result) == FALSE) 
 				break;
@@ -201,7 +201,7 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 	chart_width += width_offset;
 
 	col_count = 0;
-	if(!rlib_execute_as_string(r, chart->header_row.query_code, header_row_query, MAXSTRLEN))
+	if (chart->header_row && !rlib_execute_as_string(r, chart->header_row->query_code, header_row_query, MAXSTRLEN))
 		header_row_query[0] = 0;
 	hint_label_x = 0;
 	hint_label_y = 0;
@@ -214,15 +214,15 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 		rlib_fetch_first_rows(r);
 		//rlib_pcode_dump(r, chart->header_row.field_code, 0);
 		if(!INPUT(r, header_row_result_num)->isdone(INPUT(r, header_row_result_num), r->results[header_row_result_num]->result)) {
-			while(1) {
-				if(!rlib_execute_as_string(r, chart->header_row.field_code, field_header_row, MAXSTRLEN))
+			while (1) {
+				if (!rlib_execute_as_string(r, chart->header_row->field_code, field_header_row, MAXSTRLEN))
 					field_header_row[0] = 0;
 				OUTPUT(r)->graph_hint_label_x(r, field_header_row);
 				x_label[col_count][0] = 0;
 				string_copy(x_label[col_count], field_header_row);
 				col_count++;
 				//r_error(r, "I'm IN THE HEADER ROW!!! [%s]\n", field_header_row);
-				if(rlib_navigate_next(r, header_row_result_num) == FALSE) 
+				if (rlib_navigate_next(r, header_row_result_num) == FALSE)
 					break;
 			}
 		}
@@ -269,7 +269,7 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 	if(!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
 		while(1) {
 			gint t, row = -1, start = 0, stop = 0;
-			if (rlib_execute_as_int(r, chart->row.row_code, &t))
+			if (rlib_execute_as_int(r, chart->row->row_code, &t))
 				row = t;
 			if (row > 0 && row <= MAX_ROWS) {
 				// allocate bar and append to list
@@ -278,16 +278,16 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 
 				bar->row = row;
 				label[0] = 0;
-				if (rlib_execute_as_string(r, chart->row.label_code, label, MAXSTRLEN))
+				if (rlib_execute_as_string(r, chart->row->label_code, label, MAXSTRLEN))
 					OUTPUT(r)->graph_hint_label_y(r, RLIB_SIDE_LEFT, label);
 				string_copy(bar->row_label, label);
 				label[0] = 0;
-				rlib_execute_as_string(r, chart->row.bar_label_code, label, MAXSTRLEN);
+				rlib_execute_as_string(r, chart->row->bar_label_code, label, MAXSTRLEN);
 				string_copy(bar->bar_label, label);
 
 				bar->start = 0;
 				bar->stop = 0;
-				if (rlib_execute_as_int(r, chart->row.bar_start_code, &t)) {
+				if (rlib_execute_as_int(r, chart->row->bar_start_code, &t)) {
 					if (t > 0) {
 						start = t;
 						bar->start = t;
@@ -295,7 +295,7 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 							bar->start = cols;
 					}
 				}
-				if (rlib_execute_as_int(r, chart->row.bar_end_code, &t)) {
+				if (rlib_execute_as_int(r, chart->row->bar_end_code, &t)) {
 					if (t > 0) {
 						stop = t;
 						bar->stop = t;
@@ -315,12 +315,12 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 				}
 				bar_color = (struct rlib_rgb){ 0, 0, 0 };
 				label_color = (struct rlib_rgb){ 255, 255, 255 };
-				if (!rlib_execute_as_string(r, chart->row.bar_color_code, color, MAXSTRLEN))
+				if (!rlib_execute_as_string(r, chart->row->bar_color_code, color, MAXSTRLEN))
 					color[0] = 0;
 				if (color[0] != 0)
         			rlib_parsecolor(&bar_color, color);
 				bar->bar_color = bar_color;
-				if (!rlib_execute_as_string(r, chart->row.bar_label_color_code, color, MAXSTRLEN))
+				if (!rlib_execute_as_string(r, chart->row->bar_label_color_code, color, MAXSTRLEN))
 					color[0] = 0;
 				if (color[0] != 0)
         			rlib_parsecolor(&label_color, color);
@@ -380,7 +380,7 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 				r->font_point = report->font_size;
 				OUTPUT(r)->set_font_point(r, r->font_point);
 			}
-			top_margin = rlib_layout_get_next_line_by_font_point(r, part, part->position_top[0] + report->top_margin, 0);
+			top_margin = layout_get_next_line_by_font_point(part, part->position_top[0] + report->top_margin, 0);
 			//top_margin = part->paper->width / RLIB_PDF_DPI - part->position_top[0];
 			bottom_margin = part->paper->width / RLIB_PDF_DPI - part->position_bottom[0];
 		}

@@ -59,7 +59,7 @@ struct rlib_var {
 	gint type;
 	rlib_var *link;
 	rlib_var *alloclink;
-	gint len;
+	guint len;
 	union u_rlib_var value;
 };
 

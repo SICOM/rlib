@@ -22,7 +22,7 @@
 #include <math.h>
 
 
-#include "config.h"
+#include <config.h>
 #include "rlib-internal.h"
 #include "rpdf.h"
 
@@ -154,7 +154,7 @@ static void pdf_rpdf_callback(gchar *data, gint len, void *user_data) {
 	struct rlib_line_extra_data *extra_data = &delayed_data->extra_data;
 	rlib *r = delayed_data->r;
 	gchar *buf = NULL, *buf2 = NULL;
-	
+
 	rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL);	
 	rlib_format_string(r, &buf, extra_data->report_field, &extra_data->rval_code);
 	rlib_align_text(r, &buf2, buf, extra_data->report_field->align, extra_data->report_field->width);
@@ -165,12 +165,12 @@ static void pdf_rpdf_callback(gchar *data, gint len, void *user_data) {
 	g_free(user_data);
 }
 
-static void pdf_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *delayed_data, int backwards, int rval_type) {
+static void pdf_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *delayed_data, int backwards UNUSED, int rval_type UNUSED) {
 	struct rpdf *pdf = OUTPUT_PRIVATE(r)->pdf;
 	rpdf_text_callback(pdf, delayed_data->left_origin, delayed_data->bottom_orgin, 0, delayed_data->extra_data.width, pdf_rpdf_callback, delayed_data);
 }
 
-static void pdf_print_text_API(rlib *r, gfloat left_origin, gfloat bottom_origin, const gchar *text, gint backwards, struct rlib_line_extra_data *extra_data) {
+static void pdf_print_text_API(rlib *r, gfloat left_origin, gfloat bottom_origin, const gchar *text, gint backwards UNUSED, struct rlib_line_extra_data *extra_data UNUSED) {
 	pdf_print_text(r, left_origin, bottom_origin, text, 0); 
 }
 
@@ -195,15 +195,15 @@ static void pdf_drawbox(rlib *r, gfloat left_origin, gfloat bottom_origin, gfloa
 	}
 }
 
-static void pdf_hr(rlib *r, gint backwards, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall, 
-struct rlib_rgb *color, gfloat indent, gfloat length) {
+static void pdf_hr(rlib *r, gint backwards UNUSED, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall, 
+struct rlib_rgb *color, gfloat indent UNUSED, gfloat length UNUSED) {
 	how_tall = how_tall / RLIB_PDF_DPI;
 	pdf_drawbox(r, left_origin, bottom_origin, how_long, how_tall, color);
 }
 
-static void pdf_start_boxurl(rlib *r, struct rlib_part *part, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall, gchar *url, gint backwards) {
+static void pdf_start_boxurl(rlib *r, struct rlib_part *part, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall, gchar *url, gint backwards UNUSED) {
 	if(part->landscape) {
-		gfloat new_left = rlib_layout_get_page_width(r, part)-left_origin-how_long;
+		gfloat new_left = layout_get_page_width(part)-left_origin-how_long;
 		gfloat new_bottom = bottom_origin;
 		rpdf_link(OUTPUT_PRIVATE(r)->pdf, new_bottom, new_left, new_bottom+how_tall, new_left+how_long, url);
 	} else  {
@@ -289,7 +289,7 @@ static void pdf_set_working_page(rlib *r, struct rlib_part *part, gint page) {
 	OUTPUT_PRIVATE(r)->current_page = page_number + page - OUTPUT_PRIVATE(r)->page_diff;
 }
 
-static void pdf_set_raw_page(rlib *r, struct rlib_part *part, gint page) {
+static void pdf_set_raw_page(rlib *r, struct rlib_part *part UNUSED, gint page) {
 	OUTPUT_PRIVATE(r)->page_diff = r->current_page_number - page;
 }
 
@@ -315,10 +315,10 @@ static void pdf_start_rlib_report(rlib *r) {
 	OUTPUT_PRIVATE(r)->pdf = pdf;
 }
 
-static void pdf_end_rlib_report(rlib *r) {}
+static void pdf_end_rlib_report(rlib *r UNUSED) {}
 
 static void pdf_finalize_private(rlib *r) {
-	int length;
+	guint length;
 	rpdf_finalize(OUTPUT_PRIVATE(r)->pdf);
 	OUTPUT_PRIVATE(r)->buffer = rpdf_get_buffer(OUTPUT_PRIVATE(r)->pdf, &length);
 	OUTPUT_PRIVATE(r)->length = length;
@@ -336,8 +336,7 @@ static void pdf_end_page(rlib *r, struct rlib_part *part) {
 	r->current_line_number = 1;
 }
 
-static void pdf_end_page_again(rlib *r, struct rlib_part *part, struct rlib_report *report) {
-}
+static void pdf_end_page_again(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 
 static int pdf_free(rlib *r) {
 	rpdf_free(OUTPUT_PRIVATE(r)->pdf);
@@ -408,10 +407,10 @@ static void pdf_end_italics(rlib *r) {
 	pdf_set_font_point_actual(r, r->current_font_point);
 }
 
-static void pdf_graph_draw_line(rlib *r, gfloat x, gfloat y, gfloat new_x, gfloat new_y, struct rlib_rgb *color) {
-	if(isnan(x) || isnan(y) || isnan(new_x) || isnan(new_y)) {
-	
-	} else {
+static void pdf_graph_draw_line(rlib *r, gfloat x, gfloat y, gfloat new_x, gfloat new_y, struct rlib_rgb *color UNUSED) {
+	/* TODO: FIX THAT THE LINE IS DRAWN WITH THE PROPER COLOR */
+
+	if(!isnan(x) && !isnan(y) && !isnan(new_x) && !isnan(new_y)) {
 		rpdf_moveto(OUTPUT_PRIVATE(r)->pdf, x, y);
 		rpdf_lineto(OUTPUT_PRIVATE(r)->pdf, new_x, new_y);
 		rpdf_closepath(OUTPUT_PRIVATE(r)->pdf); 
@@ -452,7 +451,7 @@ static void pdf_graph_init(rlib *r) {
 	memset(&OUTPUT_PRIVATE(r)->graph, 0, sizeof(struct _graph));
 }
 
-static void pdf_start_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left, gfloat top, gfloat width, gfloat height, gboolean x_axis_labels_are_under_tick) {
+static void pdf_start_graph(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, gfloat left, gfloat top, gfloat width, gfloat height, gboolean x_axis_labels_are_under_tick) {
 	memset(&OUTPUT_PRIVATE(r)->graph, 0, sizeof(struct _graph));
 	
 	width /= RLIB_PDF_DPI;
@@ -664,14 +663,19 @@ static void pdf_graph_do_grid(rlib *r, gboolean just_a_box) {
 	graph->width -= (graph->y_label_width_right + graph->y_label_space_right);
 	graph->x_width = graph->width - graph->width_offset - graph->intersection;
 
-	if(graph->x_axis_labels_are_under_tick)	 {
+	if (graph->x_axis_labels_are_under_tick)	 {
 		if(graph->x_iterations <= 1)
 			graph->x_tick_width = 0;
 		else
 			graph->x_tick_width = graph->x_width/(graph->x_iterations-1);
 	}
 	else
-		graph->x_tick_width = graph->x_width/graph->x_iterations;
+	{
+		if (graph->x_iterations == 0)
+			graph->x_tick_width = 0;
+		else
+			graph->x_tick_width = graph->x_width/graph->x_iterations;
+	}
 
 	graph->x_start = graph->left+graph->width_offset;
 
@@ -930,7 +934,7 @@ static void pdf_graph_draw_bar(rlib *r, gint row, gint start_iteration, gint end
 	OUTPUT(r)->set_bg_color(r, 0, 0, 0);
 }
 
-static void pdf_graph_plot_bar(rlib *r, gchar side, gint iteration, gint plot, gfloat height_percent, struct rlib_rgb *color,gfloat last_height, gboolean divide_iterations, gfloat raw_data, gchar *label) {
+static void pdf_graph_plot_bar(rlib *r, gchar side, gint iteration, gint plot, gfloat height_percent, struct rlib_rgb *color,gfloat last_height, gboolean divide_iterations, gfloat raw_data UNUSED, gchar *label UNUSED) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;	
 	gfloat bar_width = graph->x_tick_width *.6;
 	gfloat left = graph->x_start + (graph->x_tick_width * iteration) + (graph->x_tick_width *.2);
@@ -954,7 +958,7 @@ static void pdf_graph_plot_bar(rlib *r, gchar side, gint iteration, gint plot, g
 	OUTPUT(r)->set_bg_color(r, 0, 0, 0);
 }
 
-void pdf_graph_plot_line(rlib *r, gchar side, gint iteration, gfloat p1_height, gfloat p1_last_height, gfloat p2_height, gfloat p2_last_height, struct rlib_rgb *color, gfloat raw_data, gchar *label, gint row_count) {
+void pdf_graph_plot_line(rlib *r, gchar side, gint iteration, gfloat p1_height, gfloat p1_last_height, gfloat p2_height, gfloat p2_last_height, struct rlib_rgb *color, gfloat raw_data UNUSED, gchar *label UNUSED, gint row_count) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	gfloat p1_start = graph->y_start;
 	gfloat p2_start = graph->y_start;
@@ -979,7 +983,7 @@ void pdf_graph_plot_line(rlib *r, gchar side, gint iteration, gfloat p1_height, 
 	OUTPUT(r)->set_bg_color(r, 0, 0, 0);
 }
 
-static void pdf_graph_plot_pie(rlib *r, gfloat start, gfloat end, gboolean offset, struct rlib_rgb *color, gfloat raw_data, gchar *label) {
+static void pdf_graph_plot_pie(rlib *r, gfloat start, gfloat end, gboolean offset, struct rlib_rgb *color, gfloat raw_data UNUSED, gchar *label UNUSED) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	gfloat start_angle = 360.0 * start;
 	gfloat end_angle = 360.0 * end;
@@ -1142,51 +1146,51 @@ static void pdf_graph_draw_legend_label(rlib *r, gint iteration, gchar *label, s
 	pdf_print_text(r, graph->legend_left + (w_width*2), graph->legend_top - offset, label, 0);
 }
 
-static void pdf_end_graph(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void pdf_end_part_pages_across(rlib *r, struct rlib_part *part) {}
-static void pdf_stub_line(rlib *r, int backwards) {}
-static void pdf_start_output_section(rlib *r, struct rlib_report_output_array *roa) {}
-static void pdf_end_output_section(rlib *r, struct rlib_report_output_array *roa) {}
-static void pdf_start_evil_csv(rlib *r) {}
-static void pdf_end_evil_csv(rlib *r) {}
-static void pdf_end_boxurl(rlib *r, gint backwards) {}
-static void pdf_end_draw_cell_background(rlib *r) {}
-static void pdf_start_report(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void pdf_end_report(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void pdf_start_report_field_headers(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void pdf_end_report_field_headers(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void pdf_start_report_field_details(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void pdf_end_report_field_details(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void pdf_start_report_line(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void pdf_end_report_line(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void pdf_start_report_header(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void pdf_end_report_header(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void pdf_start_report_footer(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void pdf_end_report_footer(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void pdf_start_part_header(rlib *r, struct rlib_part *part) {}
-static void pdf_end_part_header(rlib *r, struct rlib_part *part) {}
-static void pdf_start_part_page_header(rlib *r, struct rlib_part *part) {}
-static void pdf_end_part_page_header(rlib *r, struct rlib_part *part) {}
-static void pdf_start_part_page_footer(rlib *r, struct rlib_part *part) {}
-static void pdf_end_part_page_footer(rlib *r, struct rlib_part *part) {}
-static void pdf_start_report_page_footer(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void pdf_end_report_page_footer(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void pdf_start_report_break_header(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_break *rb) {}
-static void pdf_end_report_break_header(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_break *rb) {}
-static void pdf_start_report_break_footer(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_break *rb) {}
-static void pdf_end_report_break_footer(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_break *rb) {}
-static void pdf_start_report_no_data(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
-static void pdf_end_report_no_data(rlib *r, struct rlib_part *part, struct rlib_report *report) {}
+static void pdf_end_graph(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void pdf_end_part_pages_across(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void pdf_stub_line(rlib *r UNUSED, int backwards UNUSED) {}
+static void pdf_start_output_section(rlib *r UNUSED, struct rlib_report_output_array *roa UNUSED) {}
+static void pdf_end_output_section(rlib *r UNUSED, struct rlib_report_output_array *roa UNUSED) {}
+static void pdf_start_evil_csv(rlib *r UNUSED) {}
+static void pdf_end_evil_csv(rlib *r UNUSED) {}
+static void pdf_end_boxurl(rlib *r UNUSED, gint backwards UNUSED) {}
+static void pdf_end_draw_cell_background(rlib *r UNUSED) {}
+static void pdf_start_report(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void pdf_end_report(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void pdf_start_report_field_headers(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void pdf_end_report_field_headers(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void pdf_start_report_field_details(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void pdf_end_report_field_details(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void pdf_start_report_line(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void pdf_end_report_line(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void pdf_start_report_header(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void pdf_end_report_header(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void pdf_start_report_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void pdf_end_report_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void pdf_start_part_header(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void pdf_end_part_header(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void pdf_start_part_page_header(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void pdf_end_part_page_header(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void pdf_start_part_page_footer(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void pdf_end_part_page_footer(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void pdf_start_report_page_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void pdf_end_report_page_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void pdf_start_report_break_header(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, struct rlib_report_break *rb UNUSED) {}
+static void pdf_end_report_break_header(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, struct rlib_report_break *rb UNUSED) {}
+static void pdf_start_report_break_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, struct rlib_report_break *rb UNUSED) {}
+static void pdf_end_report_break_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, struct rlib_report_break *rb UNUSED) {}
+static void pdf_start_report_no_data(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
+static void pdf_end_report_no_data(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 
 
-static void pdf_start_part(rlib *r, struct rlib_part *part) {}
-static void pdf_end_part(rlib *r, struct rlib_part *part) {}
-static void pdf_start_part_table(rlib *r, struct rlib_part *part) {}
-static void pdf_end_part_table(rlib *r, struct rlib_part *part) {}
-static void pdf_start_part_tr(rlib *r, struct rlib_part *part) {}
-static void pdf_end_part_tr(rlib *r, struct rlib_part *part) {}
-static void pdf_start_part_td(rlib *r, struct rlib_part *part, gfloat width, gfloat height) {}
-static void pdf_end_part_td(rlib *r, struct rlib_part *part) {}
+static void pdf_start_part(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void pdf_end_part(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void pdf_start_part_table(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void pdf_end_part_table(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void pdf_start_part_tr(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void pdf_end_part_tr(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
+static void pdf_start_part_td(rlib *r UNUSED, struct rlib_part *part UNUSED, gfloat width UNUSED, gfloat height UNUSED) {}
+static void pdf_end_part_td(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
 
 void rlib_pdf_new_output_filter(rlib *r) {
 	OUTPUT(r) = g_malloc(sizeof(struct output_filter));

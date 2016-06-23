@@ -6,12 +6,20 @@
 Summary: RLIB is a reporting engine/library.
 Name: rlib
 Version: @VERSION@
-Release: 2
+Release: 4%{?dist}
 License: GPL
-Group: System/Libraries
-Source: %name-%{version}.tar.gz
-BuildRequires: mysql-devel, perl, php-devel, postgresql-devel, python-devel, unixODBC-devel
-BuildRoot: /var/tmp/%name-%{version}-root
+Group: System Environment/Libraries
+Source: https://github.com/SICOM/rlib/archive/%{name}-%{version}.tar.gz
+# Build
+BuildRequires: autoconf, automake, libtool, gettext-devel
+# Build documentation
+BuildRequires: docbook-utils-pdf, texlive-ec
+# Runtime
+BuildRequires: libxml2-devel, glib2-devel, zlib-devel
+# Bindings
+BuildRequires: perl-devel, php-devel, python-devel
+# Input datasources
+BuildRequires: mysql-devel, postgresql-devel, unixODBC-devel
 
 %description
 RLIB is a reporting engine/library.  To find out about all it can do visit:
@@ -19,7 +27,7 @@ http://rlib.sicompos.com
 
 %package devel
 Summary: RLIB headers and static lib
-Group: System/Libraries
+Group: Development/Libraries
 Requires: %{name} = %{version}
 
 %description devel
@@ -28,7 +36,7 @@ To find out about all it can do visit: http://rlib.sicompos.com
 
 %package mysql
 Summary: RLIB native MySQL datasource
-Group: System/Libraries
+Group: System Environment/Libraries
 Requires: %{name} = %{version}
 
 %description mysql
@@ -37,7 +45,7 @@ To find out about all it can do visit: http://rlib.sicompos.com
 
 %package odbc
 Summary: RLIB ODBC datasource
-Group: System/Libraries
+Group: System Environment/Libraries
 Requires: %{name} = %{version}
 
 %description odbc
@@ -46,7 +54,7 @@ To find out about all it can do visit: http://rlib.sicompos.com
 
 %package perl
 Summary: RLIB PERL extension
-Group: System/Libraries
+Group: System Environment/Libraries
 Requires: %{name} = %{version}
 
 %description perl
@@ -55,7 +63,7 @@ To find out about all it can do visit: http://rlib.sicompos.com
 
 %package php
 Summary: RLIB PHP extension
-Group: System/Libraries
+Group: System Environment/Libraries
 Requires: %{name} = %{version}
 Requires: php-common
 
@@ -65,7 +73,7 @@ To find out about all it can do visit: http://rlib.sicompos.com
 
 %package postgres
 Summary: RLIB native PostgreSQL datasource
-Group: System/Libraries
+Group: System Environment/Libraries
 Requires: %{name} = %{version}
 
 %description postgres
@@ -74,7 +82,7 @@ To find out about all it can do visit: http://rlib.sicompos.com
 
 %package python
 Summary: RLIB Python extension
-Group: System/Libraries
+Group: System Environment/Libraries
 Requires: %{name} = %{version}
 
 %description python
@@ -82,18 +90,20 @@ Python extension for RLIB, a reporting engine/library.
 To find out about all it can do visit: http://rlib.sicompos.com
 
 %prep
-%setup
+%setup -q
 
-%configure --enable-utf8 --with-pythonver=%{pythonver}
+autoreconf -vif -Wall
+%configure --enable-utf8 --enable-mysql --enable-postgres --with-odbc
 
 %build
-make
+make %{?_smp_mflags} CFLAGS="$RPM_OPT_FLAGS" LDFLAGS="$RPM_LD_FLAGS"
 
 %install
 [ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf $RPM_BUILD_ROOT
-%makeinstall \
-	PERL_EXTENSION_DIR=$RPM_BUILD_ROOT%{perlextdir} \
-	PHP_EXTENSION_DIR=$RPM_BUILD_ROOT%{phpextdir} \
+%make_install
+
+mkdir $RPM_BUILD_ROOT%{_sysconfdir}/php-zts.d
+cp $RPM_BUILD_ROOT%{_sysconfdir}/php.d/rlib.ini $RPM_BUILD_ROOT%{_sysconfdir}/php-zts.d
 
 %clean
 [ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf $RPM_BUILD_ROOT
@@ -103,6 +113,7 @@ make
 
 %doc AUTHORS ChangeLog HACKING INSTALL NEWS README README-JPEG doc/book.pdf
 %{_prefix}/bin/rlibc
+%{_prefix}/bin/rlib-parse
 %{_libdir}/libr.so.*
 %{_libdir}/librpdf.so.*
 
@@ -124,7 +135,8 @@ make
 %{_libdir}/libr-postgres.so
 
 %files perl
-%{perlextdir}/*
+%{perlextdir}/*.pm
+%{perlextdir}/auto/*
 
 %files php
 %{_sysconfdir}/php-zts.d/rlib.ini

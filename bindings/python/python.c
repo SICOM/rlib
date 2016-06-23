@@ -4736,6 +4736,28 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_rlib_parse(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  rlib *arg1 = (rlib *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  int result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:rlib_parse",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_parse" "', argument " "1"" of type '" "rlib *""'"); 
+  }
+  arg1 = (rlib *)(argp1);
+  result = (int)rlib_parse(arg1);
+  resultobj = SWIG_From_int((int)(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 static PyMethodDef SwigMethods[] = {
 	 { (char *)"SWIG_PyInstanceMethod_New", (PyCFunction)SWIG_PyInstanceMethod_New, METH_O, NULL},
 	 { (char *)"rlib_init", _wrap_rlib_init, METH_VARARGS, NULL},
@@ -4774,6 +4796,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"rlib_graph_set_x_minor_tick", _wrap_rlib_graph_set_x_minor_tick, METH_VARARGS, NULL},
 	 { (char *)"rlib_graph_set_x_minor_tick_by_location", _wrap_rlib_graph_set_x_minor_tick_by_location, METH_VARARGS, NULL},
 	 { (char *)"rlib_graph", _wrap_rlib_graph, METH_VARARGS, NULL},
+	 { (char *)"rlib_parse", _wrap_rlib_parse, METH_VARARGS, NULL},
 	 { NULL, NULL, 0, NULL }
 };
 

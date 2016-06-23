@@ -85,6 +85,7 @@ package rlib;
 *rlib_graph_set_x_minor_tick = *rlibc::rlib_graph_set_x_minor_tick;
 *rlib_graph_set_x_minor_tick_by_location = *rlibc::rlib_graph_set_x_minor_tick_by_location;
 *rlib_graph = *rlibc::rlib_graph;
+*rlib_parse = *rlibc::rlib_parse;
 
 # ------- VARIABLE STUBS --------
 

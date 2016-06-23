@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Chet Heilman <cheilman@sicompos.com>
  *
@@ -27,7 +27,7 @@
 #include <value.h>
 
 #include "rlib-internal.h"
-#include "config.h"
+#include <config.h>
 #include "util.h"
 
 
@@ -61,10 +61,11 @@ void rlib_var_set_string(rlib_var *v, const char *str) {
 
 
 gint rlib_var_concat_string(rlib_var *v, const char *str) {
-	int len = r_strlen(v->value.ch);
-	int tlen = len + r_strlen(str);
-	if (tlen >= v->len) return -1;
-	
+	guint len = r_strlen(v->value.ch);
+	guint tlen = len + r_strlen(str);
+	if (tlen >= v->len)
+		return -1;
+
 	strcpy(v->value.ch + len, str);
 	return tlen;
 }
@@ -113,7 +114,7 @@ void rlib_var_mod_number(rlib_var *v, gint64 n) {
 }
 
 
-gboolean rlib_var_is_number(rlib_var *v, int type) {
+gboolean rlib_var_is_number(rlib_var *v) {
 	return v->type == RLIB_VAR_NUMBER;
 }
 
@@ -204,7 +205,7 @@ rlib_var *rlib_var_factory_get_small(rlib_var_factory *f) {
  * Get a value to hold something of the specified size.
  * size must INCLUDE terminating nul for strings
  */
-static rlib_var *rlib_var_factory_get(rlib_var_factory *f, int size) {
+static rlib_var *rlib_var_factory_get(rlib_var_factory *f, guint size) {
 	rlib_var *v = NULL;
 	if (size <= sizeof(union u_rlib_var)) {
 		v = rlib_var_factory_get_small(f);
@@ -302,7 +303,7 @@ void rlib_var_factory_free_value(rlib_var_factory *f, rlib_var *v) {
 		{ /* Insert into large value list in size increasing order */
 			rlib_var **vlast = &f->headlg;
 			rlib_var *rv = *vlast;
-			gint size = v->len; 
+			guint size = v->len; 
 			while (rv) {
 				if (rv->len >= size) {
 					break;

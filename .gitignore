@@ -10,6 +10,7 @@ compile
 py-compile
 *Makefile
 *Makefile.in
+acinclude.m4
 aclocal.m4
 m4/libtool.m4
 m4/ltoptions.m4
@@ -21,6 +22,7 @@ config.guess
 config.h
 config.h.in
 config.log
+config.lt
 config.status
 config.sub
 configure
@@ -31,12 +33,23 @@ libtool
 ltmain.sh
 ltmain.sh.bak
 missing
+mkinstalldirs
 rlib.pc
 rlib.spec
 rpdf/test
 rpdf/test.exe
-src/examples/c/example
-src/examples/c/example.exe
+
+# Symlinks from inputs/*
+libsrc/mysql_data_source.c
+libsrc/odbc_data_source.c
+libsrc/postgres_data_source.c
+
+src/examples/c/example_mysql
+src/examples/c/example_mysql.exe
+src/examples/c/example_pg
+src/examples/c/example_pg.exe
+src/examples/c/example_odbc
+src/examples/c/example_odbc.exe
 src/examples/c/products.xml
 src/examples/c/relprt
 src/examples/c/relprt.exe
@@ -46,6 +59,8 @@ src/examples/c/relpth2
 src/examples/c/relpth2.exe
 src/examples/c/srcpth
 src/examples/c/srcpth.exe
+src/examples/c/graph
+src/examples/c/graph.exe
 src/examples/csharp/products.xml
 src/examples/java/*.java
 src/examples/java/*.xml
@@ -54,6 +69,8 @@ src/examples/php/*.xml
 src/examples/python/*.xml
 src/rlibc
 src/rlibc.exe
+src/rlib-parse
+src/rlib-parse.exe
 stamp-h1
 tests/.deps/
 tests/Makefile
@@ -72,3 +89,10 @@ inputs/odbc/libr-odbc.def
 inputs/postgres/libr-postgres.def
 
 *.pdf
+
+bindings/php/build
+bindings/php/modules
+bindings/php/Makefile*
+bindings/php/config.nice
+bindings/php/configure.in
+bindings/php/run-tests.php
