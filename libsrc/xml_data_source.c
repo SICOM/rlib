@@ -189,7 +189,7 @@ static void *xml_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	xmlDocPtr doc;
 	gchar *file;
 
-	file = get_filename(input->r, query->sql, -1, FALSE);
+	file = get_filename(input->r, query->sql, -1, FALSE, FALSE);
 	doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
 	g_free(file);
 

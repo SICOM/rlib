@@ -54,7 +54,9 @@ src/examples/c/products.xml
 src/examples/c/relprt
 src/examples/c/relprt.exe
 src/examples/c/relpth1
+src/examples/c/relpth1-gen
 src/examples/c/relpth1.exe
+src/examples/c/relpth1-gen.exe
 src/examples/c/relpth2
 src/examples/c/relpth2.exe
 src/examples/c/srcpth

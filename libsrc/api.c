@@ -296,6 +296,15 @@ DLL_EXPORT_SYM gint rlib_add_search_path(rlib *r, const gchar *path) {
 }
 
 /*
+ * Decision factor for external file types (e.g. images)
+ * whether to use their filenames as is for e.g. embedding
+ * or as validated full paths.
+ */
+gboolean use_relative_filename(rlib *r) {
+	return (r->format == RLIB_FORMAT_HTML);
+}
+
+/*
  * Try to search for a file and return the first one
  * found at the possible locations.
  *
@@ -303,7 +312,7 @@ DLL_EXPORT_SYM gint rlib_add_search_path(rlib *r, const gchar *path) {
  *	index to r->reportstorun[] array, or
  *	-1 to try to find relative to every reports
  */
-gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean report) {
+gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean report, gboolean relative_filename) {
 	int have_report_dir = 0, ri;
 	gchar *file;
 	struct stat st;
@@ -340,6 +349,10 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 		if (have_report_dir) {
 			file = g_strdup_printf("%s/%s", r->reportstorun[report_index].dir, filename);
 			if (stat(file, &st) == 0) {
+				if (relative_filename) {
+					g_free(file);
+					return g_strdup(filename);
+				}
 				return file;
 			}
 			g_free(file);
@@ -350,6 +363,10 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 			if (have_report_dir) {
 				file = g_strdup_printf("%s/%s", r->reportstorun[ri].dir, filename);
 				if (stat(file, &st) == 0) {
+					if (relative_filename) {
+						g_free(file);
+						return g_strdup(filename);
+					}
 					return file;
 				}
 				g_free(file);
@@ -386,6 +403,10 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 				if (have_report_dir) {
 					file = g_strdup_printf("%s/%s/%s", r->reportstorun[report_index].dir, search_path, filename);
 					if (stat(file, &st) == 0) {
+						if (relative_filename) {
+							g_free(file);
+							return g_strdup_printf("%s/%s", search_path, filename);
+						}
 						return file;
 					}
 					g_free(file);
@@ -396,6 +417,10 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 					if (have_report_dir) {
 						file = g_strdup_printf("%s/%s/%s", r->reportstorun[ri].dir, search_path, filename);
 						if (stat(file, &st) == 0) {
+							if (relative_filename) {
+								g_free(file);
+								return g_strdup_printf("%s/%s", search_path, filename);
+							}
 							return file;
 						}
 						g_free(file);
@@ -423,7 +448,7 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 	 */
 	if (report && report_index >= 0) {
 		have_report_dir = (r->reportstorun[report_index].dir[0] != 0);
-		if (have_report_dir)
+		if (have_report_dir && !relative_filename)
 			file = g_strdup_printf("%s/%s", r->reportstorun[report_index].dir, filename);
 		else
 			file = g_strdup(filename);

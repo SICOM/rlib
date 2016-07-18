@@ -211,7 +211,7 @@ void * csv_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 
 	INPUT_PRIVATE(input)->error = "";
 
-	file = get_filename(input->r, query->sql, -1, FALSE);
+	file = get_filename(input->r, query->sql, -1, FALSE, FALSE);
 	fd = open(file, O_RDONLY, 6);
 	g_free(file);
 	if(fd > 0) {

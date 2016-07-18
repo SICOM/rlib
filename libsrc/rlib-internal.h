@@ -968,7 +968,8 @@ gint64 rlib_fxp_div(gint64 num, gint64 denom, gint places);
 
 /***** PROTOTYPES: api.c ******************************************************/
 void rlib_trap(void); /* For internals debugging only */
-gchar * get_filename(rlib *r, const char *filename, int report_index, gboolean report); /* not an exported API, no rlib_ prefix */
+gboolean use_relative_filename(rlib *r);
+gchar * get_filename(rlib *r, const char *filename, int report_index, gboolean report, gboolean use_as_is); /* not an exported API, no rlib_ prefix */
 struct rlib_query *rlib_alloc_query_space(rlib *r);
 
 /***** PROTOTYPES: parsexml.c *************************************************/
