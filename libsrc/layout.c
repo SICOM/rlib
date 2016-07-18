@@ -285,7 +285,7 @@ static gfloat rlib_layout_text_from_extra_data(rlib *r, gint backwards, gfloat l
 		gfloat width = RLIB_FXP_TO_NORMAL_LONG_LONG(RLIB_VALUE_GET_AS_NUMBER(&extra_data->rval_image_width));
 		gchar *name = RLIB_VALUE_GET_AS_STRING(&extra_data->rval_image_name);
 		gchar *type = RLIB_VALUE_GET_AS_STRING(&extra_data->rval_image_type);
-		filename = get_filename(r, name, extra_data->report_index, FALSE);
+		filename = get_filename(r, name, extra_data->report_index, FALSE, use_relative_filename(r));
 		OUTPUT(r)->line_image(r, left_origin, bottom_orgin, filename, type, width, height);
 		g_free(filename);
 		rtn_width = extra_data->output_width;
@@ -295,7 +295,7 @@ static gfloat rlib_layout_text_from_extra_data(rlib *r, gint backwards, gfloat l
 		gfloat width = RLIB_FXP_TO_NORMAL_LONG_LONG(RLIB_VALUE_GET_AS_NUMBER(&extra_data->rval_image_width));
 		gchar *name = RLIB_VALUE_GET_AS_STRING(&extra_data->rval_image_name);
 		gchar *type = RLIB_VALUE_GET_AS_STRING(&extra_data->rval_image_type);
-		filename = get_filename(r, name, extra_data->report_index, FALSE);
+		filename = get_filename(r, name, extra_data->report_index, FALSE, use_relative_filename(r));
 		OUTPUT(r)->line_image(r, left_origin, bottom_orgin, filename, type, width, height);
 		g_free(filename);
 		rtn_width = extra_data->output_width;
@@ -1085,7 +1085,7 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 								gfloat width1 = RLIB_FXP_TO_NORMAL_LONG_LONG(RLIB_VALUE_GET_AS_NUMBER(&extra_data[count].rval_image_width));
 								gchar *name = RLIB_VALUE_GET_AS_STRING(&extra_data[count].rval_image_name);
 								gchar *type = RLIB_VALUE_GET_AS_STRING(&extra_data[count].rval_image_type);
-								filename = get_filename(r, name, part->report_index, FALSE);
+								filename = get_filename(r, name, part->report_index, FALSE, use_relative_filename(r));
 								OUTPUT(r)->line_image(r, margin, layout_get_next_line(part, *rlib_position, rl), filename, type, width1, height1);
 								g_free(filename);
 								width = RLIB_GET_LINE(width1);
@@ -1095,7 +1095,7 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 								gfloat width1 = RLIB_FXP_TO_NORMAL_LONG_LONG(RLIB_VALUE_GET_AS_NUMBER(&extra_data[count].rval_image_width));
 								gchar *name = RLIB_VALUE_GET_AS_STRING(&extra_data[count].rval_image_name);
 								gchar *type = RLIB_VALUE_GET_AS_STRING(&extra_data[count].rval_image_type);
-								filename = get_filename(r, name, part->report_index, FALSE);
+								filename = get_filename(r, name, part->report_index, FALSE, use_relative_filename(r));
 								OUTPUT(r)->line_image(r, margin, layout_get_next_line(part, *rlib_position, rl), filename, type, width1, height1);
 								g_free(filename);
 								width = RLIB_GET_LINE(width1);
@@ -1194,7 +1194,7 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 				gchar *type = RLIB_VALUE_GET_AS_STRING(rval_type);
 				gchar *filename;
 				output_count++;
-				filename = get_filename(r, name, part->report_index, FALSE);
+				filename = get_filename(r, name, part->report_index, FALSE, use_relative_filename(r));
 				OUTPUT(r)->background_image(r, my_left_margin, layout_get_next_line_by_font_point(part, *rlib_position, height1), filename,
 					type, width1, height1);
 				g_free(filename);

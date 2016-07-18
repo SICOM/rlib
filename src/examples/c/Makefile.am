@@ -22,7 +22,7 @@
 
 noinst_PROGRAMS = \
 	example_mysql example_pg example_odbc \
-	relpth1 relpth2 srcpth relprt graph
+	relpth1 relpth1-gen relpth2 srcpth relprt graph
 
 AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
 
@@ -33,6 +33,8 @@ example_pg_LDADD = $(top_builddir)/libsrc/libr.la
 example_odbc_LDADD = $(top_builddir)/libsrc/libr.la
 
 relpth1_LDADD = $(top_builddir)/libsrc/libr.la
+
+relpth1_gen_LDADD = $(top_builddir)/libsrc/libr.la
 
 relpth2_LDADD = $(top_builddir)/libsrc/libr.la
 
