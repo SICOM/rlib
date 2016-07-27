@@ -3,6 +3,10 @@ dnl config.m4 for extension rlib
 PHP_ARG_ENABLE(rlib, whether to enable rlib module,
 [  --enable-rlib             Enable rlib module])
 
+PHP_ARG_ENABLE(rlib-already-built, whether to expect rlib libs already installed,
+[  --enable-rlib-already-built
+                             Expect rlib libs already installed])
+
 if test "$PHP_RLIB" != "no"; then
 	AC_MSG_CHECKING(for pkg-config)
 	if test ! -f "$PKG_CONFIG"; then
@@ -24,13 +28,18 @@ if test "$PHP_RLIB" != "no"; then
 	GLIB_CFLAGS="`$PKG_CONFIG --cflags glib-2.0`"
 	GLIB_LIBS="`$PKG_CONFIG --libs glib-2.0`"
 
-	dnl
-	dnl These below must be built before they can be used
-	dnl
-	LIBRLIB_CFLAGS="-I../../libsrc"
-	# We don't want errors telling:
-	# /usr/bin/grep: /usr/lib64/librpdf.la: No such file or directory
-	LIBRLIB_LIBS="-L../../rpdf/.libs -L../../libsrc/.libs -lr"
+	if test "$PHP_RLIB_ALREADY_BUILT" != "no"; then
+		LIBRLIB_CFLAGS="-I../../libsrc"
+		LIBRLIB_LIBS="-lr"
+	else
+		dnl
+		dnl These below must be built before they can be used
+		dnl
+		LIBRLIB_CFLAGS="-I../../libsrc"
+		# We don't want errors telling:
+		# /usr/bin/grep: /usr/lib64/librpdf.la: No such file or directory
+		LIBRLIB_LIBS="-L../../rpdf/.libs -L../../libsrc/.libs -lr"
+	fi
 
 	CFLAGS="-Wall -Werror $LIBRLIB_CFLAGS $CFLAGS $GLIB_CFLAGS"
 	LDFLAGS="$LIBRLIB_LIBS $LDFLAGS $GLIB_LIBS"
