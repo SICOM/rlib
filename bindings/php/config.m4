@@ -1,11 +1,11 @@
 dnl config.m4 for extension rlib
 
-PHP_ARG_ENABLE(rlib, whether to enable rlib module,
-[  --enable-rlib             Enable rlib module])
+PHP_ARG_ENABLE([rlib],[whether to enable rlib module],
+[  --enable-rlib             Enable rlib module],[shared],[yes])
 
-PHP_ARG_ENABLE(rlib-already-built, whether to expect rlib libs already installed,
+PHP_ARG_ENABLE([rlib-already-built],[whether to expect rlib libs already installed],
 [  --enable-rlib-already-built
-                             Expect rlib libs already installed])
+                             Expect rlib libs already installed],[no],[no])
 
 if test "$PHP_RLIB" != "no"; then
 	AC_MSG_CHECKING(for pkg-config)
