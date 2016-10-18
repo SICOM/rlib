@@ -58,7 +58,7 @@
 	rlib_add_datasource_array($rlib, "local_array");
 	rlib_add_query_as($rlib, "local_array", "data", "data");
 	rlib_add_query_as($rlib, "local_array", "more_data", "more_data");
-	rlib_add_resultset_follower($rlib, "data", "more_data");
+	rlib_add_resultset_follower_n_to_1($rlib, "data", "data.last_name", "more_data", "more_data.last_name");
 	rlib_add_report($rlib, "follower.xml");
 	rlib_set_output_format_from_text($rlib, "txt");
 	rlib_execute($rlib);
