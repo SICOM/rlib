@@ -22,7 +22,9 @@
 
 noinst_PROGRAMS = \
 	example_mysql example_pg example_odbc \
-	relpth1 relpth1-gen relpth2 srcpth relprt graph
+	relpth1 relpth1-gen relpth2 srcpth relprt graph \
+	follower follower2 follower_n_to_1 \
+	follower_n_to_1_full_cartesian
 
 AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
 
@@ -44,9 +46,20 @@ relprt_LDADD = $(top_builddir)/libsrc/libr.la
 
 graph_LDADD = $(top_builddir)/libsrc/libr.la
 
-noinst_SCRIPTS = products.xml
+follower_LDADD = $(top_builddir)/libsrc/libr.la
+
+follower2_LDADD = $(top_builddir)/libsrc/libr.la
+
+follower_n_to_1_LDADD = $(top_builddir)/libsrc/libr.la
+
+follower_n_to_1_full_cartesian_LDADD = $(top_builddir)/libsrc/libr.la
+
+noinst_SCRIPTS = products.xml follower.xml
 
 products.xml:
 	$(LN_S) ../common/products.xml
+
+follower.xml:
+	$(LN_S) ../php/follower.xml
 
 CLEANFILES = $(noinst_SCRIPTS)

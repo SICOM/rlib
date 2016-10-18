@@ -63,6 +63,11 @@ src/examples/c/srcpth
 src/examples/c/srcpth.exe
 src/examples/c/graph
 src/examples/c/graph.exe
+src/examples/c/follower
+src/examples/c/follower2
+src/examples/c/follower_n_to_1
+src/examples/c/follower_n_to_1_full_cartesian
+src/examples/c/follower.xml
 src/examples/csharp/products.xml
 src/examples/java/*.java
 src/examples/java/*.xml
