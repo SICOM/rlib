@@ -24,7 +24,8 @@ noinst_PROGRAMS = \
 	example_mysql example_pg example_odbc \
 	relpth1 relpth1-gen relpth2 srcpth relprt graph \
 	follower follower2 follower_n_to_1 \
-	follower_n_to_1_full_cartesian
+	follower_n_to_1_full_cartesian \
+	follower_n_to_1_vectormatch
 
 AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
 
@@ -53,6 +54,8 @@ follower2_LDADD = $(top_builddir)/libsrc/libr.la
 follower_n_to_1_LDADD = $(top_builddir)/libsrc/libr.la
 
 follower_n_to_1_full_cartesian_LDADD = $(top_builddir)/libsrc/libr.la
+
+follower_n_to_1_vectormatch_LDADD = $(top_builddir)/libsrc/libr.la
 
 noinst_SCRIPTS = products.xml follower.xml
 
