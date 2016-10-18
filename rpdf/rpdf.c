@@ -39,6 +39,8 @@
 
 #include <glib.h>
 
+#include <fontconfig/fontconfig.h>
+
 #ifdef RPDF_COMPRESS_STREAM
 #include <zlib.h>
 #endif
@@ -1434,4 +1436,65 @@ DLL_EXPORT_SYM void rpdf_free(struct rpdf *pdf) {
 	g_slist_foreach(pdf->objects, rpdf_object_destroyer, NULL);
 	g_slist_free(pdf->objects);	
 	g_free(pdf);
+}
+
+DLL_EXPORT_SYM gboolean rpdf_embed_font_file(struct rpdf *pdf, const char *fontname) {
+	return TRUE;
+}
+
+/*
+ * Detect fonts via FontConfig,
+ * return the first one matching family/style
+ */
+DLL_EXPORT_SYM gboolean rpdf_embed_font_fc(struct rpdf *pdf, const char *fontfamily, const char *fontstyle) {
+	FcConfig *config;
+	FcPattern *pat, *font;
+	FcObjectSet *os;
+	FcFontSet *fs;
+	FcValue val_family;
+	FcValue val_style;
+	FcChar8 *file;
+	gboolean result;
+
+	if (fontfamily == NULL)
+		return FALSE;
+	if (fontstyle == NULL)
+		fontstyle = RPDF_FC_STYLE_NORMAL;
+
+	config = FcInitLoadConfigAndFonts();
+	os = FcObjectSetBuild (FC_FAMILY, FC_STYLE, FC_LANG, FC_FILE, (char *) 0);
+	pat = FcPatternCreate();
+	val_family.type = FcTypeString;
+	val_family.u.s = (FcChar8 *)fontfamily;
+	FcPatternAdd(pat, FC_FAMILY, val_family, FcTrue);
+	val_style.type = FcTypeString;
+	val_style.u.s = (FcChar8 *)fontstyle;
+	FcPatternAdd(pat, FC_STYLE, val_style, FcTrue);
+	fs = FcFontList(config, pat, os);
+	if (fs->nfont == 0) {
+		FcFontSetDestroy(fs);
+		FcObjectSetDestroy(os);
+		FcPatternDestroy(pat);
+		FcConfigDestroy(config);
+		return FALSE;
+	}
+
+	font = fs->fonts[0];
+
+	if (FcPatternGetString(font, FC_FILE, 0, &file) != FcResultMatch) {
+		FcFontSetDestroy(fs);
+		FcObjectSetDestroy(os);
+		FcPatternDestroy(pat);
+		FcConfigDestroy(config);
+		return FALSE;
+	}
+
+	result = rpdf_embed_font_file(pdf, (char *)file);
+
+	FcFontSetDestroy(fs);
+	FcObjectSetDestroy(os);
+	FcPatternDestroy(pat);
+	FcConfigDestroy(config);
+
+	return result;
 }

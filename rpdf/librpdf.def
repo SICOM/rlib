@@ -32,3 +32,5 @@ rpdf_text_width@28
 rpdf_arc@29
 rpdf_get_buffer@30
 rpdf_free@31
+rpdf_embed_font_file@32
+rpdf_embed_font_fc@33

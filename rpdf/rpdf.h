@@ -59,6 +59,11 @@
 #define RPDF_PAPER_MONARCH   9
 #define RPDF_PAPER_FILM35MM  10
 
+#define RPDF_FC_STYLE_NORMAL		"regular"
+#define RPDF_FC_STYLE_BOLD		"bold"
+#define RPDF_FC_STYLE_ITALIC		"oblique"
+#define RPDF_FC_STYLE_BOLDITALIC	"bold oblique"
+
 #define CALLBACK void (*callback)(gchar *data, gint len, gpointer user_data)
 
 struct rpdf *rpdf_new(void);
@@ -92,5 +97,7 @@ gdouble rpdf_text_width(struct rpdf *pdf, const gchar *text);
 gint rpdf_arc(struct rpdf *pdf, gdouble x, gdouble y, gdouble radius, gdouble start_angle, gdouble end_angle);
 gchar *rpdf_get_buffer(struct rpdf *pdf, gint *length);
 void rpdf_free(struct rpdf *pdf);
+gboolean rpdf_embed_font_file(struct rpdf *pdf, const char *fontname);
+gboolean rpdf_embed_font_fc(struct rpdf *pdf, const char *fontfamily, const char *fontstyle);
 
 #endif /* _RPDF_H_ */

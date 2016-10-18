@@ -1,0 +1,21 @@
+rpdf_embed_font() direct or FontConfig
+
+https://www.freedesktop.org/software/fontconfig/fontconfig-devel/fcpatternget-type.html
+http://stackoverflow.com/questions/10542832/how-to-use-fontconfig-to-get-font-list-c-c
+
+Free Monospace Unicode Font
+http://www.gnu.org/software/freefont/
+http://savannah.gnu.org/projects/freefont/
+http://ftp.gnu.org/gnu/freefont/
+http://ftp.gnu.org/gnu/freefont/freefont-ttf-20120503.zip
+
+Font object stream (as is or /Filter /FlateDecode for GZIP-compressed
+stream)
+
+object
+...
+endobject
+
+Font descriptor to refer this stream
+
+rpdf_set_font() to refer embedded fonts
