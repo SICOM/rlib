@@ -21,13 +21,14 @@
  *
  */
 
+#include <config.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include <time.h>
 #include <ctype.h>
 #include <inttypes.h>
-#include <config.h>
 
 #include "rlib-internal.h"
 #include "pcode.h"
@@ -282,7 +283,6 @@ gint64 rlib_str_to_long_long(rlib *r, gchar *str) {
 }
 
 
-#if !USE_RLIB_VAL
 gint rvalcmp(struct rlib_value *v1, struct rlib_value *v2) {
 	if(RLIB_VALUE_IS_NUMBER(v1) && RLIB_VALUE_IS_NUMBER(v2)) {
 		if(RLIB_VALUE_GET_AS_NUMBER(v1) == RLIB_VALUE_GET_AS_NUMBER(v2))
@@ -302,7 +302,6 @@ gint rvalcmp(struct rlib_value *v1, struct rlib_value *v2) {
 	}
 	return -1;
 }
-#endif
 
 struct rlib_pcode_operand * rlib_new_operand(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *str, gchar *infix, gint line_number, gboolean look_at_metadata) {
 	gint resultset;
@@ -335,13 +334,17 @@ struct rlib_pcode_operand * rlib_new_operand(rlib *r, struct rlib_part *part, st
 		o->type = OPERAND_DATE;
 		o->value = stod(tm_date, str);
 	} else if (str[0] == '[') {
-		struct rlib_vector *tm_vector = g_malloc(sizeof(struct rlib_vector));
-		r_warning(r, "Line: %d OPERAND_VECTOR created\n", line_number);
+		GSList *vector = NULL;
+		gchar *next = str + 1;
 		str++;
-		tm_vector->element_type = RLIB_VALUE_NONE;
-		tm_vector->elements = NULL;
 		o->type = OPERAND_VECTOR;
-		o->value = tm_vector;
+
+		while (next && *next && *next != ']') {
+			gchar *str1 = next;
+			struct rlib_pcode *p = rlib_infix_to_pcode_multi(r, part, report, str1, ";]", &next, line_number, look_at_metadata);
+			vector = g_slist_append(vector, p);
+		}
+		o->value = vector;
 	} else if (!strcasecmp(str, "yes") || !strcasecmp(str, "true")) {
 		gint64 *newnum = g_malloc(sizeof(gint64));
 		o->type = OPERAND_NUMBER;
@@ -434,14 +437,13 @@ static void rlib_free_operand(rlib *r, struct rlib_pcode_operand *o) {
 
 	case OPERAND_VECTOR:
 	{
-		struct rlib_vector *v = o->value;
+		GSList *v = o->value;
 		GSList *ptr;
-		for (ptr = v->elements; ptr; ptr = ptr->next) {
+		for (ptr = v; ptr; ptr = ptr->next) {
 			struct rlib_pcode_operand *oo = ptr->data;
 			rlib_free_operand(r, oo);
 		}
-		g_slist_free(v->elements);
-		g_free(v);
+		g_slist_free(v);
 	}
 
 	case OPERAND_VARIABLE:
@@ -627,8 +629,7 @@ static gchar *skip_next_closing_paren(gchar *str) {
 	return (ch == ')')? str + 1 : str;
 }
 
-
-DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *infix, gint line_number, gboolean look_at_metadata) {
+DLL_EXPORT_SYM struct rlib_pcode *rlib_infix_to_pcode_multi(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *infix, gchar *delims, gchar **next, gint line_number, gboolean look_at_metadata) {
 	gchar *moving_ptr = infix;
 	gchar *op_pointer = infix;
 	GString *operand;
@@ -655,6 +656,10 @@ DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part
 	rmwhitespacesexceptquoted(infix);
 
 	while(*moving_ptr) {
+		/* Skip irrelevant spaces */
+		if(!instr && !indate && !invector && isspace(*moving_ptr))
+			moving_ptr++;
+
 		if(*moving_ptr == '\'') {
 			if(instr) {
 				instr = 0;
@@ -682,8 +687,24 @@ DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part
 			if (!*moving_ptr)
 				break;
 		}
-		if(invector && *moving_ptr == ';')
-			moving_ptr++;
+
+		if (!instr && !indate && !invector && delims) {
+			gchar *delim = delims;
+			int found = 0;
+
+			for (delim = delims; *delim; delim++) {
+				if (*moving_ptr == *delim) {
+					found = 1;
+					break;
+				}
+			}
+
+			if (found) {
+				if (next)
+					*next = moving_ptr + 1;
+				break;
+			}
+		}
 
 		if(!instr && !indate && !invector && (op = rlib_find_operator(r, moving_ptr, pcodes, moving_ptr != op_pointer))) {
 			if(moving_ptr != op_pointer) {
@@ -691,8 +712,6 @@ DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part
 				operand->str[moving_ptr - op_pointer] = '\0';
 				if (operand->str[0] != ')') {
 					struct rlib_pcode_operand *op = rlib_new_operand(r, part, report, operand->str, infix, line_number, look_at_metadata);
-					if (op->type == OPERAND_VECTOR)
-						r_warning(r, "rlib_infix_to_pcode 1 rlib_new_operand\n");
 					rlib_pcode_add(r, pcodes, rlib_new_pcode_instruction(PCODE_PUSH, op, TRUE));
 				}
 				g_string_free(operand, TRUE);
@@ -800,8 +819,6 @@ DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part
 		operand->str[moving_ptr - op_pointer] = '\0';
 		if (operand->str[0] != ')') {
 			struct rlib_pcode_operand *op = rlib_new_operand(r, part, report, operand->str, infix, line_number, look_at_metadata);
-			if (op->type == OPERAND_VECTOR)
-				r_warning(r, "rlib_infix_to_pcode 2 rlib_new_operand\n");
 			struct rlib_pcode_instruction *in = rlib_new_pcode_instruction(PCODE_PUSH, op, TRUE);
 			rlib_pcode_add(r, pcodes, in);
 		}
@@ -815,7 +832,10 @@ DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part
 	return pcodes;
 }
 
-#if !USE_RLIB_VAL
+DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *infix, gint line_number, gboolean look_at_metadata) {
+	return rlib_infix_to_pcode_multi(r, part, report, infix, NULL, NULL, line_number, look_at_metadata);
+}
+
 void rlib_value_stack_init(struct rlib_value_stack *vs) {
 	vs->count = 0;
 }
@@ -853,7 +873,7 @@ struct rlib_value * rlib_value_new(struct rlib_value *rval, gint type, gint free
 	if(type == RLIB_VALUE_IIF)
 		rval->iif_value = value;
 	if (type == RLIB_VALUE_VECTOR)
-		rval->vector_value = *((struct rlib_vector *)value);
+		rval->vector_value = value;
 
 	return rval;
 }
@@ -885,6 +905,11 @@ DLL_EXPORT_SYM gint rlib_value_free(struct rlib_value *rval) {
 		rval->free = FALSE;
 		RLIB_VALUE_TYPE_NONE(rval);
 		return TRUE;
+	} else if(rval->type == RLIB_VALUE_VECTOR) {
+		g_slist_free(rval->vector_value);
+		rval->free = FALSE;
+		RLIB_VALUE_TYPE_NONE(rval);
+		return TRUE;
 	}
 	return FALSE;
 }
@@ -904,14 +929,13 @@ DLL_EXPORT_SYM struct rlib_value * rlib_value_new_date(struct rlib_value *rval, 
 	return rlib_value_new(rval, RLIB_VALUE_DATE, FALSE, date);
 }
 
-DLL_EXPORT_SYM struct rlib_value * rlib_value_new_vector(struct rlib_value *rval, struct rlib_vector *vector) {
-	return rlib_value_new(rval, RLIB_VALUE_VECTOR, FALSE, vector);
+DLL_EXPORT_SYM struct rlib_value * rlib_value_new_vector(struct rlib_value *rval, GSList *vector) {
+	return rlib_value_new(rval, RLIB_VALUE_VECTOR, TRUE, vector);
 }
 
 DLL_EXPORT_SYM struct rlib_value * rlib_value_new_error(struct rlib_value *rval) {
 	return rlib_value_new(rval, RLIB_VALUE_ERROR, FALSE, NULL);
 }
-#endif
 
 /*
 	The RLIB SYMBOL TABLE is a bit commplicated because of all the datasources and internal variables
@@ -1002,25 +1026,35 @@ struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, stru
 
 gint execute_pcode(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gboolean show_stack_errors) {
 	gint i;
-	for(i=0;i<code->count;i++) {
-		if(code->instructions[i]->instruction == PCODE_PUSH) {
-			struct rlib_pcode_operand *o = code->instructions[i]->value;
-			struct rlib_value rval;
-			rlib_value_stack_push(r, vs, rlib_operand_get_value(r, &rval, o, this_field_value));
-		} else { /*Execute*/
-			struct rlib_pcode_operator *o = code->instructions[i]->value;
-			if(o->execute != NULL) {
-				if(o->execute(r, code, vs, this_field_value, o->user_data) == FALSE) {
-					r_error(r, "Line: %d - PCODE Execution Error: [%s] %s Didn't Work \n",code->line_number, code->infix_string,o->tag);
-					break;
-				}
+	for (i = 0; i < code->count; i++) {
+		switch (code->instructions[i]->instruction) {
+		case PCODE_PUSH:
+			{
+				struct rlib_pcode_operand *o = code->instructions[i]->value;
+				struct rlib_value rval;
+				rlib_value_stack_push(r, vs, rlib_operand_get_value(r, &rval, o, this_field_value));
+				break;
 			}
+		case PCODE_EXECUTE:
+			{
+				struct rlib_pcode_operator *o = code->instructions[i]->value;
+				if (o->execute != NULL) {
+					if (o->execute(r, code, vs, this_field_value, o->user_data) == FALSE) {
+						r_error(r, "Line: %d - PCODE Execution Error: [%s] %s Didn't Work \n", code->line_number, code->infix_string, o->tag);
+						break;
+					}
+				}
+				break;
+			}
+		default:
+			r_error(r, "execute_pcode: Invalid instruction %d\n");
+			break;
 		}
 	}
 
-	if(vs->count != 1 && show_stack_errors) {
+	if (vs->count != 1 && show_stack_errors) {
 		r_error(r, "PCODE Execution Error: Stack Elements %d != 1\n", vs->count);
-		r_error(r, "Line: %d - PCODE Execution Error: [%s]\n", code->line_number,code->infix_string );
+		r_error(r, "Line: %d - PCODE Execution Error: [%s]\n", code->line_number, code->infix_string);
 	}
 
 	return TRUE;

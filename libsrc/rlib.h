@@ -86,12 +86,6 @@ struct rlib_datetime {
 	glong ltime;
 };
 
-typedef struct rlib_vector rlib_vector;
-struct rlib_vector {
-	gint element_type;
-	GSList *elements;
-};
-
 struct rlib_value {
 	gint type;
 	gint64 number_value;
@@ -99,7 +93,7 @@ struct rlib_value {
 	gchar *string_value;
 	gpointer iif_value;
 	gint free;
-	struct rlib_vector vector_value;
+	GSList *vector_value;
 };
 
 #define RLIB_VALUE_ERROR	-1
@@ -222,10 +216,11 @@ int rlib_value_stack_push(rlib *r, struct rlib_value_stack *vs, struct rlib_valu
 struct rlib_value *rlib_value_new_number(struct rlib_value *rval, gint64 value);
 struct rlib_value *rlib_value_new_string(struct rlib_value *rval, const char *value);
 struct rlib_value *rlib_value_new_date(struct rlib_value *rval, struct rlib_datetime *date);
-struct rlib_value *rlib_value_new_vector(struct rlib_value *rval, struct rlib_vector *vector);
+struct rlib_value *rlib_value_new_vector(struct rlib_value *rval, GSList *vector);
 struct rlib_value *rlib_value_new_error(struct rlib_value *rval);
 gint rlib_value_free(struct rlib_value *rval);
 struct rlib_pcode *rlib_infix_to_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *infix, gint line_number, gboolean look_at_metadata);
+struct rlib_pcode *rlib_infix_to_pcode_multi(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *infix, gchar *delims, gchar **next, gint line_number, gboolean look_at_metadata);
 struct rlib_value *rlib_execute_pcode(rlib *r, struct rlib_value *rval, struct rlib_pcode *code, struct rlib_value *this_field_value);
 void rlib_pcode_free(rlib *r, struct rlib_pcode *code);
 
