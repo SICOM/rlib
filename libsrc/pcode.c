@@ -282,8 +282,35 @@ gint64 rlib_str_to_long_long(rlib *r, gchar *str) {
 	return foo;
 }
 
+gint rlib_vector_compare(rlib *r, GSList *vec1, GSList *vec2) {
+	GSList *v1, *v2;
+	gint retval = 0;
 
-gint rvalcmp(struct rlib_value *v1, struct rlib_value *v2) {
+	if (g_slist_length(vec1) != g_slist_length(vec2))
+		return -1;
+
+	for (v1 = vec1, v2 = vec2; v1; v1 = v1->next, v2 = v2->next) {
+		struct rlib_value val1, val2;
+		struct rlib_value *pval1, *pval2;
+		struct rlib_pcode *code1 = v1->data;
+		struct rlib_pcode *code2 = v2->data;
+
+		pval1 = rlib_execute_pcode(r, &val1, code1, NULL);
+		pval2 = rlib_execute_pcode(r, &val2, code2, NULL);
+
+		retval = rvalcmp(r, pval1, pval2);
+
+		rlib_value_free(&val1);
+		rlib_value_free(&val2);
+
+		if (retval != 0)
+			break;
+	}
+
+	return retval;
+}
+
+gint rvalcmp(rlib *r, struct rlib_value *v1, struct rlib_value *v2) {
 	if(RLIB_VALUE_IS_NUMBER(v1) && RLIB_VALUE_IS_NUMBER(v2)) {
 		if(RLIB_VALUE_GET_AS_NUMBER(v1) == RLIB_VALUE_GET_AS_NUMBER(v2))
 			return 0;
@@ -299,6 +326,9 @@ gint rvalcmp(struct rlib_value *v1, struct rlib_value *v2) {
 	}
 	if(RLIB_VALUE_IS_DATE(v1) && RLIB_VALUE_IS_DATE(v2)) {
 		return rlib_datetime_compare(&RLIB_VALUE_GET_AS_DATE(v1), &RLIB_VALUE_GET_AS_DATE(v2));
+	}
+	if(RLIB_VALUE_IS_VECTOR(v1) && RLIB_VALUE_IS_VECTOR(v2)) {
+		return rlib_vector_compare(r, RLIB_VALUE_GET_AS_VECTOR(v1), RLIB_VALUE_GET_AS_VECTOR(v2));
 	}
 	return -1;
 }

@@ -979,7 +979,7 @@ struct rlib_report_output *report_output_new(gint type, gpointer data);
 
 /***** PROTOTYPES: pcode.c ****************************************************/
 gint64 rlib_str_to_long_long(rlib *r, gchar *str);
-gint rvalcmp(struct rlib_value *v1, struct rlib_value *v2);
+gint rvalcmp(rlib *r, struct rlib_value *v1, struct rlib_value *v2);
 struct rlib_value * rlib_value_dup(struct rlib_value *orig);
 struct rlib_value * rlib_value_dup_contents(struct rlib_value *rval);
 struct rlib_value * rlib_value_new_error(struct rlib_value *rval);

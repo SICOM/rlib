@@ -66,7 +66,7 @@ void rlib_process_variables(rlib *r, struct rlib_report *report, gboolean precal
 	if (report->uniquerow_code != NULL) {
 		struct rlib_value tmp_rval;
 		rlib_execute_pcode(r, &tmp_rval, report->uniquerow_code, NULL);
-		if (rvalcmp(&tmp_rval, &report->uniquerow) == 0) {
+		if (rvalcmp(r, &tmp_rval, &report->uniquerow) == 0) {
 			samerow = TRUE;
 		} else {
 			rlib_value_free(&report->uniquerow);
