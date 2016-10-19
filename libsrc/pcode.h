@@ -17,6 +17,8 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#ifndef _RLIB_PCODE_H_
+#define _RLIB_PCODE_H_
 
 #define RLIB_FXP_MUL(a, b) rlib_fxp_mul(a, b, RLIB_DECIMAL_PRECISION)
 #define RLIB_FXP_DIV(num, denom) rlib_fxp_div(num, denom, RLIB_FXP_PRECISION)
@@ -123,6 +125,7 @@ struct rlib_pcode_if {
 #define OPERAND_RLIB_VARIABLE   7
 #define OPERAND_METADATA        8
 #define OPERAND_IIF             9
+#define OPERAND_VECTOR          10
 
 #define RLIB_RLIB_VARIABLE_PAGENO    1
 #define RLIB_RLIB_VARIABLE_TOTPAGES  2
@@ -201,3 +204,5 @@ int rlib_pcode_operator_format(rlib *r, struct rlib_pcode *code, struct rlib_val
 int rlib_pcode_operator_stodtsql(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gpointer user_data);
 int rlib_pcode_operator_eval(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gpointer user_data);
 int rlib_pcode_operator_strlen(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gpointer user_data);
+
+#endif /* _RLIB_PCODE_H_ */

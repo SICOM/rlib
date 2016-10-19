@@ -555,6 +555,71 @@ gint rlib_pcode_operator_eql(rlib *r, struct rlib_pcode *code, struct rlib_value
 		rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, val));
 		return TRUE;
 	}
+	if (RLIB_VALUE_IS_VECTOR(v1) && RLIB_VALUE_IS_VECTOR(v2)) {
+		struct rlib_vector *vec1, *vec2;
+		GSList *list1, *list2;
+		gint64 val = 0;
+		gint element_val = TRUE;
+
+		r_warning(r, "rlib_pcode_operator_eql called\n");
+
+		vec1 = &RLIB_VALUE_GET_AS_VECTOR(v1);
+		vec2 = &RLIB_VALUE_GET_AS_VECTOR(v2);
+
+		if (g_slist_length(vec1->elements) != g_slist_length(vec2->elements)) {
+			rlib_value_free(v1);
+			rlib_value_free(v2);
+			rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, val));
+			return TRUE;
+		}
+
+		r_warning(r, "rlib_pcode_operator_eql two vectors length equals\n");
+
+		for (list1 = vec1->elements, list2 = vec2->elements; list1; list1 = list1->next, list2 = list2->next) {
+			struct rlib_pcode_operand *op1 = list1->data, *op2 = list2->data;
+			struct rlib_value val1, val2;
+			struct rlib_value *eql;
+
+			rlib_operand_get_value(r, &val1, op1, NULL);
+			rlib_operand_get_value(r, &val2, op2, NULL);
+
+			if (val1.type != val2.type) {
+				r_warning(r, "rlib_pcode_operator_eql two elements type don't match\n");
+				rlib_value_free(&val1);
+				rlib_value_free(&val2);
+				break;
+			}
+
+			r_warning(r, "rlib_pcode_operator_eql two elements type match\n");
+
+			rlib_value_stack_push(r, vs, &val1);
+			rlib_value_stack_push(r, vs, &val2);
+			element_val = rlib_pcode_operator_eql(r, code, vs, this_field_value, user_data);
+			if (!element_val) {
+				r_warning(r, "rlib_pcode_operator_eql two elements match failed\n");
+				break;
+			}
+
+			eql = rlib_value_stack_pop(vs);
+
+			if (!RLIB_VALUE_GET_AS_NUMBER(eql)) {
+				r_warning(r, "rlib_pcode_operator_eql two elements match non-equal\n");
+				rlib_value_free(eql);
+				break;
+			}
+			r_warning(r, "rlib_pcode_operator_eql two elements match equal\n");
+			rlib_value_free(eql);
+		}
+
+		if (!list1)
+			val = RLIB_DECIMAL_PRECISION;
+
+		rlib_value_free(v1);
+		rlib_value_free(v2);
+		if (element_val)
+			rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, val));
+		return element_val;
+	}
 	rlib_value_free(v1);
 	rlib_value_free(v2);
 	rlib_value_stack_push(r,vs, rlib_value_new_error(&rval_rtn));

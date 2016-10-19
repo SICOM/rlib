@@ -334,6 +334,14 @@ struct rlib_pcode_operand * rlib_new_operand(rlib *r, struct rlib_part *part, st
 		str++;
 		o->type = OPERAND_DATE;
 		o->value = stod(tm_date, str);
+	} else if (str[0] == '[') {
+		struct rlib_vector *tm_vector = g_malloc(sizeof(struct rlib_vector));
+		r_warning(r, "Line: %d OPERAND_VECTOR created\n", line_number);
+		str++;
+		tm_vector->element_type = RLIB_VALUE_NONE;
+		tm_vector->elements = NULL;
+		o->type = OPERAND_VECTOR;
+		o->value = tm_vector;
 	} else if (!strcasecmp(str, "yes") || !strcasecmp(str, "true")) {
 		gint64 *newnum = g_malloc(sizeof(gint64));
 		o->type = OPERAND_NUMBER;
@@ -422,6 +430,18 @@ static void rlib_free_operand(rlib *r, struct rlib_pcode_operand *o) {
 		rlib_pcode_free(r, rpif->false);
 		g_free(rpif);
 		break;
+	}
+
+	case OPERAND_VECTOR:
+	{
+		struct rlib_vector *v = o->value;
+		GSList *ptr;
+		for (ptr = v->elements; ptr; ptr = ptr->next) {
+			struct rlib_pcode_operand *oo = ptr->data;
+			rlib_free_operand(r, oo);
+		}
+		g_slist_free(v->elements);
+		g_free(v);
 	}
 
 	case OPERAND_VARIABLE:
@@ -611,12 +631,13 @@ static gchar *skip_next_closing_paren(gchar *str) {
 DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *infix, gint line_number, gboolean look_at_metadata) {
 	gchar *moving_ptr = infix;
 	gchar *op_pointer = infix;
-	gchar operand[255];
+	GString *operand;
 	gint found_op_last = FALSE;
 	gint last_op_was_function = FALSE;
 	gint move_pointers = TRUE;
-	gint instr=0;
-	gint indate=0;
+	gint instr = 0;
+	gint indate = 0;
+	gint invector = 0;
 	struct rlib_pcode_operator *op;
 	struct rlib_pcode *pcodes;
 	struct rlib_operator_stack os;
@@ -643,23 +664,38 @@ DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part
 			}	else
 				instr = 1;
 		}
-		if(*moving_ptr == '{') {
+		if(!instr && *moving_ptr == '{') {
 			indate = 1;
 		}
-		if(*moving_ptr == '}') {
+		if(indate && *moving_ptr == '}') {
 			indate = 0;
 			moving_ptr++;
 			if(!*moving_ptr)
 				break;
 		}
+		if(!instr && *moving_ptr == '[') {
+			invector = 1;
+		}
+		if(invector && *moving_ptr == ']') {
+			invector = 0;
+			moving_ptr++;
+			if (!*moving_ptr)
+				break;
+		}
+		if(invector && *moving_ptr == ';')
+			moving_ptr++;
 
-		if(!instr && !indate && (op = rlib_find_operator(r, moving_ptr, pcodes, moving_ptr != op_pointer))) {
+		if(!instr && !indate && !invector && (op = rlib_find_operator(r, moving_ptr, pcodes, moving_ptr != op_pointer))) {
 			if(moving_ptr != op_pointer) {
-				memcpy(operand, op_pointer, moving_ptr - op_pointer);
-				operand[moving_ptr - op_pointer] = '\0';
-				if (operand[0] != ')') {
-					rlib_pcode_add(r, pcodes, rlib_new_pcode_instruction(PCODE_PUSH, rlib_new_operand(r, part, report, operand, infix, line_number, look_at_metadata), TRUE));
+				operand = g_string_new_len(op_pointer, moving_ptr - op_pointer + 1);
+				operand->str[moving_ptr - op_pointer] = '\0';
+				if (operand->str[0] != ')') {
+					struct rlib_pcode_operand *op = rlib_new_operand(r, part, report, operand->str, infix, line_number, look_at_metadata);
+					if (op->type == OPERAND_VECTOR)
+						r_warning(r, "rlib_infix_to_pcode 1 rlib_new_operand\n");
+					rlib_pcode_add(r, pcodes, rlib_new_pcode_instruction(PCODE_PUSH, op, TRUE));
 				}
+				g_string_free(operand, TRUE);
 /*				op_pointer += moving_ptr - op_pointer;
             How about just: */
 				op_pointer = moving_ptr;
@@ -760,13 +796,16 @@ DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part
 			moving_ptr++;
 	}
 	if ((moving_ptr != op_pointer)) {
-		memcpy(operand, op_pointer, moving_ptr - op_pointer);
-		operand[moving_ptr - op_pointer] = '\0';
-		if (operand[0] != ')') {
-			struct rlib_pcode_operand *op = rlib_new_operand(r, part, report, operand, infix, line_number, look_at_metadata);
+		operand = g_string_new_len(op_pointer, moving_ptr - op_pointer + 1);
+		operand->str[moving_ptr - op_pointer] = '\0';
+		if (operand->str[0] != ')') {
+			struct rlib_pcode_operand *op = rlib_new_operand(r, part, report, operand->str, infix, line_number, look_at_metadata);
+			if (op->type == OPERAND_VECTOR)
+				r_warning(r, "rlib_infix_to_pcode 2 rlib_new_operand\n");
 			struct rlib_pcode_instruction *in = rlib_new_pcode_instruction(PCODE_PUSH, op, TRUE);
 			rlib_pcode_add(r, pcodes, in);
 		}
+		g_string_free(operand, TRUE);
 	}
 	forcepopstack(r, pcodes, &os);
 	if(os.pcount != 0) {
@@ -813,6 +852,8 @@ struct rlib_value * rlib_value_new(struct rlib_value *rval, gint type, gint free
 		rval->date_value = *((struct rlib_datetime *) value);
 	if(type == RLIB_VALUE_IIF)
 		rval->iif_value = value;
+	if (type == RLIB_VALUE_VECTOR)
+		rval->vector_value = *((struct rlib_vector *)value);
 
 	return rval;
 }
@@ -861,6 +902,10 @@ DLL_EXPORT_SYM struct rlib_value * rlib_value_new_string(struct rlib_value *rval
 
 DLL_EXPORT_SYM struct rlib_value * rlib_value_new_date(struct rlib_value *rval, struct rlib_datetime *date) {
 	return rlib_value_new(rval, RLIB_VALUE_DATE, FALSE, date);
+}
+
+DLL_EXPORT_SYM struct rlib_value * rlib_value_new_vector(struct rlib_value *rval, struct rlib_vector *vector) {
+	return rlib_value_new(rval, RLIB_VALUE_VECTOR, FALSE, vector);
 }
 
 DLL_EXPORT_SYM struct rlib_value * rlib_value_new_error(struct rlib_value *rval) {
@@ -948,6 +993,8 @@ struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, stru
 		return rlib_value_new(rval, RLIB_VALUE_NUMBER, TRUE, &val);
 	} else if(o->type == OPERAND_IIF) {
 		return rlib_value_new(rval, RLIB_VALUE_IIF, FALSE, o->value);
+	} else if(o->type == OPERAND_VECTOR) {
+		return rlib_value_new(rval, RLIB_VALUE_VECTOR, FALSE, o->value);
 	}
 	rlib_value_new(rval, RLIB_VALUE_ERROR, FALSE, NULL);
 	return 0;

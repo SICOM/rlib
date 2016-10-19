@@ -86,6 +86,12 @@ struct rlib_datetime {
 	glong ltime;
 };
 
+typedef struct rlib_vector rlib_vector;
+struct rlib_vector {
+	gint element_type;
+	GSList *elements;
+};
+
 struct rlib_value {
 	gint type;
 	gint64 number_value;
@@ -93,6 +99,7 @@ struct rlib_value {
 	gchar *string_value;
 	gpointer iif_value;
 	gint free;
+	struct rlib_vector vector_value;
 };
 
 #define RLIB_VALUE_ERROR	-1
@@ -100,6 +107,7 @@ struct rlib_value {
 #define RLIB_VALUE_NUMBER	1
 #define RLIB_VALUE_STRING	2
 #define RLIB_VALUE_DATE 	3
+#define RLIB_VALUE_VECTOR   4
 #define RLIB_VALUE_IIF 		100
 
 #define RLIB_VALUE_TYPE_NONE(a) ((a)->type = RLIB_VALUE_NONE);((a)->free = FALSE)
@@ -108,6 +116,7 @@ struct rlib_value {
 #define RLIB_VALUE_IS_STRING(a)	(RLIB_VALUE_GET_TYPE(a)==RLIB_VALUE_STRING)
 #define RLIB_VALUE_IS_DATE(a)	(RLIB_VALUE_GET_TYPE(a)==RLIB_VALUE_DATE)
 #define RLIB_VALUE_IS_IIF(a)	(RLIB_VALUE_GET_TYPE(a)==RLIB_VALUE_IIF)
+#define RLIB_VALUE_IS_VECTOR(a)	(RLIB_VALUE_GET_TYPE(a)==RLIB_VALUE_VECTOR)
 #define RLIB_VALUE_IS_ERROR(a)	(RLIB_VALUE_GET_TYPE(a)==RLIB_VALUE_ERROR)
 #define RLIB_VALUE_IS_NONE(a)	(RLIB_VALUE_GET_TYPE(a)==RLIB_VALUE_NONE)
 #define RLIB_VALUE_GET_AS_NUMBER(a) ((a)->number_value)
@@ -115,6 +124,7 @@ struct rlib_value {
 #define RLIB_VALUE_GET_AS_STRING(a) ((a)->string_value)
 #define RLIB_VALUE_GET_AS_DATE(a) (a->date_value)
 #define RLIB_VALUE_GET_AS_IIF(a) ((struct rlib_pcode_if *)a->iif_value)
+#define RLIB_VALUE_GET_AS_VECTOR(a) (a->vector_value)
 
 #define RLIB_DECIMAL_PRECISION	10000000LL
 
@@ -212,7 +222,8 @@ int rlib_value_stack_push(rlib *r, struct rlib_value_stack *vs, struct rlib_valu
 struct rlib_value *rlib_value_new_number(struct rlib_value *rval, gint64 value);
 struct rlib_value *rlib_value_new_string(struct rlib_value *rval, const char *value);
 struct rlib_value *rlib_value_new_date(struct rlib_value *rval, struct rlib_datetime *date);
-struct rlib_value * rlib_value_new_error(struct rlib_value *rval);
+struct rlib_value *rlib_value_new_vector(struct rlib_value *rval, struct rlib_vector *vector);
+struct rlib_value *rlib_value_new_error(struct rlib_value *rval);
 gint rlib_value_free(struct rlib_value *rval);
 struct rlib_pcode *rlib_infix_to_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *infix, gint line_number, gboolean look_at_metadata);
 struct rlib_value *rlib_execute_pcode(rlib *r, struct rlib_value *rval, struct rlib_pcode *code, struct rlib_value *this_field_value);

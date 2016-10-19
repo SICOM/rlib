@@ -34,6 +34,7 @@
 #include "charencoder.h"
 #include "datetime.h"
 #include "util.h"
+#include "pcode.h"
 
 #define UNUSED __attribute__((unused))
 
@@ -988,6 +989,7 @@ gint rlib_execute_as_string(rlib *r, struct rlib_pcode *pcode, gchar *buf, gint 
 gint rlib_execute_as_int_inlist(rlib *r, struct rlib_pcode *pcode, gint *result, const gchar *list[]);
 gint rlib_execute_as_float(rlib *r, struct rlib_pcode *pcode, gfloat *result);
 void rlib_pcode_find_index(rlib *r);
+struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, struct rlib_pcode_operand *o, struct rlib_value *this_field_value);
 
 /***** PROTOTYPES: reportgen.c ****************************************************/
 void set_report_from_part(struct rlib_part *part, struct rlib_report *report, gfloat top_margin_offset);
