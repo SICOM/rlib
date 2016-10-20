@@ -189,19 +189,39 @@
 			rlib_add_resultset_follower(<emphasis>rlib</emphasis>, leader, follower)
 		</para>
 		<para>
-			Adds the ability to have more then one main loop query.  leader and follower are the names of
-			the queries you set in rlib_add_query_as.
+			Adds the ability to have more then one main loop query that run in parallel.  leader and
+			follower are the names of the queries you set in rlib_add_query_as.  The two queries work
+			similarly to an SQL LEFT OUTER JOIN matched via "ROWNUM" (Oracle) or "row_number() OVER ()"
+			(PostgreSQL).  This means that the leader query determines the number of rows in the query,
+			so rows may be truncated from the follower query in case the leader query has less rows.
+			In case the follower query has less rows, for rows in the leader query with no the follower
+			row, fields in the the follower query are empty.  Use this feature if the queries are from
+			different datasources, like one database source and one array source. In case the leader
+			and the follower queries are from the same datasource, especially if they are from the same
+			database source, it is better to formulate a single query or dataset, since it has generally
+			better performance for larger datasets. For array datasources, it may be better to use
+			followers to save space and give up a little performance.
 		</para>
 	</sect1>
 	<sect1>
 		<title>rlib_add_resultset_follower_n_to_1</title>
 		<para>
-			rlib_add_resultset_follower(<emphasis>rlib</emphasis>, leader, leader_field, follower, follower_field)
+			rlib_add_resultset_follower_n_to_1(<emphasis>rlib</emphasis>, leader, leader_field, follower, follower_field)
 		</para>
 		<para>
-			Adds the ability to have more then one main loop query.  leader and follower are the names of
-			the queries you set in rlib_add_query_as.  The leader_fields and follower_fields are normal RLIB expressions.
-			Use this feature when the rows in the datasets are uneven and needs to be linked together using a common criteria.
+			Adds the ability to use a dependent LEFT OUTER JOIN query for the leader query.  leader and
+			follower are the names of the queries you set in rlib_add_query_as.
+			<emphasis>leader_field</emphasis> and <emphasis>follower_field</emphasis>
+			are normal RLIB expressions.  Use this feature to match rows from the follower to the current
+			row in the leader query based on equality of the two expressions.  Depending on the datasets,
+			this can produce duplicate rows from the leader if there are multiple matching rows in the
+			follower. For rows in the leader query with no matching row in the follower, fields from the
+			follower query are empty. Use this feature if the queries are from different datasources, like
+			one database source and one array source. In case the leader and the follower queries are from
+			the same datasource, especially if they are from the same database source, it is better to
+			formulate a single query or dataset, since it has generally better performance for larger datasets.
+			For array datasources, it may be better to use followers to save space and give up a little performance.
+			Vector expressions for the leader_field and follower_field can be used to match composite keys.
 		</para>
 	</sect1>
 	<sect1>

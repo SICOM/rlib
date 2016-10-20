@@ -73,7 +73,17 @@
 		<para>
 			Adds a XML datasource to RLIB.  Pass XML files to rlib instead of queries.
 		</para>
-	</sect1>	
+	</sect1>
+	<sect1>
+		<title>rlib_add_datasource_array</title>
+		<para>
+			rlib_add_datasource_array(<emphasis>rlib *rlib_ptr</emphasis>, char *datasource_name)
+		</para>
+		<para>
+			Adds and array datasource to RLIB. Pass two-dimensional string arrays embedded in your C code
+			to rlib instead of queries.
+		</para>
+	</sect1>
 	<sect1>
 		<title>rlib_add_query_as</title>
 		<para>
@@ -82,8 +92,31 @@
 		<para>
 			The query is added to an execution queue, but it is not executed at this time.  The name is important
 			because you can reference result sets directly in your rlib xml files.  The first query added is assumed
-			to be the main loop query.  The datasource name must match a datasource the your provided rlib, such as one
+			to be the main loop query.  The datasource name must match a datasource that you provided rlib, such as one
 			of the mysql or postgre datasources.
+		</para>
+	</sect1>
+	<sect1>
+		<title>rlib_add_query_pointer_as</title>
+		<para>
+			rlib_add_query_pointer_as(<emphasis>rlib *rlib_ptr</emphasis>, char *datasource_name, char *query, char *rlib_query_name)
+		</para>
+		<para>
+			It is the same as <emphasis>rlib_add_query_as</emphasis> with the exception that the passed-in
+			<emphasis>query</emphasis> string is not duplicated internally. Use it for extra long SQL strings.
+		</para>
+	</sect1>
+	<sect1>
+		<title>rlib_add_query_array_as</title>
+		<para>
+			rlib_add_query_array_as(<emphasis>rlib *rlib_ptr</emphasis>, gchar *datasource_name, void *array, int rows, int cols, char *name)
+		</para>
+		<para>
+			Add an array query to an execution queue. The name is important because you can reference result sets
+			directly in your rlib XML files. The datasource name must match an array datasource name.
+			The contents behind the <emphasis>array</emphasis> pointer will be treated as a two-dimensional array
+ű			layed out the same as: <programlisting>char *array[rows][cols];</programlisting>.
+			Every member of the array is a pointer to NULL terminated strings.
 		</para>
 	</sect1>
 	<sect1>
@@ -231,19 +264,39 @@
 			rlib_add_resultset_follower(<emphasis>rlib *rlib_ptr</emphasis>, char *leader, char *follower)
 		</para>
 		<para>
-			Adds the ability to have more then one main loop query.  leader and follower are the names of
-			the queries you set in rlib_add_query_as.
+			Adds the ability to have more then one main loop query that run in parallel.  leader and
+			follower are the names of the queries you set in rlib_add_query_as.  The two queries work
+			similarly to an SQL LEFT OUTER JOIN matched via "ROWNUM" (Oracle) or "row_number() OVER ()"
+			(PostgreSQL).  This means that the leader query determines the number of rows in the query,
+			so rows may be truncated from the follower query in case the leader query has less rows.
+			In case the follower query has less rows, for rows in the leader query with no the follower
+			row, fields in the the follower query are empty.  Use this feature if the queries are from
+			different datasources, like one database source and one array source. In case the leader
+			and the follower queries are from the same datasource, especially if they are from the same
+			database source, it is better to formulate a single query or dataset, since it has generally
+			better performance for larger datasets. For array datasources, it may be better to use
+			followers to save space and give up a little performance.
 		</para>
 	</sect1>
 	<sect1>
 		<title>rlib_add_resultset_follower_n_to_1</title>
 		<para>
-			rlib_add_resultset_follower(<emphasis>rlib *rlib_ptr</emphasis>, char *leader, char *leader_field, char *follower, char *follower_field)
+			rlib_add_resultset_follower_n_to_1(<emphasis>rlib *rlib_ptr</emphasis>, char *leader, char *leader_field, char *follower, char *follower_field)
 		</para>
 		<para>
-			Adds the ability to have more then one main loop query.  leader and follower are the names of
-			the queries you set in rlib_add_query_as.  The leader_fields and follower_fields are normal RLIB expressions.
-			Use this feature when the rows in the datasets are uneven and needs to be linked together using a common criteria.
+			Adds the ability to use a dependent LEFT OUTER JOIN query for the leader query.  leader and
+			follower are the names of the queries you set in rlib_add_query_as.
+			<emphasis>leader_field</emphasis> and <emphasis>follower_field</emphasis>
+			are normal RLIB expressions.  Use this feature to match rows from the follower to the current
+			row in the leader query based on equality of the two expressions.  Depending on the datasets,
+			this can produce duplicate rows from the leader if there are multiple matching rows in the
+			follower. For rows in the leader query with no matching row in the follower, fields from the
+			follower query are empty. Use this feature if the queries are from different datasources, like
+			one database source and one array source. In case the leader and the follower queries are from
+			the same datasource, especially if they are from the same database source, it is better to
+			formulate a single query or dataset, since it has generally better performance for larger datasets.
+			For array datasources, it may be better to use followers to save space and give up a little performance.
+			Vector expressions for the leader_field and follower_field can be used to match composite keys.
 		</para>
 	</sect1>
 
