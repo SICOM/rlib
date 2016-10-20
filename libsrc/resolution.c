@@ -580,10 +580,14 @@ void rlib_process_input_metadata(rlib *r) {
 
 void rlib_resolve_followers(rlib *r) {
 	gint i;
-	for(i=0; i<r->resultset_followers_count; i++) {
-        	r->followers[i].leader_code = 
-			rlib_infix_to_pcode(r, NULL, NULL, r->followers[i].leader_field, -1, FALSE);
-        	r->followers[i].follower_code = 
-			rlib_infix_to_pcode(r, NULL, NULL, r->followers[i].follower_field, -1, FALSE);
+	for (i = 0; i < r->queries_count; i++) {
+		GList *list;
+
+		for (list = r->queries[i]->followers; list; list = list->next) {
+			struct rlib_resultset_followers *f = list->data;
+
+			f->leader_code = rlib_infix_to_pcode(r, NULL, NULL, f->leader_field, -1, FALSE);
+			f->follower_code = rlib_infix_to_pcode(r, NULL, NULL, f->follower_field, -1, FALSE);
+		}
 	}
 }

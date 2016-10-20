@@ -25,6 +25,7 @@
 #include "pcode.h"
 #include "rlib_input.h"
 
+#if 0
 static gint rlib_do_followers(rlib *r, gint i, gint way) {
 	gint follower;
 	gint rtn = TRUE;
@@ -61,8 +62,10 @@ static gint rlib_do_followers(rlib *r, gint i, gint way) {
 	}
 	return rtn;
 }
+#endif
 
-static gint rlib_navigate_followers(rlib *r, gint my_leader, gint way) {
+static gint rlib_navigate_followers(rlib *r UNUSED, gint my_leader UNUSED, gint way UNUSED) {
+#if 0
 	gint i, rtn = TRUE;
 	gint found = FALSE;
 	for(i=0;i<r->resultset_followers_count;i++) {
@@ -110,6 +113,9 @@ static gint rlib_navigate_followers(rlib *r, gint my_leader, gint way) {
 	}
 	rlib_process_input_metadata(r);
 	return rtn;
+#else
+	return TRUE;
+#endif
 }
 
 gint rlib_navigate_next(rlib *r, gint resultset_num) {

@@ -25,37 +25,11 @@ noinst_PROGRAMS = \
 	relpth1 relpth1-gen relpth2 srcpth relprt graph \
 	follower follower2 follower_n_to_1 \
 	follower_n_to_1_full_cartesian \
-	follower_n_to_1_vectormatch
+	follower_n_to_1_vectormatch \
+	follower_circular
 
 AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
-
-example_mysql_LDADD = $(top_builddir)/libsrc/libr.la
-
-example_pg_LDADD = $(top_builddir)/libsrc/libr.la
-
-example_odbc_LDADD = $(top_builddir)/libsrc/libr.la
-
-relpth1_LDADD = $(top_builddir)/libsrc/libr.la
-
-relpth1_gen_LDADD = $(top_builddir)/libsrc/libr.la
-
-relpth2_LDADD = $(top_builddir)/libsrc/libr.la
-
-srcpth_LDADD = $(top_builddir)/libsrc/libr.la
-
-relprt_LDADD = $(top_builddir)/libsrc/libr.la
-
-graph_LDADD = $(top_builddir)/libsrc/libr.la
-
-follower_LDADD = $(top_builddir)/libsrc/libr.la
-
-follower2_LDADD = $(top_builddir)/libsrc/libr.la
-
-follower_n_to_1_LDADD = $(top_builddir)/libsrc/libr.la
-
-follower_n_to_1_full_cartesian_LDADD = $(top_builddir)/libsrc/libr.la
-
-follower_n_to_1_vectormatch_LDADD = $(top_builddir)/libsrc/libr.la
+AM_LDFLAGS = $(top_builddir)/libsrc/libr.la
 
 noinst_SCRIPTS = products.xml follower.xml
 

@@ -87,8 +87,8 @@ DLL_EXPORT_SYM rlib *rlib_init(void) {
 	return rlib_init_with_environment(NULL);
 }
 
-struct rlib_query *rlib_alloc_query_space(rlib *r) {
-	struct rlib_query *query = NULL;
+DLL_EXPORT_SYM struct rlib_query *rlib_alloc_query_space(rlib *r) {
+	struct rlib_query_internal *query = NULL;
 	struct rlib_results *result = NULL;
 
 	if (r->queries_count == 0) {
@@ -102,7 +102,7 @@ struct rlib_query *rlib_alloc_query_space(rlib *r) {
 			return NULL;
 		}
 	} else {
-		struct rlib_query **queries;
+		struct rlib_query_internal **queries;
 		struct rlib_results **results;
 
 		queries = g_realloc(r->queries, (r->queries_count + 1) * sizeof(void *));
@@ -121,7 +121,7 @@ struct rlib_query *rlib_alloc_query_space(rlib *r) {
 		r->results = results;
 	}
 
-	query = g_malloc0(sizeof(struct rlib_query));
+	query = g_malloc0(sizeof(struct rlib_query_internal));
 	result = g_malloc0(sizeof(struct rlib_results));
 
 	if (query == NULL || result == NULL) {
@@ -132,20 +132,21 @@ struct rlib_query *rlib_alloc_query_space(rlib *r) {
 	}
 
 	r->queries[r->queries_count] = query;
+	query->query_index = r->queries_count;
 	r->results[r->queries_count] = result;
 
 	r->queries_count++;
 
-	return query;
+	return (struct rlib_query *)query;
 }
 
-static struct rlib_query *add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name) {
+static struct rlib_query_internal *add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name) {
 	gint i;
 
 	for (i = 0; i < r->inputs_count; i++) {
 		if (!strcmp(r->inputs[i].name, input_source)) {
 			gchar *name_copy;
-			struct rlib_query *query;
+			struct rlib_query_internal *query;
 
 			name_copy = g_strdup(name);
 			if (name_copy == NULL) {
@@ -153,7 +154,7 @@ static struct rlib_query *add_query_pointer_as(rlib *r, const gchar *input_sourc
 				return NULL;
 			}
 
-			query = rlib_alloc_query_space(r);
+			query = (struct rlib_query_internal *)rlib_alloc_query_space(r);
 			if (query == NULL) {
 				g_free(name_copy);
 				return NULL;
@@ -172,7 +173,7 @@ static struct rlib_query *add_query_pointer_as(rlib *r, const gchar *input_sourc
 }
 
 DLL_EXPORT_SYM gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name) {
-	struct rlib_query *query = add_query_pointer_as(r, input_source, sql, name);
+	struct rlib_query_internal *query = add_query_pointer_as(r, input_source, sql, name);
 
 	if (query == NULL)
 		return -1;
@@ -182,7 +183,7 @@ DLL_EXPORT_SYM gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source
 
 DLL_EXPORT_SYM gint rlib_add_query_as(rlib *r, const gchar *input_source, const gchar *sql, const gchar *name) {
 	gchar *sql_copy = g_strdup(sql);
-	struct rlib_query *query;
+	struct rlib_query_internal *query;
 
 	if (sql_copy == NULL)
 		return -1;
@@ -659,43 +660,108 @@ DLL_EXPORT_SYM gint rlib_set_output_format(rlib *r, int format) {
 	return 0;
 }
 
-DLL_EXPORT_SYM gint rlib_add_resultset_follower_n_to_1(rlib *r, gchar *leader, gchar *leader_field, gchar *follower, gchar *follower_field) {
-	gint ptr_leader = -1, ptr_follower = -1;
-	gint x;
+static void duplicate_path(rlib *r, struct rlib_query_internal *query, gint *visited) {
+	GList *list;
 
-	if (r->resultset_followers_count > (RLIB_MAXIMUM_FOLLOWERS - 1)) {
-		return -1;
+	visited[query->query_index] = 1;
+
+	for (list = query->followers; list; list = list->next) {
+		struct rlib_resultset_followers *f = list->data;
+		gint follower_idx = f->follower;
+		duplicate_path(r, r->queries[follower_idx], visited);
 	}
+}
+
+static gint rlib_add_resultset_follower_common(rlib *r, gchar *leader, gchar *leader_field, gchar *follower, gchar *follower_field) {
+	gint *visited;
+	struct rlib_resultset_followers *f;
+	gint leader_idx = -1, follower_idx = -1;
+	gint x;
+	struct rlib_query_internal *top;
+	gboolean followers_circular = FALSE;
+
+	if (!r->queries_count)
+		return -1;
 
 	for (x = 0; x < r->queries_count; x++) {
 		if (!strcmp(r->queries[x]->name, leader))
-			ptr_leader = x;
+			leader_idx = x;
 		if (!strcmp(r->queries[x]->name, follower))
-			ptr_follower = x;
+			follower_idx = x;
 	}
-	
-	if(ptr_leader == -1) {
-		r_error(r,"rlib_add_resultset_follower: Could not find leader!\n");
+
+	if(leader_idx == -1) {
+		r_error(r, "Could not find leader!\n");
 		return -1;
 	}
-	if(ptr_follower == -1) {
-		r_error(r,"rlib_add_resultset_follower: Could not find follower!\n");
+	if(follower_idx == -1) {
+		r_error(r, "Could not find follower!\n");
 		return -1;
 	}
-	if(ptr_follower == ptr_leader) {
-		r_error(r,"rlib_add_resultset_follower: Followes can't be leaders ;)!\n");
+	if(follower_idx == leader_idx) {
+		r_error(r,"The leader and follower cannot be identical!\n");
 		return -1;
 	}
-	r->followers[r->resultset_followers_count].leader = ptr_leader;
-	r->followers[r->resultset_followers_count].leader_field = g_strdup(leader_field);
-	r->followers[r->resultset_followers_count].follower = ptr_follower;
-	r->followers[r->resultset_followers_count++].follower_field = g_strdup(follower_field);
+
+	/*
+	 * Test for straight circularity
+	 */
+	top = r->queries[leader_idx];
+	while (top->leader) {
+		if (top->leader == r->queries[follower_idx]) {
+			followers_circular = TRUE;
+			break;
+		}
+		top = top->leader;
+	}
+
+	if (followers_circular) {
+		r_error(r, "Circular follower!\n");
+		return -1;
+	}
+
+	visited = g_new0(gint, r->queries_count);
+	if (!visited) {
+		r_error(r, "Out of memory\n");
+		return -1;
+	}
+	duplicate_path(r, top, visited);
+	if (visited[follower_idx]) {
+		g_free(visited);
+		r_error(r, "Follower cannot occur twice in the same follower tree!\n");
+		return -1;
+	}
+
+	g_free(visited);
+
+	f = g_new0(struct rlib_resultset_followers, 1);
+	if (!f) {
+		r_error(r, "Out of memory\n");
+		return -1;
+	}
+
+	r->queries[follower_idx]->leader = r->queries[leader_idx];
+	f->leader = leader_idx;
+	f->leader_field = g_strdup(leader_field);
+	f->follower = follower_idx;
+	f->follower_field = g_strdup(follower_field);
+
+	r->queries[leader_idx]->followers = g_list_append(r->queries[leader_idx]->followers, f);
 
 	return 0;
 }
 
+DLL_EXPORT_SYM gint rlib_add_resultset_follower_n_to_1(rlib *r, gchar *leader, gchar *leader_field, gchar *follower, gchar *follower_field) {
+	if (!leader_field || !follower_field) {
+		r_error(r, "The leader_field and follower_field both must be valid!\n");
+		return -1;
+	}
+
+	return rlib_add_resultset_follower_common(r, leader, leader_field, follower, follower_field);
+}
+
 DLL_EXPORT_SYM gint rlib_add_resultset_follower(rlib *r, gchar *leader, gchar *follower) {
-	return rlib_add_resultset_follower_n_to_1(r, leader, NULL, follower, NULL);
+	return rlib_add_resultset_follower_common(r, leader, NULL, follower, NULL);
 }
 
 DLL_EXPORT_SYM gint rlib_set_output_format_from_text(rlib *r, gchar *name) {

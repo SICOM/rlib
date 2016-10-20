@@ -54,6 +54,10 @@ struct input_filter {
 };
 
 struct rlib_query {
+	/*
+	 * Identical fields as in struct rlib_query_internal in rlib-internal.h
+	 * Keep these in sync!!!
+	 */
 	gchar *sql;
 	gint sql_allocated;
 	gchar *name;
@@ -61,6 +65,10 @@ struct rlib_query {
 	gpointer *private;
 };
 
+/* Add a custom datasource not covered by the currently implemented sources. */
 gint rlib_add_datasource(rlib *r, const gchar *input_name, struct input_filter *input);
+
+/* Allocator to implement rlib_add_custom_query_as() if necessary. */
+struct rlib_query *rlib_alloc_query_space(rlib *r);
 
 #endif /* _RLIB_INPUT_H_ */

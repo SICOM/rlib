@@ -64,10 +64,17 @@ src/examples/c/srcpth.exe
 src/examples/c/graph
 src/examples/c/graph.exe
 src/examples/c/follower
+src/examples/c/follower.exe
 src/examples/c/follower2
+src/examples/c/follower2.exe
 src/examples/c/follower_n_to_1
+src/examples/c/follower_n_to_1.exe
 src/examples/c/follower_n_to_1_full_cartesian
+src/examples/c/follower_n_to_1_full_cartesian.exe
 src/examples/c/follower_n_to_1_vectormatch
+src/examples/c/follower_n_to_1_vectormatch.exe
+src/examples/c/follower_circular
+src/examples/c/follower_circular.exe
 src/examples/c/follower.xml
 src/examples/csharp/products.xml
 src/examples/java/*.java

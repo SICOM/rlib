@@ -641,11 +641,21 @@ static void rlib_free_results_and_queries(rlib *r) {
 
 gint rlib_free_follower(rlib *r) {
 	gint i;
-	for (i = 0; i < r->resultset_followers_count; i++) {
-		g_free(r->followers[i].leader_field);
-		g_free(r->followers[i].follower_field);
-		rlib_pcode_free(r, r->followers[i].leader_code);
-		rlib_pcode_free(r, r->followers[i].follower_code);
+	for (i = 0; i < r->queries_count; i++) {
+		GList *list;
+
+		for (list = r->queries[i]->followers; list; list = list->next) {
+			struct rlib_resultset_followers *f = list->data;
+
+			g_free(f->leader_field);
+			g_free(f->follower_field);
+			rlib_pcode_free(r, f->leader_code);
+			rlib_pcode_free(r, f->follower_code);
+
+			g_free(f);
+		}
+		g_list_free(r->queries[i]->followers);
+		r->queries[i]->followers = NULL;
 	}
 
 	return TRUE;

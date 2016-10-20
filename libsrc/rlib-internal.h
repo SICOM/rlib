@@ -726,7 +726,6 @@ struct input_filters {
 	struct input_filter *input;
 };
 
-#define RLIB_MAXIMUM_FOLLOWERS	10
 struct rlib_resultset_followers {
 	gint leader;
 	gint follower;
@@ -746,6 +745,26 @@ struct rlib_metadata {
 	struct rlib_from_xml xml_formula;
 	struct rlib_value rval_formula;
 	struct rlib_pcode *formula_code;
+};
+
+struct rlib_query_internal {
+	/*
+	 * Identical fields as in struct rlib_query in rlib_input.h
+	 * Keep these in sync!!!
+	 */
+	gchar *sql;
+	gint sql_allocated;
+	gchar *name;
+	struct input_filter *input;
+	gpointer *private;
+	/*
+	 * Strictly internal fields to account followers.
+	 * These should be invisible to the public and the
+	 * input sources.
+	 */
+	gint query_index;
+	struct rlib_query_internal *leader;
+	GList *followers;
 };
 
 struct rlib {
@@ -770,7 +789,7 @@ struct rlib {
 
 	struct rlib_signal_functions signal_functions[RLIB_SIGNALS];
 
-	struct rlib_query **queries;
+	struct rlib_query_internal **queries;
 
 	gint queries_count;
 	struct rlib_rip_reports reportstorun[RLIB_MAXIMUM_REPORTS];
@@ -781,9 +800,6 @@ struct rlib {
 	gint parts_count;
 
 	gint current_result;
-
-	gint resultset_followers_count;
-	struct rlib_resultset_followers followers[RLIB_MAXIMUM_FOLLOWERS];
 
 	gint format;
 	gint inputs_count;
@@ -971,7 +987,6 @@ gint64 rlib_fxp_div(gint64 num, gint64 denom, gint places);
 void rlib_trap(void); /* For internals debugging only */
 gboolean use_relative_filename(rlib *r);
 gchar * get_filename(rlib *r, const char *filename, int report_index, gboolean report, gboolean use_as_is); /* not an exported API, no rlib_ prefix */
-struct rlib_query *rlib_alloc_query_space(rlib *r);
 
 /***** PROTOTYPES: parsexml.c *************************************************/
 struct rlib_part *parse_part_file(rlib *r, gboolean allow_fail, gint report_index);
