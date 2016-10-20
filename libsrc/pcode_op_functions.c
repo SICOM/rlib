@@ -560,8 +560,6 @@ gint rlib_pcode_operator_eql(rlib *r, struct rlib_pcode *code, struct rlib_value
 		GSList *list1, *list2;
 		gint64 val = 0;
 
-		r_warning(r, "rlib_pcode_operator_eql called\n");
-
 		vec1 = RLIB_VALUE_GET_AS_VECTOR(v1);
 		vec2 = RLIB_VALUE_GET_AS_VECTOR(v2);
 
@@ -571,8 +569,6 @@ gint rlib_pcode_operator_eql(rlib *r, struct rlib_pcode *code, struct rlib_value
 			rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, val));
 			return TRUE;
 		}
-
-		r_warning(r, "rlib_pcode_operator_eql two vectors length equals\n");
 
 		for (list1 = vec1, list2 = vec2; list1; list1 = list1->next, list2 = list2->next) {
 			struct rlib_pcode *code1 = list1->data, *code2 = list2->data;
@@ -658,8 +654,6 @@ gint rlib_pcode_operator_noteql(rlib *r, struct rlib_pcode *code, struct rlib_va
 		GSList *list1, *list2;
 		gint64 val = RLIB_DECIMAL_PRECISION;
 
-		r_warning(r, "rlib_pcode_operator_noteql called\n");
-
 		vec1 = RLIB_VALUE_GET_AS_VECTOR(v1);
 		vec2 = RLIB_VALUE_GET_AS_VECTOR(v2);
 
@@ -669,8 +663,6 @@ gint rlib_pcode_operator_noteql(rlib *r, struct rlib_pcode *code, struct rlib_va
 			rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, val));
 			return TRUE;
 		}
-
-		r_warning(r, "rlib_pcode_operator_eql two vectors length equals\n");
 
 		for (list1 = vec1, list2 = vec2; list1; list1 = list1->next, list2 = list2->next) {
 			struct rlib_pcode *code1 = list1->data, *code2 = list2->data;
