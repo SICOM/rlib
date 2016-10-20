@@ -37,7 +37,10 @@ int main(void) {
 	buf = malloc(st.st_size + 1);
 
 	fd = open("relpath/relpath.xml", O_RDONLY);
-	read(fd, buf, st.st_size);
+	if (read(fd, buf, st.st_size) != st.st_size) {
+		close(fd);
+		return 1;
+	}
 	close(fd);
 
 	buf[st.st_size] = '\0';
