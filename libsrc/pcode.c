@@ -137,6 +137,7 @@ void rlib_pcode_find_index(rlib *r) {
 }
 
 static void rlib_free_operand(rlib *r, struct rlib_pcode_operand *o);
+static struct rlib_pcode *rlib_infix_to_pcode_multi(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *infix, gchar *delims, gchar **next, gint line_number, gboolean look_at_metadata);
 
 DLL_EXPORT_SYM void rlib_pcode_free(rlib *r, struct rlib_pcode *code) {
 	gint i = 0;
@@ -470,8 +471,8 @@ static void rlib_free_operand(rlib *r, struct rlib_pcode_operand *o) {
 		GSList *v = o->value;
 		GSList *ptr;
 		for (ptr = v; ptr; ptr = ptr->next) {
-			struct rlib_pcode_operand *oo = ptr->data;
-			rlib_free_operand(r, oo);
+			struct rlib_pcode *op = ptr->data;
+			rlib_pcode_free(r, op);
 		}
 		g_slist_free(v);
 	}
@@ -659,7 +660,7 @@ static gchar *skip_next_closing_paren(gchar *str) {
 	return (ch == ')')? str + 1 : str;
 }
 
-DLL_EXPORT_SYM struct rlib_pcode *rlib_infix_to_pcode_multi(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *infix, gchar *delims, gchar **next, gint line_number, gboolean look_at_metadata) {
+static struct rlib_pcode *rlib_infix_to_pcode_multi(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *infix, gchar *delims, gchar **next, gint line_number, gboolean look_at_metadata) {
 	gchar *moving_ptr = infix;
 	gchar *op_pointer = infix;
 	GString *operand;
@@ -696,7 +697,7 @@ DLL_EXPORT_SYM struct rlib_pcode *rlib_infix_to_pcode_multi(rlib *r, struct rlib
 				moving_ptr++;
 				if(!*moving_ptr)
 					break;
-			}	else
+			} else
 				instr = 1;
 		}
 		if(!instr && *moving_ptr == '{') {
