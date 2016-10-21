@@ -581,13 +581,24 @@ void rlib_process_input_metadata(rlib *r) {
 void rlib_resolve_followers(rlib *r) {
 	gint i;
 	for (i = 0; i < r->queries_count; i++) {
-		GList *list;
+		GList *list = r->queries[i]->followers;
+		GList *list0 = list;
+		GList *new_f = NULL, *new_f_n_to_1 = NULL;
 
 		for (list = r->queries[i]->followers; list; list = list->next) {
 			struct rlib_resultset_followers *f = list->data;
 
-			f->leader_code = rlib_infix_to_pcode(r, NULL, NULL, f->leader_field, -1, FALSE);
-			f->follower_code = rlib_infix_to_pcode(r, NULL, NULL, f->follower_field, -1, FALSE);
+			if (f->leader_field && f->follower_field) {
+				f->leader_code = rlib_infix_to_pcode(r, NULL, NULL, f->leader_field, -1, FALSE);
+				f->follower_code = rlib_infix_to_pcode(r, NULL, NULL, f->follower_field, -1, FALSE);
+				new_f_n_to_1 = g_list_append(new_f_n_to_1, f);
+			} else
+				new_f = g_list_append(new_f, f);
 		}
+
+		r->queries[i]->followers = new_f;
+		r->queries[i]->followers_n_to_1 = new_f_n_to_1;
+
+		g_list_free(list0);
 	}
 }

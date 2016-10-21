@@ -765,6 +765,7 @@ struct rlib_query_internal {
 	gint query_index;
 	struct rlib_query_internal *leader;
 	GList *followers;
+	GList *followers_n_to_1;
 };
 
 struct rlib {

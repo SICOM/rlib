@@ -656,6 +656,19 @@ gint rlib_free_follower(rlib *r) {
 		}
 		g_list_free(r->queries[i]->followers);
 		r->queries[i]->followers = NULL;
+
+		for (list = r->queries[i]->followers_n_to_1; list; list = list->next) {
+			struct rlib_resultset_followers *f = list->data;
+
+			g_free(f->leader_field);
+			g_free(f->follower_field);
+			rlib_pcode_free(r, f->leader_code);
+			rlib_pcode_free(r, f->follower_code);
+
+			g_free(f);
+		}
+		g_list_free(r->queries[i]->followers_n_to_1);
+		r->queries[i]->followers_n_to_1 = NULL;
 	}
 
 	return TRUE;
