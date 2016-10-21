@@ -158,10 +158,10 @@ AC_ARG_ENABLE([mysql],
 	[AS_HELP_STRING([--disable-mysql],[disable mysql backend])],,enable_mysql=yes)
 AS_IF([test x$enable_mysql = xyes],[
 	dnl Use the standard MySQL detection from mysql.m4
-	dnl MYSQL_CLIENT sets MYSQL_CLIENT_CFLAGS and MYSQL_CLIENT_LIBS.
-	dnl Lets set out own MYSQL_CFLAGS and MYSQL_LIBS too.
 	dnl It will make ./configure bail with an error if detection fails
 	dnl instead of silently ignoring it.
+	dnl MYSQL_CLIENT() sets MYSQL_CLIENT_CFLAGS and MYSQL_CLIENT_LIBS.
+	dnl Lets set our own MYSQL_CFLAGS and MYSQL_LIBS too.
 	MYSQL_CLIENT()
 	MYSQL_CFLAGS=${MYSQL_CLIENT_CFLAGS}
 	AC_SUBST(MYSQL_CFLAGS)
