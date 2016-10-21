@@ -63,6 +63,11 @@ struct rlib_query {
 	gchar *name;
 	struct input_filter *input;
 	gpointer *private;
+	/*
+	 * There are other non-exposed fields below,
+	 * so don't ever embed this struct in other structs
+	 * as is. Use a pointer to this structure.
+	 */
 };
 
 /* Add a custom datasource not covered by the currently implemented sources. */
