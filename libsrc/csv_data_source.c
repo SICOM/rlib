@@ -39,6 +39,7 @@
 struct rlib_csv_results {
 	gchar *contents;
 	gint isdone;
+	gint rows;
 	GSList *header;
 	GList *detail;
 	GList *navigator;
@@ -241,6 +242,9 @@ void * csv_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	} else {
 		INPUT_PRIVATE(input)->error = "Error Opening File";
 	}
+
+	results->rows = row;
+
 	return results;
 }
 
@@ -263,6 +267,15 @@ static gint rlib_csv_free_input_filter(gpointer input_ptr){
 	return 0;
 }
 
+static guint rlib_csv_result_rowcount(gpointer result_ptr) {
+	struct rlib_csv_results *results = result_ptr;
+
+	if (results)
+		return results->rows;
+
+	return 0;
+}
+
 gpointer rlib_csv_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
@@ -282,6 +295,7 @@ gpointer rlib_csv_new_input_filter(rlib *r) {
 	input->resolve_field_pointer = rlib_csv_resolve_field_pointer;
 	input->free = rlib_csv_free_input_filter;
 	input->free_result = rlib_csv_rlib_free_result;
+	input->result_rowcount = rlib_csv_result_rowcount;
 	return input;
 }
  

@@ -200,6 +200,15 @@ static const gchar * rlib_postgres_get_error(gpointer input_ptr) {
 	return PQerrorMessage(INPUT_PRIVATE(input)->conn);
 }
 
+static guint postgres_result_rowcount(gpointer result_ptr) {
+	struct rlib_postgres_results *results = result_ptr;
+
+	if (results)
+		return results->tot_rows;
+
+	return 0;
+}
+
 #ifdef HAVE_POSTGRES_BUILTIN
 gpointer rlib_postgres_new_input_filter(rlib *r) {
 #else
@@ -225,5 +234,8 @@ DLL_EXPORT_SYM gpointer new_input_filter(rlib *r) {
 
 	input->free = rlib_postgres_free_input_filter;
 	input->free_result = rlib_postgres_rlib_free_result;
+
+	input->result_rowcount = postgres_result_rowcount;
+
 	return input;
 }

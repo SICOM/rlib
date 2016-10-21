@@ -51,6 +51,7 @@ struct input_filter {
 	void (*free_result)(gpointer, gpointer);
 	void (*free_query)(gpointer, gpointer);
 	gint (*set_encoding)(gpointer);
+	guint (*result_rowcount)(gpointer);
 };
 
 struct rlib_query {

@@ -44,6 +44,7 @@ struct rlib_xml_results {
 	xmlNodePtr last_row;
 	xmlNodePtr this_row;
 	xmlNodePtr first_field;
+	gint rows;
 	gint isdone;
 };
 
@@ -188,6 +189,7 @@ static void *xml_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	xmlNodePtr first_field;
 	xmlDocPtr doc;
 	gchar *file;
+	gint nrows = 0;
 
 	file = get_filename(input->r, query->sql, -1, FALSE, FALSE);
 	doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
@@ -230,11 +232,13 @@ static void *xml_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 
 	first_row = NULL;
 	last_row = NULL;
+	nrows = 0;
 	for (cur = rows->xmlChildrenNode; cur; cur = cur->next) {
 		if (xmlStrcmp(cur->name, (const xmlChar *) "row") == 0) {
 			if (first_row == NULL)
 				first_row = cur;
 			last_row = cur;
+			nrows++;
 		}
 	}
 
@@ -264,6 +268,7 @@ static void *xml_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	results->this_row = first_row;
 	results->first_field = first_field;
 	results->isdone = FALSE;
+	results->rows = nrows;
 	return results;
 }
 
@@ -287,6 +292,15 @@ static gint rlib_xml_free_input_filter(gpointer input_ptr){
 	return 0;
 }
 
+static guint rlib_xml_result_rowcount(gpointer result_ptr) {
+	struct rlib_xml_results *results = result_ptr;
+
+	if (results)
+		return results->rows;
+
+	return 0;
+}
+
 gpointer rlib_xml_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
@@ -306,5 +320,6 @@ gpointer rlib_xml_new_input_filter(rlib *r) {
 	input->free = rlib_xml_free_input_filter;
 	input->free_query = rlib_xml_free_query;
 	input->free_result = rlib_xml_rlib_free_result;
+	input->result_rowcount = rlib_xml_result_rowcount;
 	return input;
 }

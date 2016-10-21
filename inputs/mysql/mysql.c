@@ -315,6 +315,15 @@ static const gchar* rlib_mysql_get_error(gpointer input_ptr) {
 	return mysql_error(INPUT_PRIVATE(input)->mysql);
 }
 
+static guint rlib_mysql_result_rowcount(gpointer result_ptr) {
+	struct rlib_mysql_results *results = result_ptr;
+
+	if (results)
+		return results->rows;
+
+	return 0;
+}
+
 #ifdef HAVE_MYSQL_BUILTIN
 gpointer rlib_mysql_new_input_filter(rlib *r) {
 #else
@@ -342,5 +351,8 @@ DLL_EXPORT_SYM gpointer new_input_filter(rlib *r) {
 	input->free = rlib_mysql_free_input_filter;
 	input->free_result = rlib_mysql_rlib_free_result;
 	input->free_query = rlib_mysql_free_query;
+
+	input->result_rowcount = rlib_mysql_result_rowcount;
+
 	return input;
 }

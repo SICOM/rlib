@@ -164,6 +164,15 @@ static void rlib_array_rlib_free_query(gpointer input_ptr UNUSED, gpointer query
 	g_free(QUERY_PRIVATE(query));
 }
 
+static guint rlib_array_result_rowcount(gpointer result_ptr) {
+	struct rlib_array_results *results = result_ptr;
+
+	if (results)
+		return results->rows;
+
+	return 0;
+}
+
 static gpointer rlib_array_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
@@ -185,6 +194,9 @@ static gpointer rlib_array_new_input_filter(rlib *r) {
 	input->free = rlib_array_free_input_filter;
 	input->free_result = rlib_array_rlib_free_result;
 	input->free_query = rlib_array_rlib_free_query;
+
+	input->result_rowcount = rlib_array_result_rowcount;
+
 	return input;
 }
 
