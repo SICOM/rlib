@@ -125,6 +125,17 @@ int main(void) {
 	retval = rlib_add_resultset_follower_n_to_1(r, "data", "[data.first_name;data.last_name]", "more_data2", "[more_data2.first_name;more_data2.last_name]");
 	printf("added rlib_add_resultset_follower_n_to_1(more_data2, data) %d\n\n", retval);
 
+	rlib_add_query_array_as(r, "local_array", more_data, 4, 3 , "more_data3");
+	printf("added query more_data3\n\n");
+
+	printf("adding follower more_data2 -> more_data3, should succeed\n");
+	retval = rlib_add_resultset_follower_n_to_1(r, "more_data2", "[more_data2.first_name;more_data2.last_name]", "more_data3", "[more_data3.first_name;more_data3.last_name]");
+	printf("added rlib_add_resultset_follower_n_to_1(more_data2, more_data3) %d\n\n", retval);
+
+	printf("adding follower more_data3 -> more_data, should fail\n");
+	retval = rlib_add_resultset_follower_n_to_1(r, "more_data3", "[more_data3.first_name;more_data3.last_name]", "more_data", "[more_data.first_name;more_data.last_name]");
+	printf("added rlib_add_resultset_follower_n_to_1(more_data3, more_data) %d\n\n", retval);
+
 	rlib_free(r);
 
 	return 0;

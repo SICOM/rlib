@@ -702,6 +702,10 @@ static gint rlib_add_resultset_follower_common(rlib *r, gchar *leader, gchar *le
 		r_error(r,"The leader and follower cannot be identical!\n");
 		return -1;
 	}
+	if(follower_idx == 0) {
+		r_error(r, "The first added query cannot be a follower!\n");
+		return -1;
+	}
 
 	/*
 	 * Test for straight circularity
