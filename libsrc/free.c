@@ -357,6 +357,7 @@ void rlib_free_break_fields(rlib *r, struct rlib_element *be) {
 	for (; be; next = be->next, g_free(be), be = next) {
 		struct rlib_break_fields *bf = be->data;
 
+		rlib_value_free(bf->rval);
 		break_free_pcode(r, bf);
 		g_free(bf);
 	}
