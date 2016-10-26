@@ -32,7 +32,7 @@
 	</PageHeader>
 
     <Variables>
-        <Variable name="district_sales" value="val(sales)" type="sum" resetonbreak="districtbreak" />
+        <Variable name="district_sales" value="val(sales)" type="sum" resetonbreak="districtbreak"/>
         <Variable name="region_sales" value="val(sales)" type="sum" resetonbreak="regionbreak" />
         <Variable name="company_sales" value="val(sales)" type="sum" resetonbreak="companybreak" />
 	</Variables>
@@ -47,6 +47,7 @@
 				<Output>
 					<Line>
 						<field value="company" width="11" align="left" col="1" />
+						<field value="v.company_sales" format="'$%.2d'" width="35" align="right" col="5"/>
 					</Line>
 				</Output>
 			</BreakHeader>

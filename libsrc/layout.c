@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <libintl.h>
+#include <inttypes.h>
 
 #include <config.h>
 
@@ -122,7 +123,7 @@ static gchar *rlib_encode_text(rlib *r, gchar *text, gchar **result) {
 		gsize result_len;
 		rlib_charencoder_convert(r->output_encoder, &text, &len, result, &result_len);
 		if (*result == NULL) {
-			r_error(r, "encode returned NULL result input was[%s], len=%d", text, r_strlen(text));
+			r_error(r, "encode returned NULL result input was[%s], len=%" PRIdFAST32, text, r_strlen(text));
 			*result = g_strdup("!ERR_ENC2");
 		}
 	}

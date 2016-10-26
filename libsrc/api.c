@@ -499,7 +499,8 @@ static gint rlib_execute_queries(rlib *r) {
 			r_error(r, "Failed To Run A Query [%s]: %s\n", r->queries[i]->sql, INPUT(r,i)->get_error(INPUT(r,i)));
 			return FALSE;
 		} else {
-			INPUT(r,i)->first(INPUT(r,i), r->results[i]->result);
+			INPUT(r,i)->start(INPUT(r,i), r->results[i]->result);
+			INPUT(r,i)->next(INPUT(r,i), r->results[i]->result);
 		}
 	}
 	return TRUE;
@@ -690,19 +691,19 @@ static gint rlib_add_resultset_follower_common(rlib *r, gchar *leader, gchar *le
 			follower_idx = x;
 	}
 
-	if(leader_idx == -1) {
+	if (leader_idx == -1) {
 		r_error(r, "Could not find leader!\n");
 		return -1;
 	}
-	if(follower_idx == -1) {
+	if (follower_idx == -1) {
 		r_error(r, "Could not find follower!\n");
 		return -1;
 	}
-	if(follower_idx == leader_idx) {
+	if (follower_idx == leader_idx) {
 		r_error(r,"The leader and follower cannot be identical!\n");
 		return -1;
 	}
-	if(follower_idx == 0) {
+	if (follower_idx == 0) {
 		r_error(r, "The first added query cannot be a follower!\n");
 		return -1;
 	}
@@ -825,7 +826,7 @@ DLL_EXPORT_SYM gboolean rlib_signal_connect_string(rlib *r, gchar *signal_name, 
 	else if(!strcasecmp(signal_name, "precalculation_done"))
 		signal = RLIB_SIGNAL_PRECALCULATION_DONE;
 	else {
-		r_error(r,"Unknowm SIGNAL [%s]\n", signal_name);
+		r_error(r,"Unknown SIGNAL [%s]\n", signal_name);
 		return FALSE;
 	}
 	return rlib_signal_connect(r, signal, signal_function, data);

@@ -23,8 +23,11 @@
 noinst_PROGRAMS = \
 	example_mysql example_pg example_odbc \
 	relpth1 relpth1-gen relpth2 srcpth relprt graph \
-	follower follower2 follower_n_to_1 \
+	follower follower2 \
+	follower_n_to_1 follower_n_to_1_2 \
 	follower_n_to_1_full_cartesian \
+	follower_n_to_1_full_cartesian2 \
+	follower_n_to_1_full_cartesian3 \
 	follower_n_to_1_vectormatch \
 	follower_circular
 

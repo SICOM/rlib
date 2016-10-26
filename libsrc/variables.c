@@ -189,35 +189,34 @@ void rlib_variables_precalculate(rlib *r, struct rlib_part *part, struct rlib_re
 
 			r->detail_line_count++;
 
-			if(did_it == FALSE) {
+			if (did_it == FALSE) {
 				rlib_process_variables(r, report, TRUE);
-			}			
-			
-			if(rlib_navigate_next(r, r->current_result) == FALSE) {
+			}
+
+			if (rlib_navigate_next(r, r->current_result) == FALSE) {
 				rlib_navigate_last(r, r->current_result);
 				rlib_handle_break_footers(r, part, report, TRUE);
 				break;
-			} 
+			}
 
 			rlib_handle_break_footers(r, part, report, TRUE);
 
 			did_it = FALSE;
 		}
 	}
-	
-	for(e = report->variables; e != NULL; e=e->next) {
+
+	for (e = report->variables; e != NULL; e = e->next) {
 		struct rlib_report_variable *rv = e->data;
 		if(rv->precalculate == TRUE && (rv->xml_resetonbreak.xml == NULL || rv->xml_resetonbreak.xml[0] == '\0')) {
 			struct rlib_count_amount *copy = g_malloc(sizeof(struct rlib_count_amount));
 			memcpy(copy, &rv->data, sizeof(struct rlib_count_amount));
-			rv->precalculated_values = g_slist_append(rv->precalculated_values, copy);				
+			rv->precalculated_values = g_slist_append(rv->precalculated_values, copy);
 		}
 	}
-	
+
 	breaks_clear(report);
 	rlib_fetch_first_rows(r);
 	rlib_emit_signal(r, RLIB_SIGNAL_PRECALCULATION_DONE);
 	rlib_value_free(&report->uniquerow);
 	RLIB_VALUE_TYPE_NONE(&report->uniquerow);
-
 }

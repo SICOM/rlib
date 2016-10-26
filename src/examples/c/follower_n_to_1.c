@@ -67,18 +67,22 @@ char *data[7][5] = {
 	[6][4] = "Dude",
 };
 
-char *more_data[4][2] = {
-	[0][0] = "last_name",
-	[0][1] = "initials",
+char *more_data[4][3] = {
+	[0][0] = "first_name",
+	[0][1] = "last_name",
+	[0][2] = "initials",
 
-	[1][0] = "Doan",
-	[1][1] = "WRD",
+	[1][0] = "Bob",
+	[1][1] = "Doan",
+	[1][2] = "WRD",
 
-	[2][0] = "Doan",
-	[2][1] = "TD",
+	[2][0] = "Terry",
+	[2][1] = "Doan",
+	[2][2] = "TD",
 
-	[3][0] = "Buruschkin",
-	[3][1] = "ERB",
+	[3][0] = "Eric",
+	[3][1] = "Buruschkin",
+	[3][2] = "ERB",
 };
 
 int main(int argc, char **argv) {
@@ -92,7 +96,7 @@ int main(int argc, char **argv) {
 	r = rlib_init();
 	rlib_add_datasource_array(r, "local_array");
 	rlib_add_query_array_as(r, "local_array", data, 7, 5, "data");
-	rlib_add_query_array_as(r, "local_array", more_data, 4, 2, "more_data");
+	rlib_add_query_array_as(r, "local_array", more_data, 4, 3, "more_data");
 	rlib_add_resultset_follower_n_to_1(r, "data", "data.last_name", "more_data", "more_data.last_name");
 	rlib_add_report(r, "follower.xml");
 	rlib_set_output_format_from_text(r, argv[1]);

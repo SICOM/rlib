@@ -762,7 +762,12 @@ struct rlib_query_internal {
 	 * These should be invisible to the public and the
 	 * input sources.
 	 */
-	gint query_index;
+	gint query_index;	/* index in r->queries and r->results */
+	gint current_row;	/* virtual current row, can be larger than
+						 * the actual number of rows in the input source */
+	gint n_to_1_empty;	/* shortcut to track 0-row resultsets */
+	gint n_to_1_started;/* track rows in n:1 followers */
+	gint n_to_1_matched;
 	struct rlib_query_internal *leader;
 	GList *followers;
 	GList *followers_n_to_1;
@@ -1037,8 +1042,8 @@ void rlib_resolve_followers(rlib *r);
 void rlib_process_input_metadata(rlib *r);
 
 /***** PROTOTYPES: navigation.c ***********************************************/
+void rlib_navigate_start(rlib *r, gint resultset_num);
 gint rlib_navigate_next(rlib *r, gint resultset_num);
-gint rlib_navigate_first(rlib *r, gint resultset_num);
 gint rlib_navigate_previous(rlib *r, gint resultset_num);
 gint rlib_navigate_last(rlib *r, gint resultset_num);
 

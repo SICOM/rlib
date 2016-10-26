@@ -35,6 +35,7 @@
 struct rlib_array_results {
 	gint cols;
 	gint rows;
+	gint atstart;
 	gint isdone;
 	char **data;
 	gint current_row;
@@ -54,36 +55,35 @@ static const gchar* rlib_array_get_error(gpointer input_ptr UNUSED) {
 	return "Hard to make a mistake here.. try checking your names/spellings";
 }
 
-static gint rlib_array_first(gpointer input_ptr UNUSED, gpointer result_ptr) {
+static void rlib_array_start(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_array_results *result = result_ptr;
 
-	if (result_ptr == NULL) {
-		return FALSE;	
-	}
+	if (result == NULL)
+		return;
 
-	result->current_row = 1;
+	result->current_row = 0;
+	result->atstart = TRUE;
 	result->isdone = FALSE;
-	if (result->rows <= 1) {
-		result->isdone = TRUE;
-		return FALSE;
-	}
-	return TRUE;
 }
 
 static gint rlib_array_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_array_results *result = result_ptr;
+
+	if (result == NULL)
+		return FALSE;
+
+	if (result->isdone)
+		return FALSE;
+
 	result->current_row++;
-	result->isdone = FALSE;
-	if (result->current_row < result->rows)
-		return TRUE;
-	result->isdone = TRUE;
-	return FALSE;
+	result->isdone = (result->current_row >= result->rows);
+	return !result->isdone;
 }
 
 static gint rlib_array_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_array_results *result = result_ptr;
 
-	if(result == NULL)
+	if (result == NULL)
 		return TRUE;
 
 	return result->isdone;
@@ -91,18 +91,28 @@ static gint rlib_array_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
 
 static gint rlib_array_previous(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_array_results *result = result_ptr;
-	result->current_row--;
-	result->isdone = FALSE;
-	if(result->current_row >= 1)
-		return TRUE;
-	else
+
+	if (result == NULL)
 		return FALSE;
-	return TRUE;
+
+	if (result->atstart)
+		return FALSE;
+
+	result->current_row--;
+	result->atstart = (result->atstart >= 1);
+	result->isdone = FALSE;
+	return !result->atstart;
 }
 
 static gint rlib_array_last(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_array_results *result = result_ptr;
+
+	if (result == NULL)
+		return FALSE;
+
 	result->current_row = result->rows - 1;
+	result->atstart = (result->current_row < 1);
+	result->isdone = (result->current_row >= result->rows);
 	return TRUE;
 }
 
@@ -164,15 +174,6 @@ static void rlib_array_rlib_free_query(gpointer input_ptr UNUSED, gpointer query
 	g_free(QUERY_PRIVATE(query));
 }
 
-static guint rlib_array_result_rowcount(gpointer result_ptr) {
-	struct rlib_array_results *results = result_ptr;
-
-	if (results)
-		return results->rows;
-
-	return 0;
-}
-
 static gpointer rlib_array_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
@@ -180,7 +181,7 @@ static gpointer rlib_array_new_input_filter(rlib *r) {
 	input->r = r;
 	input->private = NULL;
 	input->input_close = rlib_array_input_close;
-	input->first = rlib_array_first;
+	input->start = rlib_array_start;
 	input->next = rlib_array_next;
 	input->previous = rlib_array_previous;
 	input->last = rlib_array_last;
@@ -194,8 +195,6 @@ static gpointer rlib_array_new_input_filter(rlib *r) {
 	input->free = rlib_array_free_input_filter;
 	input->free_result = rlib_array_rlib_free_result;
 	input->free_query = rlib_array_rlib_free_query;
-
-	input->result_rowcount = rlib_array_result_rowcount;
 
 	return input;
 }

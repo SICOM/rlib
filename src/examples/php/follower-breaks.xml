@@ -32,7 +32,35 @@
 			</Line>
 			<HorizontalLine size="4" bgcolor="'white'"/>
 		</Output>
-	</ReportHeader>
+	</ReportHeader>		
+	<Breaks>	
+		<Break name="break0" newpage="no" headernewpage="yes">
+			<BreakHeader>
+				<Output>
+					<Line>
+						<field value="group" width="20" align="left" col="1"/>					
+					</Line>
+				</Output>								
+			</BreakHeader>
+			<BreakFields>
+				<BreakField value="group"/>
+			</BreakFields>
+			<BreakFooter>
+				<Output>
+					<HorizontalLine size="4" bgcolor="'white'"/>
+					<HorizontalLine size="2" bgcolor="'black'"/>
+					<HorizontalLine size="4" bgcolor="'white'"/>
+					<Line>
+						<literal>FOOTER</literal>
+						<field value="group" width="20" align="left" col="1"/>					
+					</Line>
+					<HorizontalLine size="4" bgcolor="'white'"/>
+					<HorizontalLine size="2" bgcolor="'black'"/>
+					<HorizontalLine size="4" bgcolor="'white'"/>
+				</Output>
+			</BreakFooter>
+		</Break>
+	</Breaks>
 	<Detail>
 		<FieldHeaders>
 			<Output>

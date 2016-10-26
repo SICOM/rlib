@@ -146,7 +146,7 @@ void rlib_handle_break_headers(rlib *r, struct rlib_part *part, struct rlib_repo
 				dobreak = 0;
 			}
 		}
-		
+
 		if(dobreak) {
 			if(rb->header != NULL) {
 				cache[icache++] = rb;

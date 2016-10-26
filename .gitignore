@@ -69,8 +69,14 @@ src/examples/c/follower2
 src/examples/c/follower2.exe
 src/examples/c/follower_n_to_1
 src/examples/c/follower_n_to_1.exe
+src/examples/c/follower_n_to_1_2
+src/examples/c/follower_n_to_1_2.exe
 src/examples/c/follower_n_to_1_full_cartesian
 src/examples/c/follower_n_to_1_full_cartesian.exe
+src/examples/c/follower_n_to_1_full_cartesian2
+src/examples/c/follower_n_to_1_full_cartesian2.exe
+src/examples/c/follower_n_to_1_full_cartesian3
+src/examples/c/follower_n_to_1_full_cartesian3.exe
 src/examples/c/follower_n_to_1_vectormatch
 src/examples/c/follower_n_to_1_vectormatch.exe
 src/examples/c/follower_circular

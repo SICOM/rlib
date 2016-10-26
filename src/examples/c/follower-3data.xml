@@ -59,6 +59,8 @@
 					<literal width="1"/>
 					<field value="more_data.initials" width="5" align="left" col="3"/>
 					<literal width="1"/>
+					<field value="more_data2.initials" width="5" align="left" col="3"/>
+					<literal width="1"/>
 					<field value="iif([data.first_name;data.last_name]==[more_data.first_name;more_data.last_name],'MATCH','NO_MATCH')" width="8" align="left" col="3" />
 					<literal width="1"/>
 					<field value="iif([data.first_name;data.last_name]!=[more_data.first_name;more_data.last_name],'NO_MATCH','MATCH')" width="8" align="left" col="3" />

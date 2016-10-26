@@ -506,7 +506,7 @@ void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, gint offset) {
 				rlogit(r, "'%s'", (char *)o->value);
 			else if(o->type == OPERAND_FIELD) {
 				struct rlib_resultset_field *rf = o->value;
-				rlogit(r, "Result Set = [%d]; Field = [%d]", rf->resultset, rf->field);
+				rlogit(r, "Result Set = [%d]; Field = [%d]", rf->resultset, GPOINTER_TO_INT(rf->field));
 			} else if(o->type == OPERAND_METADATA) {
 				struct rlib_metadata *metadata = o->value;
 				rlogit(r, "METADATA ");
@@ -515,7 +515,7 @@ void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, gint offset) {
 				rlogit(r, "Result Memory Variable = [%s]", (char *)o->value);
 			} else if(o->type == OPERAND_VARIABLE) {
 				struct rlib_report_variable *rv = o->value;
-				rlogit(r, "Result Variable = [%s]", rv->xml_name);
+				rlogit(r, "Result Variable = [%s]", rv->xml_name.xml);
 			} else if(o->type == OPERAND_RLIB_VARIABLE) {
 				rlogit(r, "RLIB Variable\n");
 			} else if(o->type == OPERAND_IIF) {
@@ -1078,7 +1078,7 @@ gint execute_pcode(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs
 				break;
 			}
 		default:
-			r_error(r, "execute_pcode: Invalid instruction %d\n");
+			r_error(r, "execute_pcode: Invalid instruction %d\n", code->line_number);
 			break;
 		}
 	}

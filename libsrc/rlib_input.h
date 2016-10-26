@@ -40,7 +40,7 @@ struct input_filter {
 	gint (*connect_with_connstr)(gpointer, const gchar *);
 	gint (*input_close)(gpointer);
 	gpointer (*new_result_from_query)(gpointer, gpointer);
-	gint (*first)(gpointer, gpointer);
+	void (*start)(gpointer, gpointer);
 	gint (*next)(gpointer, gpointer);
 	gint (*previous)(gpointer, gpointer);
 	gint (*last)(gpointer, gpointer);
@@ -51,7 +51,6 @@ struct input_filter {
 	void (*free_result)(gpointer, gpointer);
 	void (*free_query)(gpointer, gpointer);
 	gint (*set_encoding)(gpointer);
-	guint (*result_rowcount)(gpointer);
 };
 
 struct rlib_query {

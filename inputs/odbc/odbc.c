@@ -54,8 +54,8 @@ struct odbc_field_values {
 struct rlib_odbc_results {
 	gchar *name;
 	gint tot_fields;
-	gint tot_rows;
 	gint total_size;
+	gint atstart;
 	gint isdone;
 	GList *data;
 	GList *navigator;
@@ -166,37 +166,33 @@ static void rlib_odbc_load_from_navigator(struct rlib_odbc_results *result) {
 		gint i=0;
 		for(data = result->navigator->data;data != NULL; data = data->next) {
 			strcpy(result->values[i++].value, data->data);
-		}	
+		}
 	}
 }
 
-static gint rlib_odbc_first(gpointer input_ptr UNUSED, gpointer result_ptr) {
+static void rlib_odbc_start(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_odbc_results *result = result_ptr;
 
-	if(result_ptr == NULL)
-		return FALSE;
+	if (result == NULL)
+		return;
 
-	result->navigator = g_list_first(result->data);
+	result->atstart = TRUE;
+	result->navigator = NULL;
 	result->isdone = FALSE;
-	rlib_odbc_load_from_navigator(result);
-	if(result->navigator == NULL)
-		return FALSE;
-	else
-		return TRUE;
 }
 
 static gint rlib_odbc_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_odbc_results *result = result_ptr;
 
-	result->navigator = g_list_next(result->navigator);
+	if (result->atstart) {
+		result->atstart = FALSE;
+		result->navigator = g_list_first(result->data);
+	} else
+		result->navigator = g_list_next(result->navigator);
 	rlib_odbc_load_from_navigator(result);
-	if(result->navigator == NULL) {
-		result->isdone = TRUE;
-		return FALSE;
-	} else {
-		result->isdone = FALSE;
-		return TRUE;
-	}
+
+	result->isdone = (result->navigator == NULL);
+	return !result->isdone;
 }
 
 static gint rlib_odbc_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
@@ -234,8 +230,11 @@ static gint rlib_odbc_last(gpointer input_ptr UNUSED, gpointer result_ptr) {
 static gchar * rlib_odbc_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_odbc_results *results = result_ptr;
 	struct odbc_fields *the_field = field_ptr;
-	gint field = the_field->col;
-	return results->values[field].value;
+
+	if (results == NULL || results->atstart || results->isdone)
+		return "";
+
+	return results->values[the_field->col].value;
 }
 
 static gpointer rlib_odbc_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) {
@@ -294,7 +293,6 @@ gpointer odbc_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	
 	results->tot_fields = ncols;
 	results->data = NULL;
-	results->tot_rows = 0;
 	
 	results->data = NULL;
 	if (SQL_SUCCEEDED((V_OD_erg = SQLFetchScroll(V_OD_hstmt, SQL_FETCH_NEXT, 0)))) {
@@ -313,7 +311,6 @@ gpointer odbc_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 			}
 
 			results->data = g_list_append(results->data, row_data);
-			results->tot_rows++;
 
 		} while(SQL_SUCCEEDED((V_OD_erg = SQLFetchScroll(V_OD_hstmt, SQL_FETCH_NEXT, 0))));
 	}
@@ -361,15 +358,6 @@ static const gchar * rlib_odbc_get_error(gpointer input_ptr UNUSED) {
 	return "No error information";
 }
 
-static guint rlib_odbc_result_rowcount(gpointer result_ptr) {
-	struct rlib_odbc_results *results = result_ptr;
-
-	if (result_ptr)
-		return results->tot_rows;
-
-	return 0;
-}
-
 #ifdef HAVE_ODBC_BUILTIN
 gpointer rlib_odbc_new_input_filter(rlib *r) {
 #else
@@ -381,7 +369,7 @@ DLL_EXPORT_SYM gpointer new_input_filter(rlib *r) {
 	input->r = r;
 	input->connect_local_with_credentials = rlib_odbc_connect;
 	input->input_close = rlib_odbc_input_close;
-	input->first = rlib_odbc_first;
+	input->start = rlib_odbc_start;
 	input->next = rlib_odbc_next;
 	input->previous = rlib_odbc_previous;
 	input->last = rlib_odbc_last;
@@ -394,8 +382,6 @@ DLL_EXPORT_SYM gpointer new_input_filter(rlib *r) {
 
 	input->free = rlib_odbc_free_input_filter;
 	input->free_result = rlib_odbc_rlib_free_result;
-
-	input->result_rowcount = rlib_odbc_result_rowcount;
 
 	return input;
 }

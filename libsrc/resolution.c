@@ -581,11 +581,11 @@ void rlib_process_input_metadata(rlib *r) {
 void rlib_resolve_followers(rlib *r) {
 	gint i;
 	for (i = 0; i < r->queries_count; i++) {
-		GList *list = r->queries[i]->followers;
-		GList *list0 = list;
+		GList *list0, *list;
 		GList *new_f = NULL, *new_f_n_to_1 = NULL;
 
-		for (list = r->queries[i]->followers; list; list = list->next) {
+		list0 = r->queries[i]->followers;
+		for (list = list0; list; list = list->next) {
 			struct rlib_resultset_followers *f = list->data;
 
 			if (f->leader_field && f->follower_field) {

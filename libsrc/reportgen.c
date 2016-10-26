@@ -203,18 +203,24 @@ gint rlib_end_page_if_line_wont_fit(rlib *r, struct rlib_part *part, struct rlib
 }
 
 gint rlib_fetch_first_rows(rlib *r) {
+#if 0
 	gint i;
 	gint result = TRUE;
-	for(i=0;i<r->queries_count;i++) {
+	for (i = 0; i < r->queries_count; i++) {
 		if(r->results[i]->result == NULL) {
 			result = FALSE;
 		} else {
-			if(rlib_navigate_first(r, i) == FALSE) {
+			rlib_navigate_start(r, i);
+			if(rlib_navigate_next(r, i) == FALSE) {
 				result = FALSE;
 			}
 		}
 	}
 	return result;
+#else
+	rlib_navigate_start(r, r->current_result);
+	return rlib_navigate_next(r, r->current_result);
+#endif
 }
 
 static void rlib_evaluate_report_attributes(rlib *r, struct rlib_report *report) {
@@ -310,7 +316,8 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 
 	if (!part->has_only_one_report) {
 		if (variabls_needs_precalculate(report)) {
-			rlib_navigate_first(r, r->current_result);
+			rlib_navigate_start(r, r->current_result);
+			rlib_navigate_next(r, r->current_result);
 			rlib_variables_precalculate(r, part, report);
 		}
 	}
@@ -320,7 +327,7 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 		rlib_resolve_report_fields(r, part, report);
 
 	for (iterations = 0; iterations < report->iterations; iterations++) {
-		if (r->queries_count <= 0 || INPUT(r,r->current_result)->first(INPUT(r,r->current_result), r->results[r->current_result]->result) == FALSE) {
+		if (r->queries_count <= 0) {
 			rlib_evaluate_report_attributes(r, report);
 			if (report->suppress == TRUE) {
 				OUTPUT(r)->end_report(r, part, report);
@@ -335,7 +342,9 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 			rlib_layout_report_output(r, part, report, report->alternate, FALSE, TRUE);
 			OUTPUT(r)->end_report_no_data(r, part, report);
 		} else {
-			rlib_navigate_first(r, r->current_result);
+			INPUT(r,r->current_result)->start(INPUT(r,r->current_result), r->results[r->current_result]->result);
+			rlib_navigate_start(r, r->current_result);
+			rlib_navigate_next(r, r->current_result);
 			if (!part->has_only_one_report) {
 				init_variables(report);
 				rlib_process_variables(r, report, FALSE);
@@ -391,9 +400,10 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 				}
 			} else {
 				rlib_fetch_first_rows(r);
-				
+
 				/* We go first AGAIN on the real result set because it might have n to 1 followes it needs to align */
-				rlib_navigate_first(r, r->current_result);
+				rlib_navigate_start(r, r->current_result);
+				rlib_navigate_next(r, r->current_result);
 				if(!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
 					while (1) {
 						gint output_count = 0;
@@ -403,11 +413,11 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 								OUTPUT(r)->start_tr(r);
 							}*/
 						}
-						
-						if(!processed_variables) {
+
+						if (!processed_variables) {
 							rlib_process_variables(r, report, FALSE);
 						}
-						
+
 						rlib_break_evaluate_attributes(r, report);
 						rlib_handle_break_headers(r, part, report, FALSE);
 
@@ -653,7 +663,8 @@ gint rlib_evaulate_single_report_variables(rlib *r, struct rlib_part *part) {
 				rlib_pcode_free(r, report->query_code);
 
 				if(variabls_needs_precalculate(report)) {
-					rlib_navigate_first(r, r->current_result);
+					rlib_navigate_start(r, r->current_result);
+					rlib_navigate_next(r, r->current_result);
 					rlib_variables_precalculate(r, part, report);
 				}
 

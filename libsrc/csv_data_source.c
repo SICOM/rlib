@@ -38,6 +38,7 @@
 
 struct rlib_csv_results {
 	gchar *contents;
+	gint atstart;
 	gint isdone;
 	gint rows;
 	GSList *header;
@@ -62,74 +63,79 @@ static const gchar* rlib_csv_get_error(gpointer input_ptr) {
 	return INPUT_PRIVATE(input)->error;
 }
 
-
-static gint rlib_csv_first(gpointer input_ptr UNUSED, gpointer result_ptr) {
+static void rlib_csv_start(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_csv_results *result = result_ptr;
 
-	if(result == NULL)
-		return FALSE;
+	if (result == NULL)
+		return;
 
-	result->navigator = g_list_first(result->detail);
+	result->navigator = NULL;
+	result->atstart = TRUE;
 	result->isdone = FALSE;
-	if(result->navigator == NULL)
-		return FALSE;
-	else
-		return TRUE;
 }
 
 static gint rlib_csv_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_csv_results *result = result_ptr;
 
-	result->navigator = g_list_next(result->navigator);
-	if(result->navigator == NULL) {
-		result->isdone = TRUE;
+	if (result == NULL)
 		return FALSE;
-	} else {
-		result->isdone = FALSE;
-		return TRUE;
-	}
+
+	if (result->atstart) {
+		result->atstart = FALSE;
+		result->navigator = result->detail;
+	} else
+		result->navigator = g_list_next(result->navigator);
+
+	result->isdone = (result->navigator == NULL);
+	return !result->isdone;
 }
 
 static gint rlib_csv_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_csv_results *result = result_ptr;
+
+	if (result == NULL)
+		return FALSE;
+
 	return result->isdone;
 }
 
 static gint rlib_csv_previous(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_csv_results *result = result_ptr;
-	result->navigator = g_list_previous(result->navigator);
-	if(result->navigator == NULL) {
-		result->isdone = TRUE;
+
+	if (result == NULL)
 		return FALSE;
-	} else {
-		result->isdone = FALSE;
-		return TRUE;
-	}
+
+	if (result->atstart)
+		return FALSE;
+
+	result->navigator = g_list_previous(result->navigator);
+	result->atstart = (result->navigator == NULL);
+	return !result->atstart;
 }
 
 static gint rlib_csv_last(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_csv_results *result = result_ptr;
 
-	result->navigator = g_list_last(result->navigator);
-	result->isdone = TRUE;
-	if(result->navigator == NULL) {
-		return FALSE;
-	} else {
-		return TRUE;
-	}
+	result->navigator = g_list_last(result->detail);
+	result->isdone = (result->navigator == NULL);
+	return !result->isdone;
 }
 
 static gchar * rlib_csv_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_csv_results *results = result_ptr;
 	gint i = 1;
 	GSList *data;
-	if(results->navigator != NULL) {
-		for(data = results->navigator->data; data != NULL; data = data->next) {
-			if(GPOINTER_TO_INT(field_ptr) == i) {
-				return (gchar *)data->data;			
-			}
-			i++;
-		}	
+
+	if (results == NULL)
+		return "";
+
+	if (results->navigator == NULL)
+		return "";
+
+	for (data = results->navigator->data; data != NULL; data = data->next) {
+		if (GPOINTER_TO_INT(field_ptr) == i)
+			return (gchar *)data->data;
+		i++;
 	}
 
 	return "";
@@ -137,7 +143,7 @@ static gchar * rlib_csv_get_field_value_as_string(gpointer input_ptr UNUSED, gpo
 
 static gpointer rlib_csv_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) { 
 	struct rlib_csv_results *results = result_ptr;
-	gint i=1;
+	gint i = 1;
 	GSList *data;
 
 	if(results != NULL && results->header != NULL) {
@@ -267,15 +273,6 @@ static gint rlib_csv_free_input_filter(gpointer input_ptr){
 	return 0;
 }
 
-static guint rlib_csv_result_rowcount(gpointer result_ptr) {
-	struct rlib_csv_results *results = result_ptr;
-
-	if (results)
-		return results->rows;
-
-	return 0;
-}
-
 gpointer rlib_csv_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
@@ -284,7 +281,7 @@ gpointer rlib_csv_new_input_filter(rlib *r) {
 	input->private = g_malloc0(sizeof(struct _private));
 	input->connect_with_connstr = rlib_csv_connect;
 	input->input_close = rlib_csv_input_close;
-	input->first = rlib_csv_first;
+	input->start = rlib_csv_start;
 	input->next = rlib_csv_next;
 	input->previous = rlib_csv_previous;
 	input->last = rlib_csv_last;
@@ -295,7 +292,6 @@ gpointer rlib_csv_new_input_filter(rlib *r) {
 	input->resolve_field_pointer = rlib_csv_resolve_field_pointer;
 	input->free = rlib_csv_free_input_filter;
 	input->free_result = rlib_csv_rlib_free_result;
-	input->result_rowcount = rlib_csv_result_rowcount;
 	return input;
 }
  
