@@ -228,10 +228,10 @@ gfloat rlib_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, g
 gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left_margin_offset, gfloat *top_margin_offset);
 
 /* Console messages */
-void rlogit(rlib *r, const gchar *fmt, ...);
-void r_debug(rlib *r, const gchar *fmt, ...);
-void r_info(rlib *r, const gchar *fmt, ...);
-void r_warning(rlib *r, const gchar *fmt, ...);
-void r_error(rlib *r, const gchar *fmt, ...);
+void rlogit(rlib *r, const gchar *fmt, ...) __attribute__ ((format (printf, 2, 3)));
+void r_debug(rlib *r, const gchar *fmt, ...) __attribute__ ((format (printf, 2, 3)));
+void r_info(rlib *r, const gchar *fmt, ...) __attribute__ ((format (printf, 2, 3)));
+void r_warning(rlib *r, const gchar *fmt, ...) __attribute__ ((format (printf, 2, 3)));
+void r_error(rlib *r, const gchar *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 
 #endif /* RLIB_H_ */
