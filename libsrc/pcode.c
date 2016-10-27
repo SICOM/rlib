@@ -891,7 +891,8 @@ DLL_EXPORT_SYM struct rlib_value *rlib_value_stack_pop(struct rlib_value_stack *
 		return &vs->values[--vs->count];
 	}
 }
-struct rlib_value * rlib_value_new(struct rlib_value *rval, gint type, gint free_, gpointer value) {
+
+struct rlib_value *rlib_value_new(struct rlib_value *rval, gint type, gint free_, gpointer value) {
 	rval->type = type;
 	rval->free = free_;
 
@@ -909,7 +910,7 @@ struct rlib_value * rlib_value_new(struct rlib_value *rval, gint type, gint free
 	return rval;
 }
 
-struct rlib_value * rlib_value_dup(struct rlib_value *orig) {
+struct rlib_value *rlib_value_dup(struct rlib_value *orig) {
 	struct rlib_value *new;
 	new = g_malloc(sizeof(struct rlib_value));
 	memcpy(new, orig, sizeof(struct rlib_value));
@@ -918,7 +919,7 @@ struct rlib_value * rlib_value_dup(struct rlib_value *orig) {
 	return new;
 }
 
-struct rlib_value * rlib_value_dup_contents(struct rlib_value *rval) {
+struct rlib_value *rlib_value_dup_contents(struct rlib_value *rval) {
 	if(rval->type == RLIB_VALUE_STRING) {
 		rval->string_value = g_strdup(rval->string_value);
 		rval->free = TRUE;
@@ -945,32 +946,32 @@ DLL_EXPORT_SYM gint rlib_value_free(struct rlib_value *rval) {
 	return FALSE;
 }
 
-DLL_EXPORT_SYM struct rlib_value * rlib_value_new_number(struct rlib_value *rval, gint64 value) {
+DLL_EXPORT_SYM struct rlib_value *rlib_value_new_number(struct rlib_value *rval, gint64 value) {
 	rval->type = RLIB_VALUE_NUMBER;
 	rval->free = FALSE;
 	rval->number_value = value;
 	return rval;
 }
 
-DLL_EXPORT_SYM struct rlib_value * rlib_value_new_string(struct rlib_value *rval, const gchar *value) {
+DLL_EXPORT_SYM struct rlib_value *rlib_value_new_string(struct rlib_value *rval, const gchar *value) {
 	return rlib_value_new(rval, RLIB_VALUE_STRING, TRUE, g_strdup(value));
 }
 
-DLL_EXPORT_SYM struct rlib_value * rlib_value_new_date(struct rlib_value *rval, struct rlib_datetime *date) {
+DLL_EXPORT_SYM struct rlib_value *rlib_value_new_date(struct rlib_value *rval, struct rlib_datetime *date) {
 	return rlib_value_new(rval, RLIB_VALUE_DATE, FALSE, date);
 }
 
-DLL_EXPORT_SYM struct rlib_value * rlib_value_new_vector(struct rlib_value *rval, GSList *vector) {
+DLL_EXPORT_SYM struct rlib_value *rlib_value_new_vector(struct rlib_value *rval, GSList *vector) {
 	return rlib_value_new(rval, RLIB_VALUE_VECTOR, TRUE, vector);
 }
 
-DLL_EXPORT_SYM struct rlib_value * rlib_value_new_error(struct rlib_value *rval) {
+DLL_EXPORT_SYM struct rlib_value *rlib_value_new_error(struct rlib_value *rval) {
 	return rlib_value_new(rval, RLIB_VALUE_ERROR, FALSE, NULL);
 }
 
 /*
-	The RLIB SYMBOL TABLE is a bit commplicated because of all the datasources and internal variables
-*/
+ * The RLIB SYMBOL TABLE is a bit commplicated because of all the datasources and internal variables
+ */
 struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, struct rlib_pcode_operand *o, struct rlib_value *this_field_value) {
 	struct rlib_report_variable *rv = NULL;
 
@@ -981,7 +982,25 @@ struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, stru
 	} else if (o->type == OPERAND_DATE) {
 		return rlib_value_new(rval, RLIB_VALUE_DATE, FALSE, o->value);
 	} else if (o->type == OPERAND_FIELD) {
-		return rlib_value_new(rval, RLIB_VALUE_STRING, TRUE, rlib_resolve_field_value(r, o->value));
+		struct rlib_resultset_field *rf = o->value;
+		struct rlib_results *rs = r->results[rf->resultset];
+		gchar *field_value;
+
+		if (r->use_cached_data) {
+			struct rlib_value *rval2 = g_hash_table_lookup(rs->cached_values, rf->field);
+
+			r_warning(r, "rlib_operand_get_value CACHED\n");
+
+			if (rval2)
+				return rval2;
+		}
+
+		field_value = rlib_resolve_field_value(r, rf);
+		rval = rlib_value_new(rval, RLIB_VALUE_STRING, TRUE, field_value);
+
+		g_hash_table_replace(rs->cached_values, rf->field, rlib_value_dup(rval));
+
+		return rval;
 	} else if (o->type == OPERAND_METADATA) {
 		struct rlib_metadata *metadata = o->value;
 		*rval = metadata->rval_formula;
@@ -1013,9 +1032,7 @@ struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, stru
 		struct rlib_value *count;
 		struct rlib_value *amount;
 
-
 		rv = o->value;
-
 
 		count = &RLIB_VARIABLE_CA(rv)->count;
 		amount = &RLIB_VARIABLE_CA(rv)->amount;
@@ -1051,8 +1068,9 @@ struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, stru
 	} else if(o->type == OPERAND_VECTOR) {
 		return rlib_value_new(rval, RLIB_VALUE_VECTOR, FALSE, o->value);
 	}
+
 	rlib_value_new(rval, RLIB_VALUE_ERROR, FALSE, NULL);
-	return 0;
+	return NULL;
 }
 
 gint execute_pcode(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gboolean show_stack_errors) {

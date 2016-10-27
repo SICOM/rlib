@@ -606,6 +606,7 @@ void rlib_free_results(rlib *r) {
 	for (i = 0; i < r->queries_count; i++) {
 		if (r->results[i]->result && INPUT(r, i)->free_result)
 			INPUT(r, i)->free_result(INPUT(r, i), r->results[i]->result);
+		g_hash_table_destroy(r->results[i]->cached_values);
 		r->results[i]->result = NULL;
 	}
 }

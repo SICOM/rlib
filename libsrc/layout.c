@@ -1317,6 +1317,9 @@ gfloat layout_get_page_width(struct rlib_part *part) {
 
 void rlib_layout_report_footer(rlib *r, struct rlib_part *part, struct rlib_report *report) {
 	gint i;
+
+	r->use_cached_data++;
+
 	if(report->report_footer != NULL) {
 		for(i=0;i<report->pages_across;i++)
 			rlib_end_page_if_line_wont_fit(r, part, report, report->report_footer);
@@ -1324,6 +1327,8 @@ void rlib_layout_report_footer(rlib *r, struct rlib_part *part, struct rlib_repo
 		rlib_layout_report_output(r, part, report, report->report_footer, FALSE, FALSE);
 		OUTPUT(r)->end_report_footer(r, part, report);
 	}
+
+	r->use_cached_data--;
 }
 
 

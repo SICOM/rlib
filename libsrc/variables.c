@@ -194,7 +194,9 @@ void rlib_variables_precalculate(rlib *r, struct rlib_part *part, struct rlib_re
 			}
 
 			if (rlib_navigate_next(r, r->current_result) == FALSE) {
+				/* TODO fix this
 				rlib_navigate_last(r, r->current_result);
+				 */
 				rlib_handle_break_footers(r, part, report, TRUE);
 				break;
 			}

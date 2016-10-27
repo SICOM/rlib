@@ -87,6 +87,11 @@ DLL_EXPORT_SYM rlib *rlib_init(void) {
 	return rlib_init_with_environment(NULL);
 }
 
+static void rlib_cached_rval_destroy(gpointer data) {
+	rlib_value_free(data);
+	g_free(data);
+}
+
 DLL_EXPORT_SYM struct rlib_query *rlib_alloc_query_space(rlib *r) {
 	struct rlib_query_internal *query = NULL;
 	struct rlib_results *result = NULL;
@@ -125,6 +130,14 @@ DLL_EXPORT_SYM struct rlib_query *rlib_alloc_query_space(rlib *r) {
 	result = g_malloc0(sizeof(struct rlib_results));
 
 	if (query == NULL || result == NULL) {
+		g_free(query);
+		g_free(result);
+		r_error(r, "rlib_alloc_query_space: Out of memory!\n");
+		return NULL;
+	}
+
+	result->cached_values = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, rlib_cached_rval_destroy);
+	if (result->cached_values == NULL) {
 		g_free(query);
 		g_free(result);
 		r_error(r, "rlib_alloc_query_space: Out of memory!\n");
@@ -752,6 +765,11 @@ static gint rlib_add_resultset_follower_common(rlib *r, gchar *leader, gchar *le
 	f->follower_field = g_strdup(follower_field);
 
 	r->queries[leader_idx]->followers = g_list_append(r->queries[leader_idx]->followers, f);
+
+	if (f->leader_field && f->follower_field)
+		r->queries[leader_idx]->fcount_n1++;
+	else
+		r->queries[leader_idx]->fcount++;
 
 	return 0;
 }

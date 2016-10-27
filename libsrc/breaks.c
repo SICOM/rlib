@@ -70,6 +70,9 @@ static void rlib_print_break_footer_output(rlib *r, struct rlib_part *part, stru
 	
 	if(!OUTPUT(r)->do_breaks)
 		return;
+
+	r->use_cached_data++;
+
 	if(rb->didheader) {
 		for(i=0;i<report->pages_across;i++) {
 			OUTPUT(r)->set_working_page(r, part, i);
@@ -82,6 +85,8 @@ static void rlib_print_break_footer_output(rlib *r, struct rlib_part *part, stru
 			OUTPUT(r)->end_report_break_footer(r, part, report, rb);
 		}
 	}
+
+	r->use_cached_data--;
 }
 
 gboolean rlib_force_break_headers(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean precalculate) {
@@ -230,8 +235,10 @@ static void rlib_break_all_below_in_reverse_order(rlib *r, struct rlib_part *par
 			if (precalculate == FALSE)
 				did_end_page = rlib_end_page_if_line_wont_fit(r, part, report, rb->footer);
 
+			/* TODO GET ID OF THIS
 			if (!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result))
 				rlib_navigate_previous(r, r->current_result);
+			*/
 
 			if (precalculate == FALSE) {
 				rlib_process_expression_variables(r, report);
@@ -273,6 +280,9 @@ void rlib_handle_break_footers(rlib *r, struct rlib_part *part, struct rlib_repo
 
 	if(report->breaks == NULL)
 		return;
+
+	r->use_cached_data++;
+
 	for (e = report->breaks; e != NULL; e = e->next) {
 		gint dobreak = 1;
 		struct rlib_report_break *rb = e->data;
@@ -302,8 +312,9 @@ void rlib_handle_break_footers(rlib *r, struct rlib_part *part, struct rlib_repo
 			rlib_break_all_below_in_reverse_order(r, part, report, e, precalculate);
 			break;
 		}
-				
 	}
+
+	r->use_cached_data--;
 }
 
 void rlib_break_evaluate_attributes(rlib *r, struct rlib_report *report) {

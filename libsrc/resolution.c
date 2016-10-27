@@ -579,7 +579,14 @@ void rlib_process_input_metadata(rlib *r) {
 }
 
 void rlib_resolve_followers(rlib *r) {
-	gint i;
+	gint i, reattached;
+
+	/*
+	 * Separate the followers list that was easier
+	 * to check in rlib_add_resultset_follower_n_to_1() and
+	 * rlib_add_resultset_follower() as a tree into two lists:
+	 * the 1:1 followers and n:1 followers_n_to_1 lists.
+	 */
 	for (i = 0; i < r->queries_count; i++) {
 		GList *list0, *list;
 		GList *new_f = NULL, *new_f_n_to_1 = NULL;
@@ -600,5 +607,48 @@ void rlib_resolve_followers(rlib *r) {
 		r->queries[i]->followers_n_to_1 = new_f_n_to_1;
 
 		g_list_free(list0);
+	}
+
+	/*
+	 * Flatten followers as much as possible,
+	 * A leader -> 1:1 -> (anything) chain is equivalent to
+	 * keeping the leader -> 1:1 chain and move leafs under
+	 * the 1:1 child follower to the leader.
+	 */
+	reattached = TRUE;
+	while (reattached) {
+		reattached = FALSE;
+		for (i = r->queries_count; i; i--) {
+			struct rlib_query_internal *leader = r->queries[i - 1]->leader;
+			if (leader) {
+				GList *list, *list1;
+				for (list = leader->followers; list; list = list->next) {
+					struct rlib_resultset_followers *f = list->data;
+					struct rlib_query_internal *follower = r->queries[f->follower];
+
+					for (list1 = follower->followers; list1; list1 = list1->next) {
+						struct rlib_resultset_followers *f1 = list1->data;
+						struct rlib_query_internal *follower1 = r->queries[f1->follower];
+
+						f1->leader = leader->query_index;
+						follower1->leader = leader;
+						reattached = TRUE;
+					}
+					leader->followers = g_list_concat(leader->followers, follower->followers);
+					follower->followers = NULL;
+
+					for (list1 = follower->followers_n_to_1; list1; list1 = list1->next) {
+						struct rlib_resultset_followers *f1 = list1->data;
+						struct rlib_query_internal *follower1 = r->queries[f1->follower];
+
+						f1->leader = leader->query_index;
+						follower1->leader = leader;
+						reattached = TRUE;
+					}
+					leader->followers_n_to_1 = g_list_concat(leader->followers_n_to_1, follower->followers_n_to_1);
+					follower->followers_n_to_1 = NULL;
+				}
+			}
+		}
 	}
 }

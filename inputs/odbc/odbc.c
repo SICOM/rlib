@@ -200,33 +200,6 @@ static gint rlib_odbc_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	return result->isdone;
 }
 
-static gint rlib_odbc_previous(gpointer input_ptr UNUSED, gpointer result_ptr) {
-	struct rlib_odbc_results *result = result_ptr;
-
-	result->navigator = g_list_previous(result->navigator);
-	rlib_odbc_load_from_navigator(result);
-	if(result->navigator == NULL) {
-		result->isdone = TRUE;
-		return FALSE;
-	} else {
-		result->isdone = FALSE;
-		return TRUE;
-	}
-}
-
-static gint rlib_odbc_last(gpointer input_ptr UNUSED, gpointer result_ptr) {
-	struct rlib_odbc_results *result = result_ptr;
-
-	result->navigator = g_list_last(result->navigator);
-	rlib_odbc_load_from_navigator(result);
-	result->isdone = TRUE;
-	if(result->navigator == NULL) {
-		return FALSE;
-	} else {
-		return TRUE;
-	}
-}
-
 static gchar * rlib_odbc_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_odbc_results *results = result_ptr;
 	struct odbc_fields *the_field = field_ptr;
@@ -371,8 +344,6 @@ DLL_EXPORT_SYM gpointer new_input_filter(rlib *r) {
 	input->input_close = rlib_odbc_input_close;
 	input->start = rlib_odbc_start;
 	input->next = rlib_odbc_next;
-	input->previous = rlib_odbc_previous;
-	input->last = rlib_odbc_last;
 	input->isdone = rlib_odbc_isdone;
 	input->new_result_from_query = odbc_new_result_from_query;
 	input->get_field_value_as_string = rlib_odbc_get_field_value_as_string;

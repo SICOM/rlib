@@ -42,8 +42,6 @@ struct input_filter {
 	gpointer (*new_result_from_query)(gpointer, gpointer);
 	void (*start)(gpointer, gpointer);
 	gint (*next)(gpointer, gpointer);
-	gint (*previous)(gpointer, gpointer);
-	gint (*last)(gpointer, gpointer);
 	gint (*isdone)(gpointer, gpointer);
 	const gchar * (*get_error)(gpointer);
 	gchar * (*get_field_value_as_string)(gpointer, gpointer, gpointer);

@@ -453,7 +453,6 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 						rlib_emit_signal(r, RLIB_SIGNAL_ROW_CHANGE);
 
 						if(rlib_navigate_next(r, r->current_result) == FALSE) {
-							rlib_navigate_last(r, r->current_result);
 							rlib_handle_break_footers(r, part, report, FALSE);
 							break;
 						} 
@@ -483,7 +482,6 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 						}						
 					}
 				}
-				rlib_navigate_last(r, r->current_result);
 				rlib_layout_report_footer(r, part, report);
 			}
 		}

@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
 	rlib_add_query_array_as(r, "local_array", more_data, 4, 3, "more_data");
 	rlib_add_resultset_follower(r, "data", "more_data");
 	rlib_add_query_array_as(r, "local_array", more_data, 4, 3, "more_data2");
-	rlib_add_resultset_follower_n_to_1(r, "more_data", "mode_data.last_name", "more_data2", "more_data2.last_name");
+	rlib_add_resultset_follower_n_to_1(r, "more_data", "more_data.last_name", "more_data2", "more_data2.last_name");
 	rlib_add_report(r, "follower-3data.xml");
 	rlib_set_output_format_from_text(r, argv[1]);
 	rlib_execute(r);

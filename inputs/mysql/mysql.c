@@ -182,46 +182,6 @@ static gint rlib_mysql_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
 		return TRUE;
 }
 
-static gint rlib_mysql_previous(gpointer input_ptr UNUSED, gpointer result_ptr) {
-	struct rlib_mysql_results *result = result_ptr;
-	struct rlib_query *query;
-
-	if (!result)
-		return FALSE;
-
-	if (result->atstart)
-		return FALSE;
-
-	query = result->query;
-
-	result->current_row--;
-	result->atstart = (result->current_row == (guint)-1);
-	if (result->atstart)
-		return FALSE;
-	mysql_data_seek(QUERY_PRIVATE(query)->result, result->current_row);
-	result->this_row = mysql_fetch_row(QUERY_PRIVATE(query)->result);
-	return TRUE;
-}
-
-static gint rlib_mysql_last(gpointer input_ptr UNUSED, gpointer result_ptr UNUSED) {
-	struct rlib_mysql_results *result = result_ptr;
-	struct rlib_query *query;
-
-	if (!result)
-		return FALSE;
-
-	if (result->current_row <= 0)
-		return FALSE;
-
-	query = result->query;
-
-	result->current_row = result->rows - 1;
-	mysql_data_seek(QUERY_PRIVATE(query)->result, result->current_row);
-	result->this_row = mysql_fetch_row(QUERY_PRIVATE(query)->result);
-	result->isdone = (result->this_row == NULL);
-	return !result->isdone;
-}
-
 static gchar *rlib_mysql_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_mysql_results *result = result_ptr;
 	gint field = GPOINTER_TO_INT(field_ptr);
@@ -329,8 +289,6 @@ DLL_EXPORT_SYM gpointer new_input_filter(rlib *r) {
 	input->input_close = rlib_mysql_input_close;
 	input->start = rlib_mysql_start;
 	input->next = rlib_mysql_next;
-	input->previous = rlib_mysql_previous;
-	input->last = rlib_mysql_last;
 	input->isdone = rlib_mysql_isdone;
 	input->get_error = rlib_mysql_get_error;
 	input->new_result_from_query = mysql_new_result_from_query;

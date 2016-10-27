@@ -29,6 +29,8 @@ noinst_PROGRAMS = \
 	follower_n_to_1_full_cartesian2 \
 	follower_n_to_1_full_cartesian3 \
 	follower_n_to_1_vectormatch \
+	follower_n_to_1_then_1_to_1 \
+	follower_1_to_1_then_n_to_1 \
 	follower_circular
 
 AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc

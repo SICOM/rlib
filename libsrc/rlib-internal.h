@@ -187,6 +187,12 @@ struct rlib_results {
 	gboolean next_failed;
 	gboolean navigation_failed;
 	struct input_filter *input;
+	/*
+	 * Hash of struct rlib_value values,
+	 * the hash key is the "gpointer field"
+	 * from struct rlib_resultset_field
+	 */
+	GHashTable *cached_values;
 };
 
 struct rlib_line_extra_data {
@@ -768,6 +774,8 @@ struct rlib_query_internal {
 	gint n_to_1_empty;	/* shortcut to track 0-row resultsets */
 	gint n_to_1_started;/* track rows in n:1 followers */
 	gint n_to_1_matched;
+	gint fcount;
+	gint fcount_n1;
 	struct rlib_query_internal *leader;
 	GList *followers;
 	GList *followers_n_to_1;
@@ -795,17 +803,17 @@ struct rlib {
 
 	struct rlib_signal_functions signal_functions[RLIB_SIGNALS];
 
-	struct rlib_query_internal **queries;
+	gint parts_count;
+	struct rlib_rip_reports reportstorun[RLIB_MAXIMUM_REPORTS];
+	struct rlib_part *parts[RLIB_MAXIMUM_REPORTS];
 
 	gint queries_count;
-	struct rlib_rip_reports reportstorun[RLIB_MAXIMUM_REPORTS];
-	GSList *search_paths;
+	gint current_result;
+	gint use_cached_data;
+	struct rlib_query_internal **queries;
 	struct rlib_results **results;
 
-	struct rlib_part *parts[RLIB_MAXIMUM_REPORTS];
-	gint parts_count;
-
-	gint current_result;
+	GSList *search_paths;
 
 	gint format;
 	gint inputs_count;
@@ -1044,8 +1052,6 @@ void rlib_process_input_metadata(rlib *r);
 /***** PROTOTYPES: navigation.c ***********************************************/
 void rlib_navigate_start(rlib *r, gint resultset_num);
 gint rlib_navigate_next(rlib *r, gint resultset_num);
-gint rlib_navigate_previous(rlib *r, gint resultset_num);
-gint rlib_navigate_last(rlib *r, gint resultset_num);
 
 /***** PROTOTYPES: environment.c **********************************************/
 void rlib_new_c_environment(rlib *r);

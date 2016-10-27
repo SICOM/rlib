@@ -33,6 +33,7 @@
 #define QUERY_PRIVATE(query) (((struct _query_private *)query->private))
 
 struct rlib_array_results {
+	gchar *name;
 	gint cols;
 	gint rows;
 	gint atstart;
@@ -75,6 +76,7 @@ static gint rlib_array_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	if (result->isdone)
 		return FALSE;
 
+	result->atstart = FALSE;
 	result->current_row++;
 	result->isdone = (result->current_row >= result->rows);
 	return !result->isdone;
@@ -89,37 +91,11 @@ static gint rlib_array_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	return result->isdone;
 }
 
-static gint rlib_array_previous(gpointer input_ptr UNUSED, gpointer result_ptr) {
-	struct rlib_array_results *result = result_ptr;
-
-	if (result == NULL)
-		return FALSE;
-
-	if (result->atstart)
-		return FALSE;
-
-	result->current_row--;
-	result->atstart = (result->atstart >= 1);
-	result->isdone = FALSE;
-	return !result->atstart;
-}
-
-static gint rlib_array_last(gpointer input_ptr UNUSED, gpointer result_ptr) {
-	struct rlib_array_results *result = result_ptr;
-
-	if (result == NULL)
-		return FALSE;
-
-	result->current_row = result->rows - 1;
-	result->atstart = (result->current_row < 1);
-	result->isdone = (result->current_row >= result->rows);
-	return TRUE;
-}
-
 static gchar *rlib_array_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_array_results *result = result_ptr;
 	int which_field = GPOINTER_TO_INT(field_ptr) - 1;
-	if (result->rows <= 1 || result->current_row >= result->rows)
+
+	if (result == NULL || result->atstart || result->isdone)
 		return "";
 
 	return result->data[(result->current_row * result->cols) + which_field];
@@ -152,6 +128,7 @@ static void *rlib_array_new_result_from_query(gpointer input_ptr UNUSED, gpointe
 	if (result == NULL)
 		return NULL;
 
+	result->name = query->name;
 	result->rows = QUERY_PRIVATE(query)->rows;
 	result->cols = QUERY_PRIVATE(query)->cols;
 	result->data = QUERY_PRIVATE(query)->data;
@@ -183,8 +160,6 @@ static gpointer rlib_array_new_input_filter(rlib *r) {
 	input->input_close = rlib_array_input_close;
 	input->start = rlib_array_start;
 	input->next = rlib_array_next;
-	input->previous = rlib_array_previous;
-	input->last = rlib_array_last;
 	input->get_error = rlib_array_get_error;
 	input->isdone = rlib_array_isdone;
 	input->new_result_from_query = rlib_array_new_result_from_query;

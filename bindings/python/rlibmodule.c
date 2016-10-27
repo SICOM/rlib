@@ -401,31 +401,6 @@ static gint rlib_python_array_isdone(gpointer input_ptr UNUSED, gpointer result_
 	return result->isdone;
 }
 
-static gint rlib_python_array_previous(gpointer input_ptr UNUSED, gpointer result_ptr) {
-	struct rlib_python_array_results *result = result_ptr;
-
-	if (result == NULL)
-		return FALSE;
-
-	if (result->atstart)
-		return FALSE;
-
-	result->current_row--;
-	result->atstart = (result->current_row < 1);
-	result->isdone = FALSE;
-	return !result->atstart;
-}
-
-static gint rlib_python_array_last(gpointer input_ptr UNUSED, gpointer result_ptr) {
-	struct rlib_python_array_results *result = result_ptr;
-
-	if (result == NULL)
-		return FALSE;
-
-	result->current_row = result->rows - 1;
-	return TRUE;
-}
-
 static gchar * rlib_python_array_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_python_array_results *result = result_ptr;
 	int which_field = GPOINTER_TO_INT(field_ptr) - 1;
@@ -487,8 +462,6 @@ gpointer rlib_python_array_new_input_filter() {
 		input->input_close = rlib_python_array_input_close;
 		input->start = rlib_python_array_start;
 		input->next = rlib_python_array_next;
-		input->previous = rlib_python_array_previous;
-		input->last = rlib_python_array_last;
 		input->isdone = rlib_python_array_isdone;
 		input->new_result_from_query = rlib_python_array_new_result_from_query;
 		input->get_field_value_as_string = rlib_python_array_get_field_value_as_string;
