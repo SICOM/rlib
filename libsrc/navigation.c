@@ -194,7 +194,6 @@ gint rlib_navigate_next(rlib *r, gint resultset_num) {
 
 void rlib_navigate_start(rlib *r, gint resultset_num) {
 	GList *fw;
-	int i;
 
 	if (r->results[resultset_num]->result == NULL) {
 		r->results[resultset_num]->navigation_failed = TRUE;
@@ -207,7 +206,7 @@ void rlib_navigate_start(rlib *r, gint resultset_num) {
 	r->queries[resultset_num]->n_to_1_started = FALSE;
 	r->queries[resultset_num]->n_to_1_matched = FALSE;
 
-	for (i = 0, fw = r->queries[resultset_num]->followers; fw && i < 3; fw = fw->next, i++) {
+	for (fw = r->queries[resultset_num]->followers; fw; fw = fw->next) {
 		struct rlib_resultset_followers *f = fw->data;
 		rlib_navigate_start(r, f->follower);
 	}
