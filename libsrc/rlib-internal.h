@@ -379,8 +379,6 @@ struct rlib_report_lines {
 struct rlib_break_fields {
 	struct rlib_from_xml xml_value;
 	struct rlib_pcode *code;
-	struct rlib_value rval2;
-	struct rlib_value *rval;
 };
 
 struct rlib_report_break {
@@ -983,7 +981,6 @@ gboolean rlib_force_break_headers(rlib *r, struct rlib_part *part, struct rlib_r
 void rlib_handle_break_headers(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean precalculate);
 void rlib_handle_break_footers(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean precalculate);
 void rlib_break_evaluate_attributes(rlib *r, struct rlib_report *report);
-void breaks_clear(struct rlib_report *report);
 
 /***** PROTOTYPES: formatstring.c *********************************************/
 gint rlib_number_sprintf(rlib *r, gchar **dest, gchar *fmtstr, const struct rlib_value *rval, gint special_format, gchar *infix, gint line_number);
@@ -1012,6 +1009,7 @@ gint rvalcmp(rlib *r, struct rlib_value *v1, struct rlib_value *v2);
 struct rlib_value * rlib_value_dup(struct rlib_value *orig);
 struct rlib_value * rlib_value_dup_contents(struct rlib_value *rval);
 struct rlib_value * rlib_value_new_error(struct rlib_value *rval);
+gint rlib_value_is_empty(struct rlib_value *rval);
 gint rlib_execute_as_int(rlib *r, struct rlib_pcode *pcode, gint *result);
 gint rlib_execute_as_boolean(rlib *r, struct rlib_pcode *pcode, gint *result);
 gint rlib_execute_as_string(rlib *r, struct rlib_pcode *pcode, gchar *buf, gint buf_len);

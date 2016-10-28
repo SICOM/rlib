@@ -44,7 +44,7 @@ static void print_text(rlib *r, const gchar *text, gint backwards) {
 	gint current_page = OUTPUT_PRIVATE(r)->page_number;
 	struct _packet *packet = NULL;
 
-	if(backwards) {
+	if (backwards) {
 		if(OUTPUT_PRIVATE(r)->bottom[current_page] != NULL)
 			packet = OUTPUT_PRIVATE(r)->bottom[current_page]->data;
 		if(packet != NULL && packet->type == TEXT) {
@@ -134,8 +134,8 @@ static void txt_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *dela
 	struct _packet *packet = g_new0(struct _packet, 1);
 	packet->type = DELAY;
 	packet->data = delayed_data;
-	
-	if(backwards)
+
+	if (backwards)
 		OUTPUT_PRIVATE(r)->bottom[current_page] = g_slist_prepend(OUTPUT_PRIVATE(r)->bottom[current_page], packet);
 	else
 		OUTPUT_PRIVATE(r)->top[current_page] = g_slist_prepend(OUTPUT_PRIVATE(r)->top[current_page], packet);
@@ -145,38 +145,45 @@ static void txt_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *dela
 static void txt_end_part(rlib *r, struct rlib_part *part) {
 	gint i;
 	gchar *old;
-	for(i=0;i<part->pages_across;i++) {
+	for (i = 0; i < part->pages_across; i++) {
 		GSList *tmp = OUTPUT_PRIVATE(r)->top[i]; 
 		GSList *list = NULL;
+		GSList *list0;
+
 		while(tmp != NULL) {
 			list = g_slist_prepend(list, tmp->data);
 			tmp = tmp->next;
 		}
 
+		list0 = list;
 		while(list != NULL) {
 			struct _packet *packet = list->data;
 			gchar *str;	
-			if(packet->type == DELAY) {
+
+			if (packet->type == DELAY) {
 				str = txt_callback(packet->data);
 			} else {
 				str = ((GString *)packet->data)->str;
 			}
 			if(OUTPUT_PRIVATE(r)->both  == NULL) {
-				OUTPUT_PRIVATE(r)->both  = str;
+				if (packet->type == TEXT)
+					OUTPUT_PRIVATE(r)->both  = g_string_free(packet->data, FALSE);
+				else
+					OUTPUT_PRIVATE(r)->both  = str;
 			} else {
-				old = OUTPUT_PRIVATE(r)->both ;
+				old = OUTPUT_PRIVATE(r)->both;
 				OUTPUT_PRIVATE(r)->both  = g_strconcat(OUTPUT_PRIVATE(r)->both , str, NULL);
 				g_free(old);
-				if (packet->type == TEXT)
+				if (packet->type == TEXT) {
 					g_string_free(packet->data, TRUE);
-				else
+				} else
 					g_free(str);
 			}
 			g_free(packet);
 			list = list->next;
 		}
+		g_slist_free(list0);
 
-		g_slist_free(list);
 		list = NULL;
 		tmp = OUTPUT_PRIVATE(r)->bottom[i]; 
 		while(tmp != NULL) {
@@ -184,6 +191,7 @@ static void txt_end_part(rlib *r, struct rlib_part *part) {
 			tmp = tmp->next;
 		}
 
+		list0 = list;
 		while(list != NULL) {
 			struct _packet *packet = list->data;
 			gchar *str;	
@@ -198,18 +206,19 @@ static void txt_end_part(rlib *r, struct rlib_part *part) {
 				old = OUTPUT_PRIVATE(r)->both;
 				OUTPUT_PRIVATE(r)->both  = g_strconcat(OUTPUT_PRIVATE(r)->both , str, NULL);
 				g_free(old);
-				if(packet->type == TEXT)
+				if(packet->type == TEXT) {
 					g_string_free(packet->data, TRUE);
-				else
+				} else
 					g_free(str);
 			}
 			g_free(packet);
 			list = list->next;
 		}
-		
-		g_slist_free(list);
-		list = NULL;
-		OUTPUT_PRIVATE(r)->bottom[i] = NULL;		
+		g_slist_free(list0);
+
+		g_slist_free(OUTPUT_PRIVATE(r)->bottom[i]);
+		OUTPUT_PRIVATE(r)->bottom[i] = NULL;
+		g_slist_free(OUTPUT_PRIVATE(r)->top[i]);
 		OUTPUT_PRIVATE(r)->top[i] = NULL;		
 
 	}

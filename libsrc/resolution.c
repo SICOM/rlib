@@ -56,25 +56,25 @@ gint resolve_rlib_variable(gchar *name) {
 	return 0;
 }
 
-gchar * rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
+gchar *rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 	struct input_filter *rs = INPUT(r, rf->resultset);
 #if !DISABLE_UTF8
 	gsize slen, elen;
 	gchar *ptr = NULL;
-#endif	
+#endif
 	gchar *str;
 
-	if(r->results[rf->resultset]->navigation_failed == TRUE)
+	if (r->results[rf->resultset]->navigation_failed == TRUE)
 		return NULL;
 
-	if(rf->field != NULL)
+	if (rf->field != NULL)
 		str = rs->get_field_value_as_string(rs, r->results[rf->resultset]->result, rf->field);
 	else
 		str = "";
 #if DISABLE_UTF8
 	return g_strdup(str);
 #else
-	if(str == NULL)
+	if (str == NULL)
 		return g_strdup("");
 	else {
 		slen = strlen(str);
@@ -634,6 +634,7 @@ void rlib_resolve_followers(rlib *r) {
 						reattached = TRUE;
 					}
 					leader->followers = g_list_concat(leader->followers, follower->followers);
+					g_list_free(follower->followers);
 					follower->followers = NULL;
 
 					for (list1 = follower->followers_n_to_1; list1; list1 = list1->next) {
@@ -645,6 +646,7 @@ void rlib_resolve_followers(rlib *r) {
 						reattached = TRUE;
 					}
 					leader->followers_n_to_1 = g_list_concat(leader->followers_n_to_1, follower->followers_n_to_1);
+					g_list_free(follower->followers_n_to_1);
 					follower->followers_n_to_1 = NULL;
 				}
 			}

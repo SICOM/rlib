@@ -371,7 +371,6 @@ static struct rlib_element *parse_break_field(rlib *r, gboolean allow_fail, xmlN
 	cur = cur->xmlChildrenNode;
 	while (cur != NULL) {
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "BreakField"))) {
-			bf->rval = NULL;
 			get_both(&bf->xml_value, cur, "value");
 		} else if (!ignoreElement((const char *)cur->name)) {
 			r_error(r, "Line: %ld - Unknown element [%s] in <Break>. Expected BreakField \n", xmlGetLineNo(cur), cur->name );

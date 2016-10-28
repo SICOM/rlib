@@ -148,36 +148,29 @@ gfloat get_outputs_size(struct rlib_part *part, struct rlib_report *report, stru
 }
 
 gint rlib_will_this_fit(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat total, gint page) {
-	if(OUTPUT(r)->paginate == FALSE)
+	if (OUTPUT(r)->paginate == FALSE)
 		return TRUE;
-	if(report == NULL) {
-		if(part->position_top[page-1]+total > part->position_bottom[page-1])
-			return FALSE;
-		else
-			return TRUE;	
-	
-	} else {
-		if(report->position_top[page-1]+total > report->position_bottom[page-1])
-			return FALSE;
-		else
-			return TRUE;
-	}
+
+	if (report == NULL)
+		return (part->position_top[page - 1] + total <= part->position_bottom[page - 1]);
+	else
+		return (report->position_top[page - 1] + total <= report->position_bottom[page - 1]);
 }
 
 gint will_outputs_fit(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint page) {
 	gfloat size = 0;
 	struct rlib_report_output_array *roa;
 
-	if(OUTPUT(r)->paginate == FALSE)
+	if (OUTPUT(r)->paginate == FALSE)
 		return TRUE;
-	if(e == NULL)
+	if (e == NULL)
 		return TRUE;
-	for(; e != NULL; e=e->next) {
+	for (; e != NULL; e=e->next) {
 		roa = e->data;
-		if(page == -1 || page == roa->page || roa->page == -1) {
+		if (page == -1 || page == roa->page || roa->page == -1) {
 			size += get_output_size(part, report, roa);
 		}
-	}			
+	}
 	return rlib_will_this_fit(r, part, report, size, page);
 }
 
@@ -192,35 +185,20 @@ void set_report_from_part(struct rlib_part *part, struct rlib_report *report, gf
 }
 
 gint rlib_end_page_if_line_wont_fit(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e) {
-	gint i, fits=TRUE;	
-	for(i=0;i<report->pages_across;i++) {
-		if(!will_outputs_fit(r,part, report, e, i+1))
-			fits=FALSE;
+	gint i, fits = TRUE;
+
+	for (i = 0; i < report->pages_across; i++) {
+		if (!will_outputs_fit(r,part, report, e, i + 1))
+			fits = FALSE;
 	}
-	if(!fits)
+	if (!fits)
 		rlib_layout_end_page(r, part, report, TRUE);
 	return !fits;
 }
 
 gint rlib_fetch_first_rows(rlib *r) {
-#if 0
-	gint i;
-	gint result = TRUE;
-	for (i = 0; i < r->queries_count; i++) {
-		if(r->results[i]->result == NULL) {
-			result = FALSE;
-		} else {
-			rlib_navigate_start(r, i);
-			if(rlib_navigate_next(r, i) == FALSE) {
-				result = FALSE;
-			}
-		}
-	}
-	return result;
-#else
 	rlib_navigate_start(r, r->current_result);
 	return rlib_navigate_next(r, r->current_result);
-#endif
 }
 
 static void rlib_evaluate_report_attributes(rlib *r, struct rlib_report *report) {
@@ -408,6 +386,7 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 					while (1) {
 						gint output_count = 0;
 						gfloat position_top = report->position_top[0];
+
 						if(report->detail_columns > 1 && r->detail_line_count == 0) {
 							/*if(OUTPUT(r)->table_around_multiple_detail_columns) {
 								OUTPUT(r)->start_tr(r);
@@ -431,15 +410,15 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 							}*/
 						}
 						
-						if(OUTPUT(r)->do_breaks) {
-							for(i=0;i<report->pages_across;i++) {
+						if (OUTPUT(r)->do_breaks) {
+							for (i = 0; i < report->pages_across; i++) {
 								OUTPUT(r)->set_working_page(r, part, i);
 								OUTPUT(r)->start_report_field_details(r, part, report);	
 							}
 							
 							output_count = rlib_layout_report_output(r, part, report, report->detail->fields, FALSE, FALSE);
 
-							for(i=0;i<report->pages_across;i++) {
+							for (i = 0; i < report->pages_across; i++) {
 								OUTPUT(r)->set_working_page(r, part, i);
 								OUTPUT(r)->end_report_field_details(r, part, report);	
 							}
@@ -447,15 +426,17 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 							output_count = rlib_layout_report_output_with_break_headers(r, part, report, TRUE);
 						}
 
-						if(output_count > 0)
+						if (output_count > 0)
 							r->detail_line_count++;
 
 						rlib_emit_signal(r, RLIB_SIGNAL_ROW_CHANGE);
 
-						if(rlib_navigate_next(r, r->current_result) == FALSE) {
+#if 1
+						if (rlib_navigate_next(r, r->current_result) == FALSE) {
 							rlib_handle_break_footers(r, part, report, FALSE);
 							break;
-						} 
+						}
+#endif
 
 						rlib_break_evaluate_attributes(r, report);
 						rlib_handle_break_footers(r, part, report, FALSE);
@@ -479,7 +460,7 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 									OUTPUT(r)->start_tr(r);
 								}*/
 							}
-						}						
+						}
 					}
 				}
 				rlib_layout_report_footer(r, part, report);

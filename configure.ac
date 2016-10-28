@@ -542,7 +542,7 @@ rlib-$VERSION:
      PERL entension dir:     ${perl_where}
 
    ** If you like RLIB send a postcard from where you are in the world to:
-   ** Bob Doan - 4140 Skyron Drive - Doylestown - PA - 18902 - USA
+   ** Bob Doan - 4434 Progress Meadow Drive - Doylestown - PA - 18902 - USA
 
    Music:                    RHCP / Virgin Radio	
    Having Problems:          rlib-users@lists.sf.net 	

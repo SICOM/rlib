@@ -312,6 +312,9 @@ gint rlib_vector_compare(rlib *r, GSList *vec1, GSList *vec2) {
 }
 
 gint rvalcmp(rlib *r, struct rlib_value *v1, struct rlib_value *v2) {
+	if (v1 == NULL || v2 == NULL)
+		return -1;
+
 	if(RLIB_VALUE_IS_NUMBER(v1) && RLIB_VALUE_IS_NUMBER(v2)) {
 		if(RLIB_VALUE_GET_AS_NUMBER(v1) == RLIB_VALUE_GET_AS_NUMBER(v2))
 			return 0;
@@ -910,6 +913,16 @@ struct rlib_value *rlib_value_new(struct rlib_value *rval, gint type, gint free_
 	return rval;
 }
 
+gint rlib_value_is_empty(struct rlib_value *rval) {
+	if (rval == NULL)
+		return TRUE;
+
+	if (RLIB_VALUE_IS_STRING(rval) && strcmp(RLIB_VALUE_GET_AS_STRING(rval), "") == 0)
+		return TRUE;
+
+	return FALSE;
+}
+
 struct rlib_value *rlib_value_dup(struct rlib_value *orig) {
 	struct rlib_value *new;
 	new = g_malloc(sizeof(struct rlib_value));
@@ -1006,8 +1019,6 @@ struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, stru
 
 		field_value = rlib_resolve_field_value(r, rf);
 		rval = rlib_value_new(rval, RLIB_VALUE_STRING, TRUE, field_value);
-
-		g_hash_table_replace(rs->cached_values, rf->field, rlib_value_dup(rval));
 
 		return rval;
 	} else if (o->type == OPERAND_METADATA) {

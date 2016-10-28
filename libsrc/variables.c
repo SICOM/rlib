@@ -216,7 +216,6 @@ void rlib_variables_precalculate(rlib *r, struct rlib_part *part, struct rlib_re
 		}
 	}
 
-	breaks_clear(report);
 	rlib_fetch_first_rows(r);
 	rlib_emit_signal(r, RLIB_SIGNAL_PRECALCULATION_DONE);
 	rlib_value_free(&report->uniquerow);

@@ -2,18 +2,7 @@
 # to the build. It is much faster than Valgrind.
 
 export ASAN="-fsanitize=address -fno-omit-frame-pointer -lasan"
-export UBSAN="-fsanitize=undefined -fsanitize=shift \
-	-fsanitize=integer-divide-by-zero \
-	-fsanitize=unreachable -fsanitize=vla-bound \
-	-fsanitize=null -fsanitize=return \
-	-fsanitize=signed-integer-overflow \
-	-fsanitize=bounds \
-	-fsanitize=alignment -fsanitize=object-size \
-	-fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow \
-	-fsanitize=nonnull-attribute -fsanitize=returns-nonnull-attribute \
-	-fsanitize=bool -fsanitize=enum \
-	-fbounds-check -lubsan \
-"
+export UBSAN="-fsanitize=undefined,shift,integer-divide-by-zero,unreachable,vla-bound,null,return,signed-integer-overflow,bounds,alignment,object-size,float-divide-by-zero,float-cast-overflow,nonnull-attribute,returns-nonnull-attribute,bool,enum -fbounds-check -fno-sanitize-recover=undefined,shift,integer-divide-by-zero,unreachable,vla-bound,null,return,signed-integer-overflow,bounds,alignment,object-size,float-divide-by-zero,float-cast-overflow,nonnull-attribute,returns-nonnull-attribute,bool,enum -lubsan"
 # This requires an authentic Intel CPU with MPX support and
 # libmpx/libmpxwrappers libraries
 export PTRBOUNDS="-fcheck-pointer-bounds -mmpx"

@@ -178,7 +178,8 @@ static void csv_start_output_section(rlib *r UNUSED, struct rlib_report_output_a
 
 static void csv_start_evil_csv(rlib *r) {
 	gint i;
-	for(i=0;i<MAX_COL;i++) {
+
+	for (i = 0; i < MAX_COL; i++) {
 		OUTPUT_PRIVATE(r)->col[i][0] = 0;
 	}
 }

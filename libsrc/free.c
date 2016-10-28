@@ -357,7 +357,6 @@ void rlib_free_break_fields(rlib *r, struct rlib_element *be) {
 	for (; be; next = be->next, g_free(be), be = next) {
 		struct rlib_break_fields *bf = be->data;
 
-		rlib_value_free(bf->rval);
 		break_free_pcode(r, bf);
 		g_free(bf);
 	}
@@ -606,7 +605,6 @@ void rlib_free_results(rlib *r) {
 	for (i = 0; i < r->queries_count; i++) {
 		if (r->results[i]->result && INPUT(r, i)->free_result)
 			INPUT(r, i)->free_result(INPUT(r, i), r->results[i]->result);
-		g_hash_table_destroy(r->results[i]->cached_values);
 		r->results[i]->result = NULL;
 	}
 }
@@ -623,6 +621,7 @@ static void rlib_free_results_and_queries(rlib *r) {
 			INPUT(r, i)->free_result(INPUT(r, i), r->results[i]->result);
 			r->results[i]->result = NULL;
 		}
+		g_hash_table_destroy(r->results[i]->cached_values);
 		g_free(r->results[i]);
 		r->results[i] = NULL;
 		if (QUERY(r, i) && QUERY(r, i)->input && QUERY(r, i)->input->free_query)
@@ -682,6 +681,7 @@ DLL_EXPORT_SYM gint rlib_free(rlib *r) {
 	rlib_charencoder_free(r->output_encoder);
 	g_free(r->output_encoder_name);
 
+	rlib_free_follower(r);
 	rlib_free_results_and_queries(r);
 
 	rlib_free_tree(r);
@@ -704,7 +704,6 @@ DLL_EXPORT_SYM gint rlib_free(rlib *r) {
 	g_hash_table_destroy(r->output_parameters);
 	g_hash_table_destroy(r->input_metadata);
 	g_hash_table_destroy(r->parameters);
-	rlib_free_follower(r);
 	g_free(r->special_locale);
 	g_free(r->current_locale);
 
