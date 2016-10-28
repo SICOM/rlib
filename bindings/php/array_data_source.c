@@ -234,6 +234,15 @@ static void *php_array_new_result_from_query(gpointer input_ptr UNUSED, gpointer
 	return result;
 }
 
+static gint rlib_php_array_num_fields(gpointer input_ptr UNUSED, gpointer result_ptr) {
+	struct rlib_php_array_results *result = result_ptr;
+
+	if (result == NULL)
+		return 0;
+
+	return result->cols;
+}
+
 static gint rlib_php_array_free_input_filter(gpointer input_ptr UNUSED) {
 	return 0;
 }
@@ -250,6 +259,7 @@ static gpointer rlib_php_array_new_input_filter() {
 	input->private = emalloc(sizeof(struct _private));
 	memset(input->private, 0, sizeof(struct _private));
 	input->input_close = rlib_php_array_input_close;
+	input->num_fields = rlib_php_array_num_fields;
 	input->start = rlib_php_array_start;
 	input->next = rlib_php_array_next;
 	input->get_error = rlib_php_array_get_error;
