@@ -431,12 +431,10 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 
 						rlib_emit_signal(r, RLIB_SIGNAL_ROW_CHANGE);
 
-#if 1
 						if (rlib_navigate_next(r, r->current_result) == FALSE) {
 							rlib_handle_break_footers(r, part, report, FALSE);
 							break;
 						}
-#endif
 
 						rlib_break_evaluate_attributes(r, report);
 						rlib_handle_break_footers(r, part, report, FALSE);

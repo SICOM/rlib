@@ -634,7 +634,6 @@ void rlib_resolve_followers(rlib *r) {
 						reattached = TRUE;
 					}
 					leader->followers = g_list_concat(leader->followers, follower->followers);
-					g_list_free(follower->followers);
 					follower->followers = NULL;
 
 					for (list1 = follower->followers_n_to_1; list1; list1 = list1->next) {
@@ -646,7 +645,6 @@ void rlib_resolve_followers(rlib *r) {
 						reattached = TRUE;
 					}
 					leader->followers_n_to_1 = g_list_concat(leader->followers_n_to_1, follower->followers_n_to_1);
-					g_list_free(follower->followers_n_to_1);
 					follower->followers_n_to_1 = NULL;
 				}
 			}

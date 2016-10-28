@@ -639,35 +639,27 @@ static void rlib_free_results_and_queries(rlib *r) {
 	r->queries_count = 0;
 }
 
+static void free_follower(gpointer data, gpointer user_data) {
+	struct rlib_resultset_followers *f = data;
+	rlib *r = user_data;
+
+	g_free(f->leader_field);
+	g_free(f->follower_field);
+	rlib_pcode_free(r, f->leader_code);
+	rlib_pcode_free(r, f->follower_code);
+
+	g_free(f);
+}
 
 gint rlib_free_follower(rlib *r) {
 	gint i;
+
 	for (i = 0; i < r->queries_count; i++) {
-		GList *list;
-
-		for (list = r->queries[i]->followers; list; list = list->next) {
-			struct rlib_resultset_followers *f = list->data;
-
-			g_free(f->leader_field);
-			g_free(f->follower_field);
-			rlib_pcode_free(r, f->leader_code);
-			rlib_pcode_free(r, f->follower_code);
-
-			g_free(f);
-		}
+		g_list_foreach(r->queries[i]->followers, free_follower, r);
 		g_list_free(r->queries[i]->followers);
 		r->queries[i]->followers = NULL;
 
-		for (list = r->queries[i]->followers_n_to_1; list; list = list->next) {
-			struct rlib_resultset_followers *f = list->data;
-
-			g_free(f->leader_field);
-			g_free(f->follower_field);
-			rlib_pcode_free(r, f->leader_code);
-			rlib_pcode_free(r, f->follower_code);
-
-			g_free(f);
-		}
+		g_list_foreach(r->queries[i]->followers_n_to_1, free_follower, r);
 		g_list_free(r->queries[i]->followers_n_to_1);
 		r->queries[i]->followers_n_to_1 = NULL;
 	}
