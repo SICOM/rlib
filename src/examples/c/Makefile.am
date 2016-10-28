@@ -32,12 +32,13 @@ noinst_PROGRAMS = \
 	follower_n_to_1_then_1_to_1 \
 	follower_1_to_1_then_n_to_1 \
 	follower_circular \
-	follower-breaks
+	follower-breaks \
+	breaks
 
 AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
 AM_LDFLAGS = $(top_builddir)/libsrc/libr.la
 
-noinst_SCRIPTS = products.xml follower.xml follower-breaks.xml
+noinst_SCRIPTS = products.xml follower.xml follower-breaks.xml breaks.xml
 
 products.xml:
 	$(LN_S) ../common/products.xml
@@ -47,5 +48,8 @@ follower.xml:
 
 follower-breaks.xml:
 	$(LN_S) ../php/follower-breaks.xml
+
+breaks.xml:
+	$(LN_S) ../php/breaks.xml
 
 CLEANFILES = $(noinst_SCRIPTS)
