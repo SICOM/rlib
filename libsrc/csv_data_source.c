@@ -41,6 +41,7 @@ struct rlib_csv_results {
 	gint atstart;
 	gint isdone;
 	gint rows;
+	gint cols;
 	GSList *header;
 	GList *detail;
 	GList *navigator;
@@ -121,18 +122,26 @@ static gchar * rlib_csv_get_field_value_as_string(gpointer input_ptr UNUSED, gpo
 
 static gpointer rlib_csv_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) { 
 	struct rlib_csv_results *results = result_ptr;
-	gint i = 1;
+	gint i;
 	GSList *data;
 
-	if(results != NULL && results->header != NULL) {
-		for(data = results->header;data != NULL;data = data->next) {
-			if(strcmp((gchar *)data->data, name) == 0)
-				return GINT_TO_POINTER(i);
-			i++;
-		}
-	}
+	if (results == NULL || results->header == NULL)
+		return NULL;
+
+	for (i = 1, data = results->header; data != NULL; data = data->next, i++)
+		if (strcmp((gchar *)data->data, name) == 0)
+			return GINT_TO_POINTER(i);
 
 	return NULL;
+}
+
+static gint rlib_csv_num_fields(gpointer input_ptr UNUSED, gpointer result_ptr) {
+	struct rlib_csv_results *results = result_ptr;
+
+	if (results == NULL)
+		return 0;
+
+	return results->cols;
 }
 
 static gboolean parse_line(gchar **ptr, GSList **all_items) {
@@ -143,9 +152,8 @@ static gboolean parse_line(gchar **ptr, GSList **all_items) {
 	gchar *start = *ptr;
 	GSList *items = NULL;
 	gboolean in_quote = FALSE;
-	
-	
-	while(1) {
+
+	while (1) {
 		if(current != 0)
 			previous = current;
 		current = data[spot];
@@ -228,6 +236,7 @@ void * csv_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	}
 
 	results->rows = row;
+	results->cols = g_slist_length(results->header);
 
 	return results;
 }
@@ -259,6 +268,7 @@ gpointer rlib_csv_new_input_filter(rlib *r) {
 	input->private = g_malloc0(sizeof(struct _private));
 	input->connect_with_connstr = rlib_csv_connect;
 	input->input_close = rlib_csv_input_close;
+	input->num_fields = rlib_csv_num_fields;
 	input->start = rlib_csv_start;
 	input->next = rlib_csv_next;
 	input->isdone = rlib_csv_isdone;

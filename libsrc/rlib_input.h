@@ -40,11 +40,12 @@ struct input_filter {
 	gint (*connect_with_connstr)(gpointer, const gchar *);
 	gint (*input_close)(gpointer);
 	gpointer (*new_result_from_query)(gpointer, gpointer);
+	gint (*num_fields)(gpointer, gpointer);
 	void (*start)(gpointer, gpointer);
 	gint (*next)(gpointer, gpointer);
 	gint (*isdone)(gpointer, gpointer);
 	const gchar * (*get_error)(gpointer);
-	gchar * (*get_field_value_as_string)(gpointer, gpointer, gpointer);
+	gchar *(*get_field_value_as_string)(gpointer, gpointer, gpointer);
 	gpointer (*resolve_field_pointer)(gpointer, gpointer, gchar *);
 	void (*free_result)(gpointer, gpointer);
 	void (*free_query)(gpointer, gpointer);

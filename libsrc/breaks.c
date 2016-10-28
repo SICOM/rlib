@@ -251,8 +251,11 @@ static void rlib_break_all_below_in_reverse_order(rlib *r, struct rlib_part *par
 
 				rlib_print_break_footer_output(r, part, report, rb, rb->footer, FALSE);
 			}
+#if 0
+	WHY IS THIS HERE?
 			if (!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result))
 				rlib_navigate_next(r, r->current_result);
+#endif
 		}
 
 		reset_variables_on_break(report, (gchar *)rb->xml_name.xml, precalculate);
@@ -278,10 +281,10 @@ void rlib_handle_break_footers(rlib *r, struct rlib_part *part, struct rlib_repo
 	struct rlib_element *e;
 	struct rlib_break_fields *bf;
 
-	if(report->breaks == NULL)
+	if (report->breaks == NULL)
 		return;
 
-	r->use_cached_data++;
+	//r->use_cached_data++;
 
 	for (e = report->breaks; e != NULL; e = e->next) {
 		gint dobreak = 1;
@@ -295,13 +298,13 @@ void rlib_handle_break_footers(rlib *r, struct rlib_part *part, struct rlib_repo
 				if (INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
 					dobreak = 1;
 				} else {
-					struct rlib_value *tmp = rlib_execute_pcode(r, &rval_tmp, bf->code, NULL);	
+					struct rlib_value *tmp = rlib_execute_pcode(r, &rval_tmp, bf->code, NULL);
 					if (rvalcmp(r, bf->rval, tmp)) {
 					    dobreak = 1;
 					} else  {
 						dobreak = 0;
 					}
-					rlib_value_free(tmp);
+					rlib_value_free(&rval_tmp);
 				}
 			} else {
 				dobreak = 0;
@@ -309,12 +312,14 @@ void rlib_handle_break_footers(rlib *r, struct rlib_part *part, struct rlib_repo
 		}
 
 		if (dobreak) {
+			r->use_cached_data++;
 			rlib_break_all_below_in_reverse_order(r, part, report, e, precalculate);
+			r->use_cached_data--;
 			break;
 		}
 	}
 
-	r->use_cached_data--;
+	//r->use_cached_data--;
 }
 
 void rlib_break_evaluate_attributes(rlib *r, struct rlib_report *report) {

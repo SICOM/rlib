@@ -88,7 +88,8 @@ DLL_EXPORT_SYM rlib *rlib_init(void) {
 }
 
 static void rlib_cached_rval_destroy(gpointer data) {
-	rlib_value_free(data);
+	if (data)
+		rlib_value_free(data);
 	g_free(data);
 }
 

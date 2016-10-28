@@ -953,6 +953,10 @@ DLL_EXPORT_SYM struct rlib_value *rlib_value_new_number(struct rlib_value *rval,
 	return rval;
 }
 
+DLL_EXPORT_SYM struct rlib_value *rlib_value_new_none(struct rlib_value *rval) {
+	return rlib_value_new(rval, RLIB_VALUE_NONE, FALSE, NULL);
+}
+
 DLL_EXPORT_SYM struct rlib_value *rlib_value_new_string(struct rlib_value *rval, const gchar *value) {
 	return rlib_value_new(rval, RLIB_VALUE_STRING, TRUE, g_strdup(value));
 }
@@ -970,7 +974,7 @@ DLL_EXPORT_SYM struct rlib_value *rlib_value_new_error(struct rlib_value *rval) 
 }
 
 /*
- * The RLIB SYMBOL TABLE is a bit commplicated because of all the datasources and internal variables
+ * The RLIB SYMBOL TABLE is a bit complicated because of all the datasources and internal variables
  */
 struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, struct rlib_pcode_operand *o, struct rlib_value *this_field_value) {
 	struct rlib_report_variable *rv = NULL;
@@ -989,10 +993,15 @@ struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, stru
 		if (r->use_cached_data) {
 			struct rlib_value *rval2 = g_hash_table_lookup(rs->cached_values, rf->field);
 
-			r_warning(r, "rlib_operand_get_value CACHED\n");
-
-			if (rval2)
-				return rval2;
+			if (rval2) {
+				/*
+				 * Cached value was found but don't let
+				 * the caller free this data.
+				 */
+				*rval = *rval2;
+				rval->free = FALSE;
+				return rval;
+			}
 		}
 
 		field_value = rlib_resolve_field_value(r, rf);
@@ -1026,8 +1035,7 @@ struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, stru
 		} else if(type == RLIB_RLIB_VARIABLE_FORMAT) {
 			return rlib_value_new_string(rval, rlib_format_get_name(r->format));
 		}
-
-	} else if(o->type == OPERAND_VARIABLE) {
+	} else if (o->type == OPERAND_VARIABLE) {
 		gint64 val = 0;
 		struct rlib_value *count;
 		struct rlib_value *amount;

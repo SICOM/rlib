@@ -362,6 +362,15 @@ void *rlib_python_array_new_result_from_query(gpointer input_ptr, gpointer query
 	return result;
 }
 
+static gint rlib_python_array_num_fields(gpointer input_ptr UNUSED, gpointer result_ptr) {
+	struct rlib_python_array_results *result = result_ptr;
+
+	if (result == NULL)
+		return 0;
+
+	return result->cols;
+}
+
 static gint rlib_python_array_input_close(gpointer input_ptr UNUSED) {
 	return TRUE;
 }
@@ -460,6 +469,7 @@ gpointer rlib_python_array_new_input_filter() {
 		input->private = PyMem_Malloc(sizeof(struct _private));
 		memset(input->private, 0, sizeof(struct _private));
 		input->input_close = rlib_python_array_input_close;
+		input->num_fields = rlib_python_array_num_fields;
 		input->start = rlib_python_array_start;
 		input->next = rlib_python_array_next;
 		input->isdone = rlib_python_array_isdone;

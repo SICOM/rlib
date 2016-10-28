@@ -213,6 +213,7 @@ void rlib_setmessagewriter(void(*writer)(rlib *r, const gchar *msg));
 /* Value control */
 struct rlib_value *rlib_value_stack_pop(struct rlib_value_stack *vs);
 int rlib_value_stack_push(rlib *r, struct rlib_value_stack *vs, struct rlib_value *value);
+struct rlib_value *rlib_value_new_none(struct rlib_value *rval);
 struct rlib_value *rlib_value_new_number(struct rlib_value *rval, gint64 value);
 struct rlib_value *rlib_value_new_string(struct rlib_value *rval, const char *value);
 struct rlib_value *rlib_value_new_date(struct rlib_value *rval, struct rlib_datetime *date);

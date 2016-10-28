@@ -165,6 +165,23 @@ gint rlib_navigate_next(rlib *r, gint resultset_num) {
 	}
 
 	if (!r->queries[resultset_num]->n_to_1_started) {
+		struct input_filter *in = INPUT(r, resultset_num);
+		struct rlib_results *rs = r->results[resultset_num];
+		gint cols = in->num_fields(in, rs->result);
+		gint i;
+
+		for (i = 1; i <= cols; i++) {
+			gpointer col = GINT_TO_POINTER(i);
+			gchar *str = in->get_field_value_as_string(in, rs->result, col);
+			struct rlib_value *rval = g_new0(struct rlib_value, 1);
+
+			if (r->queries[resultset_num]->current_row >= 0)
+				rlib_value_new_string(rval, (str ? str : ""));
+			else
+				rlib_value_new_none(rval);
+			g_hash_table_replace(rs->cached_values, col, rval);
+		}
+
 		r->queries[resultset_num]->current_row++;
 		if (!INPUT(r, resultset_num)->next(INPUT(r, resultset_num), r->results[resultset_num]->result))
 			return FALSE;

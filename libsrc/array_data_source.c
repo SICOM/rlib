@@ -105,7 +105,7 @@ static gpointer rlib_array_resolve_field_pointer(gpointer input_ptr UNUSED, gpoi
 	struct rlib_array_results *result = result_ptr;
 	int i;
 
-	if (result_ptr == NULL)
+	if (result == NULL)
 		return NULL;
 
 	for (i = 0; i < result->cols; i++) {
@@ -151,6 +151,15 @@ static void rlib_array_rlib_free_query(gpointer input_ptr UNUSED, gpointer query
 	g_free(QUERY_PRIVATE(query));
 }
 
+static gint rlib_array_num_fields(gpointer input_ptr UNUSED, gpointer result_ptr) {
+	struct rlib_array_results *result = result_ptr;
+
+	if (result == NULL)
+		return 0;
+
+	return result->cols;
+}
+
 static gpointer rlib_array_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
@@ -158,6 +167,7 @@ static gpointer rlib_array_new_input_filter(rlib *r) {
 	input->r = r;
 	input->private = NULL;
 	input->input_close = rlib_array_input_close;
+	input->num_fields = rlib_array_num_fields;
 	input->start = rlib_array_start;
 	input->next = rlib_array_next;
 	input->get_error = rlib_array_get_error;

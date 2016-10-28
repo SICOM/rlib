@@ -85,7 +85,10 @@ src/examples/c/follower_n_to_1_then_1_to_1
 src/examples/c/follower_n_to_1_then_1_to_1.exe
 src/examples/c/follower_circular
 src/examples/c/follower_circular.exe
+src/examples/c/follower-breaks
+src/examples/c/follower-breaks.exe
 src/examples/c/follower.xml
+src/examples/c/follower-breaks.xml
 src/examples/csharp/products.xml
 src/examples/java/*.java
 src/examples/java/*.xml

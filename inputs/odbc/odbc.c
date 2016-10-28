@@ -293,6 +293,16 @@ gpointer odbc_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	return results;
 }
 
+static gint rlib_odbc_num_fields(gpointer input_ptr UNUSED, gpointer result_ptr) {
+	struct rlib_odbc_results *result = result_ptr;
+
+	if (result == NULL)
+		return 0;
+
+	return result->tot_fields;
+}
+
+
 static void rlib_odbc_rlib_free_result(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_odbc_results *results = result_ptr;
 	gint i;
@@ -342,6 +352,7 @@ DLL_EXPORT_SYM gpointer new_input_filter(rlib *r) {
 	input->r = r;
 	input->connect_local_with_credentials = rlib_odbc_connect;
 	input->input_close = rlib_odbc_input_close;
+	input->num_fields = rlib_odbc_num_fields;
 	input->start = rlib_odbc_start;
 	input->next = rlib_odbc_next;
 	input->isdone = rlib_odbc_isdone;

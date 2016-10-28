@@ -164,6 +164,15 @@ static gpointer postgres_new_result_from_query(gpointer input_ptr, gpointer quer
 	return results;
 }
 
+static gint rlib_postgres_num_fields(gpointer input_ptr UNUSED, gpointer result_ptr) {
+	struct rlib_postgres_results *result = result_ptr;
+
+	if (result == NULL)
+		return 0;
+
+	return result->tot_fields;
+}
+
 static void rlib_postgres_rlib_free_result(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_postgres_results *results = result_ptr;
 	if (results) {
@@ -197,6 +206,7 @@ DLL_EXPORT_SYM gpointer new_input_filter(rlib *r) {
 	input->r = r;
 	input->connect_with_connstr = rlib_postgres_connect;
 	input->input_close = rlib_postgres_input_close;
+	input->num_fields = rlib_postgres_num_fields;
 	input->start = rlib_postgres_start;
 	input->next = rlib_postgres_next;
 	input->isdone = rlib_postgres_isdone;

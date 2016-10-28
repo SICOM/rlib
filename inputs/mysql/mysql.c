@@ -44,7 +44,7 @@ struct rlib_mysql_results {
 	guint cols;
 	gint atstart;
 	gint isdone;
-	guint *fields;
+//	guint *fields;
 };
 
 struct _private {
@@ -210,10 +210,10 @@ static gpointer rlib_mysql_resolve_field_pointer(gpointer input_ptr UNUSED, gpoi
 	mysql_field_seek(QUERY_PRIVATE(query)->result, 0);
 
 	while ((field = mysql_fetch_field(QUERY_PRIVATE(query)->result))) {
-		if (!strcmp(field->name, name)) {
-			return GINT_TO_POINTER(result->fields[x]);
-		}
 		x++;
+		if (!strcmp(field->name, name)) {
+			return GINT_TO_POINTER(x);
+		}
 	}
 	return NULL;
 }
@@ -223,7 +223,6 @@ static void *mysql_new_result_from_query(gpointer input_ptr, gpointer query_ptr)
 	struct rlib_query *query = query_ptr;
 	struct rlib_mysql_results *results;
 	MYSQL_RES *result;
-	guint i;
 
 	query->private = (gpointer)g_new0(struct _query_private, 1);
 
@@ -238,11 +237,16 @@ static void *mysql_new_result_from_query(gpointer input_ptr, gpointer query_ptr)
 	results->rows = mysql_num_rows(result);
 	results->cols = mysql_field_count(INPUT_PRIVATE(input)->mysql);
 
-	results->fields = g_malloc(sizeof(gint) * results->cols);
-	for (i = 0; i < results->cols; i++) {
-		results->fields[i] = i + 1;
-	}
 	return results;
+}
+
+static gint rlib_mysql_num_fields(gpointer input_ptr UNUSED, gpointer result_ptr) {
+	struct rlib_mysql_results *result = result_ptr;
+
+	if (result == NULL)
+		return 0;
+
+	return result->cols;
 }
 
 static void rlib_mysql_rlib_free_result(gpointer input_ptr UNUSED, gpointer result_ptr) {
@@ -251,7 +255,6 @@ static void rlib_mysql_rlib_free_result(gpointer input_ptr UNUSED, gpointer resu
 	if (!result)
 		return;
 
-	g_free(result->fields);
 	g_free(result);
 }
 
@@ -287,6 +290,7 @@ DLL_EXPORT_SYM gpointer new_input_filter(rlib *r) {
 	input->connect_with_connstr = rlib_mysql_connect_group;
 	input->connect_with_credentials = rlib_mysql_connect_with_credentials;
 	input->input_close = rlib_mysql_input_close;
+	input->num_fields = rlib_mysql_num_fields;
 	input->start = rlib_mysql_start;
 	input->next = rlib_mysql_next;
 	input->isdone = rlib_mysql_isdone;
