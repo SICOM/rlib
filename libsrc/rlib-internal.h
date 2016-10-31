@@ -195,6 +195,44 @@ struct rlib_results {
 	GHashTable *cached_values;
 };
 
+struct rlib_report_field {
+	gchar *value;
+	gint value_line_number;
+	struct rlib_from_xml xml_align;
+	struct rlib_from_xml xml_bgcolor;
+	struct rlib_from_xml xml_color;
+	struct rlib_from_xml xml_width;
+	struct rlib_from_xml xml_bold;
+	struct rlib_from_xml xml_italics;
+	struct rlib_from_xml xml_format;
+	struct rlib_from_xml xml_link;
+	struct rlib_from_xml xml_translate;
+	struct rlib_from_xml xml_col;
+	struct rlib_from_xml xml_memo;
+	struct rlib_from_xml xml_memo_max_lines;
+	struct rlib_from_xml xml_memo_wrap_chars;
+
+	gint width;
+	gint align;
+
+	struct rlib_pcode *code;
+	struct rlib_pcode *format_code;
+	struct rlib_pcode *link_code;
+	struct rlib_pcode *translate_code;
+	struct rlib_pcode *color_code;
+	struct rlib_pcode *bgcolor_code;
+	struct rlib_pcode *col_code;
+	struct rlib_pcode *width_code;
+	struct rlib_pcode *bold_code;
+	struct rlib_pcode *italics_code;
+	struct rlib_pcode *align_code;
+	struct rlib_pcode *memo_code;
+	struct rlib_pcode *memo_max_lines_code;
+	struct rlib_pcode *memo_wrap_chars_code;
+
+	struct rlib_value *rval;
+};
+
 struct rlib_line_extra_data {
 	gint type;
 	struct rlib_value rval_code;
@@ -247,47 +285,7 @@ struct rlib_delayed_extra_data {
 	struct rlib_line_extra_data extra_data;
 	gint backwards;
 	gfloat left_origin;
-	gfloat bottom_orgin;
-};
-
-struct rlib_report_field {
-	gchar *value;
-	gint value_line_number;
-	struct rlib_from_xml xml_align;
-	struct rlib_from_xml xml_bgcolor;
-	struct rlib_from_xml xml_color;
-	struct rlib_from_xml xml_width;
-	struct rlib_from_xml xml_bold;
-	struct rlib_from_xml xml_italics;
-	struct rlib_from_xml xml_format;
-	struct rlib_from_xml xml_link;
-	struct rlib_from_xml xml_translate;
-	struct rlib_from_xml xml_col;
-	struct rlib_from_xml xml_delayed;
-	struct rlib_from_xml xml_memo;
-	struct rlib_from_xml xml_memo_max_lines;
-	struct rlib_from_xml xml_memo_wrap_chars;
-
-	gint width;
-	gint align;
-
-	struct rlib_pcode *code;
-	struct rlib_pcode *format_code;
-	struct rlib_pcode *link_code;
-	struct rlib_pcode *translate_code;
-	struct rlib_pcode *color_code;
-	struct rlib_pcode *bgcolor_code;
-	struct rlib_pcode *col_code;
-	struct rlib_pcode *delayed_code;
-	struct rlib_pcode *width_code;
-	struct rlib_pcode *bold_code;
-	struct rlib_pcode *italics_code;
-	struct rlib_pcode *align_code;
-	struct rlib_pcode *memo_code;
-	struct rlib_pcode *memo_max_lines_code;
-	struct rlib_pcode *memo_wrap_chars_code;
-
-	struct rlib_value *rval;
+	gfloat bottom_origin;
 };
 
 #define RLIB_REPORT_PRESENTATION_DATA_LINE	1
@@ -381,6 +379,11 @@ struct rlib_break_fields {
 	struct rlib_pcode *code;
 };
 
+struct rlib_break_delayed_data {
+	struct rlib_delayed_extra_data *delayed_data;
+	gint backwards;
+};
+
 struct rlib_report_break {
 	struct rlib_from_xml xml_name;
 	struct rlib_from_xml xml_newpage;
@@ -398,6 +401,9 @@ struct rlib_report_break {
 	struct rlib_pcode *newpage_code;
 	struct rlib_pcode *headernewpage_code;
 	struct rlib_pcode *suppressblank_code;
+
+	/* Contains output driver specific opaque pointers */
+	GSList *delayed_header_data;
 };
 
 struct rlib_report_detail {
@@ -425,16 +431,12 @@ struct rlib_report_variable {
 	struct rlib_from_xml xml_str_type;
 	struct rlib_from_xml xml_value;
 	struct rlib_from_xml xml_resetonbreak;
-	struct rlib_from_xml xml_precalculate;
 	struct rlib_from_xml xml_ignore;
 
 	gchar type;
-	gchar precalculate;
 	struct rlib_pcode *code;
 	struct rlib_pcode *ignore_code;
 	struct rlib_count_amount data;
-
-	GSList *precalculated_values;
 };
 
 struct rlib_part_load {
@@ -856,6 +858,7 @@ struct output_filter {
 	gfloat (*get_string_width)(rlib *, const char *);
 	void (*print_text)(rlib *, float, float, const char *, int, struct rlib_line_extra_data *);
 	void (*print_text_delayed)(rlib *, struct rlib_delayed_extra_data *, int, int);
+	void (*finalize_text_delayed)(rlib *, gpointer, int);
 	void (*set_fg_color)(rlib *, float, float, float);
 	void (*set_bg_color)(rlib *, float, float, float);
 	void (*hr)(rlib *, int, float, float, float, float, struct rlib_rgb *, float, float);
@@ -977,9 +980,9 @@ struct output_filter {
 };
 
 /***** PROTOTYPES: breaks.c ***************************************************/
-gboolean rlib_force_break_headers(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean precalculate);
-void rlib_handle_break_headers(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean precalculate);
-void rlib_handle_break_footers(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean precalculate);
+gboolean rlib_force_break_headers(rlib *r, struct rlib_part *part, struct rlib_report *report /* , gboolean precalculate */);
+void rlib_handle_break_headers(rlib *r, struct rlib_part *part, struct rlib_report *report /*, gboolean precalculate */);
+void rlib_handle_break_footers(rlib *r, struct rlib_part *part, struct rlib_report *report /*, gboolean precalculate */);
 void rlib_break_evaluate_attributes(rlib *r, struct rlib_report *report);
 
 /***** PROTOTYPES: formatstring.c *********************************************/
@@ -1091,7 +1094,7 @@ void rlib_csv_new_output_filter(rlib *r);
 /***** PROTOTYPES: layout.c ***************************************************/
 gfloat layout_get_page_width(struct rlib_part *part);
 void rlib_layout_init_part_page(rlib *r, struct rlib_part *part, gboolean first, gboolean normal);
-gint rlib_layout_report_output(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint backwards, gboolean page_header_layout);
+gint rlib_layout_report_output(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint backwards, gboolean page_header_layout, struct rlib_report_break *rb, gboolean break_header);
 struct rlib_paper * layout_get_paper(gint paper_type);
 struct rlib_paper * layout_get_paper_by_name(gchar *paper_name);
 gint rlib_layout_report_output_with_break_headers(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean page_header_layout);
@@ -1130,10 +1133,8 @@ gpointer rlib_odbc_new_input_filter(rlib *r);
 
 /***** PROTOTYPES: variables.c ******************************************************/
 void init_variables(struct rlib_report *report);
-void rlib_process_variables(rlib *r, struct rlib_report *report, gboolean precalculate);
+void rlib_process_variables(rlib *r, struct rlib_report *report);
 void rlib_process_expression_variables(rlib *r, struct rlib_report *report);
-gboolean variabls_needs_precalculate(struct rlib_report *report);
-void rlib_variables_precalculate(rlib *r, struct rlib_part *part, struct rlib_report *report);
 void variable_clear(struct rlib_report_variable *rv, gboolean do_expression);
 
 /***** PROTOTYPES: datetime.c ******************************************************/

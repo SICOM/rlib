@@ -151,7 +151,6 @@ static struct rlib_element *parse_line_array(rlib *r, gboolean allow_fail, xmlDo
 			get_both(&f->xml_link, cur, "link");
 			get_both(&f->xml_translate, cur, "translate");
 			get_both(&f->xml_col, cur, "col");
-			get_both(&f->xml_delayed, cur, "delayed");
 			get_both(&f->xml_memo, cur, "memo");
 			get_both(&f->xml_memo_max_lines, cur, "memo_max_lines");
 			get_both(&f->xml_memo_wrap_chars, cur, "memo_wrap_chars");
@@ -740,7 +739,6 @@ static struct rlib_element *parse_report_variable(rlib *r, gboolean allow_fail, 
 	get_both(&rv->xml_str_type, cur, "type");
 	get_both(&rv->xml_value, cur, "value");
 	get_both(&rv->xml_resetonbreak, cur, "resetonbreak");
-	get_both(&rv->xml_precalculate, cur, "precalculate");
 	get_both(&rv->xml_ignore, cur, "ignore");
 
 	rv->type = RLIB_REPORT_VARIABLE_UNDEFINED;

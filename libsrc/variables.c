@@ -35,31 +35,31 @@
 #include "rlib_langinfo.h"
 
 void variable_clear(struct rlib_report_variable *rv, gboolean do_expression) {
-	if(rv->type == RLIB_REPORT_VARIABLE_EXPRESSION && do_expression) {
+	if (rv->type == RLIB_REPORT_VARIABLE_EXPRESSION && do_expression) {
 		RLIB_VARIABLE_CA(rv)->amount = *rlib_value_new_number(&RLIB_VARIABLE_CA(rv)->amount, 0);
-	} else if(rv->type == RLIB_REPORT_VARIABLE_COUNT) {
+	} else if (rv->type == RLIB_REPORT_VARIABLE_COUNT) {
 		RLIB_VARIABLE_CA(rv)->count = *rlib_value_new_number(&RLIB_VARIABLE_CA(rv)->count, 0);
-	} else if(rv->type == RLIB_REPORT_VARIABLE_SUM) {
+	} else if (rv->type == RLIB_REPORT_VARIABLE_SUM) {
 		RLIB_VARIABLE_CA(rv)->amount = *rlib_value_new_number(&RLIB_VARIABLE_CA(rv)->amount, 0);
-	} else if(rv->type == RLIB_REPORT_VARIABLE_AVERAGE) {
+	} else if (rv->type == RLIB_REPORT_VARIABLE_AVERAGE) {
 		RLIB_VARIABLE_CA(rv)->count = *rlib_value_new_number(&RLIB_VARIABLE_CA(rv)->count, 0);
 		RLIB_VARIABLE_CA(rv)->amount = *rlib_value_new_number(&RLIB_VARIABLE_CA(rv)->amount, 0);
-	} else if(rv->type == RLIB_REPORT_VARIABLE_LOWEST) {
+	} else if (rv->type == RLIB_REPORT_VARIABLE_LOWEST) {
 		RLIB_VARIABLE_CA(rv)->amount = *rlib_value_new_number(&RLIB_VARIABLE_CA(rv)->amount, 0);
-	} else if(rv->type == RLIB_REPORT_VARIABLE_HIGHEST) {
+	} else if (rv->type == RLIB_REPORT_VARIABLE_HIGHEST) {
 		RLIB_VARIABLE_CA(rv)->amount = *rlib_value_new_number(&RLIB_VARIABLE_CA(rv)->amount, 0);
 	}
 } 
 
 void init_variables(struct rlib_report *report) {
 	struct rlib_element *e;
-	for(e = report->variables; e != NULL; e=e->next) {
+	for (e = report->variables; e != NULL; e = e->next) {
 		struct rlib_report_variable *rv = e->data;
 		variable_clear(rv, TRUE);
 	}
 }
 
-void rlib_process_variables(rlib *r, struct rlib_report *report, gboolean precalculate) {
+void rlib_process_variables(rlib *r, struct rlib_report *report) {
 	struct rlib_element *e;
 	gboolean samerow = FALSE;
 
@@ -110,33 +110,29 @@ void rlib_process_variables(rlib *r, struct rlib_report *report, gboolean precal
 				} else
 					r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER OR STRING FOR RLIB_REPORT_VARIABLE_EXPRESSION\n");
 			} else if (rv->type == RLIB_REPORT_VARIABLE_SUM) {
-				if(RLIB_VALUE_IS_NUMBER(er))
+				if (RLIB_VALUE_IS_NUMBER(er))
 					RLIB_VALUE_GET_AS_NUMBER(amount) += RLIB_VALUE_GET_AS_NUMBER(er);
 				else
 					r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER FOR RLIB_REPORT_VARIABLE_SUM\n");
 
-			} else if(rv->type == RLIB_REPORT_VARIABLE_AVERAGE) {
+			} else if (rv->type == RLIB_REPORT_VARIABLE_AVERAGE) {
 				RLIB_VALUE_GET_AS_NUMBER(count) += RLIB_DECIMAL_PRECISION;
-				if(RLIB_VALUE_IS_NUMBER(er))
+				if (RLIB_VALUE_IS_NUMBER(er))
 					RLIB_VALUE_GET_AS_NUMBER(amount) += RLIB_VALUE_GET_AS_NUMBER(er);
 				else
 					r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER FOR RLIB_REPORT_VARIABLE_AVERAGE\n");
-			} else if(rv->type == RLIB_REPORT_VARIABLE_LOWEST) {
-				if(RLIB_VALUE_IS_NUMBER(er)) {
-					if(RLIB_VALUE_GET_AS_NUMBER(er) < RLIB_VALUE_GET_AS_NUMBER(amount) || RLIB_VALUE_GET_AS_NUMBER(amount) == 0) /* TODO: EVIL HACK */
+			} else if (rv->type == RLIB_REPORT_VARIABLE_LOWEST) {
+				if (RLIB_VALUE_IS_NUMBER(er)) {
+					if (RLIB_VALUE_GET_AS_NUMBER(er) < RLIB_VALUE_GET_AS_NUMBER(amount) || RLIB_VALUE_GET_AS_NUMBER(amount) == 0) /* TODO: EVIL HACK */
 						RLIB_VALUE_GET_AS_NUMBER(amount) = RLIB_VALUE_GET_AS_NUMBER(er);
 				} else
 					r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER FOR RLIB_REPORT_VARIABLE_LOWEST\n");
-			} else if(rv->type == RLIB_REPORT_VARIABLE_HIGHEST) {
-				if(RLIB_VALUE_IS_NUMBER(er)) {
-					if(RLIB_VALUE_GET_AS_NUMBER(er) > RLIB_VALUE_GET_AS_NUMBER(amount) || RLIB_VALUE_GET_AS_NUMBER(amount) == 0) /* TODO: EVIL HACK */
+			} else if (rv->type == RLIB_REPORT_VARIABLE_HIGHEST) {
+				if (RLIB_VALUE_IS_NUMBER(er)) {
+					if (RLIB_VALUE_GET_AS_NUMBER(er) > RLIB_VALUE_GET_AS_NUMBER(amount) || RLIB_VALUE_GET_AS_NUMBER(amount) == 0) /* TODO: EVIL HACK */
 						RLIB_VALUE_GET_AS_NUMBER(amount) = RLIB_VALUE_GET_AS_NUMBER(er);
 				} else
 					r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER FOR RLIB_REPORT_VARIABLE_HIGHEST\n");
-			}
-			if(precalculate == FALSE && rv->precalculate == TRUE) {
-				if(rv->precalculated_values != NULL)
-					memcpy(&rv->data, rv->precalculated_values->data, sizeof(rv->data));
 			}
 		}
 	}
@@ -161,63 +157,4 @@ void rlib_process_expression_variables(rlib *r, struct rlib_report *report) {
 				r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER OR STRING FOR RLIB_REPORT_VARIABLE_EXPRESSION\n");
 		}
 	}
-}
-
-gboolean variabls_needs_precalculate(struct rlib_report *report) {
-	struct rlib_element *e;
-	for(e = report->variables; e != NULL; e=e->next) {
-		struct rlib_report_variable *rv = e->data;
-		if(rv->precalculate == TRUE)
-			return TRUE;
-	}
-	return FALSE;
-}
-
-void rlib_variables_precalculate(rlib *r, struct rlib_part *part, struct rlib_report *report) {
-	gint did_it = TRUE;
-	struct rlib_element *e;
-
-	rlib_fetch_first_rows(r);
-	rlib_process_variables(r, report, TRUE);
-
-	r->detail_line_count = 0;
-
-	if(!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
-		while (1) {
-
-			rlib_handle_break_headers(r, part, report, TRUE);
-
-			r->detail_line_count++;
-
-			if (did_it == FALSE) {
-				rlib_process_variables(r, report, TRUE);
-			}
-
-			if (rlib_navigate_next(r, r->current_result) == FALSE) {
-				/* TODO fix this
-				rlib_navigate_last(r, r->current_result);
-				 */
-				rlib_handle_break_footers(r, part, report, TRUE);
-				break;
-			}
-
-			rlib_handle_break_footers(r, part, report, TRUE);
-
-			did_it = FALSE;
-		}
-	}
-
-	for (e = report->variables; e != NULL; e = e->next) {
-		struct rlib_report_variable *rv = e->data;
-		if(rv->precalculate == TRUE && (rv->xml_resetonbreak.xml == NULL || rv->xml_resetonbreak.xml[0] == '\0')) {
-			struct rlib_count_amount *copy = g_malloc(sizeof(struct rlib_count_amount));
-			memcpy(copy, &rv->data, sizeof(struct rlib_count_amount));
-			rv->precalculated_values = g_slist_append(rv->precalculated_values, copy);
-		}
-	}
-
-	rlib_fetch_first_rows(r);
-	rlib_emit_signal(r, RLIB_SIGNAL_PRECALCULATION_DONE);
-	rlib_value_free(&report->uniquerow);
-	RLIB_VALUE_TYPE_NONE(&report->uniquerow);
 }

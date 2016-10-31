@@ -37,6 +37,7 @@ struct _private {
 	GSList **bottom;
 	gchar *both;
 	gint length;
+	gint pages;
 	gint page_number;
 };
 
@@ -47,9 +48,9 @@ static void print_text(rlib *r, const gchar *text, gint backwards) {
 	if (backwards) {
 		if(OUTPUT_PRIVATE(r)->bottom[current_page] != NULL)
 			packet = OUTPUT_PRIVATE(r)->bottom[current_page]->data;
-		if(packet != NULL && packet->type == TEXT) {
+		if (packet != NULL && packet->type == TEXT) {
 			g_string_append(packet->data, text);
-		} else {	
+		} else {
 			packet = g_new0(struct _packet, 1);
 			packet->type = TEXT;
 			packet->data = g_string_new(text);
@@ -58,9 +59,9 @@ static void print_text(rlib *r, const gchar *text, gint backwards) {
 	} else {
 		if(OUTPUT_PRIVATE(r)->top[current_page] != NULL)
 			packet = OUTPUT_PRIVATE(r)->top[current_page]->data;
-		if(packet != NULL && packet->type == TEXT) {
+		if (packet != NULL && packet->type == TEXT) {
 			g_string_append(packet->data, text);
-		} else {	
+		} else {
 			packet = g_new0(struct _packet, 1);
 			packet->type = TEXT;
 			packet->data = g_string_new(text);
@@ -109,19 +110,19 @@ static void txt_end_report_header(rlib *r UNUSED, struct rlib_part *part UNUSED,
 static void txt_start_report_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 static void txt_end_report_footer(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 
-
 static void txt_start_part(rlib *r, struct rlib_part *part) {
 	gint pages_across = part->pages_across;
+	OUTPUT_PRIVATE(r)->pages = pages_across;
 	OUTPUT_PRIVATE(r)->top = g_new0(GSList *, pages_across);
 	OUTPUT_PRIVATE(r)->bottom = g_new0(GSList *, pages_across);
 }
 
-static gchar * txt_callback(struct rlib_delayed_extra_data *delayed_data) {
+static gchar *txt_callback(struct rlib_delayed_extra_data *delayed_data) {
 	struct rlib_line_extra_data *extra_data = &delayed_data->extra_data;
 	rlib *r = delayed_data->r;
 	gchar *buf = NULL, *buf2 = NULL;
-	
-	rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL);	
+
+	rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL);
 	rlib_format_string(r, &buf, extra_data->report_field, &extra_data->rval_code);
 	rlib_align_text(r, &buf2, buf, extra_data->report_field->align, extra_data->report_field->width);
 	g_free(buf);
@@ -141,6 +142,36 @@ static void txt_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *dela
 		OUTPUT_PRIVATE(r)->top[current_page] = g_slist_prepend(OUTPUT_PRIVATE(r)->top[current_page], packet);
 }
 
+static void txt_finalize_text_delayed(rlib *r, gpointer in_ptr, int backwards) {
+	int pages, i;
+
+	pages = OUTPUT_PRIVATE(r)->pages;
+	for (i = 0; i < pages; i++) {
+		GSList *list, *l;
+
+		if (backwards)
+			list = OUTPUT_PRIVATE(r)->bottom[i];
+		else
+			list = OUTPUT_PRIVATE(r)->top[i];
+
+		for (l = list; l; l = l->next) {
+			struct _packet *packet = l->data;
+			if (packet->type == DELAY && packet->data == in_ptr) {
+				gchar *text = txt_callback(packet->data);
+				struct _packet *new_packet;
+
+				new_packet = g_new0(struct _packet, 1);
+				new_packet->type = TEXT;
+				new_packet->data = g_string_new(text);
+				l->data = new_packet;
+
+				g_free(text);
+				g_free(packet);
+				return;
+			}
+		}
+	}
+}
 
 static void txt_end_part(rlib *r, struct rlib_part *part) {
 	gint i;
@@ -340,6 +371,7 @@ void rlib_txt_new_output_filter(rlib *r) {
 	OUTPUT(r)->set_fg_color = txt_set_fg_color;
 	OUTPUT(r)->set_bg_color = txt_set_bg_color;
 	OUTPUT(r)->print_text_delayed = txt_print_text_delayed;	
+	OUTPUT(r)->finalize_text_delayed = txt_finalize_text_delayed;
 	OUTPUT(r)->hr = txt_hr;
 	OUTPUT(r)->start_draw_cell_background = txt_start_draw_cell_background;
 	OUTPUT(r)->end_draw_cell_background = txt_end_draw_cell_background;

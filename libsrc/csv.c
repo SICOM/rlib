@@ -342,6 +342,7 @@ void rlib_csv_new_output_filter(rlib *r) {
 	OUTPUT(r)->print_text = csv_print_text;
 	/* Fix a memory leak in layout.c */
 	OUTPUT(r)->print_text_delayed = NULL;
+	OUTPUT(r)->finalize_text_delayed = NULL;
 	OUTPUT(r)->set_fg_color = csv_set_fg_color;
 	OUTPUT(r)->set_bg_color = csv_set_bg_color;
 	OUTPUT(r)->hr = csv_hr;

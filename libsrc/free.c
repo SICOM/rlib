@@ -104,7 +104,6 @@ static void field_free_pcode(rlib *r, struct rlib_report_field *rf) {
 	rlib_pcode_free(r, rf->color_code);
 	rlib_pcode_free(r, rf->bgcolor_code);
 	rlib_pcode_free(r, rf->col_code);
-	rlib_pcode_free(r, rf->delayed_code);
 	rlib_pcode_free(r, rf->width_code);
 	rlib_pcode_free(r, rf->bold_code);
 	rlib_pcode_free(r, rf->italics_code);
@@ -122,7 +121,6 @@ static void field_free_pcode(rlib *r, struct rlib_report_field *rf) {
 	xmlFree(rf->xml_link.xml);
 	xmlFree(rf->xml_translate.xml);
 	xmlFree(rf->xml_col.xml);
-	xmlFree(rf->xml_delayed.xml);
 	xmlFree(rf->xml_memo.xml);
 	xmlFree(rf->xml_memo_max_lines.xml);
 	xmlFree(rf->xml_memo_wrap_chars.xml);
@@ -402,13 +400,7 @@ void rlib_free_variables(rlib *r, struct rlib_element *e) {
 		xmlFree(rv->xml_str_type.xml);
 		xmlFree(rv->xml_value.xml);
 		xmlFree(rv->xml_resetonbreak.xml);
-		xmlFree(rv->xml_precalculate.xml);
 		xmlFree(rv->xml_ignore.xml);
-
-		if(rv->precalculated_values != NULL) {
-			g_free(rv->precalculated_values->data);
-			rv->precalculated_values = g_slist_remove_link (rv->precalculated_values, rv->precalculated_values);
-		}
 
 		g_free(rv);
 		e->data = NULL;

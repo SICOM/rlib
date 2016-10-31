@@ -150,7 +150,6 @@ static void rlib_field_resolve_pcode(rlib *r, struct rlib_part *part, struct rli
 	rf->color_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_color.xml, rf->xml_color.line, TRUE);
 	rf->bgcolor_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_bgcolor.xml, rf->xml_bgcolor.line, TRUE);
 	rf->col_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_col.xml, rf->xml_col.line, TRUE);
-	rf->delayed_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_delayed.xml, rf->xml_delayed.line, TRUE);
 	rf->width_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_width.xml, rf->xml_width.line, TRUE);
 	rf->bold_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_bold.xml, rf->xml_bold.line, TRUE);
 	rf->italics_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_italics.xml, rf->xml_italics.line, TRUE);
@@ -187,22 +186,8 @@ static void rlib_break_resolve_pcode(rlib *r, struct rlib_part *part, struct rli
 }
 
 static void rlib_variable_resolve_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_variable *rv) {
-	struct rlib_pcode *code;
-	gint t;
-
 	rv->code = rlib_infix_to_pcode(r, part, report, (gchar *)rv->xml_value.xml, rv->xml_value.line, TRUE);
-
-	code = rlib_infix_to_pcode(r, part, report, (gchar *)rv->xml_precalculate.xml, rv->xml_precalculate.line, TRUE);
 	rv->ignore_code = rlib_infix_to_pcode(r, part, report, (gchar *)rv->xml_ignore.xml, rv->xml_ignore.line, TRUE);
-
-	if (rlib_execute_as_boolean(r, code, &t)) {
-		rv->precalculate = t;
-	} else {
-		rv->precalculate = FALSE;
-	}
-	rlib_pcode_free(r, code);
-
-	rv->precalculated_values = NULL;
 }
 
 static void rlib_hr_resolve_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_horizontal_line * rhl) {
@@ -318,9 +303,9 @@ struct rlib_report_variable *rlib_resolve_variable(rlib *r, struct rlib_part *pa
 		name += 2;
 		for (e = report->variables; e != NULL; e = e->next) {
 			struct rlib_report_variable *rv = e->data;
-		if (!strcmp(name, (char *)rv->xml_name.xml))
-			return rv;
-		}	
+			if (!strcmp(name, (char *)rv->xml_name.xml))
+				return rv;
+		}
 		rlogit(r, "rlib_resolve_variable: Could not find [%s]\n", name);
 	}
 	return NULL;

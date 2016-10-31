@@ -423,6 +423,7 @@ void rlib_xml_new_output_filter(rlib *r) {
 	OUTPUT(r)->set_bg_color = xml_set_bg_color;
 	/* Fix a leak in layout.c for delayed variables */
 	OUTPUT(r)->print_text_delayed = NULL;
+	OUTPUT(r)->finalize_text_delayed = NULL;
 	OUTPUT(r)->hr = xml_hr;
 	OUTPUT(r)->start_draw_cell_background = xml_start_draw_cell_background;
 	OUTPUT(r)->end_draw_cell_background = xml_end_draw_cell_background;
