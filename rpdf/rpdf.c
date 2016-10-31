@@ -184,7 +184,7 @@ static gint rpdf_object_append(struct rpdf *pdf, gboolean put_wrapper, GString *
 	return object->object_number;
 }
 
-static struct rpdf_stream * rpdf_stream_new(gint type, gpointer data) {
+static struct rpdf_stream *rpdf_stream_new(gint type, gpointer data) {
 	struct rpdf_stream *stream = g_new0(struct rpdf_stream, 1);
 	stream->type = type;
 	stream->data = data;
@@ -195,9 +195,41 @@ static void rpdf_stream_append(struct rpdf *pdf, struct rpdf_stream *stream) {
 	pdf->page_contents[pdf->current_page] = g_slist_append(pdf->page_contents[pdf->current_page], stream);
 }
 
+static struct rpdf_stream_text *rpdf_text_common(struct rpdf *pdf, gdouble x, gdouble y, gdouble angle, const gchar *text);
+
+DLL_EXPORT_SYM void rpdf_finalize_text_callback(struct rpdf *pdf, gpointer user_data) {
+	gint i;
+
+	for (i = 0; i < pdf->page_count; i++) {
+		GSList *list;
+
+		for (list = pdf->page_contents[i]; list; list = list->next) {
+			struct rpdf_stream *stream = list->data;
+			struct rpdf_stream_text_callback *stream_text_callback = stream->data;
+
+			if (stream->type == RPDF_TYPE_TEXT_CB && stream_text_callback->user_data == user_data) {
+				struct rpdf_stream_text *text;
+				gchar *callback_data;
+
+				callback_data = g_malloc0(stream_text_callback->len + 1);
+				stream_text_callback->callback(callback_data, stream_text_callback->len + 1, stream_text_callback->user_data);
+				text = rpdf_text_common(pdf, stream_text_callback->x, stream_text_callback->y, stream_text_callback->angle, callback_data);
+				g_free(callback_data);
+
+				stream->type = RPDF_TYPE_TEXT;
+				stream->data = text;
+
+				g_free(stream_text_callback);
+
+				return;
+			}
+		}
+	}
+}
+
 static gboolean rpdf_out_string(struct rpdf *rpdf, const gchar *output) {
 	gint size = strlen(output);
-	rpdf->out_buffer = g_realloc(rpdf->out_buffer, rpdf->size+size);
+	rpdf->out_buffer = g_realloc(rpdf->out_buffer, rpdf->size + size);
 	memcpy(rpdf->out_buffer + rpdf->size, output, size);
 	rpdf->size += size;
 	return TRUE;
@@ -272,7 +304,7 @@ static void rpdf_make_page_stream(gpointer data, gpointer user_data) {
 	}
 	if (stream->type != RPDF_TYPE_FONT && stream->type != RPDF_TYPE_TEXT &&
 			stream->type != RPDF_TYPE_COLOR && stream->type != RPDF_TYPE_TEXT_CB) {
-		if(pdf->text_on == TRUE) {
+		if (pdf->text_on == TRUE) {
 			pdf->text_on = FALSE;
 			sprintf(extra, "ET\n");
 		}
@@ -294,7 +326,7 @@ static void rpdf_make_page_stream(gpointer data, gpointer user_data) {
 	{
 		struct rpdf_stream_text *stream_text = stream->data;
 		gdouble angle = M_PI * stream_text->angle / 180.0;
-		gdouble text_sin= sin(angle);
+		gdouble text_sin = sin(angle);
 		gdouble text_cos = cos(angle);
 		char *text = g_strdup(stream_text->text);
 		result = g_strdup_printf("%s%.04f %.04f %.04f %.04f %.04f %.04f Tm\n(%s) Tj\n", extra, text_cos, text_sin, -text_sin, text_cos, stream_text->x*RPDF_DPI, stream_text->y*RPDF_DPI, text); 
@@ -411,14 +443,11 @@ static void rpdf_make_page_stream(gpointer data, gpointer user_data) {
 		struct rpdf_stream_text_callback *stream_text_callback = stream->data;
 		gchar *callback_data;
 		gdouble angle = M_PI * stream_text_callback->angle / 180.0;
-		gdouble text_sin= sin(angle);
+		gdouble text_sin = sin(angle);
 		gdouble text_cos = cos(angle);
-		char *text;
 		callback_data = g_malloc0(stream_text_callback->len + 1);
-		stream_text_callback->callback(callback_data, stream_text_callback->len+1, stream_text_callback->user_data);
-		text = g_strdup(callback_data);
-		result = g_strdup_printf("%s%.04f %.04f %.04f %.04f %.04f %.04f Tm\n(%s) Tj\n", extra, text_cos, text_sin, -text_sin, text_cos, stream_text_callback->x*RPDF_DPI, stream_text_callback->y*RPDF_DPI, text); 
-		g_free(text);
+		stream_text_callback->callback(callback_data, stream_text_callback->len + 1, stream_text_callback->user_data);
+		result = g_strdup_printf("%s%.04f %.04f %.04f %.04f %.04f %.04f Tm\n(%s) Tj\n", extra, text_cos, text_sin, -text_sin, text_cos, stream_text_callback->x*RPDF_DPI, stream_text_callback->y*RPDF_DPI, callback_data);
 		g_free(callback_data);
 		g_free(stream_text_callback);
 		break;
@@ -754,7 +783,7 @@ DLL_EXPORT_SYM gboolean rpdf_finalize(struct rpdf *pdf) {
 		pdf->page_data = NULL;
 		pdf->page_fonts = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, NULL);
 
-		if(list != NULL)
+		if (list != NULL)
 			g_slist_foreach(list, rpdf_make_page_stream, pdf);
 
 		rpdf_finalize_page_stream(pdf);
@@ -1011,12 +1040,10 @@ DLL_EXPORT_SYM gboolean rpdf_text_callback(struct rpdf *pdf, gdouble x, gdouble 
 	return TRUE;
 }
 
-
-
-DLL_EXPORT_SYM gboolean rpdf_text(struct rpdf *pdf, gdouble x, gdouble y, gdouble angle, const gchar *text) {
+static struct rpdf_stream_text *rpdf_text_common(struct rpdf *pdf UNUSED, gdouble x, gdouble y, gdouble angle, const gchar *text) {
 	struct rpdf_stream_text *stream;
 	gint slen;
-	gint count = 0, spot=0, i;
+	gint count = 0, spot = 0, i;
 	static GIConv conv = NULL;
 	gchar *new_text;
 
@@ -1026,11 +1053,11 @@ DLL_EXPORT_SYM gboolean rpdf_text(struct rpdf *pdf, gdouble x, gdouble y, gdoubl
 	 * ISO-8859-1 (Latin 1) characters. Anything outside it,
 	 * Latin 2, Chinese, etc. will be represented as garbage.
 	 */
-	if(conv == NULL) {
+	if (conv == NULL) {
 		conv = g_iconv_open("ISO-8859-1", "UTF-8");	
 	}
 
-	if(conv != NULL && text != NULL) {
+	if (conv != NULL && text != NULL) {
 		gsize foo1;
 		new_text = g_convert_with_iconv(text, strlen(text), conv, &foo1, &foo1, NULL);
 		if (new_text == NULL) {
@@ -1063,6 +1090,12 @@ DLL_EXPORT_SYM gboolean rpdf_text(struct rpdf *pdf, gdouble x, gdouble y, gdoubl
 
 		g_free(new_text);
 	}
+
+	return stream;
+}
+
+DLL_EXPORT_SYM gboolean rpdf_text(struct rpdf *pdf, gdouble x, gdouble y, gdouble angle, const gchar *text) {
+	struct rpdf_stream_text *stream = rpdf_text_common(pdf, x, y, angle, text);
 
 	rpdf_stream_append(pdf, rpdf_stream_new(RPDF_TYPE_TEXT, stream));
 
