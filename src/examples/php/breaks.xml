@@ -47,19 +47,21 @@
 				<Output>
 					<Line>
 						<field value="company" width="11" align="left" col="1" />
+						<literal width="1"></literal>
 						<field value="v.company_sales" format="'$%.2d'" width="35" align="right" col="5"/>
 					</Line>
 				</Output>
 			</BreakHeader>
 			<BreakFooter>
 				<Output>
-		 			<HorizontalLine length="48" size="2" bgcolor="'white'"/>
-		 			<HorizontalLine length="48" size="2" bgcolor="'black'"/>
+					<HorizontalLine length="48" size="2" bgcolor="'white'"/>
+					<HorizontalLine length="48" size="2" bgcolor="'black'"/>
 					<Line>
 						<field value="company" width="12" align="left" col="1" />
+						<literal width="1"></literal>
 						<field value="v.company_sales" format="'$%.2d'" width="35" align="right" col="5" />
 					</Line>
-		 			<HorizontalLine length="48" size="2" bgcolor="'white'"/>
+					<HorizontalLine length="48" size="2" bgcolor="'white'"/>
 				</Output>
 			</BreakFooter>
 		</Break>
@@ -71,20 +73,23 @@
 			<BreakHeader>
 				<!-- NOTE: you must set a special rlib flag to put totals in a break header -->
 				<Output>
-		 			<HorizontalLine length="48" size="2" bgcolor="'black'"/>
+					<HorizontalLine length="48" size="2" bgcolor="'black'"/>
 					<Line>
-		 				<literal width="1"></literal>
+						<literal width="1"></literal>
 						<field value="region" width="11" align="left" col="2" />
+						<literal width="1"></literal>
+						<field value="v.region_sales" format="'$%.2d'" width="35" align="right" col="5" />
 					</Line>
-		 			<HorizontalLine length="48" size="2" bgcolor="'black'"/>
-		 			<HorizontalLine length="48" size="3" bgcolor="'white'"/>
+					<HorizontalLine length="48" size="2" bgcolor="'black'"/>
+					<HorizontalLine length="48" size="3" bgcolor="'white'"/>
 				</Output>
 			</BreakHeader>
 			<BreakFooter>
 				<Output>
 					<Line>
-		 				<literal width="1"></literal>
+						<literal width="1"></literal>
 						<field value="region" width="11" align="left" col="2" />
+						<literal width="1"></literal>
 						<field value="v.region_sales" format="'$%.2d'" width="35" align="right" col="5" />
 					</Line>
 				</Output>
@@ -96,37 +101,49 @@
 				<BreakField value="district" />
 			</BreakFields>	
 			<BreakHeader>
+				<Output>
+					<HorizontalLine length="48" size="2" bgcolor="'white'"/>
+					<Line>
+						<literal width="2"></literal>
+						<field value="district" width="10" align="left" col="3" />
+						<literal width="1"></literal>
+						<field value="v.district_sales" format="'$%.2d'" width="35" align="right" col="5" />
+					</Line>
+					<HorizontalLine length="48" size="1" bgcolor="'black'"/>
+					<HorizontalLine length="48" size="2" bgcolor="'white'"/>
+				</Output>
 			</BreakHeader>
 			<BreakFooter>
 				<Output>
-		 			<HorizontalLine length="48" size="2" bgcolor="'white'"/>
-		 			<HorizontalLine length="48" size="1" bgcolor="'black'"/>
+					<HorizontalLine length="48" size="2" bgcolor="'white'"/>
+					<HorizontalLine length="48" size="1" bgcolor="'black'"/>
 					<Line>
-		 				<literal width="2"></literal>
+						<literal width="2"></literal>
 						<field value="district" width="10" align="left" col="3" />
+						<literal width="1"></literal>
 						<field value="v.district_sales" format="'$%.2d'" width="35" align="right" col="5" />
 					</Line>
-		 			<HorizontalLine length="48" size="1" bgcolor="'black'"/>
-		 			<HorizontalLine length="48" size="2" bgcolor="'white'"/>
+					<HorizontalLine length="48" size="1" bgcolor="'black'"/>
+					<HorizontalLine length="48" size="2" bgcolor="'white'"/>
 				</Output>
 			</BreakFooter>
 		</Break>
 	</Breaks>
 
 	<Detail>
-	 	<FieldHeaders>
-	 		<Output>
-	 			<Line>
-	 				<literal col="1" align="left">Company</literal>
-	 				<literal width="1"></literal>
-	 				<literal col="2" align="left">District</literal>
-	 				<literal width="1"></literal>
-	 				<literal col="3" align="left">Region</literal>
-	 				<literal width="1"></literal>
-	 				<literal col="4" align="left">Store</literal>
-	 				<literal width="1"></literal>
-	 				<literal width="47" col="5" align="right">Sales</literal>
-	 				<literal width="1"></literal>
+		<FieldHeaders>
+			<Output>
+				<Line>
+					<literal col="1" align="left">Company</literal>
+					<literal width="1"></literal>
+					<literal col="2" align="left">District</literal>
+					<literal width="1"></literal>
+					<literal col="3" align="left">Region</literal>
+					<literal width="1"></literal>
+					<literal col="4" align="left">Store</literal>
+					<literal width="1"></literal>
+					<literal width="47" col="5" align="right">Sales</literal>
+					<literal width="1"></literal>
 				</Line>
 				<HorizontalLine length="48" size="1" bgcolor="'black'" />
 				<HorizontalLine length="48" size="4" bgcolor="'white'" />
@@ -135,14 +152,14 @@
 		<FieldDetails>
 			<Output>
 				<Line>
-	 				<literal width="3"></literal>
-	 				<field value="store" width="10" col="4" align="left" />
-	 				<literal width="1"></literal>
-	 				<field value="val(sales)" format="'$%.2d'" width="33" col="5" align="right" />
-	 				<literal width="1"></literal>
-	 			</Line>
-	 		</Output>
-	 	</FieldDetails>
+					<literal width="3"></literal>
+					<field value="store" width="10" col="4" align="left" />
+					<literal width="1"></literal>
+					<field value="val(sales)" format="'$%.2d'" width="33" col="5" align="right" />
+					<literal width="1"></literal>
+				</Line>
+			</Output>
+		</FieldDetails>
 	</Detail>	
 
 	<PageFooter>
