@@ -1,0 +1,189 @@
+<?xml version="1.0"?>
+<!DOCTYPE report >
+<Report fontSize="9" orientation="portrait" xmlns:xi="http://www.w3.org/2003/XInclude">
+	<Alternate>
+		<NoData>
+			<Output>
+<!--
+				<xi:include href="common.xml" xpointer="xpointer(/common/nodataoutput/*)"/>
+-->
+			</Output>
+		</NoData>
+	</Alternate>
+
+	<ReportHeader>
+		<Output>
+<!--
+			<xi:include href="common.xml" xpointer="xpointer(/common/header/*)"/>
+-->
+		</Output>
+	</ReportHeader>
+
+	<PageHeader>
+		<Output>
+			<Line fontSize="11" bold="yes">
+				<field value="'Breaks Example'" width="40" align="left"/>
+			</Line>
+<!--
+			<xi:include href="common.xml" xpointer="xpointer(/common/date/*)"/>
+-->
+			<HorizontalLine length="40" size="4" bgcolor="'white'"/>
+		</Output>
+	</PageHeader>
+
+    <Variables>
+        <Variable name="district_sales" value="val(sales)" type="sum" resetonbreak="districtbreak"/>
+        <Variable name="region_sales" value="val(sales)" type="sum" resetonbreak="regionbreak" />
+        <Variable name="company_sales" value="val(sales)" type="sum" resetonbreak="companybreak" />
+	</Variables>
+
+	<Breaks>
+		<Break name="companybreak" newpage="no" headernewpage="yes" suppressblank="yes">
+			<BreakFields>
+				<BreakField value="company" />
+			</BreakFields>	
+			<BreakHeader>
+				<!-- NOTE: you must set a special rlib flag to put totals in a break header -->
+				<Output>
+					<Line>
+						<field value="company" width="11" align="left" col="1" />
+						<literal width="1"></literal>
+						<field value="v.company_sales" format="'$%.2d'" width="35" align="right" col="5"/>
+					</Line>
+				</Output>
+			</BreakHeader>
+			<BreakFooter>
+				<Output>
+					<HorizontalLine length="48" size="2" bgcolor="'white'"/>
+					<HorizontalLine length="48" size="2" bgcolor="'black'"/>
+					<Line>
+						<field value="company" width="12" align="left" col="1" />
+						<literal width="1"></literal>
+						<field value="v.company_sales" format="'$%.2d'" width="35" align="right" col="5" />
+					</Line>
+					<HorizontalLine length="48" size="2" bgcolor="'white'"/>
+				</Output>
+			</BreakFooter>
+		</Break>
+
+		<Break name="regionbreak" newpage="no" headernewpage="yes" suppressblank="yes">
+			<BreakFields>
+				<BreakField value="region" />
+			</BreakFields>	
+			<BreakHeader>
+				<!-- NOTE: you must set a special rlib flag to put totals in a break header -->
+				<Output>
+					<HorizontalLine length="48" size="2" bgcolor="'black'"/>
+					<Line>
+						<literal width="1"></literal>
+						<field value="region" width="11" align="left" col="2" />
+						<literal width="1"></literal>
+						<field value="v.region_sales" format="'$%.2d'" width="35" align="right" col="5" />
+					</Line>
+					<HorizontalLine length="48" size="2" bgcolor="'black'"/>
+					<HorizontalLine length="48" size="3" bgcolor="'white'"/>
+				</Output>
+			</BreakHeader>
+			<BreakFooter>
+				<Output>
+					<Line>
+						<literal width="1"></literal>
+						<field value="region" width="11" align="left" col="2" />
+						<literal width="1"></literal>
+						<field value="v.region_sales" format="'$%.2d'" width="35" align="right" col="5" />
+					</Line>
+				</Output>
+			</BreakFooter>
+		</Break>
+
+		<Break name="districtbreak" newpage="no" headernewpage="yes" suppressblank="yes">
+			<BreakFields>
+				<BreakField value="district" />
+			</BreakFields>	
+			<BreakHeader>
+				<Output>
+					<HorizontalLine length="48" size="2" bgcolor="'white'"/>
+					<Line>
+						<literal width="2"></literal>
+						<field value="district" width="10" align="left" col="3" />
+						<literal width="1"></literal>
+						<field value="v.district_sales" format="'$%.2d'" width="35" align="right" col="5" />
+					</Line>
+					<HorizontalLine length="48" size="1" bgcolor="'black'"/>
+					<HorizontalLine length="48" size="2" bgcolor="'white'"/>
+				</Output>
+			</BreakHeader>
+			<BreakFooter>
+				<Output>
+					<HorizontalLine length="48" size="2" bgcolor="'white'"/>
+					<HorizontalLine length="48" size="1" bgcolor="'black'"/>
+					<Line>
+						<literal width="2"></literal>
+						<field value="district" width="10" align="left" col="3" />
+						<literal width="1"></literal>
+						<field value="v.district_sales" format="'$%.2d'" width="35" align="right" col="5" />
+					</Line>
+					<HorizontalLine length="48" size="1" bgcolor="'black'"/>
+					<HorizontalLine length="48" size="2" bgcolor="'white'"/>
+				</Output>
+			</BreakFooter>
+		</Break>
+	</Breaks>
+
+	<Detail>
+		<FieldHeaders>
+			<Output>
+				<Line>
+					<literal col="1" align="left">Company</literal>
+					<literal width="1"></literal>
+					<literal col="2" align="left">District</literal>
+					<literal width="1"></literal>
+					<literal col="3" align="left">Region</literal>
+					<literal width="1"></literal>
+					<literal col="4" align="left">Store</literal>
+					<literal width="1"></literal>
+					<literal width="10" col="5" align="right">Sales</literal>
+					<literal width="1"></literal>
+					<literal width="15" align="right">District share</literal>
+					<literal width="1"></literal>
+					<literal width="15" align="right">Regional share</literal>
+					<literal width="1"></literal>
+					<literal width="15" align="right">Company share</literal>
+				</Line>
+				<HorizontalLine length="48" size="1" bgcolor="'black'" />
+				<HorizontalLine length="48" size="4" bgcolor="'white'" />
+			</Output>
+		</FieldHeaders>
+		<FieldDetails>
+			<Output>
+				<Line>
+					<literal width="3"></literal>
+					<field value="store" width="10" col="4" align="left" />
+					<literal width="1"></literal>
+					<field value="val(sales)" format="'$%.2d'" width="10" col="5" align="right" />
+					<literal width="1"></literal>
+					<field value="round(100*(val(sales)/v.district_sales))" format="'$%.2d'" width="15" align="right" />
+					<literal width="1"></literal>
+<!--
+					<field value="round(100*(val(sales)/v.region_sales))" format="'$%.2d'" width="15" align="right" />
+					<literal width="1"></literal>
+					<field value="round(100*(val(sales)/v.company_sales))" format="'$%.2d'" width="15" align="right" />
+-->
+				</Line>
+			</Output>
+		</FieldDetails>
+	</Detail>	
+
+	<PageFooter>
+		<Output>
+<!--
+			<xi:include href="common.xml" xpointer="xpointer(/common/pagefooteroutput/*)"/>
+-->
+		</Output>
+	</PageFooter>
+
+	<ReportFooter>
+		<Output>
+		</Output>
+	</ReportFooter>
+</Report>
