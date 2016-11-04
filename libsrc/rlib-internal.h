@@ -437,6 +437,8 @@ struct rlib_report_variable {
 	struct rlib_pcode *code;
 	struct rlib_pcode *ignore_code;
 	struct rlib_count_amount data;
+
+	struct rlib_report_break *resetonbreak;
 };
 
 struct rlib_part_load {
@@ -1039,8 +1041,8 @@ gint rlib_emit_signal(rlib *r, gint signal_number);
 
 /***** PROTOTYPES: resolution.c ***********************************************/
 gint resolve_rlib_variable(gchar *name);
-gchar * rlib_resolve_memory_variable(rlib *r, gchar *name);
-gchar * rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf);
+gchar *rlib_resolve_memory_variable(rlib *r, gchar *name);
+gchar *rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf);
 gint rlib_lookup_result(rlib *r, gchar *name);
 gint rlib_resolve_resultset_field(rlib *r, gchar *name, void **rtn_field, gint *rtn_resultset);
 struct rlib_report_variable *rlib_resolve_variable(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *name);
@@ -1048,6 +1050,7 @@ void rlib_resolve_report_fields(rlib *r, struct rlib_part *part, struct rlib_rep
 void rlib_resolve_part_fields(rlib *r, struct rlib_part *part);
 void rlib_resolve_metadata(rlib *r);
 void rlib_resolve_followers(rlib *r);
+void rlib_resolve_breaks(rlib *, struct rlib_part *, struct rlib_report *);
 void rlib_process_input_metadata(rlib *r);
 
 /***** PROTOTYPES: navigation.c ***********************************************/

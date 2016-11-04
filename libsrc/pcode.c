@@ -584,12 +584,19 @@ void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, gint offset) {
 	}
 }
 
-int rlib_pcode_has_variable(rlib *r UNUSED, struct rlib_pcode *p) {
-	int i;
+int rlib_pcode_has_variable(rlib *r UNUSED, struct rlib_pcode *p, struct rlib_report_variable **varptr, gint *error) {
+	gpointer var = NULL;
+	int i, count_vars, count_rvars, error1;
+
+	if (varptr)
+		*varptr = NULL;
 
 	if (p == NULL)
 		return FALSE;
 
+	count_vars = 0;
+	count_rvars = 0;
+	error1 = FALSE;
 	for (i = 0; i < p->count; i++) {
 		switch (p->instructions[i]->instruction) {
 		case PCODE_PUSH:
@@ -597,10 +604,15 @@ int rlib_pcode_has_variable(rlib *r UNUSED, struct rlib_pcode *p) {
 			struct rlib_pcode_operand *o = p->instructions[i]->value;
 			switch (o->type) {
 			case OPERAND_VARIABLE:
-				return TRUE;
+				if (!var)
+					var = o->value;
+				else if (var != o->value)
+					error1 = TRUE;
+				count_vars++;
+				break;
 			case OPERAND_RLIB_VARIABLE:
 				if (GPOINTER_TO_INT(o->value) == RLIB_RLIB_VARIABLE_TOTPAGES)
-					return TRUE;
+					count_rvars++;
 			default:
 				break;
 			}
@@ -610,7 +622,16 @@ int rlib_pcode_has_variable(rlib *r UNUSED, struct rlib_pcode *p) {
 			break;
 		}
 	}
-	return FALSE;
+
+	if (count_vars && count_rvars)
+		error1 = 1;
+
+	if (varptr)
+		*varptr = var;
+	if (error)
+		*error = error1;
+
+	return count_vars + count_rvars;
 }
 
 int operator_stack_push(struct rlib_operator_stack *os, struct rlib_pcode_operator *op) {

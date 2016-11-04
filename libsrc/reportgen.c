@@ -296,6 +296,8 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 	if (!part->has_only_one_report)
 		rlib_resolve_report_fields(r, part, report);
 
+	rlib_resolve_breaks(r, part, report);
+
 	for (iterations = 0; iterations < report->iterations; iterations++) {
 		if (r->queries_count <= 0) {
 			rlib_evaluate_report_attributes(r, report);

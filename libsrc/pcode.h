@@ -116,6 +116,9 @@ struct rlib_pcode_if {
 	char *str_ptr;
 };
 
+/* Forward declaration of this struct */
+struct rlib_report_variable;
+
 #define OPERAND_NUMBER          1
 #define OPERAND_STRING          2
 #define OPERAND_DATE            3
@@ -134,7 +137,6 @@ struct rlib_pcode_if {
 #define RLIB_RLIB_VARIABLE_DETAILCNT 5
 #define RLIB_RLIB_VARIABLE_FORMAT    6
 
-
 struct rlib_pcode_operand {
 	char type;
 	void *value;
@@ -144,7 +146,7 @@ struct rlib_pcode_operand {
 
 int execute_pcode(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gboolean show_stack_errors);
 void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, int offset);
-int rlib_pcode_has_variable(rlib *r, struct rlib_pcode *p);
+int rlib_pcode_has_variable(rlib *r, struct rlib_pcode *p, struct rlib_report_variable **varptr, gint *error);
 
 int rlib_pcode_operator_multiply(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gpointer user_data);
 int rlib_pcode_operator_add(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gpointer user_data);

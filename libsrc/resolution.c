@@ -636,3 +636,22 @@ void rlib_resolve_followers(rlib *r) {
 		}
 	}
 }
+
+void rlib_resolve_breaks(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report) {
+	struct rlib_element *e, *f;
+
+	if (report == NULL && part != NULL)
+		report = part->only_report;
+	if (report == NULL)
+		return;
+
+	for (e = report->breaks; e; e = e->next) {
+		struct rlib_report_break *rb = e->data;
+		for (f = report->variables; f; f = f->next) {
+			struct rlib_report_variable *rv = f->data;
+
+			if (strcmp((char *)rb->xml_name.xml, (char *)rv->xml_resetonbreak.xml) == 0)
+				rv->resetonbreak = rb;
+		}
+	}
+}
