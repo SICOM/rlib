@@ -174,6 +174,43 @@ void rlib_free_lines(rlib *r, struct rlib_report_lines *rl) {
 	g_free(rl);
 }
 
+void rlib_free_extra_data(rlib *r UNUSED, struct rlib_line_extra_data *extra_data) {
+	extra_data->refcount--;
+
+	if (extra_data->refcount)
+		return;
+
+	rlib_value_free(&extra_data->rval_code);
+	rlib_value_free(&extra_data->rval_link);
+	rlib_value_free(&extra_data->rval_bgcolor);
+	rlib_value_free(&extra_data->rval_color);
+	rlib_value_free(&extra_data->rval_col);
+	rlib_value_free(&extra_data->rval_bold);
+	rlib_value_free(&extra_data->rval_italics);
+	rlib_value_free(&extra_data->rval_image_name);
+	rlib_value_free(&extra_data->rval_image_type);
+	rlib_value_free(&extra_data->rval_image_width);
+	rlib_value_free(&extra_data->rval_image_height);
+	rlib_value_free(&extra_data->rval_image_textwidth);
+	g_free(extra_data->formatted_string);
+
+	if (extra_data->memo_lines != NULL) {
+		GSList *list;
+		for (list = extra_data->memo_lines; list != NULL; list = list->next)
+			g_free(list->data);
+		g_slist_free(list);
+	}
+	g_free(extra_data);
+}
+
+void rlib_free_delayed_extra_data(rlib *r, struct rlib_delayed_extra_data *delayed_data) {
+	delayed_data->refcount--;
+
+	rlib_free_extra_data(r, delayed_data->extra_data);
+	if (delayed_data->refcount == 0)
+		g_free(delayed_data);
+}
+
 static void free_fields(rlib *r, struct rlib_report_output_array *roa) {
 	GSList *ptr;
 

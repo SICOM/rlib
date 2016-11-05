@@ -107,7 +107,7 @@ void rlib_handle_page_footer(rlib *r, struct rlib_part *part, struct rlib_report
 	}
 
 	OUTPUT(r)->start_report_page_footer(r, part, report);
-	rlib_layout_report_output(r, part, report, report->page_footer, TRUE, FALSE, NULL, FALSE);
+	rlib_layout_report_output(r, part, report, report->page_footer, TRUE, FALSE, FALSE);
 	OUTPUT(r)->end_report_page_footer(r, part, report);
 
 	for (i = 0; i<report->pages_across; i++)
@@ -308,10 +308,10 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 			set_report_from_part(part, report, top_margin_offset);
 			report->left_margin += left_margin_offset + part->left_margin;
 			OUTPUT(r)->start_report_header(r, part, report);
-			rlib_layout_report_output(r, part, report, report->report_header, FALSE, TRUE, NULL, FALSE);
+			rlib_layout_report_output(r, part, report, report->report_header, FALSE, TRUE, FALSE);
 			OUTPUT(r)->end_report_header(r, part, report);
 			OUTPUT(r)->start_report_no_data(r, part, report);
-			rlib_layout_report_output(r, part, report, report->alternate, FALSE, TRUE, NULL, FALSE);
+			rlib_layout_report_output(r, part, report, report->alternate, FALSE, TRUE, FALSE);
 			OUTPUT(r)->end_report_no_data(r, part, report);
 		} else {
 			rlib_fetch_first_rows(r);
@@ -338,7 +338,7 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 			origional_position_top = report->position_top[0];
 			
 			OUTPUT(r)->start_report_header(r, part, report);
-			rlib_layout_report_output(r, part, report, report->report_header, FALSE, TRUE, NULL, FALSE);
+			rlib_layout_report_output(r, part, report, report->report_header, FALSE, TRUE, FALSE);
 			OUTPUT(r)->end_report_header(r, part, report);
 			
 
@@ -402,7 +402,7 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 								OUTPUT(r)->start_report_field_details(r, part, report);	
 							}
 
-							output_count = rlib_layout_report_output(r, part, report, report->detail->fields, FALSE, FALSE, NULL, FALSE);
+							output_count = rlib_layout_report_output(r, part, report, report->detail->fields, FALSE, FALSE, FALSE);
 
 							for (i = 0; i < report->pages_across; i++) {
 								OUTPUT(r)->set_working_page(r, part, i);

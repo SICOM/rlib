@@ -235,6 +235,7 @@ struct rlib_report_field {
 
 struct rlib_line_extra_data {
 	gint type;
+	gint refcount;
 	struct rlib_value rval_code;
 	struct rlib_value rval_link;
 	struct rlib_value rval_translate;
@@ -282,7 +283,8 @@ struct rlib_line_extra_data {
 
 struct rlib_delayed_extra_data {
 	void *r;
-	struct rlib_line_extra_data extra_data;
+	struct rlib_line_extra_data *extra_data;
+	gint refcount;
 	gint backwards;
 	gfloat left_origin;
 	gfloat bottom_origin;
@@ -1078,6 +1080,8 @@ void rlib_free_graph(rlib *r, struct rlib_graph *graph);
 void rlib_free_chart_header_row(rlib *r, struct rlib_chart_header_row *header_row);
 void rlib_free_chart_row(rlib *r, struct rlib_chart_row *row);
 void rlib_free_chart(rlib *r, struct rlib_chart *chart);
+void rlib_free_extra_data(rlib *r, struct rlib_line_extra_data *extra_data);
+void rlib_free_delayed_extra_data(rlib *r, struct rlib_delayed_extra_data *delayed_data);
 
 /***** PROTOTYPES: pdf.c ******************************************************/
 void rlib_pdf_new_output_filter(rlib *r);
@@ -1097,7 +1101,7 @@ void rlib_csv_new_output_filter(rlib *r);
 /***** PROTOTYPES: layout.c ***************************************************/
 gfloat layout_get_page_width(struct rlib_part *part);
 void rlib_layout_init_part_page(rlib *r, struct rlib_part *part, gboolean first, gboolean normal);
-gint rlib_layout_report_output(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint backwards, gboolean page_header_layout, struct rlib_report_break *rb, gboolean break_header);
+gint rlib_layout_report_output(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint backwards, gboolean page_header_layout, gboolean break_header);
 struct rlib_paper * layout_get_paper(gint paper_type);
 struct rlib_paper * layout_get_paper_by_name(gchar *paper_name);
 gint rlib_layout_report_output_with_break_headers(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean page_header_layout);

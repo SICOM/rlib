@@ -118,15 +118,16 @@ static void txt_start_part(rlib *r, struct rlib_part *part) {
 }
 
 static gchar *txt_callback(struct rlib_delayed_extra_data *delayed_data) {
-	struct rlib_line_extra_data *extra_data = &delayed_data->extra_data;
+	struct rlib_line_extra_data *extra_data = delayed_data->extra_data;
 	rlib *r = delayed_data->r;
 	gchar *buf = NULL, *buf2 = NULL;
 
-	rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL);
+	if (rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL) == NULL)
+		return NULL;
 	rlib_format_string(r, &buf, extra_data->report_field, &extra_data->rval_code);
 	rlib_align_text(r, &buf2, buf, extra_data->report_field->align, extra_data->report_field->width);
 	g_free(buf);
-	g_free(delayed_data);
+	rlib_free_delayed_extra_data(r, delayed_data);
 	return buf2;
 }
 

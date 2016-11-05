@@ -44,6 +44,8 @@ static void rlib_print_break_header_output(rlib *r, struct rlib_part *part, stru
 				blank = TRUE;
 			else
 				blank = FALSE;
+
+			rlib_value_free(&rval);
 		}
 	}
 
@@ -55,7 +57,7 @@ static void rlib_print_break_header_output(rlib *r, struct rlib_part *part, stru
 				OUTPUT(r)->start_report_break_header(r, part, report, rb);
 			}
 
-			rlib_layout_report_output(r, part, report, e, FALSE, TRUE, rb, TRUE);
+			rlib_layout_report_output(r, part, report, e, FALSE, TRUE, TRUE);
 
 			for (i = 0; i < report->pages_across; i++) {
 				OUTPUT(r)->set_working_page(r, part, i);
@@ -80,7 +82,7 @@ static void rlib_print_break_footer_output(rlib *r, struct rlib_part *part, stru
 		}
 
 		r->use_cached_data++;
-		rlib_layout_report_output(r, part, report, e, FALSE, TRUE, rb, FALSE);
+		rlib_layout_report_output(r, part, report, e, FALSE, TRUE, FALSE);
 		r->use_cached_data--;
 
 		for (i = 0; i < report->pages_across; i++) {
@@ -250,6 +252,7 @@ static void rlib_break_all_below_in_reverse_order(rlib *r, struct rlib_part *par
 					OUTPUT(r)->finalize_text_delayed(r, dd->delayed_data, dd->backwards);
 					r->use_cached_data--;
 
+					rlib_free_delayed_extra_data(r, dd->delayed_data);
 					g_free(dd);
 				}
 			}

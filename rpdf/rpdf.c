@@ -212,14 +212,16 @@ DLL_EXPORT_SYM void rpdf_finalize_text_callback(struct rpdf *pdf, gpointer user_
 				gchar *callback_data;
 
 				callback_data = g_malloc0(stream_text_callback->len + 1);
-				stream_text_callback->callback(callback_data, stream_text_callback->len + 1, stream_text_callback->user_data);
-				text = rpdf_text_common(pdf, stream_text_callback->x, stream_text_callback->y, stream_text_callback->angle, callback_data);
-				g_free(callback_data);
+				if (stream_text_callback->callback(callback_data, stream_text_callback->len + 1, stream_text_callback->user_data) != NULL) {
+					text = rpdf_text_common(pdf, stream_text_callback->x, stream_text_callback->y, stream_text_callback->angle, callback_data);
+					g_free(callback_data);
 
-				stream->type = RPDF_TYPE_TEXT;
-				stream->data = text;
+					stream->type = RPDF_TYPE_TEXT;
+					stream->data = text;
 
-				g_free(stream_text_callback);
+					g_free(stream_text_callback);
+				} else
+					g_free(callback_data);
 
 				return;
 			}
