@@ -150,6 +150,9 @@ gint rlib_navigate_next(rlib *r, gint resultset_num) {
 	GList *fw;
 	gint retval, retval11;
 
+	if (resultset_num < 0 || r->queries_count == 0)
+		return FALSE;
+
 	if (r->queries[resultset_num]->n_to_1_started) {
 		retval = rlib_navigate_next_n_to_1(r, resultset_num);
 		r->queries[resultset_num]->n_to_1_matched |= retval;
@@ -211,6 +214,9 @@ gint rlib_navigate_next(rlib *r, gint resultset_num) {
 
 void rlib_navigate_start(rlib *r, gint resultset_num) {
 	GList *fw;
+
+	if (resultset_num < 0 || r->queries_count == 0)
+		return;
 
 	if (r->results[resultset_num]->result == NULL) {
 		r->results[resultset_num]->navigation_failed = TRUE;
