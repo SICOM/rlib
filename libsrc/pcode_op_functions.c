@@ -124,13 +124,7 @@ gint rlib_pcode_operator_add(rlib *r, struct rlib_pcode *code, struct rlib_var_s
 	rlib_value_stack_push(r,vs, rlib_value_new_error(&rval_rtn));
 	return FALSE;
 }
-
-
-
-
-
 #endif
-
 
 gint rlib_pcode_operator_add(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value UNUSED, gpointer user_data UNUSED) {
 	struct rlib_value *v1, *v2, rval_rtn;
@@ -262,8 +256,8 @@ gint rlib_pcode_operator_divide(rlib *r, struct rlib_pcode *code, struct rlib_va
 	struct rlib_value *v1, *v2, rval_rtn;
 	v1 = rlib_value_stack_pop(vs);
 	v2 = rlib_value_stack_pop(vs);
-	if(v1 != NULL && v2 != NULL) {
-		if(RLIB_VALUE_IS_NUMBER(v1) && RLIB_VALUE_IS_NUMBER(v2)) {
+	if (v1 != NULL && v2 != NULL) {
+		if (RLIB_VALUE_IS_NUMBER(v1) && RLIB_VALUE_IS_NUMBER(v2)) {
 			gint64 result = RLIB_FXP_DIV(RLIB_VALUE_GET_AS_NUMBER(v2), RLIB_VALUE_GET_AS_NUMBER(v1));
 			rlib_value_free(v1);
 			rlib_value_free(v2);

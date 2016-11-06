@@ -242,8 +242,8 @@ static gfloat rlib_layout_output_extras_start(rlib *r, struct rlib_part *part, g
 }
 
 //BOBD: Extra_data seems to have all the stuff which needs to get passed in JSON
-static gfloat rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part UNUSED, gint backwards, gfloat left_origin, gfloat bottom_origin, struct rlib_line_extra_data *extra_data, gint flag, gint memo_line, gboolean break_header) __attribute__((nonnull(1,2,6)));
-static gfloat rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part UNUSED, gint backwards, gfloat left_origin, gfloat bottom_origin, struct rlib_line_extra_data *extra_data, gint flag, gint memo_line, gboolean break_header) {
+static gfloat rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part UNUSED, gint backwards, gfloat left_origin, gfloat bottom_origin, struct rlib_line_extra_data *extra_data, gint flag, gint memo_line) __attribute__((nonnull(1,2,6)));
+static gfloat rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part UNUSED, gint backwards, gfloat left_origin, gfloat bottom_origin, struct rlib_line_extra_data *extra_data, gint flag, gint memo_line) {
 	gfloat rtn_width;
 	gchar *text = extra_data->formatted_string;
 	gint i, slen;
@@ -297,9 +297,9 @@ static gfloat rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part U
 		g_free(filename);
 		rtn_width = extra_data->output_width;
 	} else {
-		int has_variable = FALSE, error = 0;
-		struct rlib_report_variable *rv = NULL;
-		struct rlib_report_break *rb = NULL;
+		gint has_variable = FALSE;
+		gint value_type = RLIB_VALUE_GET_TYPE(&extra_data->rval_code);
+		GSList *varlist = NULL;
 
 		OUTPUT(r)->set_font_point(r, extra_data->font_point);
 		if (extra_data->found_color)
@@ -309,11 +309,9 @@ static gfloat rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part U
 		if (extra_data->is_italics)
 			OUTPUT(r)->start_italics(r);
 
-		has_variable = (extra_data->report_field && rlib_pcode_has_variable(r, extra_data->report_field->code, &rv, &error));
-		if (rv)
-			rb = rv->resetonbreak;
+		has_variable = rlib_pcode_has_variable(r, extra_data->field_code, &varlist, TRUE);
 
-		if (extra_data->delayed == TRUE || (rb && (break_header || has_variable))) {
+		if (value_type != RLIB_VALUE_NONE && (extra_data->delayed == TRUE || has_variable)) {
 			if (OUTPUT(r)->print_text_delayed) {
 				struct rlib_delayed_extra_data *delayed_data = g_new0(struct rlib_delayed_extra_data, 1);
 
@@ -324,12 +322,15 @@ static gfloat rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part U
 				delayed_data->bottom_origin = bottom_origin + (extra_data->font_point/300.0);
 				delayed_data->extra_data = extra_data;
 				delayed_data->r = r;
-				OUTPUT(r)->print_text_delayed(r, delayed_data, backwards, RLIB_VALUE_GET_TYPE(&extra_data->rval_code));
+				OUTPUT(r)->print_text_delayed(r, delayed_data, backwards, value_type);
 
-				if (rv) {
-					struct rlib_report_break *rb = rv->resetonbreak;
-					if (has_variable == 1 && rb) {
-						if ((rb && (break_header || has_variable))) {
+				if (has_variable) {
+					GSList *ptr;
+					for (ptr = varlist; ptr; ptr = ptr->next) {
+						struct rlib_report_variable *rv = ptr->data;
+						struct rlib_report_break *rb = rv->resetonbreak;
+
+						if (rb) {
 							struct rlib_break_delayed_data *dd = g_new(struct rlib_break_delayed_data, 1);
 
 							delayed_data->refcount++;
@@ -338,8 +339,7 @@ static gfloat rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part U
 							dd->backwards = backwards;
 							rb->delayed_header_data = g_slist_append(rb->delayed_header_data, dd);
 						}
-					} else
-						r_error(r, "An expression can only reference one break variable!\n");
+					}
 				}
 			}
 		} else {
@@ -374,7 +374,7 @@ static gfloat layout_output_extras_end(rlib *r, struct rlib_part *part, gint bac
 		OUTPUT(r)->end_boxurl(r, backwards);
 		if (OUTPUT(r)->trim_links) {
 			rlib_layout_output_extras_start(r, part, backwards, 0, 0, extra_data, TRUE);
-			rlib_layout_text_from_extra_data(r, part, backwards, 0, 0, extra_data, TEXT_RIGHT, memo_line, FALSE);
+			rlib_layout_text_from_extra_data(r, part, backwards, 0, 0, extra_data, TEXT_RIGHT, memo_line);
 		}
 	}
 
@@ -572,10 +572,10 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 			}
 
 			extra_data1->width = rf->width;
-			extra_data1->field_code = rf->code;
+			extra_data1->field_code = rlib_pcode_copy_replace_fields_with_values(r, rf->code);
 			extra_data1->report_field = rf;
 			rlib_execute_pcode(r, &extra_data1->rval_col, rf->col_code, NULL);
-			if (rlib_pcode_has_variable(r, extra_data1->report_field->code, NULL, NULL)) {
+			if (rlib_pcode_has_variable(r, extra_data1->report_field->code, NULL, TRUE)) {
 				extra_data1->delayed = TRUE;
 				*delayed = TRUE;
 			}
@@ -830,7 +830,7 @@ static void rlib_layout_find_common_properties_in_a_line(rlib *r, GSList *extra_
 	struct rlib_line_extra_data *e_ptr = NULL, *save_ptr = NULL, *previous_ptr = NULL;
 	gint state = STATE_NONE;
 
-	previous_ptr = extra_data_chain->data;
+	previous_ptr = (extra_data_chain ? extra_data_chain->data : NULL);
 	for (ed = extra_data_chain; ed; ed = ed->next) {
 		e_ptr = ed->data;
 		if (e_ptr->found_bgcolor) {
@@ -865,7 +865,7 @@ static void rlib_layout_find_common_properties_in_a_line(rlib *r, GSList *extra_
 	save_ptr = NULL;
 	previous_ptr = NULL;
 	state = STATE_NONE;
-	previous_ptr = extra_data_chain->data;
+	previous_ptr = (extra_data_chain ? extra_data_chain->data : NULL);
 	for (ed = extra_data_chain; ed; ed = ed->next) {
 		e_ptr = ed->data;
 		if (e_ptr->found_link) {
@@ -907,7 +907,7 @@ static void rlib_layout_find_common_properties_in_a_line(rlib *r, GSList *extra_
  * Then dup the extra_data[] in a queue for later and add it
  * as a delayed write thingie!!!
  */
-static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_output_array *roa, gint backwards, gint page, gboolean page_header_layout, gboolean break_header) {
+static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_output_array *roa, gint backwards, gint page, gboolean page_header_layout) {
 	struct rlib_element *e = NULL;
 	gfloat margin = 0, width = 0;
 	gfloat *rlib_position;
@@ -1067,7 +1067,7 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 									buf[0] = 0;
 								}
 
-								width = rlib_layout_text_from_extra_data(r, part, backwards, margin, layout_get_next_line(part, *rlib_position, rl), extra_data1, TEXT_NORMAL, i, break_header);
+								width = rlib_layout_text_from_extra_data(r, part, backwards, margin, layout_get_next_line(part, *rlib_position, rl), extra_data1, TEXT_NORMAL, i);
 								margin += width;
 							}
 						}
@@ -1082,12 +1082,12 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 								struct rlib_report_field *rf = ((struct rlib_report_field *)e->data);
 								rf->rval = &extra_data1->rval_code;
 								rlib_layout_output_extras_start(r, part, backwards, margin, layout_get_next_line(part, *rlib_position, rl), extra_data1, FALSE);
-								width = rlib_layout_text_from_extra_data(r, part, backwards, margin, layout_get_next_line(part, *rlib_position, rl), extra_data1, TEXT_LEFT, i, break_header);
+								width = rlib_layout_text_from_extra_data(r, part, backwards, margin, layout_get_next_line(part, *rlib_position, rl), extra_data1, TEXT_LEFT, i);
 								layout_get_next_line(part, *rlib_position, rl);
 								layout_output_extras_end(r, part, backwards, extra_data1, i);
 							} else if (e->type == RLIB_ELEMENT_LITERAL) {
 								rlib_layout_output_extras_start(r, part, backwards, margin, layout_get_next_line(part, *rlib_position, rl), extra_data1, FALSE);
-								width = rlib_layout_text_from_extra_data(r, part, backwards, margin, layout_get_next_line(part, *rlib_position, rl), extra_data1, TEXT_LEFT, i, FALSE);
+								width = rlib_layout_text_from_extra_data(r, part, backwards, margin, layout_get_next_line(part, *rlib_position, rl), extra_data1, TEXT_LEFT, i);
 								layout_get_next_line(part, *rlib_position, rl);
 								layout_output_extras_end(r, part, backwards, extra_data1, i);
 							} else if (e->type == RLIB_ELEMENT_IMAGE) {
@@ -1202,7 +1202,7 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 	return output_count;
 }	
 
-static gint rlib_layout_report_outputs_across_pages(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *report_outputs, gint backwards, gboolean page_header_layout, gboolean break_header) {
+static gint rlib_layout_report_outputs_across_pages(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *report_outputs, gint backwards, gboolean page_header_layout) {
 	struct rlib_report_output_array *roa;
 	gint page;
 	gint i;
@@ -1219,17 +1219,17 @@ static gint rlib_layout_report_outputs_across_pages(rlib *r, struct rlib_part *p
 		
 		if (page >= 1) {
 			OUTPUT(r)->set_working_page(r, part, roa->page-1);
-			output_count += rlib_layout_report_output_array(r, part, report, roa, backwards, roa->page, page_header_layout, break_header);
+			output_count += rlib_layout_report_output_array(r, part, report, roa, backwards, roa->page, page_header_layout);
 		} else {
 			if (OUTPUT(r)->do_breaks) {
 				for (i = 0; i < part->pages_across; i++) {
 					OUTPUT(r)->set_working_page(r, part, i);
-					output_count = rlib_layout_report_output_array(r, part, report, roa, backwards, i+1, page_header_layout, break_header);
+					output_count = rlib_layout_report_output_array(r, part, report, roa, backwards, i+1, page_header_layout);
 				}
 			} else { /*Only go once Otherwise CVS Might Look Funny*/
 				for (i = 0; i < 1; i++) {
 					OUTPUT(r)->set_working_page(r, part, i);
-					output_count = rlib_layout_report_output_array(r, part, report, roa, backwards, i+1, page_header_layout, break_header);
+					output_count = rlib_layout_report_output_array(r, part, report, roa, backwards, i+1, page_header_layout);
 				}			
 			}
 		}
@@ -1241,11 +1241,11 @@ static gint rlib_layout_report_outputs_across_pages(rlib *r, struct rlib_part *p
 	return output_count;
 }
 
-gint rlib_layout_report_output(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint backwards, gboolean page_header_layout, gboolean break_header) {
+gint rlib_layout_report_output(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint backwards, gboolean page_header_layout) {
 	gint output_count = 0;
 
 	OUTPUT(r)->start_evil_csv(r);
-	output_count = rlib_layout_report_outputs_across_pages(r, part, report, e, backwards, page_header_layout, break_header);
+	output_count = rlib_layout_report_outputs_across_pages(r, part, report, e, backwards, page_header_layout);
 	OUTPUT(r)->end_evil_csv(r);
 	return output_count;
 }
@@ -1280,7 +1280,7 @@ gint rlib_layout_report_output_with_break_headers(rlib *r, struct rlib_part *par
 			}
 			if (!rb->suppressblank || (rb->suppressblank && !blank)) {
 				OUTPUT(r)->start_report_break_header(r, part, report, rb);
-				output_count += rlib_layout_report_outputs_across_pages(r, part, report, rb->header, FALSE, page_header_layout, TRUE);
+				output_count += rlib_layout_report_outputs_across_pages(r, part, report, rb->header, FALSE, page_header_layout);
 				OUTPUT(r)->end_report_break_header(r, part, report, rb);
 			}
 		}
@@ -1291,7 +1291,7 @@ gint rlib_layout_report_output_with_break_headers(rlib *r, struct rlib_part *par
 	}
 
 	if (report->detail)
-		rlib_layout_report_outputs_across_pages(r, part, report, report->detail->fields, FALSE, FALSE, FALSE);
+		rlib_layout_report_outputs_across_pages(r, part, report, report->detail->fields, FALSE, FALSE);
 
 	for (i = 0; i < report->pages_across; i++) {
 		OUTPUT(r)->set_working_page(r, part, i);
@@ -1316,7 +1316,7 @@ void rlib_layout_report_footer(rlib *r, struct rlib_part *part, struct rlib_repo
 		for (i = 0; i < report->pages_across; i++)
 			rlib_end_page_if_line_wont_fit(r, part, report, report->report_footer);
 		OUTPUT(r)->start_report_footer(r, part, report);
-		rlib_layout_report_output(r, part, report, report->report_footer, FALSE, FALSE, FALSE);
+		rlib_layout_report_output(r, part, report, report->report_footer, FALSE, FALSE);
 		OUTPUT(r)->end_report_footer(r, part, report);
 	}
 }
@@ -1330,7 +1330,7 @@ void rlib_layout_init_report_page(rlib *r, struct rlib_part *part, struct rlib_r
 	}
 
 	if (report->detail)
-		rlib_layout_report_output(r, part, report, report->detail->headers, FALSE, FALSE, FALSE);
+		rlib_layout_report_output(r, part, report, report->detail->headers, FALSE, FALSE);
 
 	for (i = 0; i < report->pages_across; i++) {
 		OUTPUT(r)->set_working_page(r, part, i);
@@ -1392,7 +1392,7 @@ void rlib_layout_init_part_page(rlib *r, struct rlib_part *part, gboolean first,
 		OUTPUT(r)->start_part_page_footer(r, part);
 	}
 
-	rlib_layout_report_output(r, part, NULL, part->page_footer, TRUE, FALSE, FALSE);
+	rlib_layout_report_output(r, part, NULL, part->page_footer, TRUE, FALSE);
 
 	for (i = 0; i < part->pages_across; i++) {
 		OUTPUT(r)->set_working_page(r, part, i);
@@ -1411,7 +1411,7 @@ void rlib_layout_init_part_page(rlib *r, struct rlib_part *part, gboolean first,
 				OUTPUT(r)->start_part_header(r, part);
 			}
 
-			rlib_layout_report_output(r, part, NULL, part->report_header, FALSE, TRUE, FALSE);
+			rlib_layout_report_output(r, part, NULL, part->report_header, FALSE, TRUE);
 
 			for (i = 0; i < part->pages_across; i++) {
 				OUTPUT(r)->set_working_page(r, part, i);
@@ -1426,7 +1426,7 @@ void rlib_layout_init_part_page(rlib *r, struct rlib_part *part, gboolean first,
 				OUTPUT(r)->start_part_page_header(r, part);
 			}
 
-			rlib_layout_report_output(r, part, NULL, part->page_header, FALSE, TRUE, FALSE);
+			rlib_layout_report_output(r, part, NULL, part->page_header, FALSE, TRUE);
 
 			for (i = 0; i < part->pages_across; i++) {
 				OUTPUT(r)->set_working_page(r, part, i);

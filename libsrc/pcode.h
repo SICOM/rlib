@@ -129,6 +129,7 @@ struct rlib_report_variable;
 #define OPERAND_METADATA        8
 #define OPERAND_IIF             9
 #define OPERAND_VECTOR          10
+#define OPERAND_VALUE			11
 
 #define RLIB_RLIB_VARIABLE_PAGENO    1
 #define RLIB_RLIB_VARIABLE_TOTPAGES  2
@@ -145,8 +146,11 @@ struct rlib_pcode_operand {
 #define RLIB_FXP_PRECISION 7
 
 int execute_pcode(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gboolean show_stack_errors);
+void rlib_value_dump(rlib *r, struct rlib_value *rval, gint offset, gint linefeed);
 void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, int offset);
-int rlib_pcode_has_variable(rlib *r, struct rlib_pcode *p, struct rlib_report_variable **varptr, gint *error);
+int rlib_pcode_has_variable(rlib *r, struct rlib_pcode *p, GSList **varlist, gboolean include_delayed_rlib_variables);
+struct rlib_pcode *rlib_pcode_copy_replace_fields_with_values(rlib *r, struct rlib_pcode *p);
+void rlib_pcode_replace_variable_with_value(rlib *r, struct rlib_pcode *p, struct rlib_report_variable *var);
 
 int rlib_pcode_operator_multiply(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gpointer user_data);
 int rlib_pcode_operator_add(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gpointer user_data);

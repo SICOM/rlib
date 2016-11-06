@@ -289,6 +289,9 @@ static gchar *html_callback(struct rlib_delayed_extra_data *delayed_data) {
 	gchar *buf = NULL, *buf2 = NULL;
 	GString *string;
 
+	if (rlib_pcode_has_variable(r, extra_data->field_code, NULL, FALSE))
+		return NULL;
+
 	if (rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL) == NULL)
 		return NULL;
 	rlib_format_string(r, &buf, extra_data->report_field, &extra_data->rval_code);
@@ -296,6 +299,7 @@ static gchar *html_callback(struct rlib_delayed_extra_data *delayed_data) {
 	g_free(buf);
 
 	string = html_print_text_common(buf2, extra_data);
+	g_free(buf2);
 	rlib_free_delayed_extra_data(r, delayed_data);
 	return g_string_free(string, FALSE);
 }
@@ -330,13 +334,15 @@ static void html_finalize_text_delayed(rlib *r, gpointer in_ptr, int backwards) 
 				gchar *text = html_callback(packet->data);
 				struct _packet *new_packet;
 
-				new_packet = g_new0(struct _packet, 1);
-				new_packet->type = TEXT;
-				new_packet->data = g_string_new(text);
-				l->data = new_packet;
+				if (text) {
+					new_packet = g_new0(struct _packet, 1);
+					new_packet->type = TEXT;
+					new_packet->data = g_string_new(text);
+					l->data = new_packet;
 
-				g_free(text);
-				g_free(packet);
+					g_free(text);
+					g_free(packet);
+				}
 				return;
 			}
 		}

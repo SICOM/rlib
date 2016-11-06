@@ -483,6 +483,12 @@ static void rlib_free_operand(rlib *r, struct rlib_pcode_operand *o) {
 	case OPERAND_RLIB_VARIABLE:
 	case OPERAND_METADATA:
 		break;
+
+	case OPERAND_VALUE:
+		rlib_value_free(o->value);
+		g_free(o->value);
+		break;
+
 	default:
 		r_error(r, "rlib_free_operand: unknown operand type: %d\n", o->type);
 		break;
@@ -508,6 +514,27 @@ static const gchar *rlib_rlib_variable_to_name(gint value) {
 	default:
 		return "unknown";
 	}
+}
+
+void rlib_value_dump(rlib *r, struct rlib_value *rval, gint offset, gint linefeed) {
+	int i;
+
+	for (i = 0; i < offset * 5; i++)
+		rlogit(r, " ");
+
+	switch (rval->type) {
+	case RLIB_VALUE_NUMBER:
+		rlogit(r, "OPERAND_VALUE NUMBER %lf", (double)rval->number_value / (double)RLIB_DECIMAL_PRECISION);
+		break;
+	case RLIB_VALUE_STRING:
+		rlogit(r, "OPERAND_VALUE STRING '%s'", rval->string_value);
+		break;
+	default:
+		rlogit(r, "OPERAND_VALUE TYPE [%d]", rval->type);
+		break;
+	}
+	if (linefeed)
+		rlogit(r, "\n");
 }
 
 void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, gint offset) {
@@ -557,13 +584,19 @@ void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, gint offset) {
 			case OPERAND_IIF:
 			{
 				struct rlib_pcode_if *rpi = o->value;
-				rlogit(r, "*IFF EXPRESSION EVAULATION:\n");
+				rlogit(r, "*IFF EXPRESSION EVALUATION:\n");
 				rlib_pcode_dump(r, rpi->evaluation, offset+1);
 				rlogit(r, "*IFF EXPRESSION TRUE:\n");
 				rlib_pcode_dump(r, rpi->true, offset+1);
 				rlogit(r, "*IFF EXPRESSION FALSE:\n");
 				rlib_pcode_dump(r, rpi->false, offset+1);
 				rlogit(r, "*IFF DONE\n");
+				break;
+			}
+			case OPERAND_VALUE:
+			{
+				struct rlib_value *rval = o->value;
+				rlib_value_dump(r, rval, 0, 0);
 				break;
 			}
 			default:
@@ -584,19 +617,19 @@ void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, gint offset) {
 	}
 }
 
-int rlib_pcode_has_variable(rlib *r UNUSED, struct rlib_pcode *p, struct rlib_report_variable **varptr, gint *error) {
+int rlib_pcode_has_variable(rlib *r UNUSED, struct rlib_pcode *p, GSList **varlist, gboolean include_delayed_rlib_variables) {
+	GSList *list = NULL;
 	gpointer var = NULL;
-	int i, count_vars, count_rvars, error1;
+	int i, count_vars, count_rvars;
 
-	if (varptr)
-		*varptr = NULL;
+	if (varlist)
+		*varlist = NULL;
 
 	if (p == NULL)
 		return FALSE;
 
 	count_vars = 0;
 	count_rvars = 0;
-	error1 = FALSE;
 	for (i = 0; i < p->count; i++) {
 		switch (p->instructions[i]->instruction) {
 		case PCODE_PUSH:
@@ -604,15 +637,25 @@ int rlib_pcode_has_variable(rlib *r UNUSED, struct rlib_pcode *p, struct rlib_re
 			struct rlib_pcode_operand *o = p->instructions[i]->value;
 			switch (o->type) {
 			case OPERAND_VARIABLE:
-				if (!var)
-					var = o->value;
-				else if (var != o->value)
-					error1 = TRUE;
+				var = o->value;
+				if (varlist) {
+					GSList *ptr;
+
+					for (ptr = list; ptr; ptr = ptr->next) {
+						if (ptr->data == var)
+							break;
+					}
+					if (!ptr)
+						list = g_slist_append(list, var);
+				}
 				count_vars++;
 				break;
 			case OPERAND_RLIB_VARIABLE:
-				if (GPOINTER_TO_INT(o->value) == RLIB_RLIB_VARIABLE_TOTPAGES)
-					count_rvars++;
+				if (include_delayed_rlib_variables) {
+					if (GPOINTER_TO_INT(o->value) == RLIB_RLIB_VARIABLE_TOTPAGES)
+						count_rvars++;
+				}
+				break;
 			default:
 				break;
 			}
@@ -623,15 +666,146 @@ int rlib_pcode_has_variable(rlib *r UNUSED, struct rlib_pcode *p, struct rlib_re
 		}
 	}
 
-	if (count_vars && count_rvars)
-		error1 = 1;
-
-	if (varptr)
-		*varptr = var;
-	if (error)
-		*error = error1;
+	if (varlist)
+		*varlist = list;
 
 	return count_vars + count_rvars;
+}
+
+struct rlib_pcode *rlib_pcode_copy_replace_fields_with_values(rlib *r, struct rlib_pcode *p) {
+	struct rlib_pcode *p1;
+	int i, quit;
+
+	if (p == NULL)
+		return NULL;
+
+	p1 = g_new0(struct rlib_pcode, 1);
+	if (p1 == NULL)
+		return NULL;
+
+	p1->count = p->count;
+	p1->line_number = p->line_number;
+
+	p1->infix_string = p->infix_string;
+
+	p1->instructions = g_new0(struct rlib_pcode_instruction *, p1->count);
+	if (p1->instructions == NULL) {
+		g_free(p1);
+		return NULL;
+	}
+
+	for (i = 0, quit = 0; !quit && i < p1->count; i++) {
+		p1->instructions[i] = g_new0(struct rlib_pcode_instruction, 1);
+		if (p1->instructions[i] == NULL) {
+			quit = 1;
+			break;
+		}
+
+		p1->instructions[i]->instruction = p->instructions[i]->instruction;
+
+		switch (p->instructions[i]->instruction) {
+		case PCODE_PUSH:
+			{
+				struct rlib_pcode_operand *o = p->instructions[i]->value;
+
+				switch (o->type) {
+				case OPERAND_FIELD:
+					{
+						struct rlib_resultset_field *rf = o->value;
+						gchar *field_value = rlib_resolve_field_value(r, rf);
+						struct rlib_pcode_operand *o1;
+
+						o1 = g_new0(struct rlib_pcode_operand, 1);
+						if (o1 == NULL) {
+							quit = 1;
+							continue;
+						}
+
+						o1->type = OPERAND_STRING;
+						o1->value = field_value;
+
+						p1->instructions[i]->value = o1;
+						p1->instructions[i]->value_allocated = TRUE;
+
+						break;
+					}
+				default:
+					/* copy the new operand as is, with value_allocated = FALSE */
+					p1->instructions[i]->value = p->instructions[i]->value;
+					break;
+				}
+
+				break;
+			}
+		case PCODE_EXECUTE:
+			/* copy the new instruction as is, with value_allocated = FALSE */
+			p1->instructions[i]->value = p->instructions[i]->value;
+			break;
+		default:
+			r_error(r, "rlib_pcode_copy_replace_fields_with_values: Unknown instruction %d\n", p->instructions[i]->instruction);
+			quit = 1;
+			continue;
+		}
+	}
+
+	if (quit) {
+		p1->count = i;
+		rlib_pcode_free(r, p1);
+		return NULL;
+	}
+
+	return p1;
+}
+
+void rlib_pcode_replace_variable_with_value(rlib *r, struct rlib_pcode *p, struct rlib_report_variable *var) {
+	int i;
+
+	if (p == NULL || var == NULL)
+		return;
+
+	for (i = 0; i < p->count; i++) {
+		switch (p->instructions[i]->instruction) {
+		case PCODE_PUSH:
+			{
+				struct rlib_pcode_operand *o = p->instructions[i]->value;
+
+				switch (o->type) {
+				case OPERAND_VARIABLE:
+					{
+						struct rlib_report_variable *v = o->value;
+
+						if (var == v) {
+							struct rlib_value *rval = g_new0(struct rlib_value, 1);
+
+							rlib_operand_get_value(r, rval, o, NULL);
+
+							if (p->instructions[i]->value_allocated)
+								rlib_free_operand(r, o);
+
+							o = g_new0(struct rlib_pcode_operand, 1);
+							o->type = OPERAND_VALUE;
+							o->value = rval;
+							p->instructions[i]->value = o;
+							p->instructions[i]->value_allocated = TRUE;
+
+							break;
+						}
+
+						break;
+					}
+				default:
+					break;
+				}
+
+				break;
+			}
+		case PCODE_EXECUTE:
+			break;
+		default:
+			r_error(r, "rlib_pcode_copy_replace_fields_with_values: Unknown instruction %d\n", p->instructions[i]->instruction);
+			continue;
+		}
+	}
 }
 
 int operator_stack_push(struct rlib_operator_stack *os, struct rlib_pcode_operator *op) {
@@ -968,14 +1142,15 @@ void rlib_value_stack_init(struct rlib_value_stack *vs) {
 }
 
 DLL_EXPORT_SYM gint rlib_value_stack_push(rlib *r, struct rlib_value_stack *vs, struct rlib_value *value) {
-	if(vs->count == 99)
+	if (vs->count == 99)
 		return FALSE;
-	if(value == NULL) {
+	if (value == NULL) {
 		r_error(r, "PCODE EXECUTION ERROR.. TRIED TO *PUSH* A NULL VALUE.. CHECK YOUR EXPRESSION!\n");
 		return FALSE;
 	}
 
 	vs->values[vs->count++] = *value;
+
 	return TRUE;
 }
 
@@ -1020,7 +1195,7 @@ struct rlib_value *rlib_value_dup(struct rlib_value *orig) {
 	struct rlib_value *new;
 	new = g_malloc(sizeof(struct rlib_value));
 	memcpy(new, orig, sizeof(struct rlib_value));
-	if(orig->type == RLIB_VALUE_STRING)
+	if (orig->type == RLIB_VALUE_STRING)
 		new->string_value = g_strdup(orig->string_value);
 	return new;
 }
@@ -1106,6 +1281,7 @@ struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, stru
 				 */
 				*rval = *rval2;
 				rval->free = FALSE;
+
 				return rval;
 			}
 		}
@@ -1149,7 +1325,7 @@ struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, stru
 		count = &RLIB_VARIABLE_CA(rv)->count;
 		amount = &RLIB_VARIABLE_CA(rv)->amount;
 
-		if(rv->code == NULL && rv->type != RLIB_REPORT_VARIABLE_COUNT) {
+		if (rv->code == NULL && rv->type != RLIB_REPORT_VARIABLE_COUNT) {
 			r_error(r, "Line: %d - Bad Expression in variable [%s] Variable Resolution: Assuming 0 value for variable	\n",rv->xml_name.line,rv->xml_name.xml);
 		} else {
 			if(rv->type == RLIB_REPORT_VARIABLE_COUNT) {
@@ -1175,10 +1351,15 @@ struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, stru
 			}
 		}
 		return rlib_value_new(rval, RLIB_VALUE_NUMBER, TRUE, &val);
-	} else if(o->type == OPERAND_IIF) {
+	} else if (o->type == OPERAND_IIF) {
 		return rlib_value_new(rval, RLIB_VALUE_IIF, FALSE, o->value);
-	} else if(o->type == OPERAND_VECTOR) {
+	} else if (o->type == OPERAND_VECTOR) {
 		return rlib_value_new(rval, RLIB_VALUE_VECTOR, FALSE, o->value);
+	} else if (o->type == OPERAND_VALUE) {
+		struct rlib_value *oval = o->value;
+		*rval = *oval;
+		rval->free = FALSE;
+		return rval;
 	}
 
 	rlib_value_new(rval, RLIB_VALUE_ERROR, FALSE, NULL);
@@ -1230,6 +1411,7 @@ DLL_EXPORT_SYM struct rlib_value *rlib_execute_pcode(rlib *r, struct rlib_value 
 	rlib_value_stack_init(&value_stack);
 	execute_pcode(r, code, &value_stack, this_field_value, TRUE);
 	*rval = *rlib_value_stack_pop(&value_stack);
+
 	return rval;
 }
 

@@ -404,6 +404,8 @@ struct rlib_report_break {
 	struct rlib_pcode *headernewpage_code;
 	struct rlib_pcode *suppressblank_code;
 
+	GSList *variables;
+
 	/* Contains output driver specific opaque pointers */
 	GSList *delayed_header_data;
 };
@@ -1101,7 +1103,7 @@ void rlib_csv_new_output_filter(rlib *r);
 /***** PROTOTYPES: layout.c ***************************************************/
 gfloat layout_get_page_width(struct rlib_part *part);
 void rlib_layout_init_part_page(rlib *r, struct rlib_part *part, gboolean first, gboolean normal);
-gint rlib_layout_report_output(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint backwards, gboolean page_header_layout, gboolean break_header);
+gint rlib_layout_report_output(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint backwards, gboolean page_header_layout);
 struct rlib_paper * layout_get_paper(gint paper_type);
 struct rlib_paper * layout_get_paper_by_name(gchar *paper_name);
 gint rlib_layout_report_output_with_break_headers(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean page_header_layout);

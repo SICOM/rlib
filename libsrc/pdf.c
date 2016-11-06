@@ -155,6 +155,9 @@ static gchar *pdf_rpdf_callback(gchar *data, gint len, void *user_data) {
 	rlib *r = delayed_data->r;
 	gchar *buf = NULL, *buf2 = NULL;
 
+	if (rlib_pcode_has_variable(r, extra_data->field_code, NULL, FALSE))
+		return NULL;
+
 	if (rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL) == NULL)
 		return NULL;
 	rlib_format_string(r, &buf, extra_data->report_field, &extra_data->rval_code);

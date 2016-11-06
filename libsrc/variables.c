@@ -49,7 +49,7 @@ void variable_clear(struct rlib_report_variable *rv, gboolean do_expression) {
 	} else if (rv->type == RLIB_REPORT_VARIABLE_HIGHEST) {
 		RLIB_VARIABLE_CA(rv)->amount = *rlib_value_new_number(&RLIB_VARIABLE_CA(rv)->amount, 0);
 	}
-} 
+}
 
 void init_variables(struct rlib_report *report) {
 	struct rlib_element *e;

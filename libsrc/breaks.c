@@ -57,7 +57,7 @@ static void rlib_print_break_header_output(rlib *r, struct rlib_part *part, stru
 				OUTPUT(r)->start_report_break_header(r, part, report, rb);
 			}
 
-			rlib_layout_report_output(r, part, report, e, FALSE, TRUE, TRUE);
+			rlib_layout_report_output(r, part, report, e, FALSE, TRUE);
 
 			for (i = 0; i < report->pages_across; i++) {
 				OUTPUT(r)->set_working_page(r, part, i);
@@ -82,7 +82,7 @@ static void rlib_print_break_footer_output(rlib *r, struct rlib_part *part, stru
 		}
 
 		r->use_cached_data++;
-		rlib_layout_report_output(r, part, report, e, FALSE, TRUE, FALSE);
+		rlib_layout_report_output(r, part, report, e, FALSE, TRUE);
 		r->use_cached_data--;
 
 		for (i = 0; i < report->pages_across; i++) {
@@ -198,7 +198,7 @@ void rlib_handle_break_headers(rlib *r, struct rlib_part *part, struct rlib_repo
 	g_slist_free(breaks);
 }
 
-/* TODO: Variables need to resolve the name into a number or something.. like break numbers for more efficient compareseon */
+/* TODO: Variables need to resolve the name into a number or something.. like break numbers for more efficient comparison */
 static void reset_variables_on_break(struct rlib_report *report, gchar *name) {
 	struct rlib_element *e;
 
@@ -224,7 +224,7 @@ static void rlib_break_all_below_in_reverse_order(rlib *r, struct rlib_part *par
 	for (i = count; i > 0; i--) {
 		xxx = e;
 		for (j = 0; j < i - 1; j++)
-			xxx = xxx->next;		
+			xxx = xxx->next;
 		rb = xxx->data;
 
 		if (OUTPUT(r)->do_breaks) {
@@ -240,13 +240,20 @@ static void rlib_break_all_below_in_reverse_order(rlib *r, struct rlib_part *par
 			rlib_print_break_footer_output(r, part, report, rb, rb->footer);
 
 			/*
-			 * Finalize delayed data from the break header.
+			 * Finalize delayed data
 			 */
 			if (rb->delayed_header_data && OUTPUT(r)->finalize_text_delayed) {
 				GSList *list;
 
 				for (list = rb->delayed_header_data; list; list = list->next) {
 					struct rlib_break_delayed_data *dd = list->data;
+					GSList *list1;
+
+					for (list1 = rb->variables; list1; list1 = list1->next) {
+						struct rlib_report_variable *rv = list1->data;
+
+						rlib_pcode_replace_variable_with_value(r, dd->delayed_data->extra_data->field_code, rv);
+					}
 
 					r->use_cached_data++;
 					OUTPUT(r)->finalize_text_delayed(r, dd->delayed_data, dd->backwards);

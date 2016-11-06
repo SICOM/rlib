@@ -174,11 +174,13 @@ void rlib_free_lines(rlib *r, struct rlib_report_lines *rl) {
 	g_free(rl);
 }
 
-void rlib_free_extra_data(rlib *r UNUSED, struct rlib_line_extra_data *extra_data) {
+void rlib_free_extra_data(rlib *r, struct rlib_line_extra_data *extra_data) {
 	extra_data->refcount--;
 
 	if (extra_data->refcount)
 		return;
+
+	rlib_pcode_free(r, extra_data->field_code);
 
 	rlib_value_free(&extra_data->rval_code);
 	rlib_value_free(&extra_data->rval_link);
@@ -420,6 +422,9 @@ void rlib_free_breaks(rlib *r, struct rlib_element *e) {
 		xmlFree(rb->xml_newpage.xml);
 		xmlFree(rb->xml_headernewpage.xml);
 		xmlFree(rb->xml_suppressblank.xml);
+
+		g_slist_free(rb->variables);
+
 		g_free(rb);
 	}
 }

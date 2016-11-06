@@ -122,6 +122,9 @@ static gchar *txt_callback(struct rlib_delayed_extra_data *delayed_data) {
 	rlib *r = delayed_data->r;
 	gchar *buf = NULL, *buf2 = NULL;
 
+	if (rlib_pcode_has_variable(r, extra_data->field_code, NULL, FALSE))
+		return NULL;
+
 	if (rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL) == NULL)
 		return NULL;
 	rlib_format_string(r, &buf, extra_data->report_field, &extra_data->rval_code);
@@ -161,13 +164,15 @@ static void txt_finalize_text_delayed(rlib *r, gpointer in_ptr, int backwards) {
 				gchar *text = txt_callback(packet->data);
 				struct _packet *new_packet;
 
-				new_packet = g_new0(struct _packet, 1);
-				new_packet->type = TEXT;
-				new_packet->data = g_string_new(text);
-				l->data = new_packet;
+				if (text) {
+					new_packet = g_new0(struct _packet, 1);
+					new_packet->type = TEXT;
+					new_packet->data = g_string_new(text);
+					l->data = new_packet;
 
-				g_free(text);
-				g_free(packet);
+					g_free(text);
+					g_free(packet);
+				}
 				return;
 			}
 		}

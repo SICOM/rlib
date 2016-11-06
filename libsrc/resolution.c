@@ -650,8 +650,10 @@ void rlib_resolve_breaks(rlib *r UNUSED, struct rlib_part *part UNUSED, struct r
 		for (f = report->variables; f; f = f->next) {
 			struct rlib_report_variable *rv = f->data;
 
-			if (strcmp((char *)rb->xml_name.xml, (char *)rv->xml_resetonbreak.xml) == 0)
+			if (strcmp((char *)rb->xml_name.xml, (char *)rv->xml_resetonbreak.xml) == 0) {
 				rv->resetonbreak = rb;
+				rb->variables = g_slist_append(rb->variables, rv);
+			}
 		}
 	}
 }
