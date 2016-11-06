@@ -292,6 +292,7 @@ static gchar *html_callback(struct rlib_delayed_extra_data *delayed_data) {
 	if (rlib_pcode_has_variable(r, extra_data->field_code, NULL, FALSE))
 		return NULL;
 
+	rlib_value_free(&extra_data->rval_code);
 	if (rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL) == NULL)
 		return NULL;
 	rlib_format_string(r, &buf, extra_data->report_field, &extra_data->rval_code);

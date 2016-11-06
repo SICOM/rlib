@@ -482,7 +482,7 @@ void rlib_layout_part_td(rlib *r, struct rlib_part *part, GSList *part_deviation
 		gint width, height, border_width;
 		gchar border_color[MAXSTRLEN];
 		struct rlib_rgb bgcolor;
-		GSList *report_element;		
+		GSList *report_element;
 		if(!rlib_execute_as_int(r, td->width_code, &width))
 			width = 100;
 
@@ -673,11 +673,27 @@ gint rlib_make_report(rlib *r) {
 			rlib_fetch_first_rows(r);
 			rlib_evaulate_part_attributes(r, part);
 			if (part->suppress == FALSE) {
+#if 0
+				GSList *ptr;
+#endif
+
 				OUTPUT(r)->start_part(r, part);
 				rlib_layout_init_part_page(r, part, TRUE, TRUE);
 				rlib_layout_part_tr(r, part);
 				OUTPUT(r)->end_part(r, part);
 				OUTPUT(r)->end_page(r, part);
+
+#if 0
+				for (ptr = part->delayed_data; ptr; ptr = ptr->next) {
+					struct rlib_break_delayed_data *dd = ptr->data;
+
+					rlib_free_delayed_extra_data(r, dd->delayed_data);
+					g_free(dd);
+				}
+				g_slist_free(part->delayed_data);
+				part->delayed_data = NULL;
+#endif
+
 				rlib_emit_signal(r, RLIB_SIGNAL_PART_ITERATION);
 			}
 		}

@@ -329,15 +329,17 @@ static gfloat rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part U
 					for (ptr = varlist; ptr; ptr = ptr->next) {
 						struct rlib_report_variable *rv = ptr->data;
 						struct rlib_report_break *rb = rv->resetonbreak;
+						struct rlib_break_delayed_data *dd = g_new(struct rlib_break_delayed_data, 1);
+
+						delayed_data->refcount++;
+						extra_data->refcount++;
+						dd->delayed_data = delayed_data;
+						dd->backwards = backwards;
 
 						if (rb) {
-							struct rlib_break_delayed_data *dd = g_new(struct rlib_break_delayed_data, 1);
-
-							delayed_data->refcount++;
-							extra_data->refcount++;
-							dd->delayed_data = delayed_data;
-							dd->backwards = backwards;
-							rb->delayed_header_data = g_slist_append(rb->delayed_header_data, dd);
+							rb->delayed_data = g_slist_append(rb->delayed_data, dd);
+						} else {
+							part->delayed_data = g_slist_append(part->delayed_data, dd);
 						}
 					}
 				}
@@ -349,6 +351,7 @@ static gfloat rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part U
 			if (need_free)
 				g_free(real_text);
 		}
+		g_slist_free(varlist);
 		rtn_width = extra_data->output_width;
 		if (extra_data->found_color)
 			OUTPUT(r)->set_fg_color(r, 0, 0, 0);
@@ -475,6 +478,7 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 		extra_data1->delayed = *delayed;
 		extra_data1->is_memo = FALSE;
 		if (e->type == RLIB_ELEMENT_FIELD) {
+			struct rlib_element *v;
 			gchar *buf = NULL;
 			rf = e->data;
 			if (rf == NULL) 
@@ -573,6 +577,24 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 
 			extra_data1->width = rf->width;
 			extra_data1->field_code = rlib_pcode_copy_replace_fields_with_values(r, rf->code);
+			{
+				gint report_is_null = 0;
+
+				if (report == NULL && part != NULL) {
+					report = part->only_report;
+					report_is_null = 1;
+				}
+
+				for (v = report->variables; v; v = v->next) {
+					struct rlib_report_variable *rv = v->data;
+
+					if (rv->immediate)
+						rlib_pcode_replace_variable_with_value(r, extra_data1->field_code, rv);
+				}
+
+				if (report_is_null)
+					report = NULL;
+			}
 			extra_data1->report_field = rf;
 			rlib_execute_pcode(r, &extra_data1->rval_col, rf->col_code, NULL);
 			if (rlib_pcode_has_variable(r, extra_data1->report_field->code, NULL, TRUE)) {

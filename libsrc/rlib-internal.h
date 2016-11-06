@@ -405,9 +405,7 @@ struct rlib_report_break {
 	struct rlib_pcode *suppressblank_code;
 
 	GSList *variables;
-
-	/* Contains output driver specific opaque pointers */
-	GSList *delayed_header_data;
+	GSList *delayed_data;
 };
 
 struct rlib_report_detail {
@@ -435,9 +433,11 @@ struct rlib_report_variable {
 	struct rlib_from_xml xml_str_type;
 	struct rlib_from_xml xml_value;
 	struct rlib_from_xml xml_resetonbreak;
+	struct rlib_from_xml xml_immediate;
 	struct rlib_from_xml xml_ignore;
 
-	gchar type;
+	gint type;
+	gint immediate;
 	struct rlib_pcode *code;
 	struct rlib_pcode *ignore_code;
 	struct rlib_count_amount data;
@@ -490,6 +490,7 @@ struct rlib_part {
 	struct rlib_element *report_header;
 	struct rlib_element *page_header;
 	struct rlib_element *page_footer;
+	GSList *delayed_data;
 
 	struct rlib_pcode *name_code;
 	struct rlib_pcode *pages_across_code;

@@ -186,8 +186,19 @@ static void rlib_break_resolve_pcode(rlib *r, struct rlib_part *part, struct rli
 }
 
 static void rlib_variable_resolve_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_variable *rv) {
+	struct rlib_pcode *code;
+	gint t;
+
 	rv->code = rlib_infix_to_pcode(r, part, report, (gchar *)rv->xml_value.xml, rv->xml_value.line, TRUE);
 	rv->ignore_code = rlib_infix_to_pcode(r, part, report, (gchar *)rv->xml_ignore.xml, rv->xml_ignore.line, TRUE);
+
+	code = rlib_infix_to_pcode(r, part, report, (gchar *)rv->xml_immediate.xml, rv->xml_immediate.line, TRUE);
+	if (rlib_execute_as_boolean(r, code, &t)) {
+		rv->immediate = t;
+	} else {
+		rv->immediate = FALSE;
+	}
+	rlib_pcode_free(r, code);
 }
 
 static void rlib_hr_resolve_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_horizontal_line * rhl) {

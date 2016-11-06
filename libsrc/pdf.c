@@ -158,6 +158,7 @@ static gchar *pdf_rpdf_callback(gchar *data, gint len, void *user_data) {
 	if (rlib_pcode_has_variable(r, extra_data->field_code, NULL, FALSE))
 		return NULL;
 
+	rlib_value_free(&extra_data->rval_code);
 	if (rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL) == NULL)
 		return NULL;
 	rlib_format_string(r, &buf, extra_data->report_field, &extra_data->rval_code);
@@ -319,10 +320,9 @@ static void pdf_start_rlib_report(rlib *r) {
 	pdf = rpdf_new();
 	rpdf_set_title(pdf, "RLIB Report");
 	compress = g_hash_table_lookup(r->output_parameters, "compress");
-	if(compress != NULL) {
+	if (compress != NULL) {
 		rpdf_set_compression(pdf, TRUE);
 	}
-
 	
 	OUTPUT_PRIVATE(r)->pdf = pdf;
 }

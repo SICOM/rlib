@@ -619,7 +619,7 @@ void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, gint offset) {
 
 int rlib_pcode_has_variable(rlib *r UNUSED, struct rlib_pcode *p, GSList **varlist, gboolean include_delayed_rlib_variables) {
 	GSList *list = NULL;
-	gpointer var = NULL;
+	struct rlib_report_variable *var;
 	int i, count_vars, count_rvars;
 
 	if (varlist)
@@ -638,17 +638,19 @@ int rlib_pcode_has_variable(rlib *r UNUSED, struct rlib_pcode *p, GSList **varli
 			switch (o->type) {
 			case OPERAND_VARIABLE:
 				var = o->value;
-				if (varlist) {
-					GSList *ptr;
+				if (!var->immediate) {
+					if (varlist) {
+						GSList *ptr;
 
-					for (ptr = list; ptr; ptr = ptr->next) {
-						if (ptr->data == var)
-							break;
+						for (ptr = list; ptr; ptr = ptr->next) {
+							if (ptr->data == var)
+								break;
+						}
+						if (!ptr)
+							list = g_slist_append(list, var);
 					}
-					if (!ptr)
-						list = g_slist_append(list, var);
+					count_vars++;
 				}
-				count_vars++;
 				break;
 			case OPERAND_RLIB_VARIABLE:
 				if (include_delayed_rlib_variables) {
@@ -1209,11 +1211,11 @@ struct rlib_value *rlib_value_dup_contents(struct rlib_value *rval) {
 }
 
 DLL_EXPORT_SYM gint rlib_value_free(struct rlib_value *rval) {
-	if(rval == NULL)
+	if (rval == NULL)
 		return FALSE;
-	else if(rval->free == FALSE)
+	else if (rval->free == FALSE)
 		return FALSE;
-	else if(rval->type == RLIB_VALUE_STRING) {
+	else if (rval->type == RLIB_VALUE_STRING) {
 		g_free(rval->string_value);
 		rval->free = FALSE;
 		RLIB_VALUE_TYPE_NONE(rval);

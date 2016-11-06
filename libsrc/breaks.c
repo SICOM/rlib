@@ -242,10 +242,10 @@ static void rlib_break_all_below_in_reverse_order(rlib *r, struct rlib_part *par
 			/*
 			 * Finalize delayed data
 			 */
-			if (rb->delayed_header_data && OUTPUT(r)->finalize_text_delayed) {
+			if (rb->delayed_data && OUTPUT(r)->finalize_text_delayed) {
 				GSList *list;
 
-				for (list = rb->delayed_header_data; list; list = list->next) {
+				for (list = rb->delayed_data; list; list = list->next) {
 					struct rlib_break_delayed_data *dd = list->data;
 					GSList *list1;
 
@@ -263,8 +263,8 @@ static void rlib_break_all_below_in_reverse_order(rlib *r, struct rlib_part *par
 					g_free(dd);
 				}
 			}
-			g_slist_free(rb->delayed_header_data);
-			rb->delayed_header_data = NULL;
+			g_slist_free(rb->delayed_data);
+			rb->delayed_data = NULL;
 		}
 
 		reset_variables_on_break(report, (gchar *)rb->xml_name.xml);

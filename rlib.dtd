@@ -78,5 +78,6 @@
 	name CDATA #REQUIRED
 	value CDATA #REQUIRED
 	type (expression|count|sum|average|lowest|highest) "sum"
-	resetonbreak CDATA #IMPLIED >
+	resetonbreak CDATA #IMPLIED
+	immediate CDATA #IMPLIED >
 	
