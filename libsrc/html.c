@@ -419,9 +419,13 @@ static void process_end_part(gpointer data, gpointer user_data) {
 	if (packet->type == TEXT)
 		g_string_free(packet->data, TRUE);
 	else {
-		g_free(packet->data);
+		/*
+		 * packet->data is struct rlib_delayed_extra_data,
+		 * it was already freed by html_callback()
+		 */
 		g_free(str);
 	}
+
 	g_free(packet);
 }
 
