@@ -41,11 +41,6 @@
 
 #define UNUSED __attribute__((unused))
 
-struct odbc_fields {
-	gint col;
-	gchar name[512];
-};
-
 struct odbc_field_values {
 	gint len;
 	gchar *value;
@@ -59,7 +54,7 @@ struct rlib_odbc_results {
 	gint isdone;
 	GList *data;
 	GList *navigator;
-	struct odbc_fields *fields;
+	gchar **fields;
 	struct odbc_field_values *values;
 };
 
@@ -202,12 +197,12 @@ static gint rlib_odbc_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
 
 static gchar * rlib_odbc_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_odbc_results *results = result_ptr;
-	struct odbc_fields *the_field = field_ptr;
+	gint col = GPOINTER_TO_INT(field_ptr) - 1;
 
 	if (results == NULL || results->atstart || results->isdone)
 		return "";
 
-	return results->values[the_field->col].value;
+	return results->values[col].value;
 }
 
 static gpointer rlib_odbc_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) {
@@ -218,8 +213,8 @@ static gpointer rlib_odbc_resolve_field_pointer(gpointer input_ptr UNUSED, gpoin
 		return NULL;
 
 	for (i = 0; i < results->tot_fields; i++) {
-		if (!strcmp(results->fields[i].name, name)) {
-			return &results->fields[i];
+		if (!strcmp(results->fields[i], name)) {
+			return GINT_TO_POINTER(i + 1);
 		}
 	}
 	return NULL;
@@ -244,21 +239,20 @@ gpointer odbc_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 
 	SQLNumResultCols(V_OD_hstmt, &ncols);
 
-	results->fields = g_malloc(sizeof(struct odbc_fields) * ncols);
-	results->values = g_malloc(sizeof(struct odbc_field_values) * ncols);
+	results->fields = g_new(gchar *, ncols);
+	results->values = g_new(struct odbc_field_values, ncols);
 
 	results->total_size = 0;
 	for (i = 0; i < ncols; i++) {
-		SQLCHAR name[ 256 ];
+		SQLCHAR name[256];
 		SQLSMALLINT name_length;
-		V_OD_erg = SQLDescribeCol( V_OD_hstmt, i+1,	name, sizeof( name ), &name_length, NULL, &col_size, NULL, NULL );
-		results->fields[i].col = i;
-		if (SQL_SUCCEEDED(V_OD_erg)) {
-			strcpy(results->fields[i].name, (char *)name);
-		} else {
-			strcpy(results->fields[i].name, "");
+		V_OD_erg = SQLDescribeCol( V_OD_hstmt, i + 1, name, sizeof(name), &name_length, NULL, &col_size, NULL, NULL);
+		if (!SQL_SUCCEEDED(V_OD_erg)) {
+			name[0] = '\0';
 			col_size = 0;
 		}
+		results->fields[i] = g_strdup((char *)name);
+
 		results->values[i].len = col_size;
 		results->values[i].value = g_malloc(col_size+1);
 		results->total_size += col_size + 1;
@@ -320,6 +314,7 @@ static void rlib_odbc_rlib_free_result(gpointer input_ptr UNUSED, gpointer resul
 	g_list_free(results->data);
 	
 	for (i = 0; i < results->tot_fields;i++) {
+		g_free(results->fields[i]);
 		g_free(results->values[i].value);
 	}
 	g_free(results->fields);
