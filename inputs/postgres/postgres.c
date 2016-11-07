@@ -248,18 +248,27 @@ static gint rlib_postgres_num_fields(gpointer input_ptr UNUSED, gpointer result_
 	return result->tot_fields;
 }
 
-static void rlib_postgres_free_result(gpointer input_ptr UNUSED, gpointer result_ptr) {
+static void rlib_postgres_free_result(gpointer input_ptr, gpointer result_ptr) {
+	struct input_filter *input = input_ptr;
+	struct _private *priv = INPUT_PRIVATE(input);
+
 	struct rlib_postgres_results *results = result_ptr;
 	if (results) {
+		PGresult *result;
+		GString *q = g_string_new(NULL);
+
 		PQclear(results->result);
+
+		g_string_printf(q, "CLOSE %s", results->cursor_name->str);
+		result = PQexec(priv->conn, q->str);
+		PQclear(result);
+		g_string_free(q, TRUE);
+
 		g_free(results->fields);
 		g_string_free(results->cursor_name, TRUE);
 		g_string_free(results->fetchstmt, TRUE);
 		g_free(results);
 	}
-
-
-
 }
 
 static gint rlib_postgres_free_input_filter(gpointer input_ptr) {

@@ -44,7 +44,6 @@ struct rlib_mysql_results {
 	guint cols;
 	gint atstart;
 	gint isdone;
-//	guint *fields;
 };
 
 struct _private {
