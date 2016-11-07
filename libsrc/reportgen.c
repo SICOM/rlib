@@ -673,9 +673,7 @@ gint rlib_make_report(rlib *r) {
 			rlib_fetch_first_rows(r);
 			rlib_evaulate_part_attributes(r, part);
 			if (part->suppress == FALSE) {
-#if 0
 				GSList *ptr;
-#endif
 
 				OUTPUT(r)->start_part(r, part);
 				rlib_layout_init_part_page(r, part, TRUE, TRUE);
@@ -683,16 +681,29 @@ gint rlib_make_report(rlib *r) {
 				OUTPUT(r)->end_part(r, part);
 				OUTPUT(r)->end_page(r, part);
 
-#if 0
 				for (ptr = part->delayed_data; ptr; ptr = ptr->next) {
 					struct rlib_break_delayed_data *dd = ptr->data;
+					struct rlib_pcode *p = dd->delayed_data->extra_data->field_code;
+					GSList *list = NULL;
 
-					rlib_free_delayed_extra_data(r, dd->delayed_data);
+					if (rlib_pcode_has_variable(r, p, NULL, &list, FALSE)) {
+						GSList *ptr1;
+
+						for (ptr1 = list; ptr1; ptr1 = ptr1->next) {
+							struct rlib_report_variable *rv = ptr1->data;
+							rlib_pcode_replace_variable_with_value(r, p, rv);
+						}
+					}
+
+					r->use_cached_data++;
+					OUTPUT(r)->finalize_text_delayed(r, dd->delayed_data, dd->backwards);
+					r->use_cached_data--;
+
+					//rlib_free_delayed_extra_data(r, dd->delayed_data);
 					g_free(dd);
 				}
 				g_slist_free(part->delayed_data);
 				part->delayed_data = NULL;
-#endif
 
 				rlib_emit_signal(r, RLIB_SIGNAL_PART_ITERATION);
 			}

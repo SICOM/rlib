@@ -122,7 +122,7 @@ static gchar *txt_callback(struct rlib_delayed_extra_data *delayed_data) {
 	rlib *r = delayed_data->r;
 	gchar *buf = NULL, *buf2 = NULL;
 
-	if (rlib_pcode_has_variable(r, extra_data->field_code, NULL, FALSE))
+	if (rlib_pcode_has_variable(r, extra_data->field_code, NULL, NULL, FALSE))
 		return NULL;
 
 	rlib_value_free(&extra_data->rval_code);

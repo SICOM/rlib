@@ -617,8 +617,9 @@ void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, gint offset) {
 	}
 }
 
-int rlib_pcode_has_variable(rlib *r UNUSED, struct rlib_pcode *p, GSList **varlist, gboolean include_delayed_rlib_variables) {
+int rlib_pcode_has_variable(rlib *r UNUSED, struct rlib_pcode *p, GSList **varlist, GSList **varlist_nonrb, gboolean include_delayed_rlib_variables) {
 	GSList *list = NULL;
+	GSList *list_nonrb = NULL;
 	struct rlib_report_variable *var;
 	int i, count_vars, count_rvars;
 
@@ -635,19 +636,39 @@ int rlib_pcode_has_variable(rlib *r UNUSED, struct rlib_pcode *p, GSList **varli
 		case PCODE_PUSH:
 		{
 			struct rlib_pcode_operand *o = p->instructions[i]->value;
+
+			if (o == NULL) {
+				r_error(r, "rlib_pcode_has_variable OPERAND IS NULL (p->count %d index %d)\n", p->count, i);
+				continue;
+			}
+
 			switch (o->type) {
 			case OPERAND_VARIABLE:
 				var = o->value;
-				if (!var->immediate) {
-					if (varlist) {
-						GSList *ptr;
 
-						for (ptr = list; ptr; ptr = ptr->next) {
-							if (ptr->data == var)
-								break;
+				if (var->precalculate) {
+					if (var->resetonbreak) {
+						if (varlist) {
+							GSList *ptr;
+
+							for (ptr = list; ptr; ptr = ptr->next) {
+								if (ptr->data == var)
+									break;
+							}
+							if (!ptr)
+								list = g_slist_append(list, var);
 						}
-						if (!ptr)
-							list = g_slist_append(list, var);
+					} else {
+						if (varlist_nonrb) {
+							GSList *ptr;
+
+							for (ptr = list_nonrb; ptr; ptr = ptr->next) {
+								if (ptr->data == var)
+									break;
+							}
+							if (!ptr)
+								list_nonrb = g_slist_append(list_nonrb, var);
+						}
 					}
 					count_vars++;
 				}
@@ -671,10 +692,42 @@ int rlib_pcode_has_variable(rlib *r UNUSED, struct rlib_pcode *p, GSList **varli
 	if (varlist)
 		*varlist = list;
 
+	if (varlist_nonrb)
+		*varlist_nonrb = list_nonrb;
+
 	return count_vars + count_rvars;
 }
 
-struct rlib_pcode *rlib_pcode_copy_replace_fields_with_values(rlib *r, struct rlib_pcode *p) {
+const char *rlib_pcode_operand_name(gint type) {
+	switch (type) {
+	case OPERAND_NUMBER:
+		return "OPERAND_NUMBER";
+	case OPERAND_STRING:
+		return "OPERAND_STRING";
+	case OPERAND_DATE:
+		return "OPERAND_DATE";
+	case OPERAND_FIELD:
+		return "OPERAND_FIELD";
+	case OPERAND_VARIABLE:
+		return "OPERAND_VARIABLE";
+	case OPERAND_MEMORY_VARIABLE:
+		return "OPERAND_MEMORY_VARIABLE";
+	case OPERAND_RLIB_VARIABLE:
+		return "OPERAND_RLIB_VARIABLE";
+	case OPERAND_METADATA:
+		return "OPERAND_METADATA";
+	case OPERAND_IIF:
+		return "OPERAND_IIF";
+	case OPERAND_VECTOR:
+		return "OPERAND_VECTOR";
+	case OPERAND_VALUE:
+		return "OPERAND_VALUE";
+	default:
+		return "UNKNOWN OPERAND";
+	}
+}
+
+struct rlib_pcode *rlib_pcode_copy_replace_fields_and_immediates_with_values(rlib *r, struct rlib_pcode *p) {
 	struct rlib_pcode *p1;
 	int i, quit;
 
@@ -725,6 +778,58 @@ struct rlib_pcode *rlib_pcode_copy_replace_fields_with_values(rlib *r, struct rl
 
 						o1->type = OPERAND_STRING;
 						o1->value = field_value;
+
+						p1->instructions[i]->value = o1;
+						p1->instructions[i]->value_allocated = TRUE;
+
+						break;
+					}
+				case OPERAND_VARIABLE:
+					{
+						struct rlib_report_variable *rv = o->value;
+						struct rlib_pcode_operand *o1;
+						struct rlib_value *rval;
+
+						if (rv->precalculate) {
+							p1->instructions[i]->value = p->instructions[i]->value;
+							break;
+						}
+
+						rval = g_new0(struct rlib_value, 1);
+
+						rlib_operand_get_value(r, rval, o, NULL);
+
+						o1 = g_new0(struct rlib_pcode_operand, 1);
+						o1->type = OPERAND_VALUE;
+						o1->value = rval;
+
+						p1->instructions[i]->value = o1;
+						p1->instructions[i]->value_allocated = TRUE;
+
+						break;
+					}
+				case OPERAND_RLIB_VARIABLE:
+					{
+						gint rlib_vartype = ((long)o->value);
+
+						if (rlib_vartype == RLIB_RLIB_VARIABLE_TOTPAGES) {
+							p1->instructions[i]->value = p->instructions[i]->value;
+							break;
+						}
+						/* fall through */
+					}
+				case OPERAND_MEMORY_VARIABLE:
+					{
+						struct rlib_pcode_operand *o1;
+						struct rlib_value *rval;
+
+						rval = g_new0(struct rlib_value, 1);
+
+						rlib_operand_get_value(r, rval, o, NULL);
+
+						o1 = g_new0(struct rlib_pcode_operand, 1);
+						o1->type = OPERAND_VALUE;
+						o1->value = rval;
 
 						p1->instructions[i]->value = o1;
 						p1->instructions[i]->value_allocated = TRUE;

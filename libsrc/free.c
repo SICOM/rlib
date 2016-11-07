@@ -442,7 +442,7 @@ void rlib_free_variables(rlib *r, struct rlib_element *e) {
 		xmlFree(rv->xml_str_type.xml);
 		xmlFree(rv->xml_value.xml);
 		xmlFree(rv->xml_resetonbreak.xml);
-		xmlFree(rv->xml_immediate.xml);
+		xmlFree(rv->xml_precalculate.xml);
 		xmlFree(rv->xml_ignore.xml);
 
 		g_free(rv);

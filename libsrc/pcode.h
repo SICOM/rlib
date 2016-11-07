@@ -148,9 +148,10 @@ struct rlib_pcode_operand {
 int execute_pcode(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gboolean show_stack_errors);
 void rlib_value_dump(rlib *r, struct rlib_value *rval, gint offset, gint linefeed);
 void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, int offset);
-int rlib_pcode_has_variable(rlib *r, struct rlib_pcode *p, GSList **varlist, gboolean include_delayed_rlib_variables);
-struct rlib_pcode *rlib_pcode_copy_replace_fields_with_values(rlib *r, struct rlib_pcode *p);
+int rlib_pcode_has_variable(rlib *r, struct rlib_pcode *p, GSList **varlist, GSList **varlist_nonrb, gboolean include_delayed_rlib_variables);
+struct rlib_pcode *rlib_pcode_copy_replace_fields_and_immediates_with_values(rlib *r, struct rlib_pcode *p);
 void rlib_pcode_replace_variable_with_value(rlib *r, struct rlib_pcode *p, struct rlib_report_variable *var);
+const char *rlib_pcode_operand_name(gint type);
 
 int rlib_pcode_operator_multiply(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gpointer user_data);
 int rlib_pcode_operator_add(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gpointer user_data);

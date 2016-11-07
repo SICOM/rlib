@@ -79,5 +79,4 @@
 	value CDATA #REQUIRED
 	type (expression|count|sum|average|lowest|highest) "sum"
 	resetonbreak CDATA #IMPLIED
-	immediate CDATA #IMPLIED >
-	
+	precalculate CDATA #IMPLIED >

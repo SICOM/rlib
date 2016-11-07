@@ -739,6 +739,7 @@ static struct rlib_element *parse_report_variable(rlib *r, gboolean allow_fail, 
 	get_both(&rv->xml_str_type, cur, "type");
 	get_both(&rv->xml_value, cur, "value");
 	get_both(&rv->xml_resetonbreak, cur, "resetonbreak");
+	get_both(&rv->xml_precalculate, cur, "precalculate");
 	get_both(&rv->xml_ignore, cur, "ignore");
 
 	rv->type = RLIB_REPORT_VARIABLE_UNDEFINED;

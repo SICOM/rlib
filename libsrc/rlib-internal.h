@@ -433,11 +433,11 @@ struct rlib_report_variable {
 	struct rlib_from_xml xml_str_type;
 	struct rlib_from_xml xml_value;
 	struct rlib_from_xml xml_resetonbreak;
-	struct rlib_from_xml xml_immediate;
+	struct rlib_from_xml xml_precalculate;
 	struct rlib_from_xml xml_ignore;
 
 	gint type;
-	gint immediate;
+	gint precalculate;
 	struct rlib_pcode *code;
 	struct rlib_pcode *ignore_code;
 	struct rlib_count_amount data;

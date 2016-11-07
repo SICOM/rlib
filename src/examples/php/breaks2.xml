@@ -32,11 +32,11 @@
 	</PageHeader>
 
 	<Variables>
-		<Variable name="district_sales" value="val(sales)" type="sum" resetonbreak="districtbreak"/>
-		<Variable name="region_sales" value="val(sales)" type="sum" resetonbreak="regionbreak" />
-		<Variable name="company_sales" value="val(sales)" type="sum" resetonbreak="companybreak" />
-		<Variable name="region_count" value="1" type="count" resetonbreak="regionbreak" />
-		<Variable name="region_count1" value="1" type="count" resetonbreak="regionbreak" immediate="yes" />
+		<Variable name="district_sales" value="val(sales)" type="sum" resetonbreak="districtbreak" precalculate="yes" />
+		<Variable name="region_sales" value="val(sales)" type="sum" resetonbreak="regionbreak" precalculate="yes" />
+		<Variable name="company_sales" value="val(sales)" type="sum" resetonbreak="companybreak" precalculate="yes" />
+		<Variable name="region_count" value="1" type="count" resetonbreak="regionbreak" precalculate="yes" />
+		<Variable name="region_count1" value="1" type="count" resetonbreak="regionbreak" />
 	</Variables>
 
 	<Breaks>
