@@ -175,11 +175,6 @@ void rlib_free_lines(rlib *r, struct rlib_report_lines *rl) {
 }
 
 void rlib_free_extra_data(rlib *r, struct rlib_line_extra_data *extra_data) {
-	extra_data->refcount--;
-
-	if (extra_data->refcount)
-		return;
-
 	rlib_pcode_free(r, extra_data->field_code);
 
 	rlib_value_free(&extra_data->rval_code);
@@ -206,11 +201,8 @@ void rlib_free_extra_data(rlib *r, struct rlib_line_extra_data *extra_data) {
 }
 
 void rlib_free_delayed_extra_data(rlib *r, struct rlib_delayed_extra_data *delayed_data) {
-	delayed_data->refcount--;
-
 	rlib_free_extra_data(r, delayed_data->extra_data);
-	if (delayed_data->refcount == 0)
-		g_free(delayed_data);
+	g_free(delayed_data);
 }
 
 static void free_fields(rlib *r, struct rlib_report_output_array *roa) {

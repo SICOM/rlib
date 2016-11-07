@@ -235,7 +235,6 @@ struct rlib_report_field {
 
 struct rlib_line_extra_data {
 	gint type;
-	gint refcount;
 	struct rlib_value rval_code;
 	struct rlib_value rval_link;
 	struct rlib_value rval_translate;
@@ -284,7 +283,6 @@ struct rlib_line_extra_data {
 struct rlib_delayed_extra_data {
 	void *r;
 	struct rlib_line_extra_data *extra_data;
-	gint refcount;
 	gint backwards;
 	gfloat left_origin;
 	gfloat bottom_origin;

@@ -316,8 +316,6 @@ static gfloat rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part U
 			if (OUTPUT(r)->print_text_delayed) {
 				struct rlib_delayed_extra_data *delayed_data = g_new0(struct rlib_delayed_extra_data, 1);
 
-				extra_data->refcount++;
-				delayed_data->refcount = 1;
 				delayed_data->backwards = backwards;
 				delayed_data->left_origin = left_origin;
 				delayed_data->bottom_origin = bottom_origin + (extra_data->font_point/300.0);
@@ -332,8 +330,6 @@ static gfloat rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part U
 						struct rlib_report_break *rb = rv->resetonbreak;
 						struct rlib_break_delayed_data *dd = g_new(struct rlib_break_delayed_data, 1);
 
-						delayed_data->refcount++;
-						extra_data->refcount++;
 						dd->delayed_data = delayed_data;
 						dd->backwards = backwards;
 
@@ -349,6 +345,12 @@ static gfloat rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part U
 						part->delayed_data = g_slist_append(part->delayed_data, dd);
 					}
 				}
+			} else {
+				/*
+				 * The output driver doesn't support delayed printing.
+				 * Let the caller free this extra_data.
+				 */
+				extra_data->delayed = FALSE;
 			}
 		} else {
 			gboolean need_free;
@@ -356,6 +358,7 @@ static gfloat rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part U
 			OUTPUT(r)->print_text(r, left_origin, bottom_origin + (extra_data->font_point/300.0), real_text, backwards, extra_data);
 			if (need_free)
 				g_free(real_text);
+			extra_data->delayed = FALSE;
 		}
 
 		g_slist_free(varlist);
@@ -975,7 +978,6 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 				extra_data_chain = NULL;
 				for (e = rl->e; e != NULL; e = e->next) {
 					extra_data1 = g_new0(struct rlib_line_extra_data, 1);
-					extra_data1->refcount = 1;
 					extra_data1->report_index = part->report_index;
 
 					extra_data_chain = g_slist_append(extra_data_chain, extra_data1);
@@ -1133,7 +1135,8 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 
 				for (ed = extra_data_chain; ed; ed = ed->next) {
 					extra_data1 = ed->data;
-					rlib_free_extra_data(r, extra_data1);
+					if (!extra_data1->delayed)
+						rlib_free_extra_data(r, extra_data1);
 				}
 				g_slist_free(extra_data_chain);
 			}

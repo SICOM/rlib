@@ -699,7 +699,6 @@ gint rlib_make_report(rlib *r) {
 					OUTPUT(r)->finalize_text_delayed(r, dd->delayed_data, dd->backwards);
 					r->use_cached_data--;
 
-					//rlib_free_delayed_extra_data(r, dd->delayed_data);
 					g_free(dd);
 				}
 				g_slist_free(part->delayed_data);

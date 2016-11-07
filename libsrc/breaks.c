@@ -259,7 +259,6 @@ static void rlib_break_all_below_in_reverse_order(rlib *r, struct rlib_part *par
 					OUTPUT(r)->finalize_text_delayed(r, dd->delayed_data, dd->backwards);
 					r->use_cached_data--;
 
-					rlib_free_delayed_extra_data(r, dd->delayed_data);
 					g_free(dd);
 				}
 			}

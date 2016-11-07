@@ -38,7 +38,10 @@ noinst_PROGRAMS = \
 AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
 AM_LDFLAGS = $(top_builddir)/libsrc/libr.la
 
-noinst_SCRIPTS = products.xml follower.xml follower-breaks.xml breaks.xml breaks2.xml
+noinst_SCRIPTS = graph.xml products.xml follower.xml follower-breaks.xml breaks.xml breaks2.xml
+
+graph.xml:
+	$(LN_S) ../php/graph.xml
 
 products.xml:
 	$(LN_S) ../common/products.xml
