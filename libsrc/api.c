@@ -491,6 +491,8 @@ static gint rlib_execute_queries(rlib *r) {
 		r->results[i]->input = r->queries[i]->input;
 		r->results[i]->name =  r->queries[i]->name;
 		clock_gettime(CLOCK_MONOTONIC, &ts1);
+		if (INPUT(r,i)->set_query_cache_size && r->query_cache_size)
+			INPUT(r,i)->set_query_cache_size(INPUT(r,i), r->query_cache_size);
 		r->results[i]->result = INPUT(r,i)->new_result_from_query(INPUT(r,i), r->queries[i]);
 		clock_gettime(CLOCK_MONOTONIC, &ts2);
 		if (profiling) {
@@ -920,6 +922,13 @@ DLL_EXPORT_SYM gint rlib_set_datasource_encoding(rlib *r, gchar *input_name, gch
 	}
 	r_error(r,"Error.. datasource [%s] does not exist\n", input_name);
 	return -1;
+}
+
+DLL_EXPORT_SYM void rlib_set_query_cache_size(rlib *r, gint cache_size) {
+	if (cache_size <= 0)
+		cache_size = -1;
+
+	r->query_cache_size = cache_size;
 }
 
 DLL_EXPORT_SYM gint rlib_graph_set_x_minor_tick(rlib *r, gchar *graph_name, gchar *x_value) {

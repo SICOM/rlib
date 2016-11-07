@@ -57,3 +57,4 @@ rlib_chart@52
 rlib_parse@53
 rlib_alloc_query_space@54
 rlib_value_new_none@55
+rlib_set_query_cache_size@56

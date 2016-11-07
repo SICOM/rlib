@@ -832,6 +832,7 @@ struct rlib {
 	gchar radix_character;
 
 	gint html_debugging;
+	gint query_cache_size;
 
 	struct output_filter *o;
 	struct input_filters inputs[MAX_INPUT_FILTERS];
