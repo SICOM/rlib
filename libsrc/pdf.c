@@ -155,10 +155,8 @@ static gchar *pdf_rpdf_callback(gchar *data, gint len, void *user_data) {
 	rlib *r = delayed_data->r;
 	gchar *buf = NULL, *buf2 = NULL;
 
-	if (rlib_pcode_has_variable(r, extra_data->field_code, NULL, NULL, FALSE)) {
-		r_warning(r, "pdf_rpdf_callback STILL HAS VARIABLES\n");
+	if (rlib_pcode_has_variable(r, extra_data->field_code, NULL, NULL, FALSE))
 		return NULL;
-	}
 
 	rlib_value_free(&extra_data->rval_code);
 	if (rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL) == NULL)
