@@ -182,7 +182,7 @@
 					<literal width="1"></literal>
 					<field value="val(sales)/v.company_sales*100" format="'%.2d'" width="15" align="right" />
 					<literal width="1"></literal>
-					<field value="str(v.region_count1,2,0)+' / '+str(v.region_count,2,0)" width="2" align="right" />
+					<field value="str(v.region_count1,2,0)+' / '+str(v.region_count,2,0)" width="8" align="right" />
 				</Line>
 			</Output>
 		</FieldDetails>
