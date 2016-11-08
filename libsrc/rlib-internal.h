@@ -40,8 +40,6 @@
 
 #define RLIB_DEFUALT_FONTPOINT 	10.0
 
-#define USE_RLIB_VAR	0
-
 #define RLIB_WEB_CONTENT_TYPE_HTML "Content-Type: text/html; charset=%s\n"
 #define RLIB_WEB_CONTENT_TYPE_TEXT "Content-Type: text/plain; charset=%s\n"
 #define RLIB_WEB_CONTENT_TYPE_PDF "Content-Type: application/pdf\n"

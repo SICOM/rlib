@@ -32,17 +32,17 @@
 #include "pcode.h"
 
 const gchar * rlib_value_get_type_as_str(struct rlib_value *v) {
-	if(v == NULL)
+	if (v == NULL)
 		return "(null)";
-	if(RLIB_VALUE_IS_NUMBER(v))
+	if (RLIB_VALUE_IS_NUMBER(v))
 		return "number";
-	if(RLIB_VALUE_IS_STRING(v))
+	if (RLIB_VALUE_IS_STRING(v))
 		return "string";
-	if(RLIB_VALUE_IS_DATE(v))
+	if (RLIB_VALUE_IS_DATE(v))
 		return "date";
-	if(RLIB_VALUE_IS_IIF(v))
+	if (RLIB_VALUE_IS_IIF(v))
 		return "iif";
-	if(RLIB_VALUE_IS_ERROR(v))
+	if (RLIB_VALUE_IS_ERROR(v))
 		return "ERROR";
 	return "UNKNOWN";
 }
@@ -52,79 +52,12 @@ static void rlib_pcode_operator_fatal_execption(rlib *r, const gchar *operator, 
 	rlogit(r, "RLIB EXPERIENCED A FATAL MATH ERROR WHILE TRYING TO PERFORM THE FOLLOWING OPERATION: %s\n", operator);
 	rlogit(r, "\t* Error on Line %d: The Expression Was [%s]\n", code->line_number, code->infix_string);
 	rlogit(r, "\t* DATA TYPES ARE [%s]", rlib_value_get_type_as_str(v1));
-	if(pcount > 1)
+	if (pcount > 1)
 		rlogit(r, " [%s]", rlib_value_get_type_as_str(v2));
-	if(pcount > 2)
+	if (pcount > 2)
 		rlogit(r, " [%s]", rlib_value_get_type_as_str(v3));
 	rlogit(r, "\n");
 }
-
-#if USE_RLIB_VAR
-gint rlib_pcode_add(rlib_var_stack *rvs) {
-	rlib_var *v1, *v2;
-	int tv1, tv2;
-	v1 = rlib_var_stack_pop(rvs);
-	v2 = rlib_var_stack_peek(rvs);
-	tv1 = rlib_var_get_type(v1);
-	tv2 = rlib_var_get_type(v2);
-	switch (tv2) {
-	case RLIB_VAR_NUMERIC:
-		if (tv1 != RLIB_VAR_NUMERIC) r_error("Wrong type");
-		else {
-			rlib_var_add_number(v2, rlib_var_get_number(v1));
-		}
-		break;
-	}
-}
-
-gint rlib_pcode_operator_add(rlib *r, struct rlib_pcode *code, struct rlib_var_stack *vs, struct rlib_value *this_field_value UNUSED, gpointer user_data UNUSED) {
-	struct rlib_value *v1, *v2;
-	struct rlib_var_stack *vs = r->stack;
-	v1 = rlib_var_stack_pop(vs);
-	v2 = rlib_var_stack_pop(vs);
-	if(v1 != NULL && v2 != NULL) {
-		if(RLIB_VALUE_IS_NUMBER(v1) && RLIB_VALUE_IS_NUMBER(v2)) {
-			gint64 result = RLIB_VALUE_GET_AS_NUMBER(v1) + RLIB_VALUE_GET_AS_NUMBER(v2);
-			rlib_value_free(v1);
-			rlib_value_free(v2);
-			rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, result));
-			return TRUE;
-		}
-		if(RLIB_VALUE_IS_STRING(v1) && RLIB_VALUE_IS_STRING(v2)) {
-			gchar *newstr = g_malloc(r_strlen(RLIB_VALUE_GET_AS_STRING(v1))+r_strlen(RLIB_VALUE_GET_AS_STRING(v2))+1);
-			strcpy(newstr, RLIB_VALUE_GET_AS_STRING(v2));
-			strcat(newstr, RLIB_VALUE_GET_AS_STRING(v1));
-			rlib_value_free(v1);
-			rlib_value_free(v2);
-			rlib_value_stack_push(r,vs, rlib_value_new_string(&rval_rtn, newstr));
-			g_free(newstr);
-			return TRUE;
-		}
-		if((RLIB_VALUE_IS_DATE(v1) && RLIB_VALUE_IS_NUMBER(v2)) || (RLIB_VALUE_IS_NUMBER(v1) && RLIB_VALUE_IS_DATE(v2))) {
-			struct rlib_value *number, *date;
-			struct rlib_datetime newday;
-			if(RLIB_VALUE_IS_DATE(v1)) {
-				date = v1;
-				number = v2;
-			} else {
-				date = v2;
-				number = v1;
-			}
-			newday = RLIB_VALUE_GET_AS_DATE(date);
-			rlib_datetime_addto(&newday, RLIB_FXP_TO_NORMAL_LONG_LONG(RLIB_VALUE_GET_AS_NUMBER(number)));
-			rlib_value_free(v1);
-			rlib_value_free(v2);
-			rlib_value_stack_push(r,vs, rlib_value_new_date(&rval_rtn, &newday));
-			return TRUE;
-		}
-	}
-	rlib_pcode_operator_fatal_execption(r,"ADD", 2, v1, v2, NULL);
-	rlib_value_free(v1);
-	rlib_value_free(v2);
-	rlib_value_stack_push(r,vs, rlib_value_new_error(&rval_rtn));
-	return FALSE;
-}
-#endif
 
 gint rlib_pcode_operator_add(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value UNUSED, gpointer user_data UNUSED) {
 	struct rlib_value *v1, *v2, rval_rtn;
