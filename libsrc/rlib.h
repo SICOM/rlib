@@ -26,6 +26,7 @@
 #ifndef _RLIB_H_
 #define _RLIB_H_
 
+#include <gmp.h>
 #include <glib.h>
 
 #ifndef MAXSTRLEN
@@ -88,7 +89,7 @@ struct rlib_datetime {
 
 struct rlib_value {
 	gint type;
-	gint64 number_value;
+	mpf_t mpf_value;
 	struct rlib_datetime date_value;
 	gchar *string_value;
 	gpointer iif_value;

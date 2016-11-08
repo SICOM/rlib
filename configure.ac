@@ -469,6 +469,9 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS(fcntl.h unistd.h)
 AC_C_CONST
 
+AC_CHECK_HEADERS(gmp.h)
+AC_CHECK_LIB(gmp, __gmpf_init2,,[AC_MSG_ERROR([GNU MP library not found!])])
+
 AC_ARG_ENABLE([utf8],
 	[AS_HELP_STRING([--enable-utf8],[enable utf8])],
 	[AS_IF([test x$enable_utf8 = xno],[AC_DEFINE(DISABLE_UTF8,1,[DISABLE UTF8])])],
