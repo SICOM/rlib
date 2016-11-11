@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -17,15 +17,15 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  *
- * $Id$
- * 
  * This module generates a report from the information stored in the current
  * report object.
  * The main entry point is called once at report generation time for each
  * report defined in the rlib object.
- *
  */
- 
+
+#include <config.h>
+
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -39,7 +39,6 @@
 #endif
 #include <glib.h>
 
-#include <config.h>
 #include "rlib-internal.h"
 #include "rlib_gd.h"
 
@@ -48,13 +47,13 @@ static char *unique_file_name(gchar *buf, gchar *image_directory) {
 #ifdef HAVE_SYS_TIME_H
 	struct timeval tv;
 	gint pid = getpid();
-	static gint counter;
+	static gint64 counter;
 
 	gettimeofday(&tv, NULL);
-	if(image_directory != NULL)
-		sprintf(buf, "%s/RLIB_IMAGE_FILE_%d_%ld_%ld_%d.png", image_directory, pid, tv.tv_sec, tv.tv_usec, counter++);
+	if (image_directory != NULL)
+		sprintf(buf, "%s/RLIB_IMAGE_FILE_%d_%ld_%ld_%" PRId64 ".png", image_directory, pid, tv.tv_sec, tv.tv_usec, counter++);
 	else
-		sprintf(buf, "RLIB_IMAGE_FILE_%d_%ld_%ld_%d.png", pid, tv.tv_sec, tv.tv_usec, counter++);
+		sprintf(buf, "RLIB_IMAGE_FILE_%d_%ld_%ld_%" PRId64 ".png", pid, tv.tv_sec, tv.tv_usec, counter++);
 #else
 	/* tempnam() accepts NULL as directory name and it's a standard
 	 * part of <stdio.h>. Most importantly, it also exists under MingW.
@@ -80,7 +79,7 @@ int get_color_pool(struct rlib_gd *rgd, struct rlib_rgb *rgb) {
 	return -1;
 }
 
-struct rlib_gd * rlib_gd_new(gint width, gint height, gchar *image_directory) {
+struct rlib_gd * rlib_gd_new(gint64 width, gint64 height, gchar *image_directory) {
 	struct rlib_gd *rgd = g_malloc(sizeof(struct rlib_gd));
 	char file_name[MAXSTRLEN];
 	int fd;
@@ -126,7 +125,7 @@ int rlib_gd_spool(rlib *r, struct rlib_gd *rgd) {
 	return TRUE;
 }
 
-int rlib_gd_text(struct rlib_gd *rgd, char *text, int x, int y, gboolean rotate, gboolean bold) {
+int rlib_gd_text(struct rlib_gd *rgd, char *text, gint64 x, gint64 y, gboolean rotate, gboolean bold) {
 	if(bold) {
 		if(rotate)
 			gdImageStringUp(rgd->im, gdFontMediumBold,	x,	y,	(unsigned char *)text, rgd->black);
@@ -141,8 +140,8 @@ int rlib_gd_text(struct rlib_gd *rgd, char *text, int x, int y, gboolean rotate,
 	return TRUE;
 }
 
-int rlib_gd_color_text(struct rlib_gd *rgd, char *text, int x, int y, gboolean rotate, gboolean bold, struct rlib_rgb *color) {
-	gint gd_color = get_color_pool(rgd, color);
+int rlib_gd_color_text(struct rlib_gd *rgd, char *text, gint64 x, gint64 y, gboolean rotate, gboolean bold, struct rlib_rgb *color) {
+	gint64 gd_color = get_color_pool(rgd, color);
 	if(bold) {
 		if(rotate)
 			gdImageStringUp(rgd->im, gdFontMediumBold,	x,	y,	(unsigned char *)text, gd_color);
@@ -171,14 +170,14 @@ int gd_get_string_height(gboolean bold) {
 		return gdFontMedium->h;
 }
 
-int rlib_gd_set_thickness(struct rlib_gd *rgd, int thickness) {
+int rlib_gd_set_thickness(struct rlib_gd *rgd, gint64 thickness) {
 	gdImageSetThickness(rgd->im, thickness);
 	return TRUE;
 }
 
 
-int rlib_gd_line(struct rlib_gd *rgd, gint x_1, gint y_1, gint x_2, gint y_2, struct rlib_rgb *color) {
-	gint gd_color;
+int rlib_gd_line(struct rlib_gd *rgd, gint64 x_1, gint64 y_1, gint64 x_2, gint64 y_2, struct rlib_rgb *color) {
+	gint64 gd_color;
 	
 	if(color != NULL)
 		gd_color = get_color_pool(rgd, color);	
@@ -190,8 +189,8 @@ int rlib_gd_line(struct rlib_gd *rgd, gint x_1, gint y_1, gint x_2, gint y_2, st
 }
 
 
-int rlib_gd_rectangle(struct rlib_gd *rgd, gint x, gint y, gint width, gint height, struct rlib_rgb *color) {
-	gint gd_color;
+int rlib_gd_rectangle(struct rlib_gd *rgd, gint64 x, gint64 y, gint64 width, gint64 height, struct rlib_rgb *color) {
+	gint64 gd_color;
 
 	if(height < 0) {
 		y -= height;
@@ -208,8 +207,8 @@ int rlib_gd_rectangle(struct rlib_gd *rgd, gint x, gint y, gint width, gint heig
 	return TRUE;
 }
 
-int rlib_gd_arc(struct rlib_gd *rgd, gint x, gint y, gint radius, gint start_angle, gint end_angle, struct rlib_rgb *color) {
-	gint gd_color;
+int rlib_gd_arc(struct rlib_gd *rgd, gint64 x, gint64 y, gint64 radius, gint64 start_angle, gint64 end_angle, struct rlib_rgb *color) {
+	gint64 gd_color;
 
 	radius *= 2;
 	
@@ -232,15 +231,15 @@ int rlib_gd_free(struct rlib_gd *rgd) {
 
 #else
 
-struct rlib_gd * rlib_gd_new(gint width, gint height, gchar *image_directory) {
+struct rlib_gd * rlib_gd_new(gint64 width, gint64 height, gchar *image_directory) {
 	return NULL;
 }
 
-int rlib_gd_text(struct rlib_gd *rgd, char *text, int x, int y, int rotate, gboolean bold) {
+int rlib_gd_text(struct rlib_gd *rgd, char *text, gint64 x, gint64 y, gint64 rotate, gboolean bold) {
 	return TRUE;
 }
 
-int rlib_gd_color_text(struct rlib_gd *rgd, char *text, int x, int y, gboolean rotate, gboolean bold, struct rlib_rgb *color) {
+int rlib_gd_color_text(struct rlib_gd *rgd, char *text, gint64 x, gint64 y, gboolean rotate, gboolean bold, struct rlib_rgb *color) {
 	return TRUE;
 }
 
@@ -252,19 +251,19 @@ int gd_get_string_height(gboolean bold UNUSED) {
 	return 0;
 }
 
-int rlib_gd_set_thickness(struct rlib_gd *rgd, int thickness) {
+int rlib_gd_set_thickness(struct rlib_gd *rgd, gint64 thickness) {
 	return TRUE;
 }
 
-int rlib_gd_line(struct rlib_gd *rgd, gint x_1, gint y_1, gint x_2, gint y_2, struct rlib_rgb *color) {
+int rlib_gd_line(struct rlib_gd *rgd, gint64 x_1, gint64 y_1, gint64 x_2, gint64 y_2, struct rlib_rgb *color) {
 	return TRUE;
 }
 
-int rlib_gd_rectangle(struct rlib_gd *rgd, gint x, gint y, gint width, gint height, struct rlib_rgb *color)  {
+int rlib_gd_rectangle(struct rlib_gd *rgd, gint64 x, gint64 y, gint64 width, gint64 height, struct rlib_rgb *color)  {
 	return TRUE;
 }
 
-int rlib_gd_arc(struct rlib_gd *rgd, gint x, gint y, gint radius, gint start_angle, gint end_angle, struct rlib_rgb *color) {
+int rlib_gd_arc(struct rlib_gd *rgd, gint64 x, gint64 y, gint64 radius, gint64 start_angle, gint64 end_angle, struct rlib_rgb *color) {
 	return TRUE;
 }
 

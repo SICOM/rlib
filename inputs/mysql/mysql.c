@@ -42,8 +42,8 @@ struct rlib_mysql_results {
 	guint current_row;
 	guint rows;
 	guint cols;
-	gint atstart;
-	gint isdone;
+	gboolean atstart;
+	gboolean isdone;
 };
 
 struct _private {
@@ -54,7 +54,7 @@ struct _query_private {
 	MYSQL_RES *result;
 };
 
-static gint rlib_mysql_connect_group(gpointer input_ptr, const gchar *group) {
+static gboolean rlib_mysql_connect_group(gpointer input_ptr, const gchar *group) {
 	struct input_filter *input = input_ptr;
 	rlib *r = input->r;
 	MYSQL *mysql;
@@ -62,27 +62,27 @@ static gint rlib_mysql_connect_group(gpointer input_ptr, const gchar *group) {
 	mysql = mysql_init(NULL);
 
 	if (mysql == NULL)
-		return -1;
+		return FALSE;
 
 	if (mysql_options(mysql,MYSQL_READ_DEFAULT_GROUP,group)) {
 		mysql_close(mysql);
 		r_error(r, "Error in mysql_options\n");
-		return -1;
+		return FALSE;
 	}
 
 	if (mysql_real_connect(mysql, mysql->options.host, mysql->options.user, mysql->options.password, mysql->options.db, mysql->options.port, mysql->options.unix_socket, 0) == NULL) {
 		mysql_close(mysql);
 		r_error(r, "Error in mysql_real_connect\n");
-		return -1;
+		return FALSE;
 	}
 
 	mysql_select_db(mysql, mysql->options.db);
 
 	INPUT_PRIVATE(input)->mysql = mysql;
-	return 0;
+	return TRUE;
 }
 
-static gint rlib_mysql_connect_with_credentials(gpointer input_ptr, const gchar *host, guint port, const gchar *user, const gchar *password, const gchar *database) {
+static gboolean rlib_mysql_connect_with_credentials(gpointer input_ptr, const gchar *host, guint port, const gchar *user, const gchar *password, const gchar *database) {
 	struct input_filter *input = input_ptr;
 	rlib *r = input->r;
 	MYSQL *mysql;
@@ -118,7 +118,7 @@ static gint rlib_mysql_connect_with_credentials(gpointer input_ptr, const gchar 
 	return 0;
 }
 
-static gint rlib_mysql_input_close(gpointer input_ptr) {
+static void rlib_mysql_input_close(gpointer input_ptr) {
 	struct input_filter *input = input_ptr;
 
 	mysql_close(INPUT_PRIVATE(input)->mysql);
@@ -126,8 +126,6 @@ static gint rlib_mysql_input_close(gpointer input_ptr) {
 /*	mysql_library_end(); */
 #endif
 	INPUT_PRIVATE(input)->mysql = NULL;
-
-	return 0;
 }
 
 static MYSQL_RES * rlib_mysql_query(MYSQL *mysql, gchar *query) {
@@ -153,7 +151,7 @@ static void rlib_mysql_start(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	result->isdone = FALSE;
 }
 
-static gint rlib_mysql_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
+static gboolean rlib_mysql_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_mysql_results *result = result_ptr;
 	struct rlib_query *query;
 
@@ -172,7 +170,7 @@ static gint rlib_mysql_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	return !result->isdone;
 }
 
-static gint rlib_mysql_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
+static gboolean rlib_mysql_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_mysql_results *result = result_ptr;
 
 	if (result)
@@ -257,11 +255,10 @@ static void rlib_mysql_rlib_free_result(gpointer input_ptr UNUSED, gpointer resu
 	g_free(result);
 }
 
-static gint rlib_mysql_free_input_filter(gpointer input_ptr) {
+static void rlib_mysql_free_input_filter(gpointer input_ptr) {
 	struct input_filter *input = input_ptr;
 	g_free(input->private);
 	g_free(input);
-	return 0;
 }
 
 static void rlib_mysql_free_query(gpointer input_ptr UNUSED, gpointer query_ptr) {

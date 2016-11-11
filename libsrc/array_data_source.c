@@ -18,6 +18,7 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+
 #include <config.h>
 
 #include <stdlib.h>
@@ -34,23 +35,21 @@
 
 struct rlib_array_results {
 	gchar *name;
-	gint cols;
-	gint rows;
-	gint atstart;
-	gint isdone;
+	gint64 cols;
+	gint64 rows;
+	gint64 atstart;
+	gint64 isdone;
 	char **data;
-	gint current_row;
+	gint64 current_row;
 };
 
 struct _query_private {
 	char **data;
-	gint cols;
-	gint rows;
+	gint64 cols;
+	gint64 rows;
 };
 
-static gint rlib_array_input_close(gpointer input_ptr UNUSED) {
-	return TRUE;
-}
+static void rlib_array_input_close(gpointer input_ptr UNUSED) {}
 
 static const gchar* rlib_array_get_error(gpointer input_ptr UNUSED) {
 	return "Hard to make a mistake here.. try checking your names/spellings";
@@ -67,7 +66,7 @@ static void rlib_array_start(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	result->isdone = FALSE;
 }
 
-static gint rlib_array_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
+static gboolean rlib_array_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_array_results *result = result_ptr;
 
 	if (result == NULL)
@@ -82,7 +81,7 @@ static gint rlib_array_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	return !result->isdone;
 }
 
-static gint rlib_array_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
+static gboolean rlib_array_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_array_results *result = result_ptr;
 
 	if (result == NULL)
@@ -136,9 +135,8 @@ static void *rlib_array_new_result_from_query(gpointer input_ptr UNUSED, gpointe
 	return result;
 }
 
-static gint rlib_array_free_input_filter(gpointer input_ptr) {
+static void rlib_array_free_input_filter(gpointer input_ptr) {
 	g_free(input_ptr);
-	return 0;
 }
 
 static void rlib_array_rlib_free_result(gpointer input_ptr UNUSED, gpointer result_ptr) {
@@ -184,9 +182,8 @@ static gpointer rlib_array_new_input_filter(rlib *r) {
 	return input;
 }
 
-DLL_EXPORT_SYM gint rlib_add_datasource_array(rlib *r, const gchar *input_name) {
-	rlib_add_datasource(r, input_name, rlib_array_new_input_filter(r));
-	return TRUE;
+DLL_EXPORT_SYM gboolean rlib_add_datasource_array(rlib *r, const gchar *input_name) {
+	return rlib_add_datasource(r, input_name, rlib_array_new_input_filter(r));
 }
 
 DLL_EXPORT_SYM gint rlib_add_query_array_as(rlib *r, const gchar *input_source, gpointer array, gint rows, gint cols, const gchar *name) {

@@ -123,46 +123,43 @@ implement_function_call(rlib *rlib_ptr,  struct rlib_pcode *code UNUSED, struct 
 	PyObject 	*retval;
 	func_chain	*fp = user_data;
 	int		i;
-	struct rlib_value rval_rtn;
+	struct rlib_value *rval_rtn;
 
 	arglist = PyTuple_New(fp->param_count);
 	if (arglist == NULL)
 		return 0;
-	for (i=0; i< fp->param_count; i++) {
+	for (i = 0; i < fp->param_count; i++) {
 		PyObject *arg;
-		struct rlib_value *v = rlib_value_stack_pop(vs);
-		if (RLIB_VALUE_IS_STRING(v)) {
-			arg = PyString_FromString(RLIB_VALUE_GET_AS_STRING(v));
-		} else if (RLIB_VALUE_IS_NUMBER(v)) {
-			arg = PyFloat_FromDouble((double)RLIB_VALUE_GET_AS_NUMBER(v) / (double)RLIB_DECIMAL_PRECISION);
+		struct rlib_value *v = rlib_value_stack_pop(rlib_ptr, vs);
+		if (RLIB_VALUE_IS_STRING(rlib_ptr, v)) {
+			arg = PyString_FromString(RLIB_VALUE_GET_AS_STRING(rlib_ptr, v));
+		} else if (RLIB_VALUE_IS_NUMBER(rlib_ptr, v)) {
+			arg = PyFloat_FromDouble(RLIB_VALUE_GET_AS_DOUBLE(rlib_ptr, v));
 		} else {
 			Py_INCREF(Py_None);
 			arg = Py_None;
 		}
-		rlib_value_free(v);
+		rlib_value_free(rlib_ptr, v);
 		if (PyTuple_SetItem(arglist, i, arg) < 0)
 			return 0;
 	}
-	
+
 	/* Time to call the function */
 	retval = PyEval_CallObject(fp->callable, arglist);
 	Py_DECREF(arglist);
-	if (retval == NULL) {
+	if (retval == NULL)
 		return 0;
-	}
-	/* Figure out what to do with result here */
 
+	/* Figure out what to do with result here */
+	rval_rtn = rlib_value_alloc(rlib_ptr);
 	if (PyString_Check(retval))
-		rlib_value_stack_push(rlib_ptr, vs, rlib_value_new_string(&rval_rtn, PyString_AsString(retval)));
-	else if (PyInt_Check(retval)) {
-		gint64 result = LONG_TO_FXP_NUMBER(PyInt_AsLong(retval));
-		rlib_value_stack_push(rlib_ptr, vs, rlib_value_new_number(&rval_rtn, result));
-	} else if (PyFloat_Check(retval)) {
-		gint64 result = PyFloat_AsDouble(retval)*(gdouble)RLIB_DECIMAL_PRECISION;
-				rlib_value_stack_push(rlib_ptr, vs, rlib_value_new_number(&rval_rtn, result));
-		} else {
-				rlib_value_stack_push(rlib_ptr, vs, rlib_value_new_error(&rval_rtn));
-		}
+		rlib_value_stack_push(rlib_ptr, vs, rlib_value_new_string(rlib_ptr, rval_rtn, PyString_AsString(retval)));
+	else if (PyInt_Check(retval))
+		rlib_value_stack_push(rlib_ptr, vs, rlib_value_new_number_from_long(rlib_ptr, rval_rtn, PyInt_AsLong(retval)));
+	else if (PyFloat_Check(retval))
+		rlib_value_stack_push(rlib_ptr, vs, rlib_value_new_number_from_double(rlib_ptr, rval_rtn, PyFloat_AsDouble(retval)));
+	else
+		rlib_value_stack_push(rlib_ptr, vs, rlib_value_new_error(rlib_ptr, rval_rtn));
 	Py_DECREF(retval);
 	return 1;
 }
@@ -371,9 +368,7 @@ static gint rlib_python_array_num_fields(gpointer input_ptr UNUSED, gpointer res
 	return result->cols;
 }
 
-static gint rlib_python_array_input_close(gpointer input_ptr UNUSED) {
-	return TRUE;
-}
+static void rlib_python_array_input_close(gpointer input_ptr UNUSED) {}
 
 static void rlib_python_array_start(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_python_array_results *result = result_ptr;
@@ -435,14 +430,13 @@ static gpointer rlib_python_array_resolve_field_pointer(gpointer input_ptr UNUSE
 		return NULL;
 }
 
-static gint rlib_python_array_free_input_filter(gpointer input_ptr) {
+static void rlib_python_array_free_input_filter(gpointer input_ptr) {
 	struct input_filter *input = input_ptr;
 	if (input->private) {
 		PyMem_Free(input->private);
 		input->private = NULL;
 	}
 	PyMem_Free(input);
-		return 0;
 }
 
 static void rlib_python_array_free_result(gpointer input_ptr, gpointer result_ptr) {
@@ -868,16 +862,11 @@ static PyObject *
 method_set_locale(PyObject *self, PyObject *_args) {
 	RLIBObject	*rp = (RLIBObject *)self;
 	char		*locale;
-	long		result;
 
 	if (!PyArg_ParseTuple(_args, "s:set_locale", &locale))
 		return NULL;
 	check_rlibobject_open(rp);
-	result = rlib_set_locale(rp->rlib_ptr, locale);
-	if (!result) {
-		PyErr_SetString(RLIBError, "Locale not changed");
-		return NULL;
-	}
+	rlib_set_locale(rp->rlib_ptr, locale);
 	Py_INCREF(Py_None);
 	return Py_None;
 }

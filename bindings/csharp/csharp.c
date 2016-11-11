@@ -274,7 +274,7 @@ SWIGEXPORT void SWIGSTDCALL SWIGRegisterStringCallback_rlib(SWIG_CSharpStringHel
 
 
 #include <rlib.h>
- 
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -290,15 +290,15 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_init() {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_add_datasource_mysql(void * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, char * jarg6) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_add_datasource_mysql(void * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, char * jarg6) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
   char *arg5 = (char *) 0 ;
   char *arg6 = (char *) 0 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
@@ -306,104 +306,132 @@ SWIGEXPORT int SWIGSTDCALL CSharp_rlib_add_datasource_mysql(void * jarg1, char *
   arg4 = (char *)jarg4; 
   arg5 = (char *)jarg5; 
   arg6 = (char *)jarg6; 
-  result = (int)rlib_add_datasource_mysql(arg1,arg2,arg3,arg4,arg5,arg6);
-  jresult = result; 
+  result = rlib_add_datasource_mysql(arg1,arg2,arg3,arg4,arg5,arg6);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_add_datasource_postgres(void * jarg1, char * jarg2, char * jarg3) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_add_datasource_postgres(void * jarg1, char * jarg2, char * jarg3) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
-  result = (int)rlib_add_datasource_postgres(arg1,arg2,arg3);
-  jresult = result; 
+  result = rlib_add_datasource_postgres(arg1,arg2,arg3);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_add_datasource_odbc(void * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_add_datasource_odbc(void * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
   char *arg5 = (char *) 0 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
   arg4 = (char *)jarg4; 
   arg5 = (char *)jarg5; 
-  result = (int)rlib_add_datasource_odbc(arg1,arg2,arg3,arg4,arg5);
-  jresult = result; 
+  result = rlib_add_datasource_odbc(arg1,arg2,arg3,arg4,arg5);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_add_datasource_xml(void * jarg1, char * jarg2) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_add_datasource_xml(void * jarg1, char * jarg2) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
-  result = (int)rlib_add_datasource_xml(arg1,arg2);
-  jresult = result; 
+  result = rlib_add_datasource_xml(arg1,arg2);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_add_datasource_csv(void * jarg1, char * jarg2) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_add_datasource_csv(void * jarg1, char * jarg2) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
-  result = (int)rlib_add_datasource_csv(arg1,arg2);
-  jresult = result; 
+  result = rlib_add_datasource_csv(arg1,arg2);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_add_query_as(void * jarg1, char * jarg2, char * jarg3, char * jarg4) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_add_query_as(void * jarg1, char * jarg2, char * jarg3, char * jarg4) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
-  int result;
+  gint result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
   arg4 = (char *)jarg4; 
-  result = (int)rlib_add_query_as(arg1,arg2,arg3,arg4);
-  jresult = result; 
+  result = rlib_add_query_as(arg1,arg2,arg3,arg4);
+  {
+    gint * resultptr = (gint *) malloc(sizeof(gint));
+    memmove(resultptr, &result, sizeof(gint));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_add_search_path(void * jarg1, char * jarg2) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_add_search_path(void * jarg1, char * jarg2) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
-  result = (int)rlib_add_search_path(arg1,(char const *)arg2);
-  jresult = result; 
+  result = rlib_add_search_path(arg1,(char const *)arg2);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
@@ -436,14 +464,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_rlib_add_report_from_buffer(void * jarg1, char
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_execute(void * jarg1) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_execute(void * jarg1) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
-  result = (int)rlib_execute(arg1);
-  jresult = result; 
+  result = rlib_execute(arg1);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
@@ -460,196 +492,216 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_rlib_get_content_type_as_text(void * jarg1)
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_spool(void * jarg1) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_spool(void * jarg1) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
-  result = (int)rlib_spool(arg1);
-  jresult = result; 
+  result = rlib_spool(arg1);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_set_output_format(void * jarg1, int jarg2) {
-  int jresult ;
+SWIGEXPORT void SWIGSTDCALL CSharp_rlib_set_output_format(void * jarg1, int jarg2) {
   rlib *arg1 = (rlib *) 0 ;
   int arg2 ;
-  int result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (int)jarg2; 
-  result = (int)rlib_set_output_format(arg1,arg2);
-  jresult = result; 
-  return jresult;
+  rlib_set_output_format(arg1,arg2);
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_add_resultset_follower_n_to_1(void * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5) {
-  int jresult ;
+SWIGEXPORT void SWIGSTDCALL CSharp_rlib_set_output_format_from_text(void * jarg1, char * jarg2) {
+  rlib *arg1 = (rlib *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (rlib *)jarg1; 
+  arg2 = (char *)jarg2; 
+  rlib_set_output_format_from_text(arg1,arg2);
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_add_resultset_follower_n_to_1(void * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
   char *arg5 = (char *) 0 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
   arg4 = (char *)jarg4; 
   arg5 = (char *)jarg5; 
-  result = (int)rlib_add_resultset_follower_n_to_1(arg1,arg2,arg3,arg4,arg5);
-  jresult = result; 
+  result = rlib_add_resultset_follower_n_to_1(arg1,arg2,arg3,arg4,arg5);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_add_resultset_follower(void * jarg1, char * jarg2, char * jarg3) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_add_resultset_follower(void * jarg1, char * jarg2, char * jarg3) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
-  result = (int)rlib_add_resultset_follower(arg1,arg2,arg3);
-  jresult = result; 
+  result = rlib_add_resultset_follower(arg1,arg2,arg3);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_set_output_format_from_text(void * jarg1, char * jarg2) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_get_output(void * jarg1) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
-  char *arg2 = (char *) 0 ;
-  int result;
+  gchar *result = 0 ;
   
   arg1 = (rlib *)jarg1; 
-  arg2 = (char *)jarg2; 
-  result = (int)rlib_set_output_format_from_text(arg1,arg2);
-  jresult = result; 
+  result = (gchar *)rlib_get_output(arg1);
+  jresult = (void *)result; 
   return jresult;
 }
 
 
-SWIGEXPORT char * SWIGSTDCALL CSharp_rlib_get_output(void * jarg1) {
-  char * jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_get_output_length(void * jarg1) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
-  char *result = 0 ;
+  gsize result;
   
   arg1 = (rlib *)jarg1; 
-  result = (char *)rlib_get_output(arg1);
-  jresult = SWIG_csharp_string_callback((const char *)result); 
+  result = rlib_get_output_length(arg1);
+  {
+    gsize * resultptr = (gsize *) malloc(sizeof(gsize));
+    memmove(resultptr, &result, sizeof(gsize));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_get_output_length(void * jarg1) {
-  int jresult ;
-  rlib *arg1 = (rlib *) 0 ;
-  int result;
-  
-  arg1 = (rlib *)jarg1; 
-  result = (int)rlib_get_output_length(arg1);
-  jresult = result; 
-  return jresult;
-}
-
-
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_signal_connect(void * jarg1, int jarg2, void * jarg3, void * jarg4) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_signal_connect(void * jarg1, int jarg2, void * jarg3, void * jarg4) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   int arg2 ;
   int (*arg3)(rlib *,void *) = (int (*)(rlib *,void *)) 0 ;
   void *arg4 = (void *) 0 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (int)jarg2; 
   arg3 = (int (*)(rlib *,void *))jarg3; 
   arg4 = (void *)jarg4; 
-  result = (int)rlib_signal_connect(arg1,arg2,arg3,arg4);
-  jresult = result; 
+  result = rlib_signal_connect(arg1,arg2,arg3,arg4);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_signal_connect_string(void * jarg1, char * jarg2, void * jarg3, void * jarg4) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_signal_connect_string(void * jarg1, char * jarg2, void * jarg3, void * jarg4) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   int (*arg3)(rlib *,void *) = (int (*)(rlib *,void *)) 0 ;
   void *arg4 = (void *) 0 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (int (*)(rlib *,void *))jarg3; 
   arg4 = (void *)jarg4; 
-  result = (int)rlib_signal_connect_string(arg1,arg2,arg3,arg4);
-  jresult = result; 
+  result = rlib_signal_connect_string(arg1,arg2,arg3,arg4);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_query_refresh(void * jarg1) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_query_refresh(void * jarg1) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
-  result = (int)rlib_query_refresh(arg1);
-  jresult = result; 
+  result = rlib_query_refresh(arg1);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_add_parameter(void * jarg1, char * jarg2, char * jarg3) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_add_parameter(void * jarg1, char * jarg2, char * jarg3) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
-  result = (int)rlib_add_parameter(arg1,(char const *)arg2,(char const *)arg3);
-  jresult = result; 
+  result = rlib_add_parameter(arg1,(char const *)arg2,(char const *)arg3);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_set_locale(void * jarg1, char * jarg2) {
-  int jresult ;
+SWIGEXPORT void SWIGSTDCALL CSharp_rlib_set_locale(void * jarg1, char * jarg2) {
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
-  int result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
-  result = (int)rlib_set_locale(arg1,arg2);
-  jresult = result; 
-  return jresult;
+  rlib_set_locale(arg1,arg2);
 }
 
 
-SWIGEXPORT char * SWIGSTDCALL CSharp_rlib_bindtextdomain(void * jarg1, char * jarg2, char * jarg3) {
-  char * jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_bindtextdomain(void * jarg1, char * jarg2, char * jarg3) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  char *result = 0 ;
+  gchar *result = 0 ;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
-  result = (char *)rlib_bindtextdomain(arg1,arg2,arg3);
-  jresult = SWIG_csharp_string_callback((const char *)result); 
+  result = (gchar *)rlib_bindtextdomain(arg1,arg2,arg3);
+  jresult = (void *)result; 
   return jresult;
 }
 
@@ -692,31 +744,31 @@ SWIGEXPORT void SWIGSTDCALL CSharp_rlib_set_output_encoding(void * jarg1, char *
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_set_datasource_encoding(void * jarg1, char * jarg2, char * jarg3) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_set_datasource_encoding(void * jarg1, char * jarg2, char * jarg3) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
-  result = (int)rlib_set_datasource_encoding(arg1,arg2,arg3);
-  jresult = result; 
+  result = rlib_set_datasource_encoding(arg1,arg2,arg3);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_free(void * jarg1) {
-  int jresult ;
+SWIGEXPORT void SWIGSTDCALL CSharp_rlib_free(void * jarg1) {
   rlib *arg1 = (rlib *) 0 ;
-  int result;
   
   arg1 = (rlib *)jarg1; 
-  result = (int)rlib_free(arg1);
-  jresult = result; 
-  return jresult;
+  rlib_free(arg1);
 }
 
 
@@ -730,102 +782,126 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_rlib_version() {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_graph_add_bg_region(void * jarg1, char * jarg2, char * jarg3, char * jarg4, float jarg5, float jarg6) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_graph_add_bg_region(void * jarg1, char * jarg2, char * jarg3, char * jarg4, double jarg5, double jarg6) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
-  float arg5 ;
-  float arg6 ;
-  int result;
+  double arg5 ;
+  double arg6 ;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
   arg4 = (char *)jarg4; 
-  arg5 = (float)jarg5; 
-  arg6 = (float)jarg6; 
-  result = (int)rlib_graph_add_bg_region(arg1,arg2,arg3,arg4,arg5,arg6);
-  jresult = result; 
+  arg5 = (double)jarg5; 
+  arg6 = (double)jarg6; 
+  result = rlib_graph_add_bg_region(arg1,arg2,arg3,arg4,arg5,arg6);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_graph_clear_bg_region(void * jarg1, char * jarg2) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_graph_clear_bg_region(void * jarg1, char * jarg2) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
-  result = (int)rlib_graph_clear_bg_region(arg1,arg2);
-  jresult = result; 
+  result = rlib_graph_clear_bg_region(arg1,arg2);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_graph_set_x_minor_tick(void * jarg1, char * jarg2, char * jarg3) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_graph_set_x_minor_tick(void * jarg1, char * jarg2, char * jarg3) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
-  result = (int)rlib_graph_set_x_minor_tick(arg1,arg2,arg3);
-  jresult = result; 
+  result = rlib_graph_set_x_minor_tick(arg1,arg2,arg3);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_graph_set_x_minor_tick_by_location(void * jarg1, char * jarg2, int jarg3) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_graph_set_x_minor_tick_by_location(void * jarg1, char * jarg2, int jarg3) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   int arg3 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (int)jarg3; 
-  result = (int)rlib_graph_set_x_minor_tick_by_location(arg1,arg2,arg3);
-  jresult = result; 
+  result = rlib_graph_set_x_minor_tick_by_location(arg1,arg2,arg3);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT float SWIGSTDCALL CSharp_rlib_graph(void * jarg1, void * jarg2, void * jarg3, float jarg4, void * jarg5) {
-  float jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_graph(void * jarg1, void * jarg2, void * jarg3, double jarg4, void * jarg5) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   struct rlib_part *arg2 = (struct rlib_part *) 0 ;
   struct rlib_report *arg3 = (struct rlib_report *) 0 ;
-  float arg4 ;
-  float *arg5 = (float *) 0 ;
-  float result;
+  double arg4 ;
+  double *arg5 = (double *) 0 ;
+  gdouble result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (struct rlib_part *)jarg2; 
   arg3 = (struct rlib_report *)jarg3; 
-  arg4 = (float)jarg4; 
-  arg5 = (float *)jarg5; 
-  result = (float)rlib_graph(arg1,arg2,arg3,arg4,arg5);
-  jresult = result; 
+  arg4 = (double)jarg4; 
+  arg5 = (double *)jarg5; 
+  result = rlib_graph(arg1,arg2,arg3,arg4,arg5);
+  {
+    gdouble * resultptr = (gdouble *) malloc(sizeof(gdouble));
+    memmove(resultptr, &result, sizeof(gdouble));
+    jresult = resultptr;
+  }
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_parse(void * jarg1) {
-  int jresult ;
+SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_parse(void * jarg1) {
+  void * jresult ;
   rlib *arg1 = (rlib *) 0 ;
-  int result;
+  gboolean result;
   
   arg1 = (rlib *)jarg1; 
-  result = (int)rlib_parse(arg1);
-  jresult = result; 
+  result = rlib_parse(arg1);
+  {
+    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
+    memmove(resultptr, &result, sizeof(gboolean));
+    jresult = resultptr;
+  }
   return jresult;
 }
 

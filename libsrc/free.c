@@ -16,14 +16,13 @@
  * License along with this program; if not, write to the
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
- *
- * $Id$
  */
+
+#include <config.h>
 
 #include <stdlib.h>
 #include <gmodule.h>
 
-#include <config.h>
 #include "rlib-internal.h"
 #include "pcode.h"
 #include "rlib_input.h"
@@ -177,18 +176,18 @@ void rlib_free_lines(rlib *r, struct rlib_report_lines *rl) {
 void rlib_free_extra_data(rlib *r, struct rlib_line_extra_data *extra_data) {
 	rlib_pcode_free(r, extra_data->field_code);
 
-	rlib_value_free(&extra_data->rval_code);
-	rlib_value_free(&extra_data->rval_link);
-	rlib_value_free(&extra_data->rval_bgcolor);
-	rlib_value_free(&extra_data->rval_color);
-	rlib_value_free(&extra_data->rval_col);
-	rlib_value_free(&extra_data->rval_bold);
-	rlib_value_free(&extra_data->rval_italics);
-	rlib_value_free(&extra_data->rval_image_name);
-	rlib_value_free(&extra_data->rval_image_type);
-	rlib_value_free(&extra_data->rval_image_width);
-	rlib_value_free(&extra_data->rval_image_height);
-	rlib_value_free(&extra_data->rval_image_textwidth);
+	rlib_value_free(r, &extra_data->rval_code);
+	rlib_value_free(r, &extra_data->rval_link);
+	rlib_value_free(r, &extra_data->rval_bgcolor);
+	rlib_value_free(r, &extra_data->rval_color);
+	rlib_value_free(r, &extra_data->rval_col);
+	rlib_value_free(r, &extra_data->rval_bold);
+	rlib_value_free(r, &extra_data->rval_italics);
+	rlib_value_free(r, &extra_data->rval_image_name);
+	rlib_value_free(r, &extra_data->rval_image_type);
+	rlib_value_free(r, &extra_data->rval_image_width);
+	rlib_value_free(r, &extra_data->rval_image_height);
+	rlib_value_free(r, &extra_data->rval_image_textwidth);
 	g_free(extra_data->formatted_string);
 
 	if (extra_data->memo_lines != NULL) {
@@ -421,23 +420,31 @@ void rlib_free_breaks(rlib *r, struct rlib_element *e) {
 	}
 }
 
+void rlib_free_variable(rlib *r, struct rlib_report_variable *rv) {
+	rlib_value_free(r, &rv->count);
+	rlib_value_free(r, &rv->amount);
+
+	rlib_pcode_free(r, rv->code);
+	rlib_pcode_free(r, rv->ignore_code);
+
+	xmlFree(rv->xml_name.xml);
+	xmlFree(rv->xml_str_type.xml);
+	xmlFree(rv->xml_value.xml);
+	xmlFree(rv->xml_resetonbreak.xml);
+	xmlFree(rv->xml_precalculate.xml);
+	xmlFree(rv->xml_ignore.xml);
+
+	g_free(rv);
+}
+
 void rlib_free_variables(rlib *r, struct rlib_element *e) {
 	struct rlib_element *save;
 
 	for (; e != NULL; save = e, e = e->next, g_free(save)) {
 		struct rlib_report_variable *rv = e->data;
 
-		rlib_pcode_free(r, rv->code);
-		rlib_pcode_free(r, rv->ignore_code);
+		rlib_free_variable(r, rv);
 
-		xmlFree(rv->xml_name.xml);
-		xmlFree(rv->xml_str_type.xml);
-		xmlFree(rv->xml_value.xml);
-		xmlFree(rv->xml_resetonbreak.xml);
-		xmlFree(rv->xml_precalculate.xml);
-		xmlFree(rv->xml_ignore.xml);
-
-		g_free(rv);
 		e->data = NULL;
 	}
 }
@@ -491,7 +498,7 @@ void rlib_free_report(rlib *r, struct rlib_report *report) {
 	g_free(report->position_bottom);
 	g_free(report->bottom_size);
 
-	rlib_value_free(&report->uniquerow);
+	rlib_value_free(r, &report->uniquerow);
 
 	rlib_free_breaks(r, report->breaks);
 	report->breaks = NULL;
@@ -678,8 +685,8 @@ static void free_follower(gpointer data, gpointer user_data) {
 	g_free(f);
 }
 
-gint rlib_free_follower(rlib *r) {
-	gint i;
+static void rlib_free_follower(rlib *r) {
+	gint64 i;
 
 	for (i = 0; i < r->queries_count; i++) {
 		g_list_foreach(r->queries[i]->followers, free_follower, r);
@@ -690,11 +697,9 @@ gint rlib_free_follower(rlib *r) {
 		g_list_free(r->queries[i]->followers_n_to_1);
 		r->queries[i]->followers_n_to_1 = NULL;
 	}
-
-	return TRUE;
 }
 
-DLL_EXPORT_SYM gint rlib_free(rlib *r) {
+DLL_EXPORT_SYM void rlib_free(rlib *r) {
 	int i;
 
 	rlib_charencoder_free(r->output_encoder);
@@ -727,5 +732,4 @@ DLL_EXPORT_SYM gint rlib_free(rlib *r) {
 	g_free(r->current_locale);
 
 	g_free(r);
-	return 0;
 }

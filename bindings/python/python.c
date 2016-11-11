@@ -2983,14 +2983,18 @@ SWIG_Python_NonDynamicSetAttr(PyObject *obj, PyObject *name, PyObject *value) {
 /* -------- TYPES TABLE (BEGIN) -------- */
 
 #define SWIGTYPE_p_char swig_types[0]
-#define SWIGTYPE_p_f_p_rlib_p_void__int swig_types[1]
-#define SWIGTYPE_p_float swig_types[2]
-#define SWIGTYPE_p_gchar swig_types[3]
-#define SWIGTYPE_p_rlib swig_types[4]
-#define SWIGTYPE_p_rlib_part swig_types[5]
-#define SWIGTYPE_p_rlib_report swig_types[6]
-static swig_type_info *swig_types[8];
-static swig_module_info swig_module = {swig_types, 7, 0, 0, 0, 0};
+#define SWIGTYPE_p_double swig_types[1]
+#define SWIGTYPE_p_f_p_rlib_p_void__int swig_types[2]
+#define SWIGTYPE_p_gboolean swig_types[3]
+#define SWIGTYPE_p_gchar swig_types[4]
+#define SWIGTYPE_p_gdouble swig_types[5]
+#define SWIGTYPE_p_gint swig_types[6]
+#define SWIGTYPE_p_gsize swig_types[7]
+#define SWIGTYPE_p_rlib swig_types[8]
+#define SWIGTYPE_p_rlib_part swig_types[9]
+#define SWIGTYPE_p_rlib_report swig_types[10]
+static swig_type_info *swig_types[12];
+static swig_module_info swig_module = {swig_types, 11, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -3023,7 +3027,7 @@ static swig_module_info swig_module = {swig_types, 7, 0, 0, 0, 0};
 
 
 #include <rlib.h>
- 
+
 
 SWIGINTERN swig_type_info*
 SWIG_pchar_descriptor(void)
@@ -3329,56 +3333,6 @@ SWIG_AsVal_int (PyObject * obj, int *val)
   return res;
 }
 
-
-/* Getting isfinite working pre C99 across multiple platforms is non-trivial. Users can provide SWIG_isfinite on older platforms. */
-#ifndef SWIG_isfinite
-/* isfinite() is a macro for C99, but a function in namespace std for C++11. */
-# if defined(isfinite)
-#  define SWIG_isfinite(X) (isfinite(X))
-# elif defined __cplusplus && __cplusplus >= 201103L
-#  define SWIG_isfinite(X) (std::isfinite(X))
-# elif defined(_MSC_VER)
-#  define SWIG_isfinite(X) (_finite(X))
-# elif defined(__sun) && defined(__SVR4)
-#  include <ieeefp.h>
-#  define SWIG_isfinite(X) (finite(X))
-# endif
-#endif
-
-
-/* Accept infinite as a valid float value unless we are unable to check if a value is finite */
-#ifdef SWIG_isfinite
-# define SWIG_Float_Overflow_Check(X) ((X < -FLT_MAX || X > FLT_MAX) && SWIG_isfinite(X))
-#else
-# define SWIG_Float_Overflow_Check(X) ((X < -FLT_MAX || X > FLT_MAX))
-#endif
-
-
-SWIGINTERN int
-SWIG_AsVal_float (PyObject * obj, float *val)
-{
-  double v;
-  int res = SWIG_AsVal_double (obj, &v);
-  if (SWIG_IsOK(res)) {
-    if (SWIG_Float_Overflow_Check(v)) {
-      return SWIG_OverflowError;
-    } else {
-      if (val) *val = (float)(v);
-    }
-  }  
-  return res;
-}
-
-
-  #define SWIG_From_double   PyFloat_FromDouble 
-
-
-SWIGINTERNINLINE PyObject *
-SWIG_From_float  (float value)
-{    
-  return SWIG_From_double  (value);
-}
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -3426,7 +3380,7 @@ SWIGINTERN PyObject *_wrap_rlib_add_datasource_mysql(PyObject *SWIGUNUSEDPARM(se
   PyObject * obj3 = 0 ;
   PyObject * obj4 = 0 ;
   PyObject * obj5 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"OOOOOO:rlib_add_datasource_mysql",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -3459,8 +3413,8 @@ SWIGINTERN PyObject *_wrap_rlib_add_datasource_mysql(PyObject *SWIGUNUSEDPARM(se
     SWIG_exception_fail(SWIG_ArgError(res6), "in method '" "rlib_add_datasource_mysql" "', argument " "6"" of type '" "char *""'");
   }
   arg6 = (char *)(buf6);
-  result = (int)rlib_add_datasource_mysql(arg1,arg2,arg3,arg4,arg5,arg6);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_add_datasource_mysql(arg1,arg2,arg3,arg4,arg5,arg6);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
   if (alloc4 == SWIG_NEWOBJ) free((char*)buf4);
@@ -3493,7 +3447,7 @@ SWIGINTERN PyObject *_wrap_rlib_add_datasource_postgres(PyObject *SWIGUNUSEDPARM
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"OOO:rlib_add_datasource_postgres",&obj0,&obj1,&obj2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -3511,8 +3465,8 @@ SWIGINTERN PyObject *_wrap_rlib_add_datasource_postgres(PyObject *SWIGUNUSEDPARM
     SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "rlib_add_datasource_postgres" "', argument " "3"" of type '" "char *""'");
   }
   arg3 = (char *)(buf3);
-  result = (int)rlib_add_datasource_postgres(arg1,arg2,arg3);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_add_datasource_postgres(arg1,arg2,arg3);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
   return resultobj;
@@ -3549,7 +3503,7 @@ SWIGINTERN PyObject *_wrap_rlib_add_datasource_odbc(PyObject *SWIGUNUSEDPARM(sel
   PyObject * obj2 = 0 ;
   PyObject * obj3 = 0 ;
   PyObject * obj4 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"OOOOO:rlib_add_datasource_odbc",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -3577,8 +3531,8 @@ SWIGINTERN PyObject *_wrap_rlib_add_datasource_odbc(PyObject *SWIGUNUSEDPARM(sel
     SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "rlib_add_datasource_odbc" "', argument " "5"" of type '" "char *""'");
   }
   arg5 = (char *)(buf5);
-  result = (int)rlib_add_datasource_odbc(arg1,arg2,arg3,arg4,arg5);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_add_datasource_odbc(arg1,arg2,arg3,arg4,arg5);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
   if (alloc4 == SWIG_NEWOBJ) free((char*)buf4);
@@ -3604,7 +3558,7 @@ SWIGINTERN PyObject *_wrap_rlib_add_datasource_xml(PyObject *SWIGUNUSEDPARM(self
   int alloc2 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"OO:rlib_add_datasource_xml",&obj0,&obj1)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -3617,8 +3571,8 @@ SWIGINTERN PyObject *_wrap_rlib_add_datasource_xml(PyObject *SWIGUNUSEDPARM(self
     SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "rlib_add_datasource_xml" "', argument " "2"" of type '" "char *""'");
   }
   arg2 = (char *)(buf2);
-  result = (int)rlib_add_datasource_xml(arg1,arg2);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_add_datasource_xml(arg1,arg2);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   return resultobj;
 fail:
@@ -3638,7 +3592,7 @@ SWIGINTERN PyObject *_wrap_rlib_add_datasource_csv(PyObject *SWIGUNUSEDPARM(self
   int alloc2 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"OO:rlib_add_datasource_csv",&obj0,&obj1)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -3651,8 +3605,8 @@ SWIGINTERN PyObject *_wrap_rlib_add_datasource_csv(PyObject *SWIGUNUSEDPARM(self
     SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "rlib_add_datasource_csv" "', argument " "2"" of type '" "char *""'");
   }
   arg2 = (char *)(buf2);
-  result = (int)rlib_add_datasource_csv(arg1,arg2);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_add_datasource_csv(arg1,arg2);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   return resultobj;
 fail:
@@ -3682,7 +3636,7 @@ SWIGINTERN PyObject *_wrap_rlib_add_query_as(PyObject *SWIGUNUSEDPARM(self), PyO
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
   PyObject * obj3 = 0 ;
-  int result;
+  gint result;
   
   if (!PyArg_ParseTuple(args,(char *)"OOOO:rlib_add_query_as",&obj0,&obj1,&obj2,&obj3)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -3705,8 +3659,8 @@ SWIGINTERN PyObject *_wrap_rlib_add_query_as(PyObject *SWIGUNUSEDPARM(self), PyO
     SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "rlib_add_query_as" "', argument " "4"" of type '" "char *""'");
   }
   arg4 = (char *)(buf4);
-  result = (int)rlib_add_query_as(arg1,arg2,arg3,arg4);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_add_query_as(arg1,arg2,arg3,arg4);
+  resultobj = SWIG_NewPointerObj((gint *)memcpy((gint *)malloc(sizeof(gint)),&result,sizeof(gint)), SWIGTYPE_p_gint, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
   if (alloc4 == SWIG_NEWOBJ) free((char*)buf4);
@@ -3730,7 +3684,7 @@ SWIGINTERN PyObject *_wrap_rlib_add_search_path(PyObject *SWIGUNUSEDPARM(self), 
   int alloc2 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"OO:rlib_add_search_path",&obj0,&obj1)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -3743,8 +3697,8 @@ SWIGINTERN PyObject *_wrap_rlib_add_search_path(PyObject *SWIGUNUSEDPARM(self), 
     SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "rlib_add_search_path" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = (char *)(buf2);
-  result = (int)rlib_add_search_path(arg1,(char const *)arg2);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_add_search_path(arg1,(char const *)arg2);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   return resultobj;
 fail:
@@ -3827,7 +3781,7 @@ SWIGINTERN PyObject *_wrap_rlib_execute(PyObject *SWIGUNUSEDPARM(self), PyObject
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject * obj0 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"O:rlib_execute",&obj0)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -3835,8 +3789,8 @@ SWIGINTERN PyObject *_wrap_rlib_execute(PyObject *SWIGUNUSEDPARM(self), PyObject
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_execute" "', argument " "1"" of type '" "rlib *""'"); 
   }
   arg1 = (rlib *)(argp1);
-  result = (int)rlib_execute(arg1);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_execute(arg1);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -3871,7 +3825,7 @@ SWIGINTERN PyObject *_wrap_rlib_spool(PyObject *SWIGUNUSEDPARM(self), PyObject *
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject * obj0 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"O:rlib_spool",&obj0)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -3879,8 +3833,8 @@ SWIGINTERN PyObject *_wrap_rlib_spool(PyObject *SWIGUNUSEDPARM(self), PyObject *
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_spool" "', argument " "1"" of type '" "rlib *""'"); 
   }
   arg1 = (rlib *)(argp1);
-  result = (int)rlib_spool(arg1);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_spool(arg1);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -3897,7 +3851,6 @@ SWIGINTERN PyObject *_wrap_rlib_set_output_format(PyObject *SWIGUNUSEDPARM(self)
   int ecode2 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
-  int result;
   
   if (!PyArg_ParseTuple(args,(char *)"OO:rlib_set_output_format",&obj0,&obj1)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -3910,10 +3863,43 @@ SWIGINTERN PyObject *_wrap_rlib_set_output_format(PyObject *SWIGUNUSEDPARM(self)
     SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "rlib_set_output_format" "', argument " "2"" of type '" "int""'");
   } 
   arg2 = (int)(val2);
-  result = (int)rlib_set_output_format(arg1,arg2);
-  resultobj = SWIG_From_int((int)(result));
+  rlib_set_output_format(arg1,arg2);
+  resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_rlib_set_output_format_from_text(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  rlib *arg1 = (rlib *) 0 ;
+  char *arg2 = (char *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:rlib_set_output_format_from_text",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_set_output_format_from_text" "', argument " "1"" of type '" "rlib *""'"); 
+  }
+  arg1 = (rlib *)(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "rlib_set_output_format_from_text" "', argument " "2"" of type '" "char *""'");
+  }
+  arg2 = (char *)(buf2);
+  rlib_set_output_format_from_text(arg1,arg2);
+  resultobj = SWIG_Py_Void();
+  if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
+  return resultobj;
+fail:
+  if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   return NULL;
 }
 
@@ -3944,7 +3930,7 @@ SWIGINTERN PyObject *_wrap_rlib_add_resultset_follower_n_to_1(PyObject *SWIGUNUS
   PyObject * obj2 = 0 ;
   PyObject * obj3 = 0 ;
   PyObject * obj4 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"OOOOO:rlib_add_resultset_follower_n_to_1",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -3972,8 +3958,8 @@ SWIGINTERN PyObject *_wrap_rlib_add_resultset_follower_n_to_1(PyObject *SWIGUNUS
     SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "rlib_add_resultset_follower_n_to_1" "', argument " "5"" of type '" "char *""'");
   }
   arg5 = (char *)(buf5);
-  result = (int)rlib_add_resultset_follower_n_to_1(arg1,arg2,arg3,arg4,arg5);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_add_resultset_follower_n_to_1(arg1,arg2,arg3,arg4,arg5);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
   if (alloc4 == SWIG_NEWOBJ) free((char*)buf4);
@@ -4004,7 +3990,7 @@ SWIGINTERN PyObject *_wrap_rlib_add_resultset_follower(PyObject *SWIGUNUSEDPARM(
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"OOO:rlib_add_resultset_follower",&obj0,&obj1,&obj2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4022,48 +4008,14 @@ SWIGINTERN PyObject *_wrap_rlib_add_resultset_follower(PyObject *SWIGUNUSEDPARM(
     SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "rlib_add_resultset_follower" "', argument " "3"" of type '" "char *""'");
   }
   arg3 = (char *)(buf3);
-  result = (int)rlib_add_resultset_follower(arg1,arg2,arg3);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_add_resultset_follower(arg1,arg2,arg3);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
   return resultobj;
 fail:
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_rlib_set_output_format_from_text(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  rlib *arg1 = (rlib *) 0 ;
-  char *arg2 = (char *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  int res2 ;
-  char *buf2 = 0 ;
-  int alloc2 = 0 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  int result;
-  
-  if (!PyArg_ParseTuple(args,(char *)"OO:rlib_set_output_format_from_text",&obj0,&obj1)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_set_output_format_from_text" "', argument " "1"" of type '" "rlib *""'"); 
-  }
-  arg1 = (rlib *)(argp1);
-  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "rlib_set_output_format_from_text" "', argument " "2"" of type '" "char *""'");
-  }
-  arg2 = (char *)(buf2);
-  result = (int)rlib_set_output_format_from_text(arg1,arg2);
-  resultobj = SWIG_From_int((int)(result));
-  if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
-  return resultobj;
-fail:
-  if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   return NULL;
 }
 
@@ -4074,7 +4026,7 @@ SWIGINTERN PyObject *_wrap_rlib_get_output(PyObject *SWIGUNUSEDPARM(self), PyObj
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject * obj0 = 0 ;
-  char *result = 0 ;
+  gchar *result = 0 ;
   
   if (!PyArg_ParseTuple(args,(char *)"O:rlib_get_output",&obj0)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4082,8 +4034,8 @@ SWIGINTERN PyObject *_wrap_rlib_get_output(PyObject *SWIGUNUSEDPARM(self), PyObj
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_get_output" "', argument " "1"" of type '" "rlib *""'"); 
   }
   arg1 = (rlib *)(argp1);
-  result = (char *)rlib_get_output(arg1);
-  resultobj = SWIG_FromCharPtr((const char *)result);
+  result = (gchar *)rlib_get_output(arg1);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_gchar, 0 |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -4096,7 +4048,7 @@ SWIGINTERN PyObject *_wrap_rlib_get_output_length(PyObject *SWIGUNUSEDPARM(self)
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject * obj0 = 0 ;
-  int result;
+  gsize result;
   
   if (!PyArg_ParseTuple(args,(char *)"O:rlib_get_output_length",&obj0)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4104,8 +4056,8 @@ SWIGINTERN PyObject *_wrap_rlib_get_output_length(PyObject *SWIGUNUSEDPARM(self)
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_get_output_length" "', argument " "1"" of type '" "rlib *""'"); 
   }
   arg1 = (rlib *)(argp1);
-  result = (int)rlib_get_output_length(arg1);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_get_output_length(arg1);
+  resultobj = SWIG_NewPointerObj((gsize *)memcpy((gsize *)malloc(sizeof(gsize)),&result,sizeof(gsize)), SWIGTYPE_p_gsize, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -4127,7 +4079,7 @@ SWIGINTERN PyObject *_wrap_rlib_signal_connect(PyObject *SWIGUNUSEDPARM(self), P
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
   PyObject * obj3 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"OOOO:rlib_signal_connect",&obj0,&obj1,&obj2,&obj3)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4150,8 +4102,8 @@ SWIGINTERN PyObject *_wrap_rlib_signal_connect(PyObject *SWIGUNUSEDPARM(self), P
   if (!SWIG_IsOK(res4)) {
     SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "rlib_signal_connect" "', argument " "4"" of type '" "void *""'"); 
   }
-  result = (int)rlib_signal_connect(arg1,arg2,arg3,arg4);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_signal_connect(arg1,arg2,arg3,arg4);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -4174,7 +4126,7 @@ SWIGINTERN PyObject *_wrap_rlib_signal_connect_string(PyObject *SWIGUNUSEDPARM(s
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
   PyObject * obj3 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"OOOO:rlib_signal_connect_string",&obj0,&obj1,&obj2,&obj3)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4197,8 +4149,8 @@ SWIGINTERN PyObject *_wrap_rlib_signal_connect_string(PyObject *SWIGUNUSEDPARM(s
   if (!SWIG_IsOK(res4)) {
     SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "rlib_signal_connect_string" "', argument " "4"" of type '" "void *""'"); 
   }
-  result = (int)rlib_signal_connect_string(arg1,arg2,arg3,arg4);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_signal_connect_string(arg1,arg2,arg3,arg4);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   return resultobj;
 fail:
@@ -4213,7 +4165,7 @@ SWIGINTERN PyObject *_wrap_rlib_query_refresh(PyObject *SWIGUNUSEDPARM(self), Py
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject * obj0 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"O:rlib_query_refresh",&obj0)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4221,8 +4173,8 @@ SWIGINTERN PyObject *_wrap_rlib_query_refresh(PyObject *SWIGUNUSEDPARM(self), Py
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_query_refresh" "', argument " "1"" of type '" "rlib *""'"); 
   }
   arg1 = (rlib *)(argp1);
-  result = (int)rlib_query_refresh(arg1);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_query_refresh(arg1);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -4245,7 +4197,7 @@ SWIGINTERN PyObject *_wrap_rlib_add_parameter(PyObject *SWIGUNUSEDPARM(self), Py
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"OOO:rlib_add_parameter",&obj0,&obj1,&obj2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4263,8 +4215,8 @@ SWIGINTERN PyObject *_wrap_rlib_add_parameter(PyObject *SWIGUNUSEDPARM(self), Py
     SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "rlib_add_parameter" "', argument " "3"" of type '" "char const *""'");
   }
   arg3 = (char *)(buf3);
-  result = (int)rlib_add_parameter(arg1,(char const *)arg2,(char const *)arg3);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_add_parameter(arg1,(char const *)arg2,(char const *)arg3);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
   return resultobj;
@@ -4286,7 +4238,6 @@ SWIGINTERN PyObject *_wrap_rlib_set_locale(PyObject *SWIGUNUSEDPARM(self), PyObj
   int alloc2 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
-  int result;
   
   if (!PyArg_ParseTuple(args,(char *)"OO:rlib_set_locale",&obj0,&obj1)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4299,8 +4250,8 @@ SWIGINTERN PyObject *_wrap_rlib_set_locale(PyObject *SWIGUNUSEDPARM(self), PyObj
     SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "rlib_set_locale" "', argument " "2"" of type '" "char *""'");
   }
   arg2 = (char *)(buf2);
-  result = (int)rlib_set_locale(arg1,arg2);
-  resultobj = SWIG_From_int((int)(result));
+  rlib_set_locale(arg1,arg2);
+  resultobj = SWIG_Py_Void();
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   return resultobj;
 fail:
@@ -4325,7 +4276,7 @@ SWIGINTERN PyObject *_wrap_rlib_bindtextdomain(PyObject *SWIGUNUSEDPARM(self), P
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
-  char *result = 0 ;
+  gchar *result = 0 ;
   
   if (!PyArg_ParseTuple(args,(char *)"OOO:rlib_bindtextdomain",&obj0,&obj1,&obj2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4343,8 +4294,8 @@ SWIGINTERN PyObject *_wrap_rlib_bindtextdomain(PyObject *SWIGUNUSEDPARM(self), P
     SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "rlib_bindtextdomain" "', argument " "3"" of type '" "char *""'");
   }
   arg3 = (char *)(buf3);
-  result = (char *)rlib_bindtextdomain(arg1,arg2,arg3);
-  resultobj = SWIG_FromCharPtr((const char *)result);
+  result = (gchar *)rlib_bindtextdomain(arg1,arg2,arg3);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_gchar, 0 |  0 );
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
   return resultobj;
@@ -4485,7 +4436,7 @@ SWIGINTERN PyObject *_wrap_rlib_set_datasource_encoding(PyObject *SWIGUNUSEDPARM
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"OOO:rlib_set_datasource_encoding",&obj0,&obj1,&obj2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4503,8 +4454,8 @@ SWIGINTERN PyObject *_wrap_rlib_set_datasource_encoding(PyObject *SWIGUNUSEDPARM
     SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "rlib_set_datasource_encoding" "', argument " "3"" of type '" "char *""'");
   }
   arg3 = (char *)(buf3);
-  result = (int)rlib_set_datasource_encoding(arg1,arg2,arg3);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_set_datasource_encoding(arg1,arg2,arg3);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
   return resultobj;
@@ -4521,7 +4472,6 @@ SWIGINTERN PyObject *_wrap_rlib_free(PyObject *SWIGUNUSEDPARM(self), PyObject *a
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject * obj0 = 0 ;
-  int result;
   
   if (!PyArg_ParseTuple(args,(char *)"O:rlib_free",&obj0)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4529,8 +4479,8 @@ SWIGINTERN PyObject *_wrap_rlib_free(PyObject *SWIGUNUSEDPARM(self), PyObject *a
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_free" "', argument " "1"" of type '" "rlib *""'"); 
   }
   arg1 = (rlib *)(argp1);
-  result = (int)rlib_free(arg1);
-  resultobj = SWIG_From_int((int)(result));
+  rlib_free(arg1);
+  resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
   return NULL;
@@ -4556,8 +4506,8 @@ SWIGINTERN PyObject *_wrap_rlib_graph_add_bg_region(PyObject *SWIGUNUSEDPARM(sel
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
-  float arg5 ;
-  float arg6 ;
+  double arg5 ;
+  double arg6 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
@@ -4569,9 +4519,9 @@ SWIGINTERN PyObject *_wrap_rlib_graph_add_bg_region(PyObject *SWIGUNUSEDPARM(sel
   int res4 ;
   char *buf4 = 0 ;
   int alloc4 = 0 ;
-  float val5 ;
+  double val5 ;
   int ecode5 = 0 ;
-  float val6 ;
+  double val6 ;
   int ecode6 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -4579,7 +4529,7 @@ SWIGINTERN PyObject *_wrap_rlib_graph_add_bg_region(PyObject *SWIGUNUSEDPARM(sel
   PyObject * obj3 = 0 ;
   PyObject * obj4 = 0 ;
   PyObject * obj5 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"OOOOOO:rlib_graph_add_bg_region",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4602,18 +4552,18 @@ SWIGINTERN PyObject *_wrap_rlib_graph_add_bg_region(PyObject *SWIGUNUSEDPARM(sel
     SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "rlib_graph_add_bg_region" "', argument " "4"" of type '" "char *""'");
   }
   arg4 = (char *)(buf4);
-  ecode5 = SWIG_AsVal_float(obj4, &val5);
+  ecode5 = SWIG_AsVal_double(obj4, &val5);
   if (!SWIG_IsOK(ecode5)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "rlib_graph_add_bg_region" "', argument " "5"" of type '" "float""'");
+    SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "rlib_graph_add_bg_region" "', argument " "5"" of type '" "double""'");
   } 
-  arg5 = (float)(val5);
-  ecode6 = SWIG_AsVal_float(obj5, &val6);
+  arg5 = (double)(val5);
+  ecode6 = SWIG_AsVal_double(obj5, &val6);
   if (!SWIG_IsOK(ecode6)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode6), "in method '" "rlib_graph_add_bg_region" "', argument " "6"" of type '" "float""'");
+    SWIG_exception_fail(SWIG_ArgError(ecode6), "in method '" "rlib_graph_add_bg_region" "', argument " "6"" of type '" "double""'");
   } 
-  arg6 = (float)(val6);
-  result = (int)rlib_graph_add_bg_region(arg1,arg2,arg3,arg4,arg5,arg6);
-  resultobj = SWIG_From_int((int)(result));
+  arg6 = (double)(val6);
+  result = rlib_graph_add_bg_region(arg1,arg2,arg3,arg4,arg5,arg6);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
   if (alloc4 == SWIG_NEWOBJ) free((char*)buf4);
@@ -4637,7 +4587,7 @@ SWIGINTERN PyObject *_wrap_rlib_graph_clear_bg_region(PyObject *SWIGUNUSEDPARM(s
   int alloc2 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"OO:rlib_graph_clear_bg_region",&obj0,&obj1)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4650,8 +4600,8 @@ SWIGINTERN PyObject *_wrap_rlib_graph_clear_bg_region(PyObject *SWIGUNUSEDPARM(s
     SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "rlib_graph_clear_bg_region" "', argument " "2"" of type '" "char *""'");
   }
   arg2 = (char *)(buf2);
-  result = (int)rlib_graph_clear_bg_region(arg1,arg2);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_graph_clear_bg_region(arg1,arg2);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   return resultobj;
 fail:
@@ -4676,7 +4626,7 @@ SWIGINTERN PyObject *_wrap_rlib_graph_set_x_minor_tick(PyObject *SWIGUNUSEDPARM(
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"OOO:rlib_graph_set_x_minor_tick",&obj0,&obj1,&obj2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4694,8 +4644,8 @@ SWIGINTERN PyObject *_wrap_rlib_graph_set_x_minor_tick(PyObject *SWIGUNUSEDPARM(
     SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "rlib_graph_set_x_minor_tick" "', argument " "3"" of type '" "char *""'");
   }
   arg3 = (char *)(buf3);
-  result = (int)rlib_graph_set_x_minor_tick(arg1,arg2,arg3);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_graph_set_x_minor_tick(arg1,arg2,arg3);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
   return resultobj;
@@ -4721,7 +4671,7 @@ SWIGINTERN PyObject *_wrap_rlib_graph_set_x_minor_tick_by_location(PyObject *SWI
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"OOO:rlib_graph_set_x_minor_tick_by_location",&obj0,&obj1,&obj2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4739,8 +4689,8 @@ SWIGINTERN PyObject *_wrap_rlib_graph_set_x_minor_tick_by_location(PyObject *SWI
     SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "rlib_graph_set_x_minor_tick_by_location" "', argument " "3"" of type '" "int""'");
   } 
   arg3 = (int)(val3);
-  result = (int)rlib_graph_set_x_minor_tick_by_location(arg1,arg2,arg3);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_graph_set_x_minor_tick_by_location(arg1,arg2,arg3);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   return resultobj;
 fail:
@@ -4754,15 +4704,15 @@ SWIGINTERN PyObject *_wrap_rlib_graph(PyObject *SWIGUNUSEDPARM(self), PyObject *
   rlib *arg1 = (rlib *) 0 ;
   struct rlib_part *arg2 = (struct rlib_part *) 0 ;
   struct rlib_report *arg3 = (struct rlib_report *) 0 ;
-  float arg4 ;
-  float *arg5 = (float *) 0 ;
+  double arg4 ;
+  double *arg5 = (double *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   void *argp2 = 0 ;
   int res2 = 0 ;
   void *argp3 = 0 ;
   int res3 = 0 ;
-  float val4 ;
+  double val4 ;
   int ecode4 = 0 ;
   void *argp5 = 0 ;
   int res5 = 0 ;
@@ -4771,7 +4721,7 @@ SWIGINTERN PyObject *_wrap_rlib_graph(PyObject *SWIGUNUSEDPARM(self), PyObject *
   PyObject * obj2 = 0 ;
   PyObject * obj3 = 0 ;
   PyObject * obj4 = 0 ;
-  float result;
+  gdouble result;
   
   if (!PyArg_ParseTuple(args,(char *)"OOOOO:rlib_graph",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4789,18 +4739,18 @@ SWIGINTERN PyObject *_wrap_rlib_graph(PyObject *SWIGUNUSEDPARM(self), PyObject *
     SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "rlib_graph" "', argument " "3"" of type '" "struct rlib_report *""'"); 
   }
   arg3 = (struct rlib_report *)(argp3);
-  ecode4 = SWIG_AsVal_float(obj3, &val4);
+  ecode4 = SWIG_AsVal_double(obj3, &val4);
   if (!SWIG_IsOK(ecode4)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "rlib_graph" "', argument " "4"" of type '" "float""'");
+    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "rlib_graph" "', argument " "4"" of type '" "double""'");
   } 
-  arg4 = (float)(val4);
-  res5 = SWIG_ConvertPtr(obj4, &argp5,SWIGTYPE_p_float, 0 |  0 );
+  arg4 = (double)(val4);
+  res5 = SWIG_ConvertPtr(obj4, &argp5,SWIGTYPE_p_double, 0 |  0 );
   if (!SWIG_IsOK(res5)) {
-    SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "rlib_graph" "', argument " "5"" of type '" "float *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "rlib_graph" "', argument " "5"" of type '" "double *""'"); 
   }
-  arg5 = (float *)(argp5);
-  result = (float)rlib_graph(arg1,arg2,arg3,arg4,arg5);
-  resultobj = SWIG_From_float((float)(result));
+  arg5 = (double *)(argp5);
+  result = rlib_graph(arg1,arg2,arg3,arg4,arg5);
+  resultobj = SWIG_NewPointerObj((gdouble *)memcpy((gdouble *)malloc(sizeof(gdouble)),&result,sizeof(gdouble)), SWIGTYPE_p_gdouble, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -4813,7 +4763,7 @@ SWIGINTERN PyObject *_wrap_rlib_parse(PyObject *SWIGUNUSEDPARM(self), PyObject *
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject * obj0 = 0 ;
-  int result;
+  gboolean result;
   
   if (!PyArg_ParseTuple(args,(char *)"O:rlib_parse",&obj0)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4821,8 +4771,8 @@ SWIGINTERN PyObject *_wrap_rlib_parse(PyObject *SWIGUNUSEDPARM(self), PyObject *
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_parse" "', argument " "1"" of type '" "rlib *""'"); 
   }
   arg1 = (rlib *)(argp1);
-  result = (int)rlib_parse(arg1);
-  resultobj = SWIG_From_int((int)(result));
+  result = rlib_parse(arg1);
+  resultobj = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -4875,9 +4825,9 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"rlib_get_content_type_as_text", _wrap_rlib_get_content_type_as_text, METH_VARARGS, NULL},
 	 { (char *)"rlib_spool", _wrap_rlib_spool, METH_VARARGS, NULL},
 	 { (char *)"rlib_set_output_format", _wrap_rlib_set_output_format, METH_VARARGS, NULL},
+	 { (char *)"rlib_set_output_format_from_text", _wrap_rlib_set_output_format_from_text, METH_VARARGS, NULL},
 	 { (char *)"rlib_add_resultset_follower_n_to_1", _wrap_rlib_add_resultset_follower_n_to_1, METH_VARARGS, NULL},
 	 { (char *)"rlib_add_resultset_follower", _wrap_rlib_add_resultset_follower, METH_VARARGS, NULL},
-	 { (char *)"rlib_set_output_format_from_text", _wrap_rlib_set_output_format_from_text, METH_VARARGS, NULL},
 	 { (char *)"rlib_get_output", _wrap_rlib_get_output, METH_VARARGS, NULL},
 	 { (char *)"rlib_get_output_length", _wrap_rlib_get_output_length, METH_VARARGS, NULL},
 	 { (char *)"rlib_signal_connect", _wrap_rlib_signal_connect, METH_VARARGS, NULL},
@@ -4906,36 +4856,52 @@ static PyMethodDef SwigMethods[] = {
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_double = {"_p_double", "double *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_f_p_rlib_p_void__int = {"_p_f_p_rlib_p_void__int", "int (*)(rlib *,void *)", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_float = {"_p_float", "float *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_gboolean = {"_p_gboolean", "gboolean *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_gchar = {"_p_gchar", "gchar *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_gdouble = {"_p_gdouble", "gdouble *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_gint = {"_p_gint", "gint *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_gsize = {"_p_gsize", "gsize *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_rlib = {"_p_rlib", "rlib *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_rlib_part = {"_p_rlib_part", "struct rlib_part *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_rlib_report = {"_p_rlib_report", "struct rlib_report *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_char,
+  &_swigt__p_double,
   &_swigt__p_f_p_rlib_p_void__int,
-  &_swigt__p_float,
+  &_swigt__p_gboolean,
   &_swigt__p_gchar,
+  &_swigt__p_gdouble,
+  &_swigt__p_gint,
+  &_swigt__p_gsize,
   &_swigt__p_rlib,
   &_swigt__p_rlib_part,
   &_swigt__p_rlib_report,
 };
 
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_double[] = {  {&_swigt__p_double, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_f_p_rlib_p_void__int[] = {  {&_swigt__p_f_p_rlib_p_void__int, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_float[] = {  {&_swigt__p_float, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_gboolean[] = {  {&_swigt__p_gboolean, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_gchar[] = {  {&_swigt__p_gchar, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_gdouble[] = {  {&_swigt__p_gdouble, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_gint[] = {  {&_swigt__p_gint, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_gsize[] = {  {&_swigt__p_gsize, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_rlib[] = {  {&_swigt__p_rlib, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_rlib_part[] = {  {&_swigt__p_rlib_part, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_rlib_report[] = {  {&_swigt__p_rlib_report, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_char,
+  _swigc__p_double,
   _swigc__p_f_p_rlib_p_void__int,
-  _swigc__p_float,
+  _swigc__p_gboolean,
   _swigc__p_gchar,
+  _swigc__p_gdouble,
+  _swigc__p_gint,
+  _swigc__p_gsize,
   _swigc__p_rlib,
   _swigc__p_rlib_part,
   _swigc__p_rlib_report,

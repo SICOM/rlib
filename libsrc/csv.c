@@ -18,10 +18,11 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#include <config.h>
+
 #include <stdlib.h>
 #include <string.h>
 
-#include <config.h>
 #include "rlib-internal.h"
 #include "pcode.h"
 
@@ -31,16 +32,16 @@ struct _private {
 	gchar col[MAX_COL][MAXSTRLEN];
 	gchar rval_type[MAX_COL];
 	gchar *top;
-	gint top_size;
-	gint top_total_size;
-	gint length;
+	gint64 top_size;
+	gint64 top_total_size;
+	gint64 length;
 	gboolean only_quote_strings;
 	gboolean no_quotes;
 	gboolean new_line_on_end_of_line;
 	gchar csv_delimeter;
 };
 
-static void print_text(rlib *r, const gchar *text, gint backwards UNUSED, gint col, gint rval_type) {
+static void print_text(rlib *r, const gchar *text, gint64 backwards UNUSED, gint64 col, gint64 rval_type) {
 	if(col < MAX_COL) {
 		OUTPUT_PRIVATE(r)->rval_type[col] = rval_type;
 		if(OUTPUT_PRIVATE(r)->col[col][0] == 0)
@@ -56,15 +57,14 @@ static void print_text(rlib *r, const gchar *text, gint backwards UNUSED, gint c
 	}
 }
 
-static gfloat csv_get_string_width(rlib *r UNUSED, const gchar *text UNUSED) {
-	return 1;
+static gdouble csv_get_string_width(rlib *r UNUSED, const gchar *text UNUSED) {
+	return 1.0;
 }
 
-static void csv_print_text(rlib *r, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, const gchar *text, gint backwards, struct rlib_line_extra_data *extra_data) {
-	gint rval_type = RLIB_VALUE_GET_TYPE(&extra_data->rval_code);
-	if(extra_data->col) {
-		print_text(r, text, backwards, extra_data->col-1, rval_type);
-	}
+static void csv_print_text(rlib *r, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, const gchar *text, gint64 backwards, struct rlib_line_extra_data *extra_data) {
+	gint rval_type = rlib_value_get_type(r, &extra_data->rval_code);
+	if (extra_data->col)
+		print_text(r, text, backwards, extra_data->col - 1, rval_type);
 }
 
 static void csv_start_new_page(rlib *r UNUSED, struct rlib_part *part) {
@@ -84,13 +84,13 @@ static char csv_get_delimiter(rlib *r) {
 	return OUTPUT_PRIVATE(r)->csv_delimeter;
 }
 
-static void really_print_text(rlib *r, const gchar *passed_text, gint rval_type, gint field_count) {
+static void really_print_text(rlib *r, const gchar *passed_text, gint64 rval_type, gint64 field_count) {
 	gchar buf[MAXSTRLEN], text[MAXSTRLEN];
 	gchar *str_ptr;
 	gchar csv_delimeter;
-	gint text_size = strlen(passed_text);
-	gint *size;
-	gint i, spot = 0;
+	gint64 text_size = strlen(passed_text);
+	gint64 *size;
+	gint64 i, spot = 0;
 
 	if (text_size > MAXSTRLEN - 5) {
 		text_size = MAXSTRLEN - 5;
@@ -157,8 +157,8 @@ static void really_print_text(rlib *r, const gchar *passed_text, gint rval_type,
 }
 
 static void print_csv_line(rlib *r) {
-	gint i;
-	gint biggest = -1;
+	gint64 i;
+	gint64 biggest = -1;
 	for(i=0;i<MAX_COL;i++)
 		if(OUTPUT_PRIVATE(r)->col[i][0] != 0)
 			biggest = i;
@@ -177,7 +177,7 @@ static void print_csv_line(rlib *r) {
 static void csv_start_output_section(rlib *r UNUSED, struct rlib_report_output_array *roa UNUSED) {}
 
 static void csv_start_evil_csv(rlib *r) {
-	gint i;
+	gint64 i;
 
 	for (i = 0; i < MAX_COL; i++) {
 		OUTPUT_PRIVATE(r)->col[i][0] = 0;
@@ -191,7 +191,7 @@ static void csv_end_evil_csv(rlib *r) {
 		print_csv_line(r);
 }
 
-static void csv_end_line(rlib *r, gint backwards UNUSED) {
+static void csv_end_line(rlib *r, gint64 backwards UNUSED) {
 	if(OUTPUT_PRIVATE(r)->new_line_on_end_of_line == TRUE) {
 		print_csv_line(r);
 		csv_start_evil_csv(r);
@@ -208,21 +208,21 @@ static char *csv_get_output(rlib *r) {
 	return OUTPUT_PRIVATE(r)->top;
 }
 
-static long csv_get_output_length(rlib *r) {
+static gsize csv_get_output_length(rlib *r) {
 	return OUTPUT_PRIVATE(r)->top_size;
 }
 
-static void csv_set_working_page(rlib *r UNUSED, struct rlib_part *part UNUSED, gint page UNUSED) {}
-static void csv_set_fg_color(rlib *r UNUSED, gfloat red UNUSED, gfloat green UNUSED, gfloat blue UNUSED) {}
-static void csv_set_bg_color(rlib *r UNUSED, gfloat red UNUSED, gfloat green UNUSED, gfloat blue UNUSED) {}
-static void csv_hr(rlib *r UNUSED, gint backwards UNUSED, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gfloat how_long UNUSED, gfloat how_tall UNUSED, struct rlib_rgb *color UNUSED, gfloat indent UNUSED, gfloat length UNUSED) {}
-static void csv_start_draw_cell_background(rlib *r UNUSED, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gfloat how_long UNUSED, gfloat how_tall UNUSED, struct rlib_rgb *color UNUSED) {}
+static void csv_set_working_page(rlib *r UNUSED, struct rlib_part *part UNUSED, gint64 page UNUSED) {}
+static void csv_set_fg_color(rlib *r UNUSED, gdouble red UNUSED, gdouble green UNUSED, gdouble blue UNUSED) {}
+static void csv_set_bg_color(rlib *r UNUSED, gdouble red UNUSED, gdouble green UNUSED, gdouble blue UNUSED) {}
+static void csv_hr(rlib *r UNUSED, gint64 backwards UNUSED, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, gdouble how_long UNUSED, gdouble how_tall UNUSED, struct rlib_rgb *color UNUSED, gdouble indent UNUSED, gdouble length UNUSED) {}
+static void csv_start_draw_cell_background(rlib *r UNUSED, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, gdouble how_long UNUSED, gdouble how_tall UNUSED, struct rlib_rgb *color UNUSED) {}
 static void csv_end_draw_cell_background(rlib *r UNUSED) {}
-static void csv_start_boxurl(rlib *r UNUSED, struct rlib_part *part UNUSED, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gfloat how_long UNUSED, gfloat how_tall UNUSED, gchar *url UNUSED, gint backwards UNUSED) {}
-static void csv_end_boxurl(rlib *r UNUSED, gint backwards UNUSED) {}
-static void csv_background_image(rlib *r UNUSED, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gchar *nname UNUSED, gchar *type UNUSED, gfloat nwidth UNUSED, gfloat nheight UNUSED) {}
+static void csv_start_boxurl(rlib *r UNUSED, struct rlib_part *part UNUSED, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, gdouble how_long UNUSED, gdouble how_tall UNUSED, gchar *url UNUSED, gint64 backwards UNUSED) {}
+static void csv_end_boxurl(rlib *r UNUSED, gint64 backwards UNUSED) {}
+static void csv_background_image(rlib *r UNUSED, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, gchar *nname UNUSED, gchar *type UNUSED, gdouble nwidth UNUSED, gdouble nheight UNUSED) {}
 static void csv_init_end_page(rlib *r UNUSED) {}
-static void csv_start_line(rlib *r UNUSED, gint backwards UNUSED) {}
+static void csv_start_line(rlib *r UNUSED, gint64 backwards UNUSED) {}
 static void csv_start_part(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
 static void csv_start_report(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 static void csv_end_report(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
@@ -239,47 +239,47 @@ static void csv_end_report_header(rlib *r UNUSED, struct rlib_part *part UNUSED,
 static void csv_end_part(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
 static void csv_start_rlib_report(rlib *r UNUSED) {}
 static void csv_end_rlib_report(rlib *r UNUSED) {}
-static void csv_set_font_point(rlib *r UNUSED, gint point UNUSED) {}
+static void csv_set_font_point(rlib *r UNUSED, gint64 point UNUSED) {}
 static void csv_start_part_table(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
 static void csv_end_part_table(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
 static void csv_start_part_tr(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
 static void csv_end_part_tr(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
-static void csv_start_part_td(rlib *r UNUSED, struct rlib_part *part UNUSED, gfloat width UNUSED, gfloat height UNUSED) {}
+static void csv_start_part_td(rlib *r UNUSED, struct rlib_part *part UNUSED, gdouble width UNUSED, gdouble height UNUSED) {}
 static void csv_end_part_td(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
-static void csv_start_part_pages_across(rlib *r UNUSED, struct rlib_part *part UNUSED, gfloat left_margin UNUSED, gfloat top_margin UNUSED, int width UNUSED, int height UNUSED, int border_width UNUSED, struct rlib_rgb *color UNUSED) {}
+static void csv_start_part_pages_across(rlib *r UNUSED, struct rlib_part *part UNUSED, gdouble left_margin UNUSED, gdouble top_margin UNUSED, gint64 width UNUSED, gint64 height UNUSED, gint64 border_width UNUSED, struct rlib_rgb *color UNUSED) {}
 static void csv_end_part_pages_across(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
-static void csv_set_raw_page(rlib *r UNUSED, struct rlib_part *part UNUSED, int page UNUSED) {}
+static void csv_set_raw_page(rlib *r UNUSED, struct rlib_part *part UNUSED, gint64 page UNUSED) {}
 static void csv_start_bold(rlib *r UNUSED) {}
 static void csv_end_bold(rlib *r UNUSED) {}
 static void csv_start_italics(rlib *r UNUSED) {}
 static void csv_end_italics(rlib *r UNUSED) {}
 
-static void csv_start_graph(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, gfloat left UNUSED, gfloat top UNUSED, gfloat width UNUSED, gfloat height UNUSED, gboolean x_axis_labels_are_under_tick UNUSED) {}
+static void csv_start_graph(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, gdouble left UNUSED, gdouble top UNUSED, gdouble width UNUSED, gdouble height UNUSED, gboolean x_axis_labels_are_under_tick UNUSED) {}
 static void csv_graph_set_limits(rlib *r UNUSED, gchar side UNUSED, gdouble min UNUSED, gdouble max UNUSED, gdouble origin UNUSED) {}
 static void csv_graph_set_title(rlib *r UNUSED, gchar *title UNUSED) {}
 static void csv_graph_x_axis_title(rlib *r UNUSED, gchar *title UNUSED) {}
 static void csv_graph_y_axis_title(rlib *r UNUSED, gchar side UNUSED, gchar *title UNUSED) {}
 static void csv_graph_do_grid(rlib *r UNUSED, gboolean just_a_box UNUSED) {}
 static void csv_graph_tick_x(rlib *r UNUSED) {}
-static void csv_graph_set_x_iterations(rlib *r UNUSED, gint iterations UNUSED) {}
+static void csv_graph_set_x_iterations(rlib *r UNUSED, gint64 iterations UNUSED) {}
 static void csv_graph_hint_label_x(rlib *r UNUSED, gchar *label UNUSED) {}
-static void csv_graph_label_x(rlib *r UNUSED, gint iteration UNUSED, gchar *label UNUSED) {}
-static void csv_graph_tick_y(rlib *r UNUSED, gint iterations UNUSED) {}
-static void csv_graph_label_y(rlib *r UNUSED, gchar side UNUSED, gint iteration UNUSED, gchar *label UNUSED) {}
+static void csv_graph_label_x(rlib *r UNUSED, gint64 iteration UNUSED, gchar *label UNUSED) {}
+static void csv_graph_tick_y(rlib *r UNUSED, gint64 iterations UNUSED) {}
+static void csv_graph_label_y(rlib *r UNUSED, gchar side UNUSED, gint64 iteration UNUSED, gchar *label UNUSED) {}
 static void csv_graph_hint_label_y(rlib *r UNUSED, gchar side UNUSED, gchar *label UNUSED) {}
-static void csv_graph_set_data_plot_count(rlib *r UNUSED, gint count UNUSED) {}
-static void csv_graph_plot_bar(rlib *r UNUSED, gchar side UNUSED, gint iteration UNUSED, gint plot UNUSED, gfloat height_percent UNUSED, struct rlib_rgb *color UNUSED, gfloat last_height UNUSED, gboolean divide_iterations UNUSED, gfloat raw_data UNUSED, gchar *label UNUSED) {}
-static void csv_graph_plot_line(rlib *r UNUSED, gchar side UNUSED, gint iteration UNUSED, gfloat p1_height UNUSED, gfloat p1_last_height UNUSED, gfloat p2_height UNUSED, gfloat p2_last_height UNUSED, struct rlib_rgb * color UNUSED, gfloat raw_data UNUSED, gchar *label UNUSED, gint row_count UNUSED) {}
-static void csv_graph_plot_pie(rlib *r UNUSED, gfloat start UNUSED, gfloat end UNUSED, gboolean offset UNUSED, struct rlib_rgb *color UNUSED, gfloat raw_data UNUSED, gchar *label UNUSED) {}
+static void csv_graph_set_data_plot_count(rlib *r UNUSED, gint64 count UNUSED) {}
+static void csv_graph_plot_bar(rlib *r UNUSED, gchar side UNUSED, gint64 iteration UNUSED, gint64 plot UNUSED, gdouble height_percent UNUSED, struct rlib_rgb *color UNUSED, gdouble last_height UNUSED, gboolean divide_iterations UNUSED, gdouble raw_data UNUSED, gchar *label UNUSED) {}
+static void csv_graph_plot_line(rlib *r UNUSED, gchar side UNUSED, gint64 iteration UNUSED, gdouble p1_height UNUSED, gdouble p1_last_height UNUSED, gdouble p2_height UNUSED, gdouble p2_last_height UNUSED, struct rlib_rgb * color UNUSED, gdouble raw_data UNUSED, gchar *label UNUSED, gint64 row_count UNUSED) {}
+static void csv_graph_plot_pie(rlib *r UNUSED, gdouble start UNUSED, gdouble end UNUSED, gboolean offset UNUSED, struct rlib_rgb *color UNUSED, gdouble raw_data UNUSED, gchar *label UNUSED) {}
 static void csv_graph_hint_legend(rlib *r UNUSED, gchar *label UNUSED) {}
 static void csv_graph_draw_legend(rlib *r UNUSED) {}
-static void csv_graph_draw_legend_label(rlib *r UNUSED, gint iteration UNUSED, gchar *label UNUSED, struct rlib_rgb *color UNUSED, gboolean is_line UNUSED) {}
+static void csv_graph_draw_legend_label(rlib *r UNUSED, gint64 iteration UNUSED, gchar *label UNUSED, struct rlib_rgb *color UNUSED, gboolean is_line UNUSED) {}
 static void csv_end_graph(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
-static void csv_graph_draw_line(rlib *r UNUSED, gfloat x UNUSED, gfloat y UNUSED, gfloat new_x UNUSED, gfloat new_y UNUSED, struct rlib_rgb *color UNUSED) {}
+static void csv_graph_draw_line(rlib *r UNUSED, gdouble x UNUSED, gdouble y UNUSED, gdouble new_x UNUSED, gdouble new_y UNUSED, struct rlib_rgb *color UNUSED) {}
 
 static void csv_graph_set_name(rlib *r UNUSED, gchar *name UNUSED) {}
 static void csv_graph_set_legend_bg_color(rlib *r UNUSED, struct rlib_rgb *rgb UNUSED) {}
-static void csv_graph_set_legend_orientation(rlib *r UNUSED, gint orientation UNUSED) {}
+static void csv_graph_set_legend_orientation(rlib *r UNUSED, gint64 orientation UNUSED) {}
 static void csv_graph_set_draw_x_y(rlib *r UNUSED, gboolean draw_x UNUSED, gboolean draw_y UNUSED) {}
 static void csv_graph_set_bold_titles(rlib *r UNUSED, gboolean bold_titles UNUSED) {}
 static void csv_graph_set_grid_color(rlib *r UNUSED, struct rlib_rgb *rgb UNUSED) {}
@@ -298,11 +298,10 @@ static void csv_end_report_break_footer(rlib *r UNUSED, struct rlib_part *part U
 static void csv_start_report_no_data(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 static void csv_end_report_no_data(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 
-static int csv_free(rlib *r) {
+static void csv_free(rlib *r) {
 	g_free(OUTPUT_PRIVATE(r)->top);
 	g_free(OUTPUT_PRIVATE(r));
 	g_free(OUTPUT(r));
-	return 0;
 }
 
 void rlib_csv_new_output_filter(rlib *r) {

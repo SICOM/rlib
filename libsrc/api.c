@@ -16,9 +16,7 @@
  * License along with this program; if not, write to the
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
- * 
- * $Id$s
- *
+
  * This module implements the C language API (Application Programming Interface)
  * for the RLIB library functions.
  */
@@ -34,6 +32,7 @@
 #include <libintl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <mpfr.h>
 
 #include "rlib-internal.h"
 #include "pcode.h"
@@ -51,7 +50,7 @@ static void string_destroyer(gpointer data) {
 static void metadata_destroyer(gpointer data) {
 	struct rlib_metadata *metadata = data;
 	rlib *r = metadata->r;
-	rlib_value_free(&metadata->rval_formula);
+	rlib_value_free(r, &metadata->rval_formula);
 	rlib_pcode_free(r, metadata->formula_code);
 	xmlFree(metadata->xml_formula.xml);
 	g_free(data);
@@ -62,7 +61,7 @@ DLL_EXPORT_SYM rlib *rlib_init_with_environment(struct environment_filter *envir
 	
 	r = g_new0(rlib, 1);
 
-	if(environment == NULL)
+	if (environment == NULL)
 		rlib_new_c_environment(r);
 	else
 		ENVIRONMENT(r) = environment;
@@ -72,7 +71,8 @@ DLL_EXPORT_SYM rlib *rlib_init_with_environment(struct environment_filter *envir
 	r->parameters = g_hash_table_new_full (g_str_hash, g_str_equal, string_destroyer, string_destroyer);
 
 	r->radix_character = '.';
-	
+	r->numeric_precision_bits = RLIB_MPFR_PRECISION_BITS;
+
 #if !DISABLE_UTF8
 	make_all_locales_utf8();
 #endif
@@ -89,7 +89,7 @@ DLL_EXPORT_SYM rlib *rlib_init(void) {
 
 static void rlib_cached_rval_destroy(gpointer data) {
 	if (data)
-		rlib_value_free(data);
+		rlib_value_free(NULL, data);
 	g_free(data);
 }
 
@@ -99,7 +99,7 @@ DLL_EXPORT_SYM struct rlib_query *rlib_alloc_query_space(rlib *r) {
 
 	if (r->queries_count == 0) {
 		r->queries = g_malloc((r->queries_count + 1) * sizeof(gpointer));
-		r->results = g_malloc((r->queries_count + 1) * sizeof(gpointer));		
+		r->results = g_malloc((r->queries_count + 1) * sizeof(gpointer));
 
 		if (r->queries == NULL || r->results == NULL) {
 			g_free(r->queries);
@@ -213,7 +213,7 @@ DLL_EXPORT_SYM gint rlib_add_query_as(rlib *r, const gchar *input_source, const 
 	return r->queries_count;
 }
 
-DLL_EXPORT_SYM gint rlib_add_report(rlib *r, const gchar *name) {
+DLL_EXPORT_SYM gboolean rlib_add_report(rlib *r, const gchar *name) {
 	gchar *tmp;
 	int i, found_dir_sep = 0, last_dir_sep = 0;
 
@@ -282,7 +282,7 @@ DLL_EXPORT_SYM gint rlib_add_report_from_buffer(rlib *r, gchar *buffer) {
 	return r->parts_count;
 }
 
-DLL_EXPORT_SYM gint rlib_add_search_path(rlib *r, const gchar *path) {
+DLL_EXPORT_SYM gboolean rlib_add_search_path(rlib *r, const gchar *path) {
 	gchar *path_copy;
 #ifdef _WIN32
 	int i;
@@ -291,13 +291,13 @@ DLL_EXPORT_SYM gint rlib_add_search_path(rlib *r, const gchar *path) {
 
 	/* Don't add useless search paths */
 	if (path == NULL)
-		return -1;
+		return FALSE;
 	if (strlen(path) == 0)
-		return -1;
+		return FALSE;
 
 	path_copy = g_strdup(path);
 	if (path_copy == NULL)
-		return -1;
+		return FALSE;
 
 #ifdef _WIN32
 	len = strlen(path_copy);
@@ -307,7 +307,7 @@ DLL_EXPORT_SYM gint rlib_add_search_path(rlib *r, const gchar *path) {
 			path_copy[i] = '/';
 #endif
 	r->search_paths = g_slist_append(r->search_paths, path_copy);
-	return 0;
+	return TRUE;
 }
 
 /*
@@ -327,7 +327,7 @@ gboolean use_relative_filename(rlib *r) {
  *	index to r->reportstorun[] array, or
  *	-1 to try to find relative to every reports
  */
-gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean report, gboolean relative_filename) {
+gchar *get_filename(rlib *r, const char *filename, gint report_index, gboolean report, gboolean relative_filename) {
 	int have_report_dir = 0, ri;
 	gchar *file;
 	struct stat st;
@@ -473,10 +473,10 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 	return file;
 }
 
-static gint rlib_execute_queries(rlib *r) {
+static gboolean rlib_execute_queries(rlib *r) {
 	gint i;
 	char *env;
-	gint profiling;
+	gboolean profiling;
 
 	env = getenv("RLIB_PROFILING");
 	profiling = !(env == NULL || *env == '\0');
@@ -522,14 +522,14 @@ static gint rlib_execute_queries(rlib *r) {
 	return TRUE;
 }
 
-gint rlib_parse_internal(rlib *r, gboolean allow_fail) {
-	gint i;
+static gboolean rlib_parse_internal(rlib *r, gboolean allow_fail) {
+	gint64 i;
 	char *env;
-	gint profiling;
+	gint64 profiling;
 	struct timespec ts1, ts2;
 
 	if (r->did_parse)
-		return 0;
+		return TRUE;
 
 	env = getenv("RLIB_PROFILING");
 	profiling = !(env == NULL || *env == '\0');
@@ -553,7 +553,7 @@ gint rlib_parse_internal(rlib *r, gboolean allow_fail) {
 		xmlCleanupParser();
 		if (r->parts[i] == NULL) {
 			r_error(r,"Failed to load a report file [%s]\n", r->reportstorun[i].name);
-			return -1;
+			return FALSE;
 		}
 	}
 
@@ -567,23 +567,23 @@ gint rlib_parse_internal(rlib *r, gboolean allow_fail) {
 
 	r->did_parse = TRUE;
 
-	return 0;
+	return TRUE;
 }
 
-DLL_EXPORT_SYM gint rlib_parse(rlib *r) {
+DLL_EXPORT_SYM gboolean rlib_parse(rlib *r) {
 	return rlib_parse_internal(r, FALSE);
 }
 
-DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
+DLL_EXPORT_SYM gboolean rlib_execute(rlib *r) {
 	char *env;
-	gint profiling;
+	gboolean profiling;
 	struct timespec ts1, ts2;
 
 	if (!r->did_parse) {
-		gint parse = rlib_parse_internal(r, TRUE);
+		gboolean parse = rlib_parse_internal(r, TRUE);
 
-		if (parse != 0)
-			return -1;
+		if (!parse)
+			return FALSE;
 	}
 
 	env = getenv("RLIB_PROFILING");
@@ -625,7 +625,7 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 		r_warning(r, "rlib_execute: creating report took %ld microseconds\n", diff);
 	}
 
-	return 0;
+	return TRUE;
 }
 
 DLL_EXPORT_SYM gchar *rlib_get_content_type_as_text(rlib *r) {
@@ -664,41 +664,40 @@ DLL_EXPORT_SYM gchar *rlib_get_content_type_as_text(rlib *r) {
 	return (gchar *)"UNKNOWN";
 }
 
-DLL_EXPORT_SYM gint rlib_spool(rlib *r) {
-	if(r->did_execute == TRUE) {
+DLL_EXPORT_SYM gboolean rlib_spool(rlib *r) {
+	if (r->did_execute == TRUE) {
 		OUTPUT(r)->spool_private(r);
-		return 0;
+		return TRUE;
 	}
-	return -1;
+	return FALSE;
 }
 
-DLL_EXPORT_SYM gint rlib_set_output_format(rlib *r, int format) {
+DLL_EXPORT_SYM void rlib_set_output_format(rlib *r, gint format) {
 	r->format = format;
-	return 0;
 }
 
-static void duplicate_path(rlib *r, struct rlib_query_internal *query, gint *visited) {
+static void duplicate_path(rlib *r, struct rlib_query_internal *query, gint64 *visited) {
 	GList *list;
 
 	visited[query->query_index] = 1;
 
 	for (list = query->followers; list; list = list->next) {
 		struct rlib_resultset_followers *f = list->data;
-		gint follower_idx = f->follower;
+		gint64 follower_idx = f->follower;
 		duplicate_path(r, r->queries[follower_idx], visited);
 	}
 }
 
-static gint rlib_add_resultset_follower_common(rlib *r, gchar *leader, gchar *leader_field, gchar *follower, gchar *follower_field) {
-	gint *visited;
+static gboolean rlib_add_resultset_follower_common(rlib *r, gchar *leader, gchar *leader_field, gchar *follower, gchar *follower_field) {
+	gint64 *visited;
 	struct rlib_resultset_followers *f;
-	gint leader_idx = -1, follower_idx = -1;
-	gint x;
+	gint64 leader_idx = -1, follower_idx = -1;
+	gint64 x;
 	struct rlib_query_internal *top;
 	gboolean followers_circular = FALSE;
 
 	if (!r->queries_count)
-		return -1;
+		return FALSE;
 
 	for (x = 0; x < r->queries_count; x++) {
 		if (!strcmp(r->queries[x]->name, leader))
@@ -709,19 +708,19 @@ static gint rlib_add_resultset_follower_common(rlib *r, gchar *leader, gchar *le
 
 	if (leader_idx == -1) {
 		r_error(r, "Could not find leader!\n");
-		return -1;
+		return FALSE;
 	}
 	if (follower_idx == -1) {
 		r_error(r, "Could not find follower!\n");
-		return -1;
+		return FALSE;
 	}
 	if (follower_idx == leader_idx) {
 		r_error(r,"The leader and follower cannot be identical!\n");
-		return -1;
+		return FALSE;
 	}
 	if (follower_idx == 0) {
 		r_error(r, "The first added query cannot be a follower!\n");
-		return -1;
+		return FALSE;
 	}
 
 	/*
@@ -738,19 +737,19 @@ static gint rlib_add_resultset_follower_common(rlib *r, gchar *leader, gchar *le
 
 	if (followers_circular) {
 		r_error(r, "Circular follower!\n");
-		return -1;
+		return FALSE;
 	}
 
-	visited = g_new0(gint, r->queries_count);
+	visited = g_new0(gint64, r->queries_count);
 	if (!visited) {
 		r_error(r, "Out of memory\n");
-		return -1;
+		return FALSE;
 	}
 	duplicate_path(r, top, visited);
 	if (visited[follower_idx]) {
 		g_free(visited);
 		r_error(r, "Follower cannot occur twice in the same follower tree!\n");
-		return -1;
+		return FALSE;
 	}
 
 	g_free(visited);
@@ -758,7 +757,7 @@ static gint rlib_add_resultset_follower_common(rlib *r, gchar *leader, gchar *le
 	f = g_new0(struct rlib_resultset_followers, 1);
 	if (!f) {
 		r_error(r, "Out of memory\n");
-		return -1;
+		return FALSE;
 	}
 
 	r->queries[follower_idx]->leader = r->queries[leader_idx];
@@ -774,39 +773,38 @@ static gint rlib_add_resultset_follower_common(rlib *r, gchar *leader, gchar *le
 	else
 		r->queries[leader_idx]->fcount++;
 
-	return 0;
+	return TRUE;
 }
 
-DLL_EXPORT_SYM gint rlib_add_resultset_follower_n_to_1(rlib *r, gchar *leader, gchar *leader_field, gchar *follower, gchar *follower_field) {
+DLL_EXPORT_SYM gboolean rlib_add_resultset_follower_n_to_1(rlib *r, gchar *leader, gchar *leader_field, gchar *follower, gchar *follower_field) {
 	if (!leader_field || !follower_field) {
 		r_error(r, "The leader_field and follower_field both must be valid!\n");
-		return -1;
+		return FALSE;
 	}
 
 	return rlib_add_resultset_follower_common(r, leader, leader_field, follower, follower_field);
 }
 
-DLL_EXPORT_SYM gint rlib_add_resultset_follower(rlib *r, gchar *leader, gchar *follower) {
+DLL_EXPORT_SYM gboolean rlib_add_resultset_follower(rlib *r, gchar *leader, gchar *follower) {
 	return rlib_add_resultset_follower_common(r, leader, NULL, follower, NULL);
 }
 
-DLL_EXPORT_SYM gint rlib_set_output_format_from_text(rlib *r, gchar *name) {
+DLL_EXPORT_SYM void rlib_set_output_format_from_text(rlib *r, gchar *name) {
 	r->format = rlib_format_get_number(name);
 
 	if (r->format == -1)
 		r->format = RLIB_FORMAT_TXT;
-	return 0;
 }
 
 DLL_EXPORT_SYM gchar *rlib_get_output(rlib *r) {
-	if(r->did_execute) 
+	if (r->did_execute) 
 		return OUTPUT(r)->get_output(r);
 	else
 		return NULL;
 }
 
-DLL_EXPORT_SYM gint rlib_get_output_length(rlib *r) {
-	if(r->did_execute) 
+DLL_EXPORT_SYM gsize rlib_get_output_length(rlib *r) {
+	if (r->did_execute) 
 		return OUTPUT(r)->get_output_length(r);
 	else
 		return 0;
@@ -818,7 +816,7 @@ DLL_EXPORT_SYM gboolean rlib_signal_connect(rlib *r, gint signal_number, gboolea
 	return TRUE;
 }
 
-DLL_EXPORT_SYM gboolean rlib_add_function(rlib *r, gchar *function_name, gboolean (*function)(rlib *, struct rlib_pcode *code, struct rlib_value_stack *, struct rlib_value *this_field_value, gpointer user_data), gpointer user_data) {
+DLL_EXPORT_SYM gboolean rlib_add_function(rlib *r, gchar *function_name, rlib_function function, gpointer user_data) {
 	struct rlib_pcode_operator *rpo = g_new0(struct rlib_pcode_operator, 1);
 	rpo->tag = g_strconcat(function_name, "(", NULL);	
 	rpo->taglen = strlen(rpo->tag);
@@ -860,22 +858,24 @@ DLL_EXPORT_SYM gboolean rlib_query_refresh(rlib *r) {
 	return TRUE;
 }
 
-DLL_EXPORT_SYM gint rlib_add_parameter(rlib *r, const gchar *name, const gchar *value) {
-	g_hash_table_insert(r->parameters, g_strdup(name), g_strdup(value));
+DLL_EXPORT_SYM gboolean rlib_add_parameter(rlib *r, const gchar *name, const gchar *value) {
+	/*
+	 * We don't want duplicate parameters in the hash
+	 * so don't use g_hash_table_insert().
+	 */
+	g_hash_table_replace(r->parameters, g_strdup(name), g_strdup(value));
 	return TRUE;
 }
 
 /*
 *  Returns TRUE if locale was actually set, otherwise, FALSE
 */
-DLL_EXPORT_SYM gint rlib_set_locale(rlib *r, gchar *locale) {
-
+DLL_EXPORT_SYM void rlib_set_locale(rlib *r, gchar *locale) {
 #if DISABLE_UTF8
 	r->special_locale = g_strdup(locale);
 #else
 	r->special_locale = g_strdup(make_utf8_locale(locale));
 #endif
-	return TRUE;
 }
 
 DLL_EXPORT_SYM gchar * rlib_bindtextdomain(rlib *r UNUSED, gchar *domainname, gchar *dirname) {
@@ -894,7 +894,11 @@ void rlib_trap() {
 }
 
 DLL_EXPORT_SYM void rlib_set_output_parameter(rlib *r, gchar *parameter, gchar *value) {
-	g_hash_table_insert(r->output_parameters, g_strdup(parameter), g_strdup(value));
+	/*
+	 * We don't want duplicate keys in the hash
+	 * so don't use g_hash_table_insert().
+	 */
+	g_hash_table_replace(r->output_parameters, g_strdup(parameter), g_strdup(value));
 }
 
 DLL_EXPORT_SYM void rlib_set_output_encoding(rlib *r, const char *encoding) {
@@ -908,20 +912,20 @@ DLL_EXPORT_SYM void rlib_set_output_encoding(rlib *r, const char *encoding) {
 	r->output_encoder_name  = g_strdup(new_encoding);
 }
 
-DLL_EXPORT_SYM gint rlib_set_datasource_encoding(rlib *r, gchar *input_name, gchar *encoding) {
+DLL_EXPORT_SYM gboolean rlib_set_datasource_encoding(rlib *r, gchar *input_name, gchar *encoding) {
 	int i;
 	struct input_filter *tif;
 	
-	for (i=0;i<r->inputs_count;i++) {
+	for (i = 0; i < r->inputs_count; i++) {
 		tif = r->inputs[i].input;
 		if (strcmp(r->inputs[i].name, input_name) == 0) {
 			rlib_charencoder_free(tif->info.encoder);
 			tif->info.encoder = rlib_charencoder_new("UTF-8", encoding);
-			return 0;
+			return TRUE;
 		}
 	}
 	r_error(r,"Error.. datasource [%s] does not exist\n", input_name);
-	return -1;
+	return FALSE;
 }
 
 DLL_EXPORT_SYM void rlib_set_query_cache_size(rlib *r, gint cache_size) {
@@ -931,8 +935,16 @@ DLL_EXPORT_SYM void rlib_set_query_cache_size(rlib *r, gint cache_size) {
 	r->query_cache_size = cache_size;
 }
 
-DLL_EXPORT_SYM gint rlib_graph_set_x_minor_tick(rlib *r, gchar *graph_name, gchar *x_value) {
+DLL_EXPORT_SYM void rlib_set_numeric_precision_bits(rlib *r, mpfr_prec_t prec) {
+	r->numeric_precision_bits = prec;
+}
+
+DLL_EXPORT_SYM gboolean rlib_graph_set_x_minor_tick(rlib *r, gchar *graph_name, gchar *x_value) {
 	struct rlib_graph_x_minor_tick *gmt = g_new0(struct rlib_graph_x_minor_tick, 1);
+
+	if (gmt == NULL)
+		return FALSE;
+
 	gmt->graph_name = g_strdup(graph_name);
 	gmt->x_value = g_strdup(x_value);
 	gmt->by_name = TRUE;
@@ -940,8 +952,12 @@ DLL_EXPORT_SYM gint rlib_graph_set_x_minor_tick(rlib *r, gchar *graph_name, gcha
 	return TRUE;
 }
 
-DLL_EXPORT_SYM gint rlib_graph_set_x_minor_tick_by_location(rlib *r, gchar *graph_name, gint location) {
+DLL_EXPORT_SYM gboolean rlib_graph_set_x_minor_tick_by_location(rlib *r, gchar *graph_name, gint64 location) {
 	struct rlib_graph_x_minor_tick *gmt = g_new0(struct rlib_graph_x_minor_tick, 1);
+
+	if (gmt == NULL)
+		return FALSE;
+
 	gmt->by_name = FALSE;
 	gmt->location = location;
 	gmt->graph_name = g_strdup(graph_name);
@@ -950,8 +966,12 @@ DLL_EXPORT_SYM gint rlib_graph_set_x_minor_tick_by_location(rlib *r, gchar *grap
 	return TRUE;
 }
 
-DLL_EXPORT_SYM gint rlib_graph_add_bg_region(rlib *r, gchar *graph_name, gchar *region_label, gchar *color, gfloat start, gfloat end) {
+DLL_EXPORT_SYM gboolean rlib_graph_add_bg_region(rlib *r, gchar *graph_name, gchar *region_label, gchar *color, gdouble start, gdouble end) {
 	struct rlib_graph_region *gr = g_new0(struct rlib_graph_region, 1);
+
+	if (gr == NULL)
+		return FALSE;
+
 	gr->graph_name = g_strdup(graph_name);
 	gr->region_label = g_strdup(region_label);
 	rlib_parsecolor(&gr->color, color);
@@ -962,7 +982,7 @@ DLL_EXPORT_SYM gint rlib_graph_add_bg_region(rlib *r, gchar *graph_name, gchar *
 	return TRUE;
 }
 
-DLL_EXPORT_SYM gint rlib_graph_clear_bg_region(rlib *r UNUSED, gchar *graph_name UNUSED) {
+DLL_EXPORT_SYM gboolean rlib_graph_clear_bg_region(rlib *r UNUSED, gchar *graph_name UNUSED) {
 	return TRUE;
 }
 

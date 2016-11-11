@@ -72,11 +72,10 @@ static gint rlib_postgres_connect(gpointer input_ptr, const gchar *conninfo) {
 	return 0;
 }
 
-static gint rlib_postgres_input_close(gpointer input_ptr) {
+static void rlib_postgres_input_close(gpointer input_ptr) {
 	struct input_filter *input = input_ptr;
 	PQfinish(INPUT_PRIVATE(input)->conn);
 	INPUT_PRIVATE(input)->conn = NULL;
-	return 0;
 }
 
 static PGresult *rlib_postgres_fetch_next_chunk(struct input_filter *input, struct rlib_postgres_results *results) {
@@ -271,11 +270,10 @@ static void rlib_postgres_free_result(gpointer input_ptr, gpointer result_ptr) {
 	}
 }
 
-static gint rlib_postgres_free_input_filter(gpointer input_ptr) {
+static void rlib_postgres_free_input_filter(gpointer input_ptr) {
 	struct input_filter *input = input_ptr;
 	g_free(input->private);
 	g_free(input);
-	return 0;
 }
 
 static const gchar * rlib_postgres_get_error(gpointer input_ptr) {

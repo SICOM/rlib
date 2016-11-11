@@ -147,6 +147,10 @@ def rlib_set_output_format(r, format):
     return _rlib.rlib_set_output_format(r, format)
 rlib_set_output_format = _rlib.rlib_set_output_format
 
+def rlib_set_output_format_from_text(r, name):
+    return _rlib.rlib_set_output_format_from_text(r, name)
+rlib_set_output_format_from_text = _rlib.rlib_set_output_format_from_text
+
 def rlib_add_resultset_follower_n_to_1(r, leader, leader_field, follower, follower_field):
     return _rlib.rlib_add_resultset_follower_n_to_1(r, leader, leader_field, follower, follower_field)
 rlib_add_resultset_follower_n_to_1 = _rlib.rlib_add_resultset_follower_n_to_1
@@ -154,10 +158,6 @@ rlib_add_resultset_follower_n_to_1 = _rlib.rlib_add_resultset_follower_n_to_1
 def rlib_add_resultset_follower(r, leader, follower):
     return _rlib.rlib_add_resultset_follower(r, leader, follower)
 rlib_add_resultset_follower = _rlib.rlib_add_resultset_follower
-
-def rlib_set_output_format_from_text(r, name):
-    return _rlib.rlib_set_output_format_from_text(r, name)
-rlib_set_output_format_from_text = _rlib.rlib_set_output_format_from_text
 
 def rlib_get_output(r):
     return _rlib.rlib_get_output(r)

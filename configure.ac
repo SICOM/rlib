@@ -20,7 +20,7 @@ dnl Report bugs to rlib-devel@lists.sourceforge.net
 dnl
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([rlib],[2.0.15],[http://bugzilla.sicompos.com])
+AC_INIT([rlib],[3.0.0],[http://bugzilla.sicompos.com])
 AC_CANONICAL_TARGET
 AC_CONFIG_SRCDIR(libsrc/rlib.h)
 AC_CONFIG_MACRO_DIR([m4])
@@ -30,12 +30,12 @@ AM_INIT_AUTOMAKE()
 AC_CONFIG_HEADERS(config.h)
 AM_MAINTAINER_MODE
 
-RLIB_VERSION=2.0.10
+RLIB_VERSION=3.0.0
 AC_SUBST(RLIB_VERSION)
 
-RLIB_LT_CURRENT=4
-RLIB_LT_AGE=3
-RLIB_LT_REVISION=15
+RLIB_LT_CURRENT=2
+RLIB_LT_AGE=0
+RLIB_LT_REVISION=0
 AC_SUBST(RLIB_LT_CURRENT)
 AC_SUBST(RLIB_LT_REVISION)
 AC_SUBST(RLIB_LT_AGE)
@@ -57,7 +57,7 @@ AC_SUBST(LIBLTDL)
 
 AC_CHECK_HEADERS(langinfo.h sys/time.h)
 
-AC_CHECK_FUNCS([localtime_r strfmon])
+AC_CHECK_FUNCS([localtime_r])
 
 gl_VISIBILITY
 AS_IF([test x$gl_cv_cc_visibility = xyes],
@@ -76,6 +76,11 @@ AC_TRY_LINK_FLAG([-Wl,--no-copy-dt-needed-entries],[ac_cv_Wl_no_copy_dt_needed_e
 AS_IF([test x$ac_cv_Wl_no_copy_dt_needed_entries = xno],
 	[AC_TRY_LINK_FLAG([-Wl,--no-add-needed],[ac_cv_Wl_no_add_needed])])
 
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS(fcntl.h unistd.h)
+AC_C_CONST
+
 dnl Checks for libraries.
 AC_CHECK_LIB(c, exit)
 AC_CHECK_LIB(m, exp)
@@ -88,6 +93,11 @@ AS_IF([test x$enable_compressed_pdf = xyes],
 	[AC_DEFINE([RPDF_COMPRESS_STREAM], [1], [RPDF can compress streams])
 	 ZLIB_LIBS="-lz"])
 AC_SUBST(ZLIB_LIBS)
+
+AC_CHECK_HEADERS(gmp.h mpfr.h mpf2mpfr.h,,[AC_MSG_ERROR([GNU MP and MPFR headers not found!])])
+AC_CHECK_LIB(mpfr, mpfr_init2,[MPFR_LIBS="-lmpfr"],[AC_MSG_ERROR([GNU MPFR library not found!])])
+AC_CHECK_LIB(gmp, __gmpf_init2,[MPFR_LIBS="$MPFR_LIBS -lgmp"],[AC_MSG_ERROR([GNU MP library not found!])])
+AC_SUBST(MPFR_LIBS)
 
 PKG_CHECK_MODULES(LIBXML, libxml-2.0 >= 2.6.0)
 AC_SUBST(LIBXML_LIBS)
@@ -455,7 +465,7 @@ dnl but e.g. strcasecmp is a GNU extension.
 CFLAGS="-D_GNU_SOURCE -Wall -Wextra -Werror $CFLAGS"
 
 RLIB_CFLAGS="$LIBXML_CFLAGS $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $MYSQL_CFLAGS $POSTGRES_CFLAGS $ODBC_CFLAGS $GD_CFLAGS $NO_CYGWIN"
-RLIB_LIBS="$LIBXML_LIBS $LIBGLIB_LIBS $LIBGMODULE_LIBS $ICONVLIBS $GD_LDFLAGS $GD_LIBS $GD_LINK "
+RLIB_LIBS="$LIBXML_LIBS $LIBGLIB_LIBS $LIBGMODULE_LIBS $ICONVLIBS $GD_LDFLAGS $GD_LIBS $GD_LINK $MPFR_LIBS"
 AC_SUBST(RLIB_CFLAGS)
 AC_SUBST(RLIB_LIBS)
 
@@ -463,14 +473,6 @@ RPDF_CFLAGS="-D_GNU_SOURCE -Wall -Wextra -Werror $LIBGLIB_CFLAGS $LIBGMODULE_CFL
 RPDF_LIBS="$LIBGLIB_LIBS $LIBGMODULE_LIBS $ZLIB_LIBS"
 AC_SUBST(RPDF_CFLAGS)
 AC_SUBST(RPDF_LIBS)
-
-dnl Checks for header files.
-AC_HEADER_STDC
-AC_CHECK_HEADERS(fcntl.h unistd.h)
-AC_C_CONST
-
-AC_CHECK_HEADERS(gmp.h)
-AC_CHECK_LIB(gmp, __gmpf_init2,,[AC_MSG_ERROR([GNU MP library not found!])])
 
 AC_ARG_ENABLE([utf8],
 	[AS_HELP_STRING([--enable-utf8],[enable utf8])],

@@ -112,12 +112,11 @@ static gint rlib_odbc_connect(gpointer input_ptr, const gchar *source, const gch
 	return 0;
 }
 
-static gint rlib_odbc_input_close(gpointer input_ptr) {
+static void rlib_odbc_input_close(gpointer input_ptr) {
 	struct input_filter *input = input_ptr;
 	SQLFreeHandle(SQL_HANDLE_ENV, INPUT_PRIVATE(input)->V_OD_Env);
 	SQLDisconnect(INPUT_PRIVATE(input)->V_OD_hdbc);
 	INPUT_PRIVATE(input)->V_OD_Env = NULL;
-	return 0;
 }
 
 static SQLHSTMT * rlib_odbc_query(gpointer input_ptr, gchar *query) {
@@ -176,7 +175,7 @@ static void rlib_odbc_start(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	result->isdone = FALSE;
 }
 
-static gint rlib_odbc_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
+static gboolean rlib_odbc_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_odbc_results *result = result_ptr;
 
 	if (result->atstart) {
@@ -190,7 +189,7 @@ static gint rlib_odbc_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	return !result->isdone;
 }
 
-static gint rlib_odbc_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
+static gboolean rlib_odbc_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_odbc_results *result = result_ptr;
 	return result->isdone;
 }
@@ -322,14 +321,13 @@ static void rlib_odbc_rlib_free_result(gpointer input_ptr UNUSED, gpointer resul
 	g_free(results);
 }
 
-static gint rlib_odbc_free_input_filter(gpointer input_ptr) {
+static void rlib_odbc_free_input_filter(gpointer input_ptr) {
 	struct input_filter *input = input_ptr;
 	SQLDisconnect(INPUT_PRIVATE(input)->V_OD_hdbc);
 	SQLFreeHandle(SQL_HANDLE_DBC,INPUT_PRIVATE(input)->V_OD_hdbc);
 	SQLFreeHandle(SQL_HANDLE_ENV,INPUT_PRIVATE(input)-> V_OD_Env);
 	g_free(input->private);
 	g_free(input);
-	return 0;
 }
 
 static const gchar * rlib_odbc_get_error(gpointer input_ptr UNUSED) {

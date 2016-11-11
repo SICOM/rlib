@@ -17,6 +17,9 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+
+#include <config.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,7 +28,6 @@
 #include <stdarg.h>
 #include <time.h>
 #include <math.h>
-#include <config.h>
 #include <locale.h>
 
 #include "rlib-internal.h"
@@ -82,15 +84,15 @@ int locale_codes[] = {
 gchar *strlwrexceptquoted (char *s) {
 	gchar c;
 	gchar *ptr = s;
-	gint quote=0;
+	gint64 quote=0;
 	while ((c = tolower(*s)) != '\0') {
-		if(*s == '\'') {
-			if(quote)
+		if (*s == '\'') {
+			if (quote)
 				quote=0;
 			else
 				quote=1;
 		}
-		if(!quote)
+		if (!quote)
 			*s++ = c;
 		else
 			s++;
@@ -101,17 +103,17 @@ gchar *strlwrexceptquoted (char *s) {
 gchar *rmwhitespacesexceptquoted(gchar *s) {
 	gchar *backptr = s;
 	gchar *orig = s;
-	gint spacecount=0;
-	gint quote=0;
+	gint64 spacecount=0;
+	gint64 quote=0;
 	while(*s != '\0') {
-		if(*s == '\'') {
-			if(quote)
+		if (*s == '\'') {
+			if (quote)
 				quote=0;
 			else
 				quote=1;
 		}
 
-		if(*s != ' ' || quote==1)
+		if (*s != ' ' || quote==1)
 			backptr++;
 		else
 			spacecount++;
@@ -119,13 +121,13 @@ gchar *rmwhitespacesexceptquoted(gchar *s) {
 		*backptr = *s;
 	}
 	backptr++;
-	if(spacecount)
+	if (spacecount)
 		*backptr = '\0';
 	return orig;
 }
 
 static void local_rlogit(rlib *r, const gchar *message) {
-	if(r != NULL && r->html_debugging) {
+	if (r != NULL && r->html_debugging) {
 		ENVIRONMENT(r)->rlib_write_output("<p><b>RLIB Error:</b> ", strlen("<p><b>RLIB Error:</b> "));
 
 		/* escape '&','<','>' as HTML character entities */
@@ -252,7 +254,7 @@ DLL_EXPORT_SYM void r_warning(rlib *r, const gchar *fmt, ...) {
 	return;
 }
 
-gint64 tentothe(gint n) {
+gint64 tentothe(gint64 n) {
 	/* Previously we kept an array here with 12 elements.
 	 * double->gint64 conversion can give corrects values up to 10^18.
 	 */
@@ -261,77 +263,72 @@ gint64 tentothe(gint n) {
 	return (gint64)pow(10.0, (double)n);
 }
 
-gchar hextochar(gchar c) {
+static gchar hextochar(gchar c) {
 	gint	c1;
 	c1 = toupper(c);
-	if(isalpha(c1))
-		return c1-'A'+10;
+	if (isalpha(c1))
+		return c1 - 'A' + 10;
 	else
-		return c1-'0';
-
+		return c1 - '0';
 }
 
 const gchar *colornames(const char *str) {
-	if(str == NULL)
+	if (str == NULL)
 		return "0x000000";
-	if(!isalpha((int)*str))
+	if (!isalpha((int)*str))
 		return str;
-	if(!strcasecmp(str, "black"))
+	if (!strcasecmp(str, "black"))
 		return "0x000000";
-	if(!strcasecmp(str, "silver"))
+	if (!strcasecmp(str, "silver"))
 		return "0xC0C0C0";
-	if(!strcasecmp(str, "gray"))
+	if (!strcasecmp(str, "gray"))
 		return "0x808080";
-	if(!strcasecmp(str, "white"))
+	if (!strcasecmp(str, "white"))
 		return "0xFFFFFF";
-	if(!strcasecmp(str, "maroon"))
+	if (!strcasecmp(str, "maroon"))
 		return "0x800000";
-	if(!strcasecmp(str, "red"))
+	if (!strcasecmp(str, "red"))
 		return "0xFF0000";
-	if(!strcasecmp(str, "purple"))
+	if (!strcasecmp(str, "purple"))
 		return "0x800080";
-	if(!strcasecmp(str, "fuchsia"))
+	if (!strcasecmp(str, "fuchsia"))
 		return "0xFF00FF";
-	if(!strcasecmp(str, "green"))
+	if (!strcasecmp(str, "green"))
 		return "0x008000";
-	if(!strcasecmp(str, "lime"))
+	if (!strcasecmp(str, "lime"))
 		return "0x00FF00";
-	if(!strcasecmp(str, "olive"))
+	if (!strcasecmp(str, "olive"))
 		return "0x808000";
-	if(!strcasecmp(str, "yellow"))
+	if (!strcasecmp(str, "yellow"))
 		return "0xFFFF00";
-	if(!strcasecmp(str, "navy"))
+	if (!strcasecmp(str, "navy"))
 		return "0x000080";
-	if(!strcasecmp(str, "blue"))
+	if (!strcasecmp(str, "blue"))
 		return "0x0000FF";
-	if(!strcasecmp(str, "teal"))
+	if (!strcasecmp(str, "teal"))
 		return "0x008080";
-	if(!strcasecmp(str, "aqua"))
+	if (!strcasecmp(str, "aqua"))
 		return "0x00FFFF";
-	if(!strcasecmp(str, "bobkratz")) /* Easter egg.. a pink color to match the shirts he wears */
+	if (!strcasecmp(str, "bobkratz")) /* Easter egg.. a pink color to match the shirts he wears */
 		return "0xffc59f";
-	if(!strcasecmp(str, "everton")) /* Easter egg.. an ideal background color */
+	if (!strcasecmp(str, "everton")) /* Easter egg.. an ideal background color */
 		return "0xd3d3d3";
 	return str;
 }
 
 void rlib_parsecolor(struct rlib_rgb *color, const gchar *strx) {
 	const gchar *str = colornames(strx);
-	if(str != NULL && r_strlen(str) == 8) {
-		guchar r;
-		guchar g;
-		guchar b;
-		r = (hextochar(str[2]) << 4) | hextochar(str[3]);
-		g = (hextochar(str[4]) << 4) | hextochar(str[5]);
-		b = (hextochar(str[6]) << 4) | hextochar(str[7]);
-		color->r = (gfloat)r/(gfloat)0xFF;
-		color->g = (gfloat)g/(gfloat)0xFF;
-		color->b = (gfloat)b/(gfloat)0xFF;
-	} else {
-		color->r = -1;
-		color->g = -1;
-		color->b = -1;
-	}
+	guchar r, g, b;
+
+	if (str == NULL || r_strlen(str) != 8)
+		strx = colornames("white");
+
+	r = (((gint)(guchar)hextochar(str[2])) << 4) | hextochar(str[3]);
+	g = (((gint)(guchar)hextochar(str[4])) << 4) | hextochar(str[5]);
+	b = (((gint)(guchar)hextochar(str[6])) << 4) | hextochar(str[7]);
+	color->r = (gdouble)r / (gdouble)0xff;
+	color->g = (gdouble)g / (gdouble)0xff;
+	color->b = (gdouble)b / (gdouble)0xff;
 }
 
 struct rlib_datetime * stod(struct rlib_datetime *dt, gchar *str) {
@@ -362,7 +359,7 @@ gchar *strproper (gchar *s) {
 	return ptr;
 #else
 	gchar *ptr, *s1, *ptr1;
-	gint len, first;
+	gint64 len, first;
 	gunichar c;
 
 	if (!s)
@@ -408,12 +405,12 @@ gchar *strproper (gchar *s) {
 
 
 /* TODO: Change this to use a g_string instead of this.. Bob agree's */
-void make_more_space_if_necessary(gchar **str, gint *size, gint *total_size, gint len) {
-	if(*total_size == 0) {
+void make_more_space_if_necessary(gchar **str, gint64 *size, gint64 *total_size, gint64 len) {
+	if (*total_size == 0) {
 		*str = g_malloc(MAXSTRLEN);
 		memset(*str, 0, MAXSTRLEN);
 		*total_size = MAXSTRLEN;
-	} else if((*size) + len > (*total_size)) {
+	} else if ((*size) + len > (*total_size)) {
 		*str = g_realloc(*str, (*total_size)*2);
 		*total_size = (*total_size) * 2;
 	}
@@ -429,7 +426,7 @@ gchar *make_utf8_locale(const gchar *encoding) {
 	gchar *locale, *codeset = NULL, *extra = NULL;
 	gchar buf[256];
 	gchar *t;
-	gint len = r_strlen(encoding);
+	gint64 len = r_strlen(encoding);
 
 	if ((encoding == NULL) || (r_strlen(encoding) < 2)) {
 		// shows in apache error_log
@@ -491,7 +488,7 @@ gchar *str2hex(const gchar *str) {
 }
 
 gint64 rlib_safe_atoll(char *str) {
-	if(str == NULL)
+	if (str == NULL)
 		return 0;
 	return (gint64)atoll(str);
 }

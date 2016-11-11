@@ -147,7 +147,7 @@ struct rpdf_stream_text_callback {
 	gdouble angle;
 	gdouble x;
 	gdouble y;
-	gint len;
+	gint64 len;
 	CALLBACK;
 	gpointer user_data;
 };

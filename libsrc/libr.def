@@ -58,3 +58,6 @@ rlib_parse@53
 rlib_alloc_query_space@54
 rlib_value_new_none@55
 rlib_set_query_cache_size@56
+rlib_set_numeric_precision_bits@57
+rlib_value_alloc@58
+rlib_value_free2@59

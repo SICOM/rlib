@@ -17,11 +17,12 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
- 
+
+#include <config.h>
+
 #include <string.h>
 #include <ctype.h>
 
-#include <config.h>
 #include "rlib-internal.h"
 #include "pcode.h"
 #include "rlib_input.h"
@@ -37,7 +38,7 @@
 	In this case r.pageno
 
 */
-gint resolve_rlib_variable(gchar *name) {
+gint64 resolve_rlib_variable(gchar *name) {
 	if(r_strlen(name) >= 3 && name[0] == 'r' && name[1] == '.') {
 		name += 2;
 		if(!strcmp(name, "pageno"))
@@ -85,8 +86,8 @@ gchar *rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 #endif
 }
 
-gint rlib_lookup_result(rlib *r, gchar *name) {
-	gint i;
+gint64 rlib_lookup_result(rlib *r, gchar *name) {
+	gint64 i;
 	for (i = 0; i < r->queries_count; i++) {
 		if (r->results[i]->name != NULL) {
 			if (!strcmp(r->results[i]->name, name))
@@ -96,9 +97,9 @@ gint rlib_lookup_result(rlib *r, gchar *name) {
 	return -1;
 }
 
-gint rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gint *rtn_resultset) {
-	gint resultset=0;
-	gint found = FALSE;
+gint64 rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gint64 *rtn_resultset) {
+	gint64 resultset=0;
+	gint64 found = FALSE;
 	gchar *right_side = NULL, *result_name = NULL;
 
 	if (r->results == NULL)
@@ -107,7 +108,7 @@ gint rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gint *r
 	resultset = r->current_result;
 	right_side = memchr(name, '.', r_strlen(name));
 	if (right_side != NULL) {
-		gint t;
+		gint64 t;
 		result_name = g_malloc(r_strlen(name) - r_strlen(right_side) + 1);
 		memcpy(result_name, name, r_strlen(name) - r_strlen(right_side));
 		result_name[r_strlen(name) - r_strlen(right_side)] = '\0';
@@ -187,7 +188,7 @@ static void rlib_break_resolve_pcode(rlib *r, struct rlib_part *part, struct rli
 
 static void rlib_variable_resolve_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_variable *rv) {
 	struct rlib_pcode *code;
-	gint t;
+	gboolean t;
 
 	rv->code = rlib_infix_to_pcode(r, part, report, (gchar *)rv->xml_value.xml, rv->xml_value.line, TRUE);
 	rv->ignore_code = rlib_infix_to_pcode(r, part, report, (gchar *)rv->xml_ignore.xml, rv->xml_ignore.line, TRUE);
@@ -202,7 +203,7 @@ static void rlib_variable_resolve_pcode(rlib *r, struct rlib_part *part, struct 
 }
 
 static void rlib_hr_resolve_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_horizontal_line * rhl) {
-	gfloat f;
+	gdouble f;
 	rhl->size = 0;
 
 	rhl->indent_code = rlib_infix_to_pcode(r, part, report, (gchar *)rhl->xml_indent.xml, rhl->xml_indent.line, TRUE);
@@ -211,15 +212,15 @@ static void rlib_hr_resolve_pcode(rlib *r, struct rlib_part *part, struct rlib_r
 	rhl->suppress_code = rlib_infix_to_pcode(r, part, report, (gchar *)rhl->xml_suppress.xml, rhl->xml_suppress.line, TRUE);
 	rhl->size_code = rlib_infix_to_pcode(r, part, report, (gchar *)rhl->xml_size.xml, rhl->xml_size.line, TRUE);
 
-	if (rlib_execute_as_float(r, rhl->size_code, &f))
+	if (rlib_execute_as_double(r, rhl->size_code, &f))
 		rhl->size = f;
 	
 	rhl->length = 0;
-	if (rlib_execute_as_float(r, rhl->length_code, &f))
+	if (rlib_execute_as_double(r, rhl->length_code, &f))
 		rhl->length = f;
 
 	rhl->indent = 0;
-	if (rlib_execute_as_float(r, rhl->indent_code, &f))
+	if (rlib_execute_as_double(r, rhl->indent_code, &f))
 		rhl->indent = f;
 }
 
@@ -403,7 +404,7 @@ void rlib_resolve_chart(rlib *r, struct rlib_part *part, struct rlib_report *rep
 
 void rlib_resolve_report_fields(rlib *r, struct rlib_part *part, struct rlib_report *report) {
 	struct rlib_element *e;
-	gfloat f;
+	gdouble f;
 
 	if(report->variables != NULL) {
 		for(e = report->variables; e != NULL; e=e->next) {
@@ -413,7 +414,7 @@ void rlib_resolve_report_fields(rlib *r, struct rlib_part *part, struct rlib_rep
 		}
 	}
 
-	init_variables(report);
+	init_variables(r, report);
 	rlib_process_expression_variables(r, report);
 	
 	report->orientation = RLIB_ORIENTATION_PORTRAIT;
@@ -440,14 +441,14 @@ void rlib_resolve_report_fields(rlib *r, struct rlib_part *part, struct rlib_rep
 
 	report->uniquerow_code = rlib_infix_to_pcode(r, part, report, (gchar *)report->xml_uniquerow.xml, report->xml_uniquerow.line, TRUE);
 
-	if (rlib_execute_as_float(r, report->pages_across_code, &f))
+	if (rlib_execute_as_double(r, report->pages_across_code, &f))
 		report->pages_across = f;
-	if (rlib_execute_as_float(r, report->iterations_code, &f))
+	if (rlib_execute_as_double(r, report->iterations_code, &f))
 		report->iterations = f;
 	
-	report->position_top = g_malloc(report->pages_across * sizeof(float));
-	report->position_bottom = g_malloc(report->pages_across * sizeof(float));
-	report->bottom_size = g_malloc(report->pages_across * sizeof(float));
+	report->position_top = g_malloc(report->pages_across * sizeof(gdouble));
+	report->position_bottom = g_malloc(report->pages_across * sizeof(gdouble));
+	report->bottom_size = g_malloc(report->pages_across * sizeof(gdouble));
 
 	rlib_resolve_outputs(r, part, report, report->report_header);
 	rlib_resolve_outputs(r, part, report, report->page_header);
@@ -505,7 +506,7 @@ static void rlib_resolve_part_tr(rlib *r, struct rlib_part *part) {
 }
 
 void rlib_resolve_part_fields(rlib *r, struct rlib_part *part) {
-	gfloat f;
+	gdouble f;
 	part->orientation = RLIB_ORIENTATION_PORTRAIT;
 	part->orientation_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_orientation.xml, part->xml_orientation.line, TRUE);
 	part->font_size = -1;
@@ -527,14 +528,14 @@ void rlib_resolve_part_fields(rlib *r, struct rlib_part *part) {
 	part->suppress = FALSE;
 	part->suppress_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_suppress.xml, part->xml_suppress.line, TRUE);
 
-	if (rlib_execute_as_float(r, part->pages_across_code, &f))
+	if (rlib_execute_as_double(r, part->pages_across_code, &f))
 		part->pages_across = f;
-	if (rlib_execute_as_float(r, part->iterations_code, &f))
+	if (rlib_execute_as_double(r, part->iterations_code, &f))
 		part->iterations = f;
 
-	part->position_top = g_malloc(part->pages_across * sizeof(float));
-	part->position_bottom = g_malloc(part->pages_across * sizeof(float));
-	part->bottom_size = g_malloc(part->pages_across * sizeof(float));
+	part->position_top = g_malloc(part->pages_across * sizeof(gdouble));
+	part->position_bottom = g_malloc(part->pages_across * sizeof(gdouble));
+	part->bottom_size = g_malloc(part->pages_across * sizeof(gdouble));
 
 	rlib_resolve_part_tr(r, part);
 	rlib_resolve_outputs(r, part, NULL, part->page_header);
@@ -556,7 +557,7 @@ gchar * rlib_resolve_memory_variable(rlib *r, gchar *name) {
 void resolve_metadata(gpointer name UNUSED, gpointer value, gpointer user_data) {
 	struct rlib_metadata *metadata = value;
 	metadata->formula_code = rlib_infix_to_pcode(user_data, NULL, NULL, (gchar *)metadata->xml_formula.xml, metadata->xml_formula.line, FALSE);
-	RLIB_VALUE_TYPE_NONE(&metadata->rval_formula);
+	rlib_value_free(metadata->r, &metadata->rval_formula);
 }
 
 void rlib_resolve_metadata(rlib *r) {
@@ -565,7 +566,7 @@ void rlib_resolve_metadata(rlib *r) {
 
 void process_metadata(gpointer name UNUSED, gpointer value, gpointer user_data) {
 	struct rlib_metadata *metadata = value;
-	rlib_value_free(&metadata->rval_formula);
+	rlib_value_free(metadata->r, &metadata->rval_formula);
 	rlib_execute_pcode(user_data, &metadata->rval_formula, metadata->formula_code, NULL);
 }
 
@@ -574,7 +575,7 @@ void rlib_process_input_metadata(rlib *r) {
 }
 
 void rlib_resolve_followers(rlib *r) {
-	gint i, reattached;
+	gint64 i, reattached;
 
 	/*
 	 * Separate the followers list that was easier

@@ -27,7 +27,7 @@
 #include "pcode.h"
 #include "rlib_input.h"
 
-static gint rlib_navigate_n_to_1_check_current(rlib *r, gint resultset_num) {
+static gint64 rlib_navigate_n_to_1_check_current(rlib *r, gint64 resultset_num) {
 	GList *fw;
 
 	if (INPUT(r, resultset_num)->isdone(INPUT(r, resultset_num), r->results[resultset_num]->result))
@@ -40,25 +40,27 @@ static gint rlib_navigate_n_to_1_check_current(rlib *r, gint resultset_num) {
 		if (INPUT(r, f->follower)->isdone(INPUT(r, f->follower), r->results[f->follower]->result))
 			return FALSE;
 
+		rlib_value_init(r, &rval_leader);
+		rlib_value_init(r, &rval_follower);
 		rlib_execute_pcode(r, &rval_leader, f->leader_code, NULL);
 		rlib_execute_pcode(r, &rval_follower, f->follower_code, NULL);
 
 		if (rvalcmp(r, &rval_leader,&rval_follower) != 0) {
-			rlib_value_free(&rval_leader);
-			rlib_value_free(&rval_follower);
+			rlib_value_free(r, &rval_leader);
+			rlib_value_free(r, &rval_follower);
 			return FALSE;
 		}
 
-		rlib_value_free(&rval_leader);
-		rlib_value_free(&rval_follower);
+		rlib_value_free(r, &rval_leader);
+		rlib_value_free(r, &rval_follower);
 	}
 
 	return TRUE;
 }
 
-static gint rlib_navigate_n_to_1_check_ended(rlib *r, gint resultset_num) {
+static gint64 rlib_navigate_n_to_1_check_ended(rlib *r, gint64 resultset_num) {
 	GList *fw;
-	gint ended = TRUE;
+	gint64 ended = TRUE;
 
 	for (fw = r->queries[resultset_num]->followers_n_to_1; fw; fw = fw->next) {
 		struct rlib_resultset_followers *f = fw->data;
@@ -72,8 +74,8 @@ static gint rlib_navigate_n_to_1_check_ended(rlib *r, gint resultset_num) {
 	return ended;
 }
 
-static gint rlib_navigate_next_n_to_1(rlib *r, gint resultset_num) {
-	gint retval = FALSE;
+static gint64 rlib_navigate_next_n_to_1(rlib *r, gint64 resultset_num) {
+	gint64 retval = FALSE;
 
 	if (g_list_length(r->queries[resultset_num]->followers_n_to_1) == 0)
 		return retval;
@@ -146,9 +148,9 @@ static gint rlib_navigate_next_n_to_1(rlib *r, gint resultset_num) {
 	return retval;
 }
 
-gint rlib_navigate_next(rlib *r, gint resultset_num) {
+gboolean rlib_navigate_next(rlib *r, gint resultset_num) {
 	GList *fw;
-	gint retval, retval11;
+	gint64 retval, retval11;
 
 	if (resultset_num < 0 || r->queries_count == 0)
 		return FALSE;
@@ -170,8 +172,8 @@ gint rlib_navigate_next(rlib *r, gint resultset_num) {
 	if (!r->queries[resultset_num]->n_to_1_started) {
 		struct input_filter *in = INPUT(r, resultset_num);
 		struct rlib_results *rs = r->results[resultset_num];
-		gint cols = in->num_fields(in, rs->result);
-		gint i;
+		gint64 cols = in->num_fields(in, rs->result);
+		gint64 i;
 
 		for (i = 1; i <= cols; i++) {
 			gpointer col = GINT_TO_POINTER(i);
@@ -179,9 +181,9 @@ gint rlib_navigate_next(rlib *r, gint resultset_num) {
 			struct rlib_value *rval = g_new0(struct rlib_value, 1);
 
 			if (r->queries[resultset_num]->current_row >= 0)
-				rlib_value_new_string(rval, (str ? str : ""));
+				rlib_value_new_string(r, rval, (str ? str : ""));
 			else
-				rlib_value_new_none(rval);
+				rlib_value_new_none(r, rval);
 			g_hash_table_replace(rs->cached_values, col, rval);
 		}
 

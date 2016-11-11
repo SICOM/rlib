@@ -16,13 +16,14 @@
  * License along with this program; if not, write to the
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
-*/
+ */
+
+#include <config.h>
+
 #include <locale.h>
 #include <string.h>
 #include <math.h>
 
-
-#include <config.h>
 #include "rlib-internal.h"
 #include "rpdf.h"
 
@@ -48,47 +49,47 @@ struct _graph {
 	gboolean has_grid_color;
 	struct rlib_rgb grid_color;
 
-	gint legend_orientation;
-	gfloat y_label_space_left;
-	gfloat y_label_space_right;
-	gfloat y_label_width_left;
-	gfloat y_label_width_right;
-	gfloat x_label_width;
-	gfloat x_tick_width;
-	gfloat legend_width;
-	gfloat legend_height;
-	gfloat top;
-	gfloat bottom;
-	gfloat left;
-	gfloat width_before_legend;
-	gfloat width;
-	gfloat height;
-	gfloat x_start;
-	gfloat x_width;
-	gfloat y_start;
-	gfloat y_height;
-	gfloat intersection;
-	gfloat height_offset;
-	gfloat width_offset;
-	gfloat title_height;
-	gint x_iterations;
-	gint y_iterations;
-	gint data_plot_count;
-	gint orig_data_plot_count;
+	gint64 legend_orientation;
+	gdouble y_label_space_left;
+	gdouble y_label_space_right;
+	gdouble y_label_width_left;
+	gdouble y_label_width_right;
+	gdouble x_label_width;
+	gdouble x_tick_width;
+	gdouble legend_width;
+	gdouble legend_height;
+	gdouble top;
+	gdouble bottom;
+	gdouble left;
+	gdouble width_before_legend;
+	gdouble width;
+	gdouble height;
+	gdouble x_start;
+	gdouble x_width;
+	gdouble y_start;
+	gdouble y_height;
+	gdouble intersection;
+	gdouble height_offset;
+	gdouble width_offset;
+	gdouble title_height;
+	gint64 x_iterations;
+	gint64 y_iterations;
+	gint64 data_plot_count;
+	gint64 orig_data_plot_count;
 	gboolean x_axis_labels_are_under_tick;
 	gboolean is_chart;
 	
-	gfloat legend_top;
-	gfloat legend_left;
+	gdouble legend_top;
+	gdouble legend_left;
 	gboolean draw_x;
 	gboolean draw_y;
 	gchar *name;
-	gint region_count;
-	gint current_region;
+	gint64 region_count;
+	gint64 current_region;
 	gboolean bold_titles;
 	gboolean *minor_ticks;
 	gboolean vertical_x_label;
-	gfloat last_left_x_label;
+	gdouble last_left_x_label;
 };
 
 struct _private {
@@ -96,20 +97,20 @@ struct _private {
 	struct rpdf *pdf;
 	gchar text_on[MAX_PDF_PAGES];
 	gchar *buffer;
-	gint length;
-	gint page_diff;
-	gint current_page;
+	gint64 length;
+	gint64 page_diff;
+	gint64 current_page;
 	gboolean is_bold;
 	gboolean is_italics;
 	struct _graph graph;
 };
 
-static void pdf_graph_get_x_label_width(rlib *r, gfloat *width) {
+static void pdf_graph_get_x_label_width(rlib *r, gdouble *width) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	*width = graph->x_label_width;
 }
 
-static void pdf_graph_set_x_label_width(rlib *r, gfloat width, gint cell_width) {
+static void pdf_graph_set_x_label_width(rlib *r, gdouble width, gint64 cell_width) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	if (width == 0) {
 		graph->x_label_width = cell_width / RLIB_PDF_DPI;
@@ -117,16 +118,16 @@ static void pdf_graph_set_x_label_width(rlib *r, gfloat width, gint cell_width) 
 	else
 		graph->x_label_width = width;
 	
-	if ((float)RLIB_PDF_DPI * width >= cell_width - 2)
+	if ((gdouble)RLIB_PDF_DPI * width >= cell_width - 2)
 		graph->vertical_x_label = TRUE;
 }
 
-static void pdf_graph_get_y_label_width(rlib *r, gfloat *width) {
+static void pdf_graph_get_y_label_width(rlib *r, gdouble *width) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	*width = graph->y_label_width_left;
 }
 
-static void pdf_graph_set_y_label_width(rlib *r, gfloat width) {
+static void pdf_graph_set_y_label_width(rlib *r, gdouble width) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	if (width == 0)
 		graph->y_label_width_left = rpdf_text_width(OUTPUT_PRIVATE(r)->pdf, "W")/(RLIB_PDF_DPI);
@@ -134,22 +135,22 @@ static void pdf_graph_set_y_label_width(rlib *r, gfloat width) {
 		graph->y_label_width_left = width;
 }
 
-static void pdf_graph_get_width_offset(rlib *r, gint *width_offset) {
+static void pdf_graph_get_width_offset(rlib *r, gint64 *width_offset) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	*width_offset = graph->y_label_width_left * RLIB_PDF_DPI + .1 * RLIB_PDF_DPI;
 }
 
-static gfloat pdf_get_string_width(rlib *r, const gchar *text) {
+static gdouble pdf_get_string_width(rlib *r, const gchar *text) {
 	return rpdf_text_width(OUTPUT_PRIVATE(r)->pdf, text)/(RLIB_PDF_DPI);
 }
 
-static void pdf_print_text(rlib *r, gfloat left_origin, gfloat bottom_origin, const gchar *text, gfloat orientation) {
+static void pdf_print_text(rlib *r, gdouble left_origin, gdouble bottom_origin, const gchar *text, gdouble orientation) {
 	struct rpdf *pdf = OUTPUT_PRIVATE(r)->pdf;
 
 	rpdf_text(pdf, left_origin, bottom_origin, orientation, text);
 }
 
-static gchar *pdf_rpdf_callback(gchar *data, gint len, void *user_data) {
+static gchar *pdf_rpdf_callback(gchar *data, gint64 len, void *user_data) {
 	struct rlib_delayed_extra_data *delayed_data = user_data;
 	struct rlib_line_extra_data *extra_data = delayed_data->extra_data;
 	rlib *r = delayed_data->r;
@@ -158,7 +159,7 @@ static gchar *pdf_rpdf_callback(gchar *data, gint len, void *user_data) {
 	if (rlib_pcode_has_variable(r, extra_data->field_code, NULL, NULL, FALSE))
 		return NULL;
 
-	rlib_value_free(&extra_data->rval_code);
+	rlib_value_free(r, &extra_data->rval_code);
 	if (rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL) == NULL)
 		return NULL;
 	rlib_format_string(r, &buf, extra_data->report_field, &extra_data->rval_code);
@@ -173,21 +174,21 @@ static gchar *pdf_rpdf_callback(gchar *data, gint len, void *user_data) {
 	return data;
 }
 
-static void pdf_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *delayed_data, int backwards UNUSED, int rval_type UNUSED) {
+static void pdf_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *delayed_data, gint64 backwards UNUSED, gint64 rval_type UNUSED) {
 	struct rpdf *pdf = OUTPUT_PRIVATE(r)->pdf;
 	rpdf_text_callback(pdf, delayed_data->left_origin, delayed_data->bottom_origin, 0, delayed_data->extra_data->width, pdf_rpdf_callback, delayed_data);
 }
 
-static void pdf_finalize_text_delayed(rlib *r, gpointer in_ptr, int backwards UNUSED) {
+static void pdf_finalize_text_delayed(rlib *r, gpointer in_ptr, gint64 backwards UNUSED) {
 	struct rpdf *pdf = OUTPUT_PRIVATE(r)->pdf;
 	rpdf_finalize_text_callback(pdf, in_ptr);
 }
 
-static void pdf_print_text_API(rlib *r, gfloat left_origin, gfloat bottom_origin, const gchar *text, gint backwards UNUSED, struct rlib_line_extra_data *extra_data UNUSED) {
+static void pdf_print_text_API(rlib *r, gdouble left_origin, gdouble bottom_origin, const gchar *text, gint64 backwards UNUSED, struct rlib_line_extra_data *extra_data UNUSED) {
 	pdf_print_text(r, left_origin, bottom_origin, text, 0); 
 }
 
-static void pdf_set_fg_color(rlib *r, gfloat red, gfloat green, gfloat blue) {
+static void pdf_set_fg_color(rlib *r, gdouble red, gdouble green, gdouble blue) {
 	if(OUTPUT_PRIVATE(r)->current_color.r != red || OUTPUT_PRIVATE(r)->current_color.g != green 
 	|| OUTPUT_PRIVATE(r)->current_color.b != blue) {
 		if(red != -1 && green != -1 && blue != -1 )
@@ -198,7 +199,7 @@ static void pdf_set_fg_color(rlib *r, gfloat red, gfloat green, gfloat blue) {
 	}
 }
 
-static void pdf_drawbox(rlib *r, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall, struct rlib_rgb *color) {
+static void pdf_drawbox(rlib *r, gdouble left_origin, gdouble bottom_origin, gdouble how_long, gdouble how_tall, struct rlib_rgb *color) {
 	if(!(color->r == 1.0 && color->g == 1.0 && color->b == 1.0)) {
 		/* the - PDF_PIXEL seems to get around decimal percision problems.. but should investigate this a bit further */
 		OUTPUT(r)->set_bg_color(r, color->r, color->g, color->b);
@@ -208,28 +209,26 @@ static void pdf_drawbox(rlib *r, gfloat left_origin, gfloat bottom_origin, gfloa
 	}
 }
 
-static void pdf_hr(rlib *r, gint backwards UNUSED, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall, 
-struct rlib_rgb *color, gfloat indent UNUSED, gfloat length UNUSED) {
+static void pdf_hr(rlib *r, gint64 backwards UNUSED, gdouble left_origin, gdouble bottom_origin, gdouble how_long, gdouble how_tall, struct rlib_rgb *color, gdouble indent UNUSED, gdouble length UNUSED) {
 	how_tall = how_tall / RLIB_PDF_DPI;
 	pdf_drawbox(r, left_origin, bottom_origin, how_long, how_tall, color);
 }
 
-static void pdf_start_boxurl(rlib *r, struct rlib_part *part, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall, gchar *url, gint backwards UNUSED) {
+static void pdf_start_boxurl(rlib *r, struct rlib_part *part, gdouble left_origin, gdouble bottom_origin, gdouble how_long, gdouble how_tall, gchar *url, gint64 backwards UNUSED) {
 	if(part->landscape) {
-		gfloat new_left = layout_get_page_width(part)-left_origin-how_long;
-		gfloat new_bottom = bottom_origin;
+		gdouble new_left = layout_get_page_width(part)-left_origin-how_long;
+		gdouble new_bottom = bottom_origin;
 		rpdf_link(OUTPUT_PRIVATE(r)->pdf, new_bottom, new_left, new_bottom+how_tall, new_left+how_long, url);
 	} else  {
-		gfloat new_left = left_origin;
-		gfloat new_bottom = bottom_origin;
+		gdouble new_left = left_origin;
+		gdouble new_bottom = bottom_origin;
 		rpdf_link(OUTPUT_PRIVATE(r)->pdf, new_left, new_bottom, new_left+how_long, new_bottom+how_tall, url);
 	}
 }
 
-static void pdf_line_image(rlib *r, gfloat left_origin, gfloat bottom_origin, gchar *nname, gchar *type, gfloat nwidth, 
-gfloat nheight) {
+static void pdf_line_image(rlib *r, gdouble left_origin, gdouble bottom_origin, gchar *nname, gchar *type, gdouble nwidth, gdouble nheight) {
 	gchar	*type_lower;
-	gint realtype = RPDF_IMAGE_JPEG;
+	gint64 realtype = RPDF_IMAGE_JPEG;
 
 	type_lower = g_ascii_strdown(type, -1);
 	
@@ -243,7 +242,7 @@ gfloat nheight) {
 	OUTPUT(r)->set_bg_color(r, 0, 0, 0);
 }
 
-static void pdf_set_font_point_actual(rlib *r, gint point) {
+static void pdf_set_font_point_actual(rlib *r, gint64 point) {
 	const char *fontname;
 	int which_font = 0;
 	gchar *pdffontname;
@@ -261,7 +260,7 @@ static void pdf_set_font_point_actual(rlib *r, gint point) {
 	rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, fontname, "WinAnsiEncoding", point);
 }
 
-static void pdf_set_font_point(rlib *r, gint point) {
+static void pdf_set_font_point(rlib *r, gint64 point) {
 	if(point == 0)
 		point = 8;
 
@@ -272,8 +271,8 @@ static void pdf_set_font_point(rlib *r, gint point) {
 }
 	
 static void pdf_start_new_page(rlib *r, struct rlib_part *part) {
-	gint i=0;
-	gint pages_across = part->pages_across;
+	gint64 i=0;
+	gint64 pages_across = part->pages_across;
 	gchar paper_type[40];
 	r->current_page_number++;
 	
@@ -293,16 +292,16 @@ static void pdf_start_new_page(rlib *r, struct rlib_part *part) {
 	}
 }
 
-static void pdf_set_working_page(rlib *r, struct rlib_part *part, gint page) {
-	gint pages_across = part->pages_across;
-	gint page_number = (r->current_page_number-1) * pages_across;
+static void pdf_set_working_page(rlib *r, struct rlib_part *part, gint64 page) {
+	gint64 pages_across = part->pages_across;
+	gint64 page_number = (r->current_page_number-1) * pages_across;
 	
 	rpdf_set_page(OUTPUT_PRIVATE(r)->pdf, page_number + page - OUTPUT_PRIVATE(r)->page_diff);
 
 	OUTPUT_PRIVATE(r)->current_page = page_number + page - OUTPUT_PRIVATE(r)->page_diff;
 }
 
-static void pdf_set_raw_page(rlib *r, struct rlib_part *part UNUSED, gint page) {
+static void pdf_set_raw_page(rlib *r, struct rlib_part *part UNUSED, gint64 page) {
 	OUTPUT_PRIVATE(r)->page_diff = r->current_page_number - page;
 }
 
@@ -350,39 +349,38 @@ static void pdf_end_page(rlib *r, struct rlib_part *part) {
 
 static void pdf_end_page_again(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 
-static int pdf_free(rlib *r) {
+static void pdf_free(rlib *r) {
 	rpdf_free(OUTPUT_PRIVATE(r)->pdf);
 	g_free(OUTPUT_PRIVATE(r));
 	g_free(OUTPUT(r));
-	return 0;
 }
 
 static char *pdf_get_output(rlib *r) {
 	return OUTPUT_PRIVATE(r)->buffer;
 }
 
-static long pdf_get_output_length(rlib *r) {
+static gsize pdf_get_output_length(rlib *r) {
 	return OUTPUT_PRIVATE(r)->length;
 }
 
-static void pdf_start_part_pages_across(rlib *r, struct rlib_part *part, gfloat left_margin, gfloat bottom_margin, int width, int height, int border_width, struct rlib_rgb *border_color) {
+static void pdf_start_part_pages_across(rlib *r, struct rlib_part *part, gdouble left_margin, gdouble bottom_margin, gint64 width, gint64 height, gint64 border_width, struct rlib_rgb *border_color) {
 	struct rlib_rgb color;
-	gfloat real_width;
-	gfloat real_height;
-	gfloat box_width = width / RLIB_PDF_DPI / 100;
-	gfloat space = part->position_bottom[0] - part->position_top[0];
+	gdouble real_width;
+	gdouble real_height;
+	gdouble box_width = width / RLIB_PDF_DPI / 100;
+	gdouble space = part->position_bottom[0] - part->position_top[0];
 
 	if(part->orientation == RLIB_ORIENTATION_LANDSCAPE) {
-		real_height = space * ((gfloat)height/100);
+		real_height = space * ((gdouble)height/100);
 	} else {
-		real_height = space * ((gfloat)height/100);
+		real_height = space * ((gdouble)height/100);
 	}
 
 
 	if(part->orientation == RLIB_ORIENTATION_LANDSCAPE) {
-		real_width = ((part->paper->height/RLIB_PDF_DPI) - (part->left_margin*2)) * ((gfloat)width/100);
+		real_width = ((part->paper->height/RLIB_PDF_DPI) - (part->left_margin*2)) * ((gdouble)width/100);
 	} else {
-		real_width = ((part->paper->width/RLIB_PDF_DPI) - (part->left_margin*2)) * ((gfloat)width/100);
+		real_width = ((part->paper->width/RLIB_PDF_DPI) - (part->left_margin*2)) * ((gdouble)width/100);
 	}
 	
 	memset(&color, 0, sizeof(struct rlib_rgb));
@@ -419,7 +417,7 @@ static void pdf_end_italics(rlib *r) {
 	pdf_set_font_point_actual(r, r->current_font_point);
 }
 
-static void pdf_graph_draw_line(rlib *r, gfloat x, gfloat y, gfloat new_x, gfloat new_y, struct rlib_rgb *color UNUSED) {
+static void pdf_graph_draw_line(rlib *r, gdouble x, gdouble y, gdouble new_x, gdouble new_y, struct rlib_rgb *color UNUSED) {
 	/* TODO: FIX THAT THE LINE IS DRAWN WITH THE PROPER COLOR */
 
 	if(!isnan(x) && !isnan(y) && !isnan(new_x) && !isnan(new_y)) {
@@ -430,13 +428,13 @@ static void pdf_graph_draw_line(rlib *r, gfloat x, gfloat y, gfloat new_x, gfloa
 	}
 }
 
-static void pdf_graph_get_chart_layout(rlib *r, gfloat top, gfloat bottom, gint cell_height, gint rows, gint *chart_size, gint *chart_height) {
-	gint rows_available;
-	gfloat height = top - bottom;
-	gfloat intersection = .1;
-	gfloat title_height = RLIB_GET_LINE(r->current_font_point);
-	gfloat height_offset = 0;
-	gfloat y_height = 0;
+static void pdf_graph_get_chart_layout(rlib *r, gdouble top, gdouble bottom, gint64 cell_height, gint64 rows, gint64 *chart_size, gint64 *chart_height) {
+	gint64 rows_available;
+	gdouble height = top - bottom;
+	gdouble intersection = .1;
+	gdouble title_height = RLIB_GET_LINE(r->current_font_point);
+	gdouble height_offset = 0;
+	gdouble y_height = 0;
 
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 
@@ -449,21 +447,21 @@ static void pdf_graph_get_chart_layout(rlib *r, gfloat top, gfloat bottom, gint 
 		height -= RLIB_GET_LINE(r->current_font_point);
 	
 	y_height = height - height_offset - intersection;
-	rows_available = (y_height * (float)RLIB_PDF_DPI) / cell_height;
+	rows_available = (y_height * (gdouble)RLIB_PDF_DPI) / cell_height;
 
 	if (rows > rows_available)
 		*chart_size = rows_available;
 	else
 		*chart_size = rows;
 
-	*chart_height = ((top - bottom - y_height) * (float)RLIB_PDF_DPI) + *chart_size * cell_height;
+	*chart_height = ((top - bottom - y_height) * (gdouble)RLIB_PDF_DPI) + *chart_size * cell_height;
 }
 
 static void pdf_graph_init(rlib *r) {
 	memset(&OUTPUT_PRIVATE(r)->graph, 0, sizeof(struct _graph));
 }
 
-static void pdf_start_graph(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, gfloat left, gfloat top, gfloat width, gfloat height, gboolean x_axis_labels_are_under_tick) {
+static void pdf_start_graph(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, gdouble left, gdouble top, gdouble width, gdouble height, gboolean x_axis_labels_are_under_tick) {
 	memset(&OUTPUT_PRIVATE(r)->graph, 0, sizeof(struct _graph));
 	
 	width /= RLIB_PDF_DPI;
@@ -488,7 +486,7 @@ static void pdf_graph_set_limits(rlib *r, gchar side, gdouble min, gdouble max, 
 
 static void pdf_graph_set_title(rlib *r, gchar *title) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat title_width = pdf_get_string_width(r, title);
+	gdouble title_width = pdf_get_string_width(r, title);
 	graph->title_height = RLIB_GET_LINE(r->current_font_point);
 	if(graph->bold_titles)
 		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[1], "WinAnsiEncoding", r->current_font_point);
@@ -508,7 +506,7 @@ static void pdf_graph_set_legend_bg_color(rlib *r, struct rlib_rgb *rgb) {
 	graph->has_legend_bg_color = TRUE;
 }
 
-static void pdf_graph_set_legend_orientation(rlib *r, gint orientation) {
+static void pdf_graph_set_legend_orientation(rlib *r, gint64 orientation) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	graph->legend_orientation = orientation;
 }
@@ -554,7 +552,7 @@ static void pdf_graph_x_axis_title(rlib *r, gchar *title) {
 	if(title[0] == 0)
 		graph->height_offset += RLIB_GET_LINE(r->current_font_point) / 2.0;
 	else {
-		gfloat title_width = pdf_get_string_width(r, title);
+		gdouble title_width = pdf_get_string_width(r, title);
 		graph->height_offset += (RLIB_GET_LINE(r->current_font_point) * 2);
 		pdf_print_text(r, graph->left + ((graph->width-title_width)/2.0), graph->bottom+graph->height_offset - (RLIB_GET_LINE(r->current_font_point)*1.3), title, 0);
 	}
@@ -566,7 +564,7 @@ static void pdf_graph_x_axis_title(rlib *r, gchar *title) {
 
 static void pdf_graph_y_axis_title(rlib *r, gchar side, gchar *title) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat title_width;
+	gdouble title_width;
 	
 	if(graph->bold_titles)
 		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[1], "WinAnsiEncoding", r->current_font_point);
@@ -603,10 +601,10 @@ static void pdf_draw_regions(gpointer data, gpointer user_data) {
 	}	
 }
 
-static void pdf_graph_label_x_get_variables(rlib *r, gint iteration, gchar *label, gfloat *left, gfloat *y_offset, gfloat *rotation, gfloat *string_width) {
+static void pdf_graph_label_x_get_variables(rlib *r, gint64 iteration, gchar *label, gdouble *left, gdouble *y_offset, gdouble *rotation, gdouble *string_width) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat white_space = graph->x_tick_width;
-	gfloat w_width = pdf_get_string_width(r, "W");
+	gdouble white_space = graph->x_tick_width;
+	gdouble w_width = pdf_get_string_width(r, "W");
 
 	if(*string_width == 0)
 		*string_width = pdf_get_string_width(r, label);
@@ -658,8 +656,8 @@ static void pdf_graph_set_x_tick_width(rlib *r) {
 
 static void pdf_graph_do_grid(rlib *r, gboolean just_a_box) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gint i;
-	gfloat last_left = graph->left-graph->x_label_width;
+	gint64 i;
+	gdouble last_left = graph->left-graph->x_label_width;
 	
 	graph->width_offset = graph->y_label_space_left + graph->y_label_width_left +  graph->intersection ;
 
@@ -692,7 +690,7 @@ static void pdf_graph_do_grid(rlib *r, gboolean just_a_box) {
 	graph->x_start = graph->left+graph->width_offset;
 
 	for(i=0;i<graph->x_iterations;i++) {
-		gfloat left,y_offset, rotation, string_width=graph->x_label_width;
+		gdouble left,y_offset, rotation, string_width=graph->x_label_width;
 		if(graph->minor_ticks[i] == FALSE) {
 			pdf_graph_label_x_get_variables(r, i, NULL, &left, &y_offset, &rotation, &string_width); 
 			if(left < (last_left+graph->x_label_width+pdf_get_string_width(r, "W"))) {
@@ -710,7 +708,7 @@ static void pdf_graph_do_grid(rlib *r, gboolean just_a_box) {
 	}
 
 	if (graph->is_chart) {
-		//gfloat line_width = RLIB_GET_LINE(r->current_font_point) / 3.0;
+		//gdouble line_width = RLIB_GET_LINE(r->current_font_point) / 3.0;
 		if (graph->vertical_x_label == TRUE)
 			graph->height -= graph->x_label_width;
 		else
@@ -747,10 +745,10 @@ static void pdf_graph_do_grid(rlib *r, gboolean just_a_box) {
 }
 
 static void pdf_graph_tick_x(rlib *r) {
-	gint i;
-	gfloat spot;
+	gint64 i;
+	gdouble spot;
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gint iterations = graph->x_iterations;
+	gint64 iterations = graph->x_iterations;
 
 	graph->height_offset	+= graph->intersection;
 	
@@ -785,25 +783,25 @@ static void pdf_graph_tick_x(rlib *r) {
 
 }
 
-static void pdf_graph_set_x_iterations(rlib *r, gint iterations) {
+static void pdf_graph_set_x_iterations(rlib *r, gint64 iterations) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	graph->x_iterations = iterations;
 }
 
 static void pdf_graph_hint_label_x(rlib *r, gchar *label) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat string_width = pdf_get_string_width(r, label);
+	gdouble string_width = pdf_get_string_width(r, label);
 	if(string_width > graph->x_label_width)
 		graph->x_label_width = string_width;
 }
 
-static void pdf_graph_label_x(rlib *r, gint iteration, gchar *label) {
+static void pdf_graph_label_x(rlib *r, gint64 iteration, gchar *label) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat rotation = 0;
-	gfloat left = 0;
-	gfloat y_offset = 0;
-	gfloat string_width = 0;
-	gfloat height = RLIB_GET_LINE(r->current_font_point);
+	gdouble rotation = 0;
+	gdouble left = 0;
+	gdouble y_offset = 0;
+	gdouble string_width = 0;
+	gdouble height = RLIB_GET_LINE(r->current_font_point);
 	gboolean doit = TRUE;
 
 	pdf_graph_label_x_get_variables(r, iteration, label, &left, &y_offset, &rotation, &string_width);
@@ -817,7 +815,7 @@ static void pdf_graph_label_x(rlib *r, gint iteration, gchar *label) {
 	
 	if(doit) {
 		if (graph->is_chart) {
-			float text_height;
+			gdouble text_height;
 			if (graph->vertical_x_label) {
 				text_height = RLIB_GET_LINE(r->current_font_point) / 3.0;
 				//text_height = graph->x_label_width + RLIB_GET_LINE(r->current_font_point) / 3.0;
@@ -833,9 +831,9 @@ static void pdf_graph_label_x(rlib *r, gint iteration, gchar *label) {
 	}
 }
 
-static void pdf_graph_tick_y(rlib *r, gint iterations) {
-	gfloat i;
-	gfloat extra = 0;
+static void pdf_graph_tick_y(rlib *r, gint64 iterations) {
+	gdouble i;
+	gdouble extra = 0;
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	graph->y_iterations = iterations;
 
@@ -848,7 +846,7 @@ static void pdf_graph_tick_y(rlib *r, gint iterations) {
 	rpdf_set_line_width(OUTPUT_PRIVATE(r)->pdf, GRID_LINE_WIDTH);
 	
 	for(i=0;i<iterations+1;i++) {
-		gfloat y = graph->y_start + ((graph->y_height/iterations) * i);
+		gdouble y = graph->y_start + ((graph->y_height/iterations) * i);
 		if(graph->draw_y) {
 			pdf_graph_draw_line(r, graph->left+graph->width_offset-graph->intersection, y, graph->left+graph->width-graph->intersection+extra, y, NULL);
 		} else {
@@ -864,14 +862,14 @@ static void pdf_graph_tick_y(rlib *r, gint iterations) {
 
 }
 
-static void pdf_graph_label_y(rlib *r, gchar side, gint iteration, gchar *label) {
+static void pdf_graph_label_y(rlib *r, gchar side, gint64 iteration, gchar *label) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat white_space = graph->y_height/graph->y_iterations;
-	gfloat line_width = RLIB_GET_LINE(r->current_font_point) / 3.0;
+	gdouble white_space = graph->y_height/graph->y_iterations;
+	gdouble line_width = RLIB_GET_LINE(r->current_font_point) / 3.0;
 
-	gfloat top;// = graph->y_start + (white_space * iteration) - line_width;
+	gdouble top;// = graph->y_start + (white_space * iteration) - line_width;
 	if (graph->is_chart) {
-		gfloat l = white_space / 2 - (line_width / 1.5);
+		gdouble l = white_space / 2 - (line_width / 1.5);
 		top = graph->y_start + (white_space * (iteration - 1)) + l;
 	}
 	else
@@ -886,7 +884,7 @@ static void pdf_graph_label_y(rlib *r, gchar side, gint iteration, gchar *label)
 
 static void pdf_graph_hint_label_y(rlib *r, gchar side, gchar *label) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat width =  pdf_get_string_width(r, label);
+	gdouble width =  pdf_get_string_width(r, label);
 	if(side == RLIB_SIDE_LEFT) {
 		if(width > graph->y_label_width_left)
 			graph->y_label_width_left = width;
@@ -896,24 +894,24 @@ static void pdf_graph_hint_label_y(rlib *r, gchar side, gchar *label) {
 	}
 }
 
-static void pdf_graph_set_data_plot_count(rlib *r, gint count) {
+static void pdf_graph_set_data_plot_count(rlib *r, gint64 count) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	graph->data_plot_count = count;
 }
 
-static void pdf_graph_draw_bar(rlib *r, gint row, gint start_iteration, gint end_iteration, struct rlib_rgb *color, char *label, struct rlib_rgb *label_color, gint width_pad, gint height_pad) {
+static void pdf_graph_draw_bar(rlib *r, gint64 row, gint64 start_iteration, gint64 end_iteration, struct rlib_rgb *color, char *label, struct rlib_rgb *label_color, gint64 width_pad, gint64 height_pad) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;	
-	gfloat bar_length = (end_iteration - start_iteration + 1) * graph->x_tick_width;
-	gfloat bar_height = graph->y_height / graph->y_iterations;
-	gfloat x_adjust = width_pad / RLIB_PDF_DPI / graph->x_tick_width;
-	gfloat y_adjust = height_pad / RLIB_PDF_DPI / bar_height;
-	gfloat left = graph->x_start + (graph->x_tick_width * (start_iteration - 1)) + (graph->x_tick_width * x_adjust);
-	gfloat start = graph->y_start + (graph->y_iterations - row) * bar_height + bar_height * y_adjust;
-	gfloat label_width =  pdf_get_string_width(r, label);
-	gfloat line_width = RLIB_GET_LINE(r->current_font_point) / 3.0;
+	gdouble bar_length = (end_iteration - start_iteration + 1) * graph->x_tick_width;
+	gdouble bar_height = graph->y_height / graph->y_iterations;
+	gdouble x_adjust = width_pad / RLIB_PDF_DPI / graph->x_tick_width;
+	gdouble y_adjust = height_pad / RLIB_PDF_DPI / bar_height;
+	gdouble left = graph->x_start + (graph->x_tick_width * (start_iteration - 1)) + (graph->x_tick_width * x_adjust);
+	gdouble start = graph->y_start + (graph->y_iterations - row) * bar_height + bar_height * y_adjust;
+	gdouble label_width =  pdf_get_string_width(r, label);
+	gdouble line_width = RLIB_GET_LINE(r->current_font_point) / 3.0;
 
 	gchar label_text[MAXSTRLEN];
-	gint i;
+	gint64 i;
 
 	strcpy(label_text, label);
 	i = strlen(label_text);
@@ -937,8 +935,8 @@ static void pdf_graph_draw_bar(rlib *r, gint row, gint start_iteration, gint end
 	}
 
 	if (label_width > 0) {
-		gfloat text_left = left + bar_length / 2 - label_width / 2;
-		gfloat text_top = start + bar_height / 2 - line_width * 2 / 3;
+		gdouble text_left = left + bar_length / 2 - label_width / 2;
+		gdouble text_top = start + bar_height / 2 - line_width * 2 / 3;
 		OUTPUT(r)->set_fg_color(r, label_color->r, label_color->g, label_color->b);
 		pdf_print_text(r, text_left, text_top, label_text, 0);
 	}
@@ -946,23 +944,23 @@ static void pdf_graph_draw_bar(rlib *r, gint row, gint start_iteration, gint end
 	OUTPUT(r)->set_bg_color(r, 0, 0, 0);
 }
 
-static void pdf_graph_plot_bar(rlib *r, gchar side, gint iteration, gint plot, gfloat height_percent, struct rlib_rgb *color,gfloat last_height, gboolean divide_iterations, gfloat raw_data UNUSED, gchar *label UNUSED) {
+static void pdf_graph_plot_bar(rlib *r, gchar side, gint64 iteration, gint64 plot, gdouble height_percent, struct rlib_rgb *color,gdouble last_height, gboolean divide_iterations, gdouble raw_data UNUSED, gchar *label UNUSED) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;	
-	gfloat bar_width = graph->x_tick_width *.6;
-	gfloat left = graph->x_start + (graph->x_tick_width * iteration) + (graph->x_tick_width *.2);
-	gfloat start = graph->y_start;
+	gdouble bar_width = graph->x_tick_width *.6;
+	gdouble left = graph->x_start + (graph->x_tick_width * iteration) + (graph->x_tick_width *.2);
+	gdouble start = graph->y_start;
 
-	if(graph->y_origin != graph->y_min)  {
-		gfloat n = fabs(graph->y_max[(gint)side])+fabs(graph->y_origin[(gint)side]);
-		gfloat d = fabs(graph->y_min[(gint)side])+fabs(graph->y_max[(gint)side]);
-		gfloat real_height =  1 - (n / d);				
+	if (graph->y_origin != graph->y_min)  {
+		gdouble n = fabs(graph->y_max[(gint)side])+fabs(graph->y_origin[(gint)side]);
+		gdouble d = fabs(graph->y_min[(gint)side])+fabs(graph->y_max[(gint)side]);
+		gdouble real_height =  1 - (n / d);
 		start += (real_height * graph->y_height);
 	}
-	
-	if(divide_iterations)
+
+	if (divide_iterations)
 		bar_width /= graph->data_plot_count;
 
-	left += (bar_width)*plot;	
+	left += (bar_width) * plot;
 	bar_width -= (PDF_PIXEL * 4);
 	OUTPUT(r)->set_bg_color(r, color->r, color->g, color->b);
 	rpdf_rect(OUTPUT_PRIVATE(r)->pdf, left, start + last_height*graph->y_height, bar_width, graph->y_height*(height_percent));
@@ -970,21 +968,21 @@ static void pdf_graph_plot_bar(rlib *r, gchar side, gint iteration, gint plot, g
 	OUTPUT(r)->set_bg_color(r, 0, 0, 0);
 }
 
-void pdf_graph_plot_line(rlib *r, gchar side, gint iteration, gfloat p1_height, gfloat p1_last_height, gfloat p2_height, gfloat p2_last_height, struct rlib_rgb *color, gfloat raw_data UNUSED, gchar *label UNUSED, gint row_count) {
+void pdf_graph_plot_line(rlib *r, gchar side, gint64 iteration, gdouble p1_height, gdouble p1_last_height, gdouble p2_height, gdouble p2_last_height, struct rlib_rgb *color, gdouble raw_data UNUSED, gchar *label UNUSED, gint64 row_count) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat p1_start = graph->y_start;
-	gfloat p2_start = graph->y_start;
-	gfloat left = graph->x_start + (graph->x_tick_width * (iteration-1));
-	gfloat x_tick_width = graph->x_tick_width;
-	if(row_count <= 0) 
+	gdouble p1_start = graph->y_start;
+	gdouble p2_start = graph->y_start;
+	gdouble left = graph->x_start + (graph->x_tick_width * (iteration-1));
+	gdouble x_tick_width = graph->x_tick_width;
+	if (row_count <= 0) 
 		return;
 	p1_height += p1_last_height;
 	p2_height += p2_last_height;
 
 	if(graph->y_origin != graph->y_min)  {
-		gfloat n = fabs(graph->y_max[(gint)side])+fabs(graph->y_origin[(gint)side]);
-		gfloat d = fabs(graph->y_min[(gint)side])+fabs(graph->y_max[(gint)side]);
-		gfloat real_height =  1 - (n / d);				
+		gdouble n = fabs(graph->y_max[(gint)side])+fabs(graph->y_origin[(gint)side]);
+		gdouble d = fabs(graph->y_min[(gint)side])+fabs(graph->y_max[(gint)side]);
+		gdouble real_height =  1 - (n / d);
 		p1_start += (real_height * graph->y_height);
 		p2_start += (real_height * graph->y_height);
 	}
@@ -995,15 +993,15 @@ void pdf_graph_plot_line(rlib *r, gchar side, gint iteration, gfloat p1_height, 
 	OUTPUT(r)->set_bg_color(r, 0, 0, 0);
 }
 
-static void pdf_graph_plot_pie(rlib *r, gfloat start, gfloat end, gboolean offset, struct rlib_rgb *color, gfloat raw_data UNUSED, gchar *label UNUSED) {
+static void pdf_graph_plot_pie(rlib *r, gdouble start, gdouble end, gboolean offset, struct rlib_rgb *color, gdouble raw_data UNUSED, gchar *label UNUSED) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat start_angle = 360.0 * start;
-	gfloat end_angle = 360.0 * end;
-	gfloat x = graph->left + (graph->width / 2);
-	gfloat y = graph->top - ((graph->height-graph->legend_height) / 2);
-	gfloat radius = 0;
-	gfloat offset_factor = 0;
-	gfloat rads;
+	gdouble start_angle = 360.0 * start;
+	gdouble end_angle = 360.0 * end;
+	gdouble x = graph->left + (graph->width / 2);
+	gdouble y = graph->top - ((graph->height-graph->legend_height) / 2);
+	gdouble radius = 0;
+	gdouble offset_factor = 0;
+	gdouble rads;
 	
 	if(start == end)
 		return;
@@ -1032,7 +1030,7 @@ static void pdf_graph_plot_pie(rlib *r, gfloat start, gfloat end, gboolean offse
 
 static void pdf_graph_hint_legend(rlib *r, gchar *label) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat width =  pdf_get_string_width(r, label) + pdf_get_string_width(r, "WWW");
+	gdouble width =  pdf_get_string_width(r, label) + pdf_get_string_width(r, "WWW");
 
 	if(width > graph->legend_width)
 		graph->legend_width = width;
@@ -1044,7 +1042,7 @@ static void pdf_count_regions(gpointer data, gpointer user_data) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	if(graph->name != NULL) {
 		if(strcmp(graph->name, gr->graph_name) == 0) {
-			gfloat width =  pdf_get_string_width(r, gr->region_label) + pdf_get_string_width(r, "WWW");
+			gdouble width =  pdf_get_string_width(r, gr->region_label) + pdf_get_string_width(r, "WWW");
 		
 			if(width > graph->legend_width)
 				graph->legend_width = width;
@@ -1060,13 +1058,13 @@ static void pdf_label_regions(gpointer data, gpointer user_data) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	if(graph->name != NULL) {
 		if(strcmp(graph->name, gr->graph_name) == 0) {
-			gint iteration = graph->orig_data_plot_count + graph->current_region;
-			gfloat offset =  ((iteration + 1) * RLIB_GET_LINE(r->current_font_point));
-			gfloat w_width = pdf_get_string_width(r, "W");
-			gfloat line_height = RLIB_GET_LINE(r->current_font_point);
-			gfloat left = graph->legend_left + (w_width/2);
-			gfloat top =  graph->legend_top - offset;
-			gfloat bottom =  top + (line_height *.6);
+			gint64 iteration = graph->orig_data_plot_count + graph->current_region;
+			gdouble offset =  ((iteration + 1) * RLIB_GET_LINE(r->current_font_point));
+			gdouble w_width = pdf_get_string_width(r, "W");
+			gdouble line_height = RLIB_GET_LINE(r->current_font_point);
+			gdouble left = graph->legend_left + (w_width/2);
+			gdouble top =  graph->legend_top - offset;
+			gdouble bottom =  top + (line_height *.6);
 
 			OUTPUT(r)->set_bg_color(r, gr->color.r, gr->color.g, gr->color.b);
 			rpdf_rect(OUTPUT_PRIVATE(r)->pdf, graph->legend_left + (w_width/2), graph->legend_top - offset , w_width, line_height*.6);
@@ -1086,7 +1084,7 @@ static void pdf_label_regions(gpointer data, gpointer user_data) {
 
 static void pdf_graph_draw_legend(rlib *r) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat left, width, height, top, bottom;
+	gdouble left, width, height, top, bottom;
 	
 	g_slist_foreach(r->graph_regions, pdf_count_regions, r);
 	graph->orig_data_plot_count = graph->data_plot_count;
@@ -1130,14 +1128,14 @@ static void pdf_graph_draw_legend(rlib *r) {
 
 }
 
-static void pdf_graph_draw_legend_label(rlib *r, gint iteration, gchar *label, struct rlib_rgb *color, gboolean line) {
+static void pdf_graph_draw_legend_label(rlib *r, gint64 iteration, gchar *label, struct rlib_rgb *color, gboolean line) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat offset =  ((iteration + 1) * RLIB_GET_LINE(r->current_font_point) );
-	gfloat w_width = pdf_get_string_width(r, "W");
-	gfloat line_height = RLIB_GET_LINE(r->current_font_point);
-	gfloat left = graph->legend_left + (w_width/2);
-	gfloat top =  graph->legend_top - offset;
-	gfloat bottom =  top + (line_height *.6);
+	gdouble offset =  ((iteration + 1) * RLIB_GET_LINE(r->current_font_point) );
+	gdouble w_width = pdf_get_string_width(r, "W");
+	gdouble line_height = RLIB_GET_LINE(r->current_font_point);
+	gdouble left = graph->legend_left + (w_width/2);
+	gdouble top =  graph->legend_top - offset;
+	gdouble bottom =  top + (line_height *.6);
 
 	if(!line) {
 		OUTPUT(r)->set_bg_color(r, color->r, color->g, color->b);
@@ -1160,12 +1158,12 @@ static void pdf_graph_draw_legend_label(rlib *r, gint iteration, gchar *label, s
 
 static void pdf_end_graph(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 static void pdf_end_part_pages_across(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
-static void pdf_stub_line(rlib *r UNUSED, int backwards UNUSED) {}
+static void pdf_stub_line(rlib *r UNUSED, gint64 backwards UNUSED) {}
 static void pdf_start_output_section(rlib *r UNUSED, struct rlib_report_output_array *roa UNUSED) {}
 static void pdf_end_output_section(rlib *r UNUSED, struct rlib_report_output_array *roa UNUSED) {}
 static void pdf_start_evil_csv(rlib *r UNUSED) {}
 static void pdf_end_evil_csv(rlib *r UNUSED) {}
-static void pdf_end_boxurl(rlib *r UNUSED, gint backwards UNUSED) {}
+static void pdf_end_boxurl(rlib *r UNUSED, gint64 backwards UNUSED) {}
 static void pdf_end_draw_cell_background(rlib *r UNUSED) {}
 static void pdf_start_report(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 static void pdf_end_report(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
@@ -1201,7 +1199,7 @@ static void pdf_start_part_table(rlib *r UNUSED, struct rlib_part *part UNUSED) 
 static void pdf_end_part_table(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
 static void pdf_start_part_tr(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
 static void pdf_end_part_tr(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
-static void pdf_start_part_td(rlib *r UNUSED, struct rlib_part *part UNUSED, gfloat width UNUSED, gfloat height UNUSED) {}
+static void pdf_start_part_td(rlib *r UNUSED, struct rlib_part *part UNUSED, gdouble width UNUSED, gdouble height UNUSED) {}
 static void pdf_end_part_td(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
 
 void rlib_pdf_new_output_filter(rlib *r) {

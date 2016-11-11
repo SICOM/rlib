@@ -191,25 +191,25 @@ class rlibPINVOKE {
   public static extern global::System.IntPtr rlib_init();
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_add_datasource_mysql")]
-  public static extern int rlib_add_datasource_mysql(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6);
+  public static extern global::System.IntPtr rlib_add_datasource_mysql(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_add_datasource_postgres")]
-  public static extern int rlib_add_datasource_postgres(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
+  public static extern global::System.IntPtr rlib_add_datasource_postgres(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_add_datasource_odbc")]
-  public static extern int rlib_add_datasource_odbc(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5);
+  public static extern global::System.IntPtr rlib_add_datasource_odbc(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_add_datasource_xml")]
-  public static extern int rlib_add_datasource_xml(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+  public static extern global::System.IntPtr rlib_add_datasource_xml(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_add_datasource_csv")]
-  public static extern int rlib_add_datasource_csv(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+  public static extern global::System.IntPtr rlib_add_datasource_csv(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_add_query_as")]
-  public static extern int rlib_add_query_as(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, string jarg4);
+  public static extern global::System.IntPtr rlib_add_query_as(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, string jarg4);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_add_search_path")]
-  public static extern int rlib_add_search_path(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+  public static extern global::System.IntPtr rlib_add_search_path(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_add_report")]
   public static extern int rlib_add_report(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
@@ -218,49 +218,49 @@ class rlibPINVOKE {
   public static extern int rlib_add_report_from_buffer(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_execute")]
-  public static extern int rlib_execute(global::System.Runtime.InteropServices.HandleRef jarg1);
+  public static extern global::System.IntPtr rlib_execute(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_get_content_type_as_text")]
   public static extern string rlib_get_content_type_as_text(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_spool")]
-  public static extern int rlib_spool(global::System.Runtime.InteropServices.HandleRef jarg1);
+  public static extern global::System.IntPtr rlib_spool(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_set_output_format")]
-  public static extern int rlib_set_output_format(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
-
-  [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_add_resultset_follower_n_to_1")]
-  public static extern int rlib_add_resultset_follower_n_to_1(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5);
-
-  [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_add_resultset_follower")]
-  public static extern int rlib_add_resultset_follower(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
+  public static extern void rlib_set_output_format(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_set_output_format_from_text")]
-  public static extern int rlib_set_output_format_from_text(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+  public static extern void rlib_set_output_format_from_text(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_add_resultset_follower_n_to_1")]
+  public static extern global::System.IntPtr rlib_add_resultset_follower_n_to_1(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5);
+
+  [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_add_resultset_follower")]
+  public static extern global::System.IntPtr rlib_add_resultset_follower(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_get_output")]
-  public static extern string rlib_get_output(global::System.Runtime.InteropServices.HandleRef jarg1);
+  public static extern global::System.IntPtr rlib_get_output(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_get_output_length")]
-  public static extern int rlib_get_output_length(global::System.Runtime.InteropServices.HandleRef jarg1);
+  public static extern global::System.IntPtr rlib_get_output_length(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_signal_connect")]
-  public static extern int rlib_signal_connect(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, global::System.Runtime.InteropServices.HandleRef jarg3, global::System.Runtime.InteropServices.HandleRef jarg4);
+  public static extern global::System.IntPtr rlib_signal_connect(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, global::System.Runtime.InteropServices.HandleRef jarg3, global::System.Runtime.InteropServices.HandleRef jarg4);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_signal_connect_string")]
-  public static extern int rlib_signal_connect_string(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, global::System.Runtime.InteropServices.HandleRef jarg3, global::System.Runtime.InteropServices.HandleRef jarg4);
+  public static extern global::System.IntPtr rlib_signal_connect_string(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, global::System.Runtime.InteropServices.HandleRef jarg3, global::System.Runtime.InteropServices.HandleRef jarg4);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_query_refresh")]
-  public static extern int rlib_query_refresh(global::System.Runtime.InteropServices.HandleRef jarg1);
+  public static extern global::System.IntPtr rlib_query_refresh(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_add_parameter")]
-  public static extern int rlib_add_parameter(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
+  public static extern global::System.IntPtr rlib_add_parameter(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_set_locale")]
-  public static extern int rlib_set_locale(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+  public static extern void rlib_set_locale(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_bindtextdomain")]
-  public static extern string rlib_bindtextdomain(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
+  public static extern global::System.IntPtr rlib_bindtextdomain(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_set_radix_character")]
   public static extern void rlib_set_radix_character(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
@@ -272,31 +272,31 @@ class rlibPINVOKE {
   public static extern void rlib_set_output_encoding(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_set_datasource_encoding")]
-  public static extern int rlib_set_datasource_encoding(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
+  public static extern global::System.IntPtr rlib_set_datasource_encoding(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_free")]
-  public static extern int rlib_free(global::System.Runtime.InteropServices.HandleRef jarg1);
+  public static extern void rlib_free(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_version")]
   public static extern string rlib_version();
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_graph_add_bg_region")]
-  public static extern int rlib_graph_add_bg_region(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, string jarg4, float jarg5, float jarg6);
+  public static extern global::System.IntPtr rlib_graph_add_bg_region(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, string jarg4, double jarg5, double jarg6);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_graph_clear_bg_region")]
-  public static extern int rlib_graph_clear_bg_region(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+  public static extern global::System.IntPtr rlib_graph_clear_bg_region(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_graph_set_x_minor_tick")]
-  public static extern int rlib_graph_set_x_minor_tick(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
+  public static extern global::System.IntPtr rlib_graph_set_x_minor_tick(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_graph_set_x_minor_tick_by_location")]
-  public static extern int rlib_graph_set_x_minor_tick_by_location(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, int jarg3);
+  public static extern global::System.IntPtr rlib_graph_set_x_minor_tick_by_location(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, int jarg3);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_graph")]
-  public static extern float rlib_graph(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2, global::System.Runtime.InteropServices.HandleRef jarg3, float jarg4, global::System.Runtime.InteropServices.HandleRef jarg5);
+  public static extern global::System.IntPtr rlib_graph(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2, global::System.Runtime.InteropServices.HandleRef jarg3, double jarg4, global::System.Runtime.InteropServices.HandleRef jarg5);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_parse")]
-  public static extern int rlib_parse(global::System.Runtime.InteropServices.HandleRef jarg1);
+  public static extern global::System.IntPtr rlib_parse(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_set_query_cache_size")]
   public static extern void rlib_set_query_cache_size(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);

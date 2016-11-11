@@ -48,9 +48,7 @@ struct _private {
 	int	dummy;
 };
 
-static gint rlib_php_array_input_close(gpointer input_ptr UNUSED) {
-	return TRUE;
-}
+static void rlib_php_array_input_close(gpointer input_ptr UNUSED) {}
 
 static const gchar* rlib_php_array_get_error(gpointer input_ptr UNUSED) {
 	return "Hard to make a mistake here.. try checking your names/spellings";
@@ -243,12 +241,9 @@ static gint rlib_php_array_num_fields(gpointer input_ptr UNUSED, gpointer result
 	return result->cols;
 }
 
-static gint rlib_php_array_free_input_filter(gpointer input_ptr UNUSED) {
-	return 0;
-}
+static void rlib_php_array_free_input_filter(gpointer input_ptr UNUSED) {}
 
-static void rlib_php_array_rlib_free_result(gpointer input_ptr UNUSED, gpointer result_ptr UNUSED) {
-}
+static void rlib_php_array_rlib_free_result(gpointer input_ptr UNUSED, gpointer result_ptr UNUSED) {}
 
 
 static gpointer rlib_php_array_new_input_filter() {
@@ -277,4 +272,5 @@ static gpointer rlib_php_array_new_input_filter() {
 gint rlib_add_datasource_php_array(void *r, gchar *input_name) {
 	rlib_add_datasource(r, input_name, rlib_php_array_new_input_filter());
 	return TRUE;
+
 }

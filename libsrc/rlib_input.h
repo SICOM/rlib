@@ -34,22 +34,22 @@ struct input_filter {
 	gpointer r;
 	gpointer private;
 	struct input_info info;
-	gint (*free)(gpointer);
-	gint (*connect_local_with_credentials)(gpointer, const gchar *, const gchar *, const gchar *);
-	gint (*connect_with_credentials)(gpointer, const gchar *, guint, const gchar *, const gchar *, const gchar*);
-	gint (*connect_with_connstr)(gpointer, const gchar *);
-	gint (*input_close)(gpointer);
+	void (*free)(gpointer);
+	gboolean (*connect_local_with_credentials)(gpointer, const gchar *, const gchar *, const gchar *);
+	gboolean (*connect_with_credentials)(gpointer, const gchar *, guint, const gchar *, const gchar *, const gchar*);
+	gboolean (*connect_with_connstr)(gpointer, const gchar *);
+	void (*input_close)(gpointer);
 	gpointer (*new_result_from_query)(gpointer, gpointer);
 	gint (*num_fields)(gpointer, gpointer);
 	void (*start)(gpointer, gpointer);
-	gint (*next)(gpointer, gpointer);
-	gint (*isdone)(gpointer, gpointer);
+	gboolean (*next)(gpointer, gpointer);
+	gboolean (*isdone)(gpointer, gpointer);
 	const gchar * (*get_error)(gpointer);
 	gchar *(*get_field_value_as_string)(gpointer, gpointer, gpointer);
 	gpointer (*resolve_field_pointer)(gpointer, gpointer, gchar *);
 	void (*free_result)(gpointer, gpointer);
 	void (*free_query)(gpointer, gpointer);
-	gint (*set_encoding)(gpointer);
+	gint64 (*set_encoding)(gpointer);
 	void (*set_query_cache_size)(gpointer, gint);
 };
 
@@ -59,7 +59,7 @@ struct rlib_query {
 	 * Keep these in sync!!!
 	 */
 	gchar *sql;
-	gint sql_allocated;
+	gint64 sql_allocated;
 	gchar *name;
 	struct input_filter *input;
 	gpointer *private;
@@ -71,7 +71,7 @@ struct rlib_query {
 };
 
 /* Add a custom datasource not covered by the currently implemented sources. */
-gint rlib_add_datasource(rlib *r, const gchar *input_name, struct input_filter *input);
+gboolean rlib_add_datasource(rlib *r, const gchar *input_name, struct input_filter *input);
 
 /* Allocator to implement rlib_add_custom_query_as() if necessary. */
 struct rlib_query *rlib_alloc_query_space(rlib *r);

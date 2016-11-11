@@ -612,14 +612,14 @@ gboolean default_function(rlib *r, struct rlib_pcode * code, struct rlib_value_s
 	zval value;
 #endif
 	zval *retval;
-	struct rlib_value rval_rtn;
+	struct rlib_value *rval_rtn;
 	TSRMLS_FETCH();
 
 	for (i = 0; i < b->params; i++) {
-		struct rlib_value *v = rlib_value_stack_pop(vs);
+		struct rlib_value *v = rlib_value_stack_pop(r, vs);
 		int spot = b->params-i-1;
-		if (RLIB_VALUE_IS_STRING(v)) {
-			if (RLIB_VALUE_GET_AS_STRING(v) == NULL) {
+		if (RLIB_VALUE_IS_STRING(r, v)) {
+			if (RLIB_VALUE_GET_AS_STRING(r, v) == NULL) {
 #if PHP_MAJOR_VERSION < 7
 				params[spot] = emalloc(sizeof(gpointer));
 				MAKE_STD_ZVAL(*params[spot]);
@@ -631,21 +631,21 @@ gboolean default_function(rlib *r, struct rlib_pcode * code, struct rlib_value_s
 #if PHP_MAJOR_VERSION < 7
 				params[spot] = emalloc(sizeof(gpointer));
 				MAKE_STD_ZVAL(*params[spot]);
-				ZVAL_STRING(*params[spot], RLIB_VALUE_GET_AS_STRING(v), 1);
+				ZVAL_STRING(*params[spot], RLIB_VALUE_GET_AS_STRING(r, v), 1);
 #else
-				ZVAL_STRING(&params[spot], estrdup(RLIB_VALUE_GET_AS_STRING(v)));
+				ZVAL_STRING(&params[spot], estrdup(RLIB_VALUE_GET_AS_STRING(r, v)));
 #endif
 			}
-			rlib_value_free(v);
-		} else if (RLIB_VALUE_IS_NUMBER(v)) {
+			rlib_value_free(r, v);
+		} else if (RLIB_VALUE_IS_NUMBER(r, v)) {
 #if PHP_MAJOR_VERSION < 7
 			params[spot] = emalloc(sizeof(gpointer));
 			MAKE_STD_ZVAL(*params[spot]);
-			ZVAL_DOUBLE(*params[spot], (double)RLIB_VALUE_GET_AS_NUMBER(v) / (double)RLIB_DECIMAL_PRECISION);
+			ZVAL_DOUBLE(*params[spot], rlib_value_get_as_double(r, v));
 #else
-			ZVAL_DOUBLE(&params[spot], (double)RLIB_VALUE_GET_AS_NUMBER(v) / (double)RLIB_DECIMAL_PRECISION);
+			ZVAL_DOUBLE(&params[spot], rlib_value_get_as_double(r, v));
 #endif
-			rlib_value_free(v);
+			rlib_value_free(r, v);
 		}
 	}
 
@@ -657,16 +657,16 @@ gboolean default_function(rlib *r, struct rlib_pcode * code, struct rlib_value_s
 #endif
 		return FALSE;
 
+	rval_rtn = rlib_value_alloc(r);
+
 	if (Z_TYPE_P(retval) == IS_STRING)
-		rlib_value_stack_push(r, vs, rlib_value_new_string(&rval_rtn, estrdup(Z_STRVAL_P(retval))));
+		rlib_value_stack_push(r, vs, rlib_value_new_string(r, rval_rtn, estrdup(Z_STRVAL_P(retval))));
 	else if (Z_TYPE_P(retval) == IS_LONG) {
-		gint64 result = Z_LVAL_P(retval) * RLIB_DECIMAL_PRECISION;
-		rlib_value_stack_push(r, vs, rlib_value_new_number(&rval_rtn, result));
+		rlib_value_stack_push(r, vs, rlib_value_new_number_from_long(r, rval_rtn, Z_LVAL_P(retval)));
 	} else if (Z_TYPE_P(retval) == IS_DOUBLE) {
-		gint64 result = (gdouble)Z_DVAL_P(retval) * (gdouble)RLIB_DECIMAL_PRECISION;
-		rlib_value_stack_push(r, vs, rlib_value_new_number(&rval_rtn, result));
+		rlib_value_stack_push(r, vs, rlib_value_new_number_from_double(r, rval_rtn, Z_DVAL_P(retval)));
 	} else {
-		rlib_value_stack_push(r, vs, rlib_value_new_error(&rval_rtn));		
+		rlib_value_stack_push(r, vs, rlib_value_new_error(r, rval_rtn));
 	}
 
 	return TRUE;
@@ -982,10 +982,8 @@ ZEND_FUNCTION(rlib_compile_infix) {
 	z_str_len_t size_of_string;
 	char *infix;
 	struct rlib_pcode *code;
-	struct rlib_value value;
+	struct rlib_value *value = NULL;
 	char *ret_str;
-
-	error_data = g_string_new("");
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rs", &z_rip, &infix, &size_of_string) == FAILURE)
 		return;
@@ -998,12 +996,15 @@ ZEND_FUNCTION(rlib_compile_infix) {
 		RETURN_FALSE;
 #endif
 
+	error_data = g_string_new("");
+
 	rlib_setmessagewriter(compile_error_capture);
 	code = rlib_infix_to_pcode(rip->r, NULL, NULL, infix, -1, FALSE);
 	if (code != NULL) {
-		rlib_execute_pcode(rip->r, &value, code, NULL);
+		value = rlib_value_alloc(rip->r);
+		rlib_execute_pcode(rip->r, value, code, NULL);
 		rlib_pcode_free(rip->r, code);
-		rlib_value_free(&value);
+		rlib_value_free(rip->r, value);
 	}
 
 	ret_str = estrdup(error_data->str);

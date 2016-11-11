@@ -17,10 +17,10 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  * 
- * $Id$s
- *
  * Built in CSV Input Data Source
  */
+
+#include <config.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -38,10 +38,10 @@
 
 struct rlib_csv_results {
 	gchar *contents;
-	gint atstart;
-	gint isdone;
-	gint rows;
-	gint cols;
+	gint64 atstart;
+	gint64 isdone;
+	gint64 rows;
+	gint64 cols;
 	GSList *header;
 	GList *detail;
 	GList *navigator;
@@ -51,13 +51,7 @@ struct _private {
 	gchar *error;
 };
 
-static gint rlib_csv_connect(gpointer input_ptr UNUSED, const gchar *connstr UNUSED) {
-	return 0;
-}
-
-static gint rlib_csv_input_close(gpointer input_ptr UNUSED) {
-	return 0;
-}
+static void rlib_csv_input_close(gpointer input_ptr UNUSED) {}
 
 static const gchar* rlib_csv_get_error(gpointer input_ptr) {
 	struct input_filter *input = input_ptr;
@@ -75,7 +69,7 @@ static void rlib_csv_start(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	result->isdone = FALSE;
 }
 
-static gint rlib_csv_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
+static gboolean rlib_csv_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_csv_results *result = result_ptr;
 
 	if (result == NULL)
@@ -91,7 +85,7 @@ static gint rlib_csv_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	return !result->isdone;
 }
 
-static gint rlib_csv_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
+static gboolean rlib_csv_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_csv_results *result = result_ptr;
 
 	if (result == NULL)
@@ -102,7 +96,7 @@ static gint rlib_csv_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
 
 static gchar * rlib_csv_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_csv_results *results = result_ptr;
-	gint i = 1;
+	gint64 i = 1;
 	GSList *data;
 
 	if (results == NULL)
@@ -122,7 +116,7 @@ static gchar * rlib_csv_get_field_value_as_string(gpointer input_ptr UNUSED, gpo
 
 static gpointer rlib_csv_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) { 
 	struct rlib_csv_results *results = result_ptr;
-	gint i;
+	gint64 i;
 	GSList *data;
 
 	if (results == NULL || results->header == NULL)
@@ -146,7 +140,7 @@ static gint rlib_csv_num_fields(gpointer input_ptr UNUSED, gpointer result_ptr) 
 
 static gboolean parse_line(gchar **ptr, GSList **all_items) {
 	gchar *data = *ptr;
-	gint spot = 0;
+	gint64 spot = 0;
 	gchar current = 0, previous = 0;
 	gboolean eof = FALSE;
 	gchar *start = *ptr;
@@ -166,7 +160,7 @@ static gboolean parse_line(gchar **ptr, GSList **all_items) {
 			in_quote = !in_quote;
 		
 		if((current == ',' && !in_quote) || current == '\n') {
-			gint slen;
+			gint64 slen;
 			data[spot] = '\0';
 			slen = strlen(start);
 			if(start[0] == '"' && start[slen-1] == '"') {
@@ -196,11 +190,11 @@ void * csv_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	struct input_filter *input = input_ptr;
 	struct rlib_query *query = query_ptr;
 	gchar *file;
-	gint fd;
-	gint size;
+	gint64 fd;
+	gint64 size;
 	gchar *contents;
 	GSList *line_items;
-	gint row = 0;
+	gint64 row = 0;
 
 	INPUT_PRIVATE(input)->error = "";
 
@@ -253,11 +247,10 @@ static void rlib_csv_rlib_free_result(gpointer input_ptr UNUSED, gpointer result
 	g_free(results);
 }
 
-static gint rlib_csv_free_input_filter(gpointer input_ptr){
+static void rlib_csv_free_input_filter(gpointer input_ptr){
 	struct input_filter *input = input_ptr;
 	g_free(input->private);
 	g_free(input);
-	return 0;
 }
 
 gpointer rlib_csv_new_input_filter(rlib *r) {
@@ -266,7 +259,6 @@ gpointer rlib_csv_new_input_filter(rlib *r) {
 	input = g_malloc0(sizeof(struct input_filter));
 	input->r = r;
 	input->private = g_malloc0(sizeof(struct _private));
-	input->connect_with_connstr = rlib_csv_connect;
 	input->input_close = rlib_csv_input_close;
 	input->num_fields = rlib_csv_num_fields;
 	input->start = rlib_csv_start;

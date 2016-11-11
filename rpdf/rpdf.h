@@ -59,7 +59,7 @@
 #define RPDF_PAPER_MONARCH   9
 #define RPDF_PAPER_FILM35MM  10
 
-#define CALLBACK gchar *(*callback)(gchar *data, gint len, gpointer user_data)
+#define CALLBACK gchar *(*callback)(gchar *data, gint64 len, gpointer user_data)
 
 struct rpdf *rpdf_new(void);
 void rpdf_set_compression(struct rpdf *pdf, gboolean use_compression);

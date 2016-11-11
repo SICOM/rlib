@@ -6,7 +6,7 @@
 		<para>
 			In addition to being a report writer, RLIB is also an interpreted language (like Basic and FOXPRO).  RLIB handles all memory
 			management for you.  If you are familiar with FOXPRO, then you will feel at home with RLIB.  However, if you don't know
-			foxpro see the function reference (symbol table) to see all of the functions available to you.  In a nutshell its pretty 
+			FOXPRO see the function reference (symbol table) to see all of the functions available to you.  In a nutshell its pretty 
 			powerful.  You can do stuff like this:
 			<programlisting>
 'hi' + ' ' + 'there' + database.stringfield
@@ -14,7 +14,7 @@
 dtos(database.somedatefield)-7
 [database.field1;database.field2;database.field3]
 			</programlisting>
-			RLIB has 4 data types that it uses internally. STRING, DATE, NUMBER and VECTOR.  There are functions to turn datatypes
+			RLIB has 4 data types that it uses internally. STRING, DATE, NUMBER and VECTOR. There are functions to turn datatypes
 			into other datatypes, plus all sorts of other goodies.  Almost all parameters in the RLIB xml file are expressions. This
 			means that the parameters are computed on the fly. The result must be a STRING, DATE, or NUMBER (usually STRING or NUMBER).
 			In our examples you will see stuff like expN, expS, expD or expV.  expN means number expressions, expS means a string
@@ -64,13 +64,22 @@ dtos(database.somedatefield)-7
 		</para>
 	</sect1>
 	<sect1>
-		<title>Fixed Point</title>
+		<title>High-precision Floating Point Numbers</title>
 		<para>
-			Numerical accuracy is important in RLIB, therefore all mathematical calculations are done with fixed point using 
-			8 decimal places of accuracy.  As you might know, floating point operations in computing are inherently inaccurate. 
-			It is especially true if you are looping through data doing computations.  Therefore, rlib uses FIXED POINT calculations 
-			internally in order to preserve accuracy.  Note, all of this is internal to rlib, and you never have to worry about it
-			when writing reports.			
+			Numerical accuracy is important in RLIB, therefore all mathematical calculations are done using MPFR numbers.
+			(See http://www.mpfr.org/ for more elaborate documentation about this scientific library.) As you might know,
+			floating point operations in computing are inherently inaccurate, but this inaccuracy can be overcome by using
+			more bits for precision as defined by the IEEE 754-1985 standard. By default, RLIB uses 256 bits for mantissa
+			but if it's not enough for you, see the rlib_set_numeric_precision() function in the C API which is also exposed
+			to all language bindings. Using MPFR numbers are the perfect choice to handle arbitrary precision numbers from
+			database fields, a.k.a. the numeric type in SQL.
+		</para>
+		<para>
+			Historically (before version 3.0.0) RLIB used fixed point calculations on 64-bit numbers
+			with 7 decimal digits that meant that every integer number was pre-multiplied by ten million
+			and the largest number that could have been represented was 922'337'203'685.4775807. Multiplying two numbers
+			larger than one million or using RLIB in high money flow industries in countries with weak local currency
+			(i.e. already high numbers summed over long periods) caused overflow, in other words incorrect numbers in the report.
 		</para>
 	</sect1>
 	<sect1>
