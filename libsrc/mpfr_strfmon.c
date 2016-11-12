@@ -546,7 +546,7 @@ static char *__format_grouped_mpfr(mpfr_ptr value, int *flags, int left_prec, in
 	bufsize = strlen(avalue)*2+1;
 	rslt = malloc(bufsize);
 	if (rslt == NULL) {
-		free(avalue);
+		mpfr_free_str(avalue);
 		return (NULL);
 	}
 	memset(rslt, 0, bufsize);
@@ -607,6 +607,6 @@ static char *__format_grouped_mpfr(mpfr_ptr value, int *flags, int left_prec, in
 
 	bufsize = bufsize - (bufend - rslt) + 1;
 	memmove(rslt, bufend, bufsize);
-	free(avalue);
+	mpfr_free_str(avalue);
 	return (rslt);
 }
