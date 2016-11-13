@@ -438,7 +438,7 @@ struct rlib_report_variable {
 	struct rlib_from_xml xml_ignore;
 
 	gint type;
-	gint64 precalculate;
+	gboolean precalculate;
 	struct rlib_pcode *code;
 	struct rlib_pcode *ignore_code;
 	struct rlib_value count;
