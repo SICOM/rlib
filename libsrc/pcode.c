@@ -1523,10 +1523,12 @@ struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, stru
 		else {
 			switch (rv->type) {
 			case RLIB_REPORT_VARIABLE_COUNT:
+				mpfr_set(val, count->mpfr_value, MPFR_RNDN);
+				break;
 			case RLIB_REPORT_VARIABLE_SUM:
 			case RLIB_REPORT_VARIABLE_LOWEST:
 			case RLIB_REPORT_VARIABLE_HIGHEST:
-				mpfr_set(val, count->mpfr_value, MPFR_RNDN);
+				mpfr_set(val, amount->mpfr_value, MPFR_RNDN);
 				break;
 			case RLIB_REPORT_VARIABLE_AVERAGE:
 				mpfr_div(val, amount->mpfr_value, count->mpfr_value, MPFR_RNDN);
