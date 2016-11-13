@@ -243,7 +243,7 @@ ssize_t rlib_mpfr_strfmon(char * __restrict s, size_t maxsize, const char * __re
 		mpfr_set_prec(val, mpfr_get_prec(val_ptr));
 
 		/* detect sign */
-		if (mpfr_cmp_si(val_ptr, 0) < 0) {
+		if (mpfr_sgn(val_ptr) < 0) {
 			flags |= IS_NEGATIVE;
 			mpfr_abs(val, val_ptr, MPFR_RNDN);
 		} else
