@@ -464,7 +464,7 @@ static void rlib_free_operand(rlib *r, struct rlib_pcode_operand *o) {
 		break;
 
 	default:
-		r_error(r, "rlib_free_operand: unknown operand type: %d\n", o->type);
+		r_error(r, "rlib_free_operand: unknown operand type: %" PRIdFAST32 "\n", o->type);
 		break;
 	}
 
@@ -579,7 +579,7 @@ void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, gint64 offset) {
 				break;
 			}
 			default:
-				rlogit(r, "*UNKOWN EXPRESSION: %d\n", o->type);
+				rlogit(r, "*UNKOWN EXPRESSION: %" PRIdFAST32 "\n", o->type);
 			}
 			break;
 		}

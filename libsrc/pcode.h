@@ -133,7 +133,11 @@ struct rlib_report_variable;
 #define RLIB_RLIB_VARIABLE_FORMAT    6
 
 struct rlib_pcode_operand {
-	char type;
+	/*
+	 * We use "long" for ->type to ensure correct
+	 * alignment for ->value with no padding in between.
+	 */
+	glong type;
 	void *value;
 };
 
