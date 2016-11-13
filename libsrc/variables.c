@@ -147,10 +147,8 @@ void rlib_process_variables(rlib *r, struct rlib_report *report) {
 			if (RLIB_VALUE_IS_NUMBER(r, er)) {
 				if (RLIB_VALUE_IS_NONE(r, amount)) {
 					rlib_value_new_number_from_mpfr(r, amount, er->mpfr_value);
-					fprintf(stderr, "rlib_process_variables SUM RLIB_VALUE_IS_NONE\n");
 				} else
 					mpfr_add(amount->mpfr_value, amount->mpfr_value, er->mpfr_value, MPFR_RNDN);
-				mpfr_fprintf(stderr, "rlib_process_variables SUM '%s' %Rf\n", rv->xml_name.xml, amount->mpfr_value);
 			} else
 				r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER FOR RLIB_REPORT_VARIABLE_SUM\n");
 			break;
