@@ -10,32 +10,8 @@
 	</ReportHeader>
 
 	<Variables>
-		<Variable name="total_salary" value="val(salary)" type="sum" resetonbreak="total_salary" />
+		<Variable name="total_salary" value="val(salary)" type="sum" />
 	</Variables>
-
-	<Breaks>
-		<Break name="total_salary" newpage="no" headernewpage="yes" suppressblank="yes">
-			<BreakFields>
-				<BreakField value="salary" />
-			</BreakFields>	
-			<BreakFooter>
-				<Output>
-					<Line>
-						<literal width="10">Total:</literal>
-						<field value="v.total_salary" format="'$%.2d'" width="100" align="right" />
-					</Line>
-					<Line>
-						<literal width="10"/>
-						<field value="v.total_salary" format="'!$%=*#60n'" width="100" align="right" />
-					</Line>
-					<Line>
-						<literal width="10"/>
-						<field value="v.total_salary" format="'!$%=*#60i'" width="100" align="right" />
-					</Line>
-				</Output>
-			</BreakFooter>
-		</Break>
-	</Breaks>
 
 	<Detail>
 		<FieldHeaders>
@@ -71,4 +47,20 @@
 			</Output>
 		</FieldDetails>
 	</Detail>
+	<ReportFooter>
+		<Output>
+			<Line>
+				<literal width="10">Total:</literal>
+				<field value="v.total_salary" format="'$%.2d'" width="100" align="right" />
+			</Line>
+			<Line>
+				<literal width="10"/>
+				<field value="v.total_salary" format="'!$%=*#60n'" width="100" align="right" />
+			</Line>
+			<Line>
+				<literal width="10"/>
+				<field value="v.total_salary" format="'!$%=*#60i'" width="100" align="right" />
+			</Line>
+		</Output>
+	</ReportFooter>
 </Report>
