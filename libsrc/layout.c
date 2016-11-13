@@ -758,7 +758,7 @@ static gint64 rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *par
 				if (RLIB_VALUE_IS_NUMBER(r, &extra_data1->rval_code) && strchr(colorstring, ':')) {
 					colorstring = g_strdup(colorstring);
 					idx = strchr(colorstring, ':');
-					if (mpfr_cmp_d(extra_data1->rval_code.mpfr_value, 0.0) >= 0)
+					if (mpfr_sgn(extra_data1->rval_code.mpfr_value) >= 0)
 						idx[0] = '\0';
 					else
 						colorstring = idx + 1;
@@ -778,7 +778,7 @@ static gint64 rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *par
 				ocolor = colorstring = g_strdup(RLIB_VALUE_GET_AS_STRING(r, &extra_data1->rval_color));
 				if (RLIB_VALUE_IS_NUMBER(r, &extra_data1->rval_code) && strchr(colorstring, ':')) {
 					idx = strchr(colorstring, ':');
-					if (mpfr_cmp_d(extra_data1->rval_code.mpfr_value, 0.0) >= 0)
+					if (mpfr_sgn(extra_data1->rval_code.mpfr_value) >= 0)
 						idx[0] = '\0';
 					else
 						colorstring = idx + 1;

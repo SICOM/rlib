@@ -179,7 +179,7 @@ gint64 rlib_number_sprintf(rlib *r, gchar **woot_dest, gchar *fmtstr, const stru
 		}
 		if (left_pad == 0 && left == 0) {
 			gint64 spot = 0;
-			if (mpfr_cmp_d(rval->mpfr_value, 0.0) < 0)
+			if (mpfr_sgn(rval->mpfr_value) < 0)
 				left_holding[spot++] = '-';
 			left_holding[spot++] = '0';
 			left_holding[spot++] = 0;			
@@ -324,7 +324,7 @@ gint64 rlib_format_string(rlib *r, gchar **dest, struct rlib_report_field *rf, s
 						formatstring = g_strdup(formatstring);
 						idx = strchr(formatstring, ':');
 						special_format = 1;
-						if (mpfr_cmp_d(rval->mpfr_value, 0.0) >= 0)
+						if (mpfr_sgn(rval->mpfr_value) >= 0)
 							idx[0] = '\0';
 						else
 							formatstring = idx + 1;
