@@ -1509,12 +1509,14 @@ struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, stru
 		}
 	} else if (o->type == OPERAND_VARIABLE) {
 		mpfr_t val;
-		struct rlib_value *count = &rv->count;
-		struct rlib_value *amount = &rv->amount;
+		struct rlib_value *count;
+		struct rlib_value *amount;
 
 		mpfr_init2(val, r->numeric_precision_bits);
 
 		rv = o->value;
+		count = &rv->count;
+		amount = &rv->amount;
 
 		if (rv->code == NULL && rv->type != RLIB_REPORT_VARIABLE_COUNT)
 			r_error(r, "Line: %d - Bad Expression in variable [%s] Variable Resolution: Assuming 0 value for variable\n", rv->xml_name.line, rv->xml_name.xml);
