@@ -543,7 +543,7 @@ static char *__format_grouped_mpfr(mpfr_ptr value, int *flags, int left_prec, in
 		return (NULL);
 
 	/* make sure that we've enough space for result string */
-	bufsize = strlen(avalue)*2+1;
+	bufsize = strlen(avalue) * 2 + 1;
 	rslt = malloc(bufsize);
 	if (rslt == NULL) {
 		mpfr_free_str(avalue);
@@ -561,8 +561,7 @@ static char *__format_grouped_mpfr(mpfr_ptr value, int *flags, int left_prec, in
 
 	if (right_prec > 0) {
 		bufend -= right_prec;
-		memcpy(bufend, avalue + avalue_size+padded-right_prec,
-		    right_prec);
+		memcpy(bufend, avalue + avalue_size + padded - right_prec, right_prec);
 		*--bufend = decimal_point;
 		avalue_size -= (right_prec + 1);
 	}
@@ -605,7 +604,7 @@ static char *__format_grouped_mpfr(mpfr_ptr value, int *flags, int left_prec, in
 		memset(bufend, pad_char, padded);
 	}
 
-	bufsize = bufsize - (bufend - rslt) + 1;
+	bufsize = bufsize - (bufend - rslt);
 	memmove(rslt, bufend, bufsize);
 	mpfr_free_str(avalue);
 	return (rslt);
