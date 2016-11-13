@@ -33,12 +33,15 @@ noinst_PROGRAMS = \
 	follower_1_to_1_then_n_to_1 \
 	follower_circular \
 	follower-breaks \
-	breaks breaks2
+	breaks breaks2 \
+	hyperinflation
 
 AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
 AM_LDFLAGS = $(top_builddir)/libsrc/libr.la
 
-noinst_SCRIPTS = graph.xml products.xml follower.xml follower-breaks.xml breaks.xml breaks2.xml
+noinst_SCRIPTS = \
+	graph.xml products.xml follower.xml follower-breaks.xml \
+	breaks.xml breaks2.xml hyperinflation.xml
 
 graph.xml:
 	$(LN_S) ../php/graph.xml
@@ -57,5 +60,8 @@ breaks.xml:
 
 breaks2.xml:
 	$(LN_S) ../php/breaks2.xml
+
+hyperinflation.xml:
+	$(LN_S) ../php/hyperinflation.xml
 
 CLEANFILES = $(noinst_SCRIPTS)
