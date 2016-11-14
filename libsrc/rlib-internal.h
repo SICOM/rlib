@@ -492,7 +492,6 @@ struct rlib_part {
 	struct rlib_element *report_header;
 	struct rlib_element *page_header;
 	struct rlib_element *page_footer;
-	GSList *delayed_data;
 
 	struct rlib_pcode *name_code;
 	struct rlib_pcode *pages_across_code;
@@ -507,10 +506,10 @@ struct rlib_part {
 	struct rlib_pcode *suppress_code;
 
 	struct rlib_paper *paper;
-	gint64 orientation;
-	gint64 font_size;
-	gint64 pages_across;
-	gint64 iterations;
+	gint orientation;
+	gint font_size;
+	gint pages_across;
+	gint iterations;
 	gboolean suppress;
 	gboolean has_only_one_report;
 	struct rlib_report *only_report;
@@ -520,9 +519,9 @@ struct rlib_part {
 	gdouble top_margin;
 	gdouble bottom_margin;
 	gdouble left_margin;
-	gint64 landscape;
-	gint64 suppress_page_header_first_page;
-	gint64 report_index;
+	gboolean landscape;
+	gboolean suppress_page_header_first_page;
+	gint report_index;
 };
 
 struct rlib_graph_x_minor_tick {
@@ -677,19 +676,19 @@ struct rlib_report {
 	gdouble *position_bottom;
 	gdouble *bottom_size;
 
-	gint64 main_loop_query;
-	gint64 raw_page_number;
+	gint main_loop_query;
+	gint raw_page_number;
 
-	gint64 orientation;
-	gint64 font_size;
-	gint64 detail_columns;
+	gint orientation;
+	gint font_size;
+	gint detail_columns;
 	gdouble column_pad;
 	gdouble top_margin;
 	gdouble bottom_margin;
 	gdouble left_margin;
 	gdouble page_width;
-	gint64 iterations;
-	gint64 pages_across;
+	gint iterations;
+	gint pages_across;
 	gboolean suppress_page_header_first_page;
 	gboolean suppress;
 	gboolean is_the_only_report;
@@ -722,6 +721,8 @@ struct rlib_report {
 	struct rlib_pcode *suppress_page_header_first_page_code;
 	struct rlib_pcode *suppress_code;
 	struct rlib_pcode *uniquerow_code;
+
+	GSList *delayed_data;
 };
 
 #define RLIB_REPORT_TYPE_FILE 1

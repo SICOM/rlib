@@ -271,23 +271,23 @@ static void pdf_set_font_point(rlib *r, gint64 point) {
 }
 	
 static void pdf_start_new_page(rlib *r, struct rlib_part *part) {
-	gint64 i=0;
-	gint64 pages_across = part->pages_across;
+	gint i = 0;
+	gint pages_across = part->pages_across;
 	gchar paper_type[40];
 	r->current_page_number++;
-	
+
 	sprintf(paper_type, "0 0 %ld %ld", part->paper->width, part->paper->height);
-	for(i=0;i<pages_across;i++) {
-		if(part->orientation == RLIB_ORIENTATION_LANDSCAPE) {
+	for (i = 0; i < pages_across; i++) {
+		if (part->orientation == RLIB_ORIENTATION_LANDSCAPE) {
 			part->position_bottom[i] = (part->paper->width/RLIB_PDF_DPI)-part->bottom_margin;
 			rpdf_new_page(OUTPUT_PRIVATE(r)->pdf, part->paper->type, RPDF_LANDSCAPE); 
 			rpdf_translate(OUTPUT_PRIVATE(r)->pdf, 0.0, (part->paper->height/RLIB_PDF_DPI));	
 		   rpdf_rotate(OUTPUT_PRIVATE(r)->pdf, -90.0);
-			part->landscape = 1;
+			part->landscape = TRUE;
 		} else {
 			part->position_bottom[i] = (part->paper->height/RLIB_PDF_DPI)-part->bottom_margin;
 			rpdf_new_page(OUTPUT_PRIVATE(r)->pdf, part->paper->type, RPDF_PORTRAIT); 
-			part->landscape = 0;
+			part->landscape = FALSE;
 		}
 	}
 }

@@ -220,7 +220,7 @@ static gchar *rlib_layout_get_true_text_from_extra_data(rlib *r, struct rlib_lin
 	return encoded_text;
 }
 
-static gdouble rlib_layout_output_extras_start(rlib *r, struct rlib_part *part, gint64 backwards, gdouble left_origin, gdouble bottom_origin, struct rlib_line_extra_data *extra_data, gboolean ignore_links) {
+static gdouble rlib_layout_output_extras_start(rlib *r, struct rlib_part *part, gboolean backwards, gdouble left_origin, gdouble bottom_origin, struct rlib_line_extra_data *extra_data, gboolean ignore_links) {
 	if (extra_data->is_bold)
 		OUTPUT(r)->start_bold(r);
 	if (extra_data->is_italics)
@@ -238,12 +238,20 @@ static gdouble rlib_layout_output_extras_start(rlib *r, struct rlib_part *part, 
 }
 
 //BOBD: Extra_data seems to have all the stuff which needs to get passed in JSON
-static gdouble rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part UNUSED, gint64 backwards, gdouble left_origin, gdouble bottom_origin, struct rlib_line_extra_data *extra_data, gint64 flag, gint64 memo_line) __attribute__((nonnull(1,2,6)));
-static gdouble rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part UNUSED, gint64 backwards, gdouble left_origin, gdouble bottom_origin, struct rlib_line_extra_data *extra_data, gint64 flag, gint64 memo_line) {
+static gdouble rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean backwards, gdouble left_origin, gdouble bottom_origin, struct rlib_line_extra_data *extra_data, gint64 flag, gint64 memo_line) __attribute__((nonnull(1,7)));
+static gdouble rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean backwards, gdouble left_origin, gdouble bottom_origin, struct rlib_line_extra_data *extra_data, gint64 flag, gint64 memo_line) {
 	gdouble rtn_width;
 	gchar *text = extra_data->formatted_string;
-	gint64 i, slen;
+	gint i, slen;
 	gchar spaced_out[MAXSTRLEN];
+
+	if (report == NULL) {
+		if (part == NULL)
+			return extra_data->output_width;
+		report = part->only_report;
+		if (report == NULL)
+			return extra_data->output_width;
+	}
 
 	if (OUTPUT(r)->trim_links == FALSE) {
 		flag = TEXT_NORMAL;
@@ -338,7 +346,7 @@ static gdouble rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part 
 						dd->delayed_data = delayed_data;
 						dd->backwards = backwards;
 
-						part->delayed_data = g_slist_append(part->delayed_data, dd);
+						report->delayed_data = g_slist_append(report->delayed_data, dd);
 					}
 				}
 			} else {
@@ -376,8 +384,8 @@ static gdouble rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part 
 	return rtn_width;
 }
 
-static gdouble layout_output_extras_end(rlib *r, struct rlib_part *part, gint64 backwards, struct rlib_line_extra_data *extra_data, gint64 memo_line) __attribute((nonnull(1,4)));
-static gdouble layout_output_extras_end(rlib *r, struct rlib_part *part, gint64 backwards, struct rlib_line_extra_data *extra_data, gint64 memo_line) {
+static gdouble layout_output_extras_end(rlib *r, struct rlib_part *part, struct rlib_report *report, gint64 backwards, struct rlib_line_extra_data *extra_data, gint64 memo_line) __attribute((nonnull(1,5)));
+static gdouble layout_output_extras_end(rlib *r, struct rlib_part *part, struct rlib_report *report, gint64 backwards, struct rlib_line_extra_data *extra_data, gint64 memo_line) {
 	if (extra_data->running_bgcolor_status & STATUS_STOP)
 		OUTPUT(r)->end_draw_cell_background(r);
 
@@ -385,7 +393,7 @@ static gdouble layout_output_extras_end(rlib *r, struct rlib_part *part, gint64 
 		OUTPUT(r)->end_boxurl(r, backwards);
 		if (OUTPUT(r)->trim_links) {
 			rlib_layout_output_extras_start(r, part, backwards, 0, 0, extra_data, TRUE);
-			rlib_layout_text_from_extra_data(r, part, backwards, 0, 0, extra_data, TEXT_RIGHT, memo_line);
+			rlib_layout_text_from_extra_data(r, part, report, backwards, 0, 0, extra_data, TEXT_RIGHT, memo_line);
 		}
 	}
 
@@ -917,11 +925,11 @@ static void rlib_layout_find_common_properties_in_a_line(rlib *r, GSList *extra_
  * Then dup the extra_data[] in a queue for later and add it
  * as a delayed write thingie!!!
  */
-static gint64 rlib_layout_report_output_array(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_output_array *roa, gint64 backwards, gint64 page, gboolean page_header_layout) {
+static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_output_array *roa, gint64 backwards, gint64 page, gboolean page_header_layout) {
 	struct rlib_element *e = NULL;
 	gdouble margin = 0, width = 0;
 	gdouble *rlib_position;
-	gint64 output_count = 0;
+	gint output_count = 0;
 	gdouble my_left_margin;
 	GSList *ptr;
 
@@ -1076,7 +1084,7 @@ static gint64 rlib_layout_report_output_array(rlib *r, struct rlib_part *part, s
 									buf[0] = 0;
 								}
 
-								width = rlib_layout_text_from_extra_data(r, part, backwards, margin, layout_get_next_line(part, *rlib_position, rl), extra_data1, TEXT_NORMAL, i);
+								width = rlib_layout_text_from_extra_data(r, part, report, backwards, margin, layout_get_next_line(part, *rlib_position, rl), extra_data1, TEXT_NORMAL, i);
 								margin += width;
 							}
 						}
@@ -1091,14 +1099,14 @@ static gint64 rlib_layout_report_output_array(rlib *r, struct rlib_part *part, s
 								struct rlib_report_field *rf = ((struct rlib_report_field *)e->data);
 								rf->rval = &extra_data1->rval_code;
 								rlib_layout_output_extras_start(r, part, backwards, margin, layout_get_next_line(part, *rlib_position, rl), extra_data1, FALSE);
-								width = rlib_layout_text_from_extra_data(r, part, backwards, margin, layout_get_next_line(part, *rlib_position, rl), extra_data1, TEXT_LEFT, i);
+								width = rlib_layout_text_from_extra_data(r, part, report, backwards, margin, layout_get_next_line(part, *rlib_position, rl), extra_data1, TEXT_LEFT, i);
 								layout_get_next_line(part, *rlib_position, rl);
-								layout_output_extras_end(r, part, backwards, extra_data1, i);
+								layout_output_extras_end(r, part, report, backwards, extra_data1, i);
 							} else if (e->type == RLIB_ELEMENT_LITERAL) {
 								rlib_layout_output_extras_start(r, part, backwards, margin, layout_get_next_line(part, *rlib_position, rl), extra_data1, FALSE);
-								width = rlib_layout_text_from_extra_data(r, part, backwards, margin, layout_get_next_line(part, *rlib_position, rl), extra_data1, TEXT_LEFT, i);
+								width = rlib_layout_text_from_extra_data(r, part, report, backwards, margin, layout_get_next_line(part, *rlib_position, rl), extra_data1, TEXT_LEFT, i);
 								layout_get_next_line(part, *rlib_position, rl);
-								layout_output_extras_end(r, part, backwards, extra_data1, i);
+								layout_output_extras_end(r, part, report, backwards, extra_data1, i);
 							} else if (e->type == RLIB_ELEMENT_IMAGE) {
 								gchar *filename;
 								gdouble height1;
