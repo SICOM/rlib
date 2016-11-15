@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
 
 #include <config.h>
 #include "rlib-internal.h"
@@ -177,6 +178,9 @@ static gchar *get_html_color(gchar *str, struct rlib_rgb *color) {
 
 static GString *html_print_text_common(const gchar *text, struct rlib_line_extra_data *extra_data) {
 	GString *string = g_string_new("");
+	gchar *escaped;
+	gint pos;
+	gboolean only_spaces;
 
 	g_string_append_printf(string, "<span data-col=\"%d\" data-width=\"%d\" style=\"font-size: %dpx; ", extra_data->col, extra_data->width, BIGGER_HTML_FONT(extra_data->font_point));
 
@@ -190,7 +194,24 @@ static GString *html_print_text_common(const gchar *text, struct rlib_line_extra
 		g_string_append(string, "font-style: italic;");
 
 	g_string_append(string,"\">");
-	gchar *escaped = g_markup_escape_text(text, strlen(text));
+	escaped = g_markup_escape_text(text, strlen(text));
+	only_spaces = TRUE;
+	for (pos = 0; escaped[pos]; pos++) {
+		if (!isspace(escaped[pos])) {
+			only_spaces = FALSE;
+			break;
+		}
+	}
+	if (only_spaces) {
+		GString *new_esc = g_string_new(NULL);
+		gint i;
+		for (i = 0; i < pos; i++) {
+			g_string_append(new_esc, "&nbsp;");
+		}
+		g_free(escaped);
+		escaped = g_string_free(new_esc, FALSE);
+	}
+
 	g_string_append(string, escaped);
 	g_string_append(string, "</span>");
 	g_free(escaped);
@@ -376,23 +397,45 @@ static void html_start_rlib_report(rlib *r) {
    	if(suppress_head == NULL) {
 		char *doctype = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">\n";
 		int font_size = r->font_point;
-		if(font_size <= 0)
+		if (font_size <= 0)
 			font_size = RLIB_DEFUALT_FONTPOINT;
-		
+
 		g_string_append(OUTPUT_PRIVATE(r)->whole_report, doctype);
 		g_string_append_printf(OUTPUT_PRIVATE(r)->whole_report, "<head>\n<style type=\"text/css\">\n");
-
 
 		g_string_append_printf(OUTPUT_PRIVATE(r)->whole_report, "pre { margin:0; padding:0; margin-top:0; margin-bottom:0; font-size:%dpt;}\n", BIGGER_HTML_FONT(font_size));
 		g_string_append_printf(OUTPUT_PRIVATE(r)->whole_report, "body { background-color: #ffffff;}\n");
 		g_string_append(OUTPUT_PRIVATE(r)->whole_report, "TABLE { border: 0; border-spacing: 0; padding: 0; width:100%; }\n");
 		g_string_append(OUTPUT_PRIVATE(r)->whole_report, "</style>\n");
 		meta = g_hash_table_lookup(r->output_parameters, "meta");
-		if(meta != NULL)
-			g_string_append(OUTPUT_PRIVATE(r)->whole_report, meta);
+		if (meta != NULL) {
+			int start = 0;
+			int len = strlen(meta);
+			gboolean closed_meta = FALSE;
+
+			while (isspace(meta[start]))
+				start++;
+			if (meta[start] == '<') {
+				start++;
+				while (isspace(meta[start]))
+					start++;
+				if (strncmp(meta + start, "meta", 4) == 0 && strlen(meta + start) >= 4 && isspace(meta + start + 4)) {
+					/* Found "meta" */
+					while (len && isspace(meta[len - 1]))
+						len--;
+					if (meta[len - 1] == '>' && meta[len - 2] == '/')
+						closed_meta = TRUE;
+					else if (strcmp(meta + len - 7, "</meta>") == 0)
+						closed_meta = TRUE;
+
+					g_string_append(OUTPUT_PRIVATE(r)->whole_report, meta);
+					if (!closed_meta)
+						g_string_append(OUTPUT_PRIVATE(r)->whole_report, "</meta>");
+				}
+			}
+		}
 		g_string_append(OUTPUT_PRIVATE(r)->whole_report, "<title>RLIB Report</title></head>\n");
 		g_string_append(OUTPUT_PRIVATE(r)->whole_report, "<body>\n");
-
    	}
 }
 
@@ -505,7 +548,6 @@ static void html_end_part_td(rlib *r, struct rlib_part *part UNUSED) {
 static void html_start_report_line(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 
 static void html_end_report_line(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
-
 
 static void html_start_line(rlib *r, int backwards) {
 	print_text(r, "<div><pre style=\"font-size: 1pt\">",  backwards);
