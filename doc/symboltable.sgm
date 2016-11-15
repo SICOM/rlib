@@ -275,8 +275,13 @@
 	<sect1>
 		<title>fxpval(expS, expN)</title>
 		<para>
-			 Converts a string into a number.. assumes no decimal places in the string.. expN says where the decimal place should go
-			 for instance if in your database you store all values in cents.. and not dollars
+			Legacy function that converts a string into a number, using the formula
+			val(expS)*pow(10,expN), equivalent of the E notation in floating points.
+			E.g. 1.5e15. With RLIB 3.0, both expS and expN may contain fractions.
+			Originally both expS and expN were assumed to contains integer values.
+			The main use case was when the database stored all values in cents
+			instead of dollars, i.e. values pre-multiplied by 100 or whatever the
+			change was between monetary units.
 		</para>
 		<para>
 			<emphasis> Returns</emphasis> NUMBER

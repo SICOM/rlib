@@ -47,28 +47,38 @@
 	<sect1>
 		<title>Format Strings</title>
 		<para>
-			Yup RLIB has them. They are very similar to C. Numbers, Dates, or Strings.
-			Here is the neat part.  If you mess up format strings, rlib will put an error message in the field.  
+			Yup, RLIB has them, in fact two distinct formats, one legacy and one "new style", see below..
+			The legacy format string work similar but not identical to C. It can format number, string or date values.
+			It works a lot like printf format strings in C, with optional length and precision specifiers.
+			The format string may also contain literals before and after the format specifier for the
+			value.
+		</para>
+		<para>
+			Numbers are denoted by conversion specifier '%d'. Examples: '%d', '%10.2d' or 'You have %d apples'.
+			Unlike C format strings, the optional [length][.[precision]] works in a way that
+			the "length" part only influences the integer part of the number instead of the
+			whole length of the formatted output.
+		</para>
+		<para>
+			For US-specific monetary formatting with numeric grouping separator, use '%$d'.
+			For example, Example: '%$d', '%$5.2d'. The second would result '12,345.67'.
+		</para>
+		<para>
+			For incorrect format strings, RLIB will put an error message in the field.
 			They are...
-		</para>	
-		<para>
-			!ERR_F means that rlib was not given a format string and can't automatically make something of your data
 		</para>
 		<para>
-			!ERR_F_D means you asked rlib to format as a number but it was not given a number data type
+			!ERR_F means that RLIB was not given a format string and can't automatically make something of your data
 		</para>
 		<para>
-			!ERR_F_S means you asked rlib to format as a string but it was not given a string data type
+			!ERR_F_D means you asked RLIB to format as a number but it was not given a number data type
 		</para>
 		<para>
-			!ERR_F_F means you asked rlib could not interperate your format string expression / or what it interpreted it to was not a string
-		</para>			
+			!ERR_F_S means you asked RLIB to format as a string but it was not given a string data type
+		</para>
 		<para>
-			It works a lot like c. You can do stuff like "'You have %d apples'"
-		</para>			
-		<para>
-			If you do something like %$5.2d this means put commas in so you will get 12,345.67
-		</para>			
+			!ERR_F_F means RLIB could not interperate your format string expression / or what it interpreted it to was not a string
+		</para>
 	</sect1>
 	<sect1>
 		<title>New Style Format Strings with "!" prefix</title>
@@ -78,16 +88,16 @@
 			The first 2 characters in the new format strings must begin with either "!@", "!$" or "!#", respectively.
 			Following this is an appropriate 'C' style format string for one of the functions
 			strftime, strfmon, or sprintf (for numbers).
-			All numerics in the money and number format strings must be represented using the 'e', 'f' or 'g' format codes.
-			For example "!#$.2g", "!$%n", "!@%m/%d/%Y" are valid format strings using the new style
-			for a number, a money amount and a date.
+			The conversion specifiers in number format strings must be 'a', 'A', 'e', 'E', 'f', 'F', 'g' or 'G'.
+			The conversion specifiers in monetary format strings must be 'i' or 'n', for international or national formatting, respectively.
+			For example "!#$.2g", "!$%n", "!@%m/%d/%Y" are valid format strings using the new style for a number, a money amount and a date.
 			There are also additional error codes added	as follows:
 		</para>
 		<para>
-			!ERR_DT_D means you asked rlib to format a date but the date field of the datetime is not set.
+			!ERR_DT_D means you asked RLIB to format a date but the date field of the datetime is not set.
 		</para>
 		<para>
-			!ERR_DT_T means you asked rlib to format a time but the time field of the datetime is not set.
+			!ERR_DT_T means you asked RLIB to format a time but the time field of the datetime is not set.
 		</para>
 		<para>
 			!ERR_DT_NO means there were no valid format codes in a format string for a date/time.
@@ -96,20 +106,29 @@
 	<sect1>
 		<title>String Format Strings</title>
 		<para>
-			Exactly like c. %[optional number]s where optional number is how big to make the string
-		</para>	
+			Exactly like C. %[length]s where length is how long to make the string.
+		</para>
 	</sect1>
 	<sect1>
 		<title>Number Format Strings</title>
 		<para>
-			Close to c. %[optional number 1][.][optional number 2]d ... where optional number 1 is how big should the left side be
-			and optional number 2 is how many decimal places... 
-		</para>	
+			Close to C: %[0][integer length][.[decimal precision]]d
+		</para>
+		<para>
+			Integer length indicates the intended length of the integer part of the number. Just like for printf in C,
+			this length can be exceeded if the number is actually larger than what would fit in the specified length.
+			If the printed integer part is shorter than the specified length, then it will be left padded up to the specified length,
+			by default with spaces. If '0' is added before the length specifier, the number will be 0-padded on the left.
+			Decimal precision specifies how many decimal places should be printed from the number.
+			Note that other XML attributes for the report field where this value is printed, like width and align
+			will also influence the way the number is shown in the report. The character 'd' at the end is mandatory and
+			says it is a number.
+		</para>
 	</sect1>
 	<sect1>
 		<title>Number Format Strings (!# format)</title>
 		<para>
-			Identical to C. All numbers must be represented by the e, f or g format types.
+			Identical to C. All numbers must be represented by the 'a', 'A', 'e', 'E', 'f', 'F', 'g' or 'G' conversion specifiers.
 		</para>	
 		<para>
 			Please refer to your systems printf formatting codes.
