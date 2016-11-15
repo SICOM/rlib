@@ -86,7 +86,7 @@ libr_la_LDFLAGS = \
 rlibincludedir = $(includedir)/rlib
 rlibinclude_HEADERS = rlib.h rlib_input.h
 
-AM_CFLAGS = $(CFLAG_VISIBILITY) $(RLIB_CFLAGS) -I$(top_srcdir)/rpdf
+libr_la_CFLAGS = $(CFLAG_VISIBILITY) $(RLIB_CFLAGS) -I$(top_srcdir)/rpdf
 
 EXTRA_DIST = rlib.i generate_bindings.sh \
 	charencoder.h datetime.h util.h value.h pcode.h

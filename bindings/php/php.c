@@ -71,6 +71,7 @@ ZEND_FUNCTION(rlib_set_output_encoding);
 ZEND_FUNCTION(rlib_compile_infix);
 ZEND_FUNCTION(rlib_add_search_path);
 ZEND_FUNCTION(rlib_parse);
+ZEND_FUNCTION(rlib_set_query_cache_size);
 
 PHP_MINIT_FUNCTION(rlib);
 
@@ -115,6 +116,7 @@ zend_function_entry rlib_functions[] =
 	ZEND_FE(rlib_compile_infix, NULL)
 	ZEND_FE(rlib_add_search_path, NULL)
 	ZEND_FE(rlib_parse, NULL)
+	ZEND_FE(rlib_set_query_cache_size, NULL)
 	{ .fname = NULL }
 };
 
@@ -724,7 +726,6 @@ ZEND_FUNCTION(rlib_set_output_format_from_text) {
 #endif
 
 	rlib_set_output_format_from_text(rip->r, name);
-
 }
 
 ZEND_FUNCTION(rlib_execute) {
@@ -1053,4 +1054,23 @@ ZEND_FUNCTION(rlib_parse) {
 
 	result = rlib_parse(rip->r);
 	RETURN_LONG(result);
+}
+
+ZEND_FUNCTION(rlib_set_query_cache_size) {
+	zval *z_rip = NULL;
+	gdouble cache_size;
+	rlib_inout_pass *rip;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rd", &z_rip, &cache_size) == FAILURE)
+		return;
+
+#if PHP_MAJOR_VERSION < 7
+	ZEND_FETCH_RESOURCE(rip, rlib_inout_pass *, &z_rip, -1, LE_RLIB_NAME, le_link);
+#else
+	rip = (rlib_inout_pass *)zend_fetch_resource(Z_RES_P(z_rip), LE_RLIB_NAME, le_link);
+	if (rip == NULL)
+		RETURN_FALSE;
+#endif
+
+	rlib_set_query_cache_size(rip->r, cache_size);
 }

@@ -149,25 +149,38 @@ static void pdf_print_text(rlib *r, gfloat left_origin, gfloat bottom_origin, co
 	rpdf_text(pdf, left_origin, bottom_origin, orientation, text);
 }
 
-static void pdf_rpdf_callback(gchar *data, gint len, void *user_data) {
+static gchar *pdf_rpdf_callback(gchar *data, gint len, void *user_data) {
 	struct rlib_delayed_extra_data *delayed_data = user_data;
-	struct rlib_line_extra_data *extra_data = &delayed_data->extra_data;
+	struct rlib_line_extra_data *extra_data = delayed_data->extra_data;
 	rlib *r = delayed_data->r;
 	gchar *buf = NULL, *buf2 = NULL;
 
-	rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL);	
+	if (rlib_pcode_has_variable(r, extra_data->field_code, NULL, NULL, FALSE))
+		return NULL;
+
+	rlib_value_free(&extra_data->rval_code);
+	if (rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL) == NULL)
+		return NULL;
 	rlib_format_string(r, &buf, extra_data->report_field, &extra_data->rval_code);
 	rlib_align_text(r, &buf2, buf, extra_data->report_field->align, extra_data->report_field->width);
 	memcpy(data, buf2, len);
 	g_free(buf);
 	g_free(buf2);
-	data[len-1] = 0;
-	g_free(user_data);
+	data[len - 1] = 0;
+
+	rlib_free_delayed_extra_data(r, delayed_data);
+
+	return data;
 }
 
 static void pdf_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *delayed_data, int backwards UNUSED, int rval_type UNUSED) {
 	struct rpdf *pdf = OUTPUT_PRIVATE(r)->pdf;
-	rpdf_text_callback(pdf, delayed_data->left_origin, delayed_data->bottom_orgin, 0, delayed_data->extra_data.width, pdf_rpdf_callback, delayed_data);
+	rpdf_text_callback(pdf, delayed_data->left_origin, delayed_data->bottom_origin, 0, delayed_data->extra_data->width, pdf_rpdf_callback, delayed_data);
+}
+
+static void pdf_finalize_text_delayed(rlib *r, gpointer in_ptr, int backwards UNUSED) {
+	struct rpdf *pdf = OUTPUT_PRIVATE(r)->pdf;
+	rpdf_finalize_text_callback(pdf, in_ptr);
 }
 
 static void pdf_print_text_API(rlib *r, gfloat left_origin, gfloat bottom_origin, const gchar *text, gint backwards UNUSED, struct rlib_line_extra_data *extra_data UNUSED) {
@@ -307,10 +320,9 @@ static void pdf_start_rlib_report(rlib *r) {
 	pdf = rpdf_new();
 	rpdf_set_title(pdf, "RLIB Report");
 	compress = g_hash_table_lookup(r->output_parameters, "compress");
-	if(compress != NULL) {
+	if (compress != NULL) {
 		rpdf_set_compression(pdf, TRUE);
 	}
-
 	
 	OUTPUT_PRIVATE(r)->pdf = pdf;
 }
@@ -1205,6 +1217,7 @@ void rlib_pdf_new_output_filter(rlib *r) {
 	OUTPUT(r)->get_string_width = pdf_get_string_width;
 	OUTPUT(r)->print_text = pdf_print_text_API;
 	OUTPUT(r)->print_text_delayed = pdf_print_text_delayed;
+	OUTPUT(r)->finalize_text_delayed = pdf_finalize_text_delayed;
 	OUTPUT(r)->set_fg_color = pdf_set_fg_color;
 	OUTPUT(r)->set_bg_color = pdf_set_fg_color;
 	OUTPUT(r)->start_draw_cell_background = pdf_drawbox;

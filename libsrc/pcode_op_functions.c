@@ -124,13 +124,7 @@ gint rlib_pcode_operator_add(rlib *r, struct rlib_pcode *code, struct rlib_var_s
 	rlib_value_stack_push(r,vs, rlib_value_new_error(&rval_rtn));
 	return FALSE;
 }
-
-
-
-
-
 #endif
-
 
 gint rlib_pcode_operator_add(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value UNUSED, gpointer user_data UNUSED) {
 	struct rlib_value *v1, *v2, rval_rtn;
@@ -262,8 +256,8 @@ gint rlib_pcode_operator_divide(rlib *r, struct rlib_pcode *code, struct rlib_va
 	struct rlib_value *v1, *v2, rval_rtn;
 	v1 = rlib_value_stack_pop(vs);
 	v2 = rlib_value_stack_pop(vs);
-	if(v1 != NULL && v2 != NULL) {
-		if(RLIB_VALUE_IS_NUMBER(v1) && RLIB_VALUE_IS_NUMBER(v2)) {
+	if (v1 != NULL && v2 != NULL) {
+		if (RLIB_VALUE_IS_NUMBER(v1) && RLIB_VALUE_IS_NUMBER(v2)) {
 			gint64 result = RLIB_FXP_DIV(RLIB_VALUE_GET_AS_NUMBER(v2), RLIB_VALUE_GET_AS_NUMBER(v1));
 			rlib_value_free(v1);
 			rlib_value_free(v2);
@@ -555,6 +549,47 @@ gint rlib_pcode_operator_eql(rlib *r, struct rlib_pcode *code, struct rlib_value
 		rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, val));
 		return TRUE;
 	}
+	if (RLIB_VALUE_IS_VECTOR(v1) && RLIB_VALUE_IS_VECTOR(v2)) {
+		GSList *vec1, *vec2;
+		GSList *list1, *list2;
+		gint64 val = 0;
+
+		vec1 = RLIB_VALUE_GET_AS_VECTOR(v1);
+		vec2 = RLIB_VALUE_GET_AS_VECTOR(v2);
+
+		if (g_slist_length(vec1) != g_slist_length(vec2)) {
+			rlib_value_free(v1);
+			rlib_value_free(v2);
+			rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, val));
+			return TRUE;
+		}
+
+		for (list1 = vec1, list2 = vec2; list1; list1 = list1->next, list2 = list2->next) {
+			struct rlib_pcode *code1 = list1->data, *code2 = list2->data;
+			struct rlib_value val1, val2;
+			struct rlib_value *pval1, *pval2;
+			gint retval;
+
+			pval1 = rlib_execute_pcode(r, &val1, code1, NULL);
+			pval2 = rlib_execute_pcode(r, &val2, code2, NULL);
+
+			retval = rvalcmp(r, pval1, pval2);
+
+			rlib_value_free(&val1);
+			rlib_value_free(&val2);
+
+			if (retval != 0)
+				break;
+		}
+
+		if (!list1)
+			val = RLIB_DECIMAL_PRECISION;
+
+		rlib_value_free(v1);
+		rlib_value_free(v2);
+		rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, val));
+		return TRUE;
+	}
 	rlib_value_free(v1);
 	rlib_value_free(v2);
 	rlib_value_stack_push(r,vs, rlib_value_new_error(&rval_rtn));
@@ -603,6 +638,47 @@ gint rlib_pcode_operator_noteql(rlib *r, struct rlib_pcode *code, struct rlib_va
 		t1 = &RLIB_VALUE_GET_AS_DATE(v1);
 		t2 = &RLIB_VALUE_GET_AS_DATE(v2);
 		val = (rlib_datetime_compare(t2, t1) != 0)? RLIB_DECIMAL_PRECISION : 0;
+		rlib_value_free(v1);
+		rlib_value_free(v2);
+		rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, val));
+		return TRUE;
+	}
+	if (RLIB_VALUE_IS_VECTOR(v1) && RLIB_VALUE_IS_VECTOR(v2)) {
+		GSList *vec1, *vec2;
+		GSList *list1, *list2;
+		gint64 val = RLIB_DECIMAL_PRECISION;
+
+		vec1 = RLIB_VALUE_GET_AS_VECTOR(v1);
+		vec2 = RLIB_VALUE_GET_AS_VECTOR(v2);
+
+		if (g_slist_length(vec1) != g_slist_length(vec2)) {
+			rlib_value_free(v1);
+			rlib_value_free(v2);
+			rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, val));
+			return TRUE;
+		}
+
+		for (list1 = vec1, list2 = vec2; list1; list1 = list1->next, list2 = list2->next) {
+			struct rlib_pcode *code1 = list1->data, *code2 = list2->data;
+			struct rlib_value val1, val2;
+			struct rlib_value *pval1, *pval2;
+			gint retval = 0;
+
+			pval1 = rlib_execute_pcode(r, &val1, code1, NULL);
+			pval2 = rlib_execute_pcode(r, &val2, code2, NULL);
+
+			retval = rvalcmp(r, pval1, pval2);
+
+			rlib_value_free(&val1);
+			rlib_value_free(&val2);
+
+			if (retval != 0)
+				break;
+		}
+
+		if (!list1)
+			val = 0;
+
 		rlib_value_free(v1);
 		rlib_value_free(v2);
 		rlib_value_stack_push(r,vs, rlib_value_new_number(&rval_rtn, val));
@@ -1705,7 +1781,6 @@ gint rlib_pcode_operator_eval(rlib *r, struct rlib_pcode *code, struct rlib_valu
 			code = rlib_infix_to_pcode(r, NULL, NULL, RLIB_VALUE_GET_AS_STRING(v1), -1, TRUE);
 			rlib_execute_pcode(r, &rval_rtn, code, this_field_value);
 			rlib_pcode_free(r, code);
-			rlib_value_dup(&rval_rtn);
 			rlib_value_free(v1);
 			rlib_value_stack_push(r,vs,&rval_rtn);
 			return TRUE;

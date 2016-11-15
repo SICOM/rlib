@@ -12,12 +12,13 @@
 'hi' + ' ' + 'there' + database.stringfield
 1+2*87+(7*2)/98.2/database.numberfield
 dtos(database.somedatefield)-7
+[database.field1;database.field2;database.field3]
 			</programlisting>
-			RLIB has 3 data types that it uses internally. STRING, DATE, and NUMBER.  There are functions to turn datatypes
+			RLIB has 4 data types that it uses internally. STRING, DATE, NUMBER and VECTOR.  There are functions to turn datatypes
 			into other datatypes, plus all sorts of other goodies.  Almost all parameters in the RLIB xml file are expressions. This
 			means that the parameters are computed on the fly. The result must be a STRING, DATE, or NUMBER (usually STRING or NUMBER).
-			In our examples you will see stuff like expN, expS, expD.  expN means number expressions, expS means a string expression, and
-			expD means a date expression.
+			In our examples you will see stuff like expN, expS, expD or expV.  expN means number expressions, expS means a string
+			expression, expD means a date expression and expV means a vector expression.
 		</para>
 		<tip><title>STRINGS are in single quotes</title>
 		<para>
@@ -70,6 +71,15 @@ dtos(database.somedatefield)-7
 			It is especially true if you are looping through data doing computations.  Therefore, rlib uses FIXED POINT calculations 
 			internally in order to preserve accuracy.  Note, all of this is internal to rlib, and you never have to worry about it
 			when writing reports.			
+		</para>
+	</sect1>
+	<sect1>
+		<title>Vectors</title>
+		<para>
+			Vectors are denoted as a list of expressions delimited by semicolons inside brackets: [exp;...].
+			Vectors currently have limited use cases but they cover enough functionality to be useful. The main intended use
+			case is the <emphasis>leader_field</emphasis> and <emphasis>follower_field</emphasis> in
+			<emphasis>rlib_add_follower_n_to_1()</emphasis>, see the C and PHP APIs.
 		</para>
 	</sect1>
 	<sect1>

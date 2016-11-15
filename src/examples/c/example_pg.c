@@ -31,6 +31,7 @@ int main(void) {
 	connstr = "dbname=rlib user=rlib";
 
 	r = rlib_init();
+	rlib_set_query_cache_size(r, 2);
 	if (rlib_add_datasource_postgres(r, "local_pg", connstr) < 0) {
 		fprintf(stderr, "Cannot connect to PostgreSQL database\n ");
 		rlib_free(r);

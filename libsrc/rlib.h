@@ -93,6 +93,7 @@ struct rlib_value {
 	gchar *string_value;
 	gpointer iif_value;
 	gint free;
+	GSList *vector_value;
 };
 
 #define RLIB_VALUE_ERROR	-1
@@ -100,6 +101,7 @@ struct rlib_value {
 #define RLIB_VALUE_NUMBER	1
 #define RLIB_VALUE_STRING	2
 #define RLIB_VALUE_DATE 	3
+#define RLIB_VALUE_VECTOR   4
 #define RLIB_VALUE_IIF 		100
 
 #define RLIB_VALUE_TYPE_NONE(a) ((a)->type = RLIB_VALUE_NONE);((a)->free = FALSE)
@@ -108,6 +110,7 @@ struct rlib_value {
 #define RLIB_VALUE_IS_STRING(a)	(RLIB_VALUE_GET_TYPE(a)==RLIB_VALUE_STRING)
 #define RLIB_VALUE_IS_DATE(a)	(RLIB_VALUE_GET_TYPE(a)==RLIB_VALUE_DATE)
 #define RLIB_VALUE_IS_IIF(a)	(RLIB_VALUE_GET_TYPE(a)==RLIB_VALUE_IIF)
+#define RLIB_VALUE_IS_VECTOR(a)	(RLIB_VALUE_GET_TYPE(a)==RLIB_VALUE_VECTOR)
 #define RLIB_VALUE_IS_ERROR(a)	(RLIB_VALUE_GET_TYPE(a)==RLIB_VALUE_ERROR)
 #define RLIB_VALUE_IS_NONE(a)	(RLIB_VALUE_GET_TYPE(a)==RLIB_VALUE_NONE)
 #define RLIB_VALUE_GET_AS_NUMBER(a) ((a)->number_value)
@@ -115,6 +118,7 @@ struct rlib_value {
 #define RLIB_VALUE_GET_AS_STRING(a) ((a)->string_value)
 #define RLIB_VALUE_GET_AS_DATE(a) (a->date_value)
 #define RLIB_VALUE_GET_AS_IIF(a) ((struct rlib_pcode_if *)a->iif_value)
+#define RLIB_VALUE_GET_AS_VECTOR(a) (a->vector_value)
 
 #define RLIB_DECIMAL_PRECISION	10000000LL
 
@@ -182,6 +186,7 @@ void rlib_set_output_parameter(rlib *r, gchar *parameter, gchar *value);
 gint rlib_set_locale(rlib *r, gchar *locale);
 void rlib_set_output_encoding(rlib *r, const char *encoding);
 gint rlib_set_datasource_encoding(rlib *r, gchar *input_name, gchar *encoding);
+void rlib_set_query_cache_size(rlib *r, gint cache_size);
 gint rlib_execute(rlib *r);
 gint rlib_parse(rlib *);
 gchar * rlib_get_content_type_as_text(rlib *r);
@@ -209,10 +214,12 @@ void rlib_setmessagewriter(void(*writer)(rlib *r, const gchar *msg));
 /* Value control */
 struct rlib_value *rlib_value_stack_pop(struct rlib_value_stack *vs);
 int rlib_value_stack_push(rlib *r, struct rlib_value_stack *vs, struct rlib_value *value);
+struct rlib_value *rlib_value_new_none(struct rlib_value *rval);
 struct rlib_value *rlib_value_new_number(struct rlib_value *rval, gint64 value);
 struct rlib_value *rlib_value_new_string(struct rlib_value *rval, const char *value);
 struct rlib_value *rlib_value_new_date(struct rlib_value *rval, struct rlib_datetime *date);
-struct rlib_value * rlib_value_new_error(struct rlib_value *rval);
+struct rlib_value *rlib_value_new_vector(struct rlib_value *rval, GSList *vector);
+struct rlib_value *rlib_value_new_error(struct rlib_value *rval);
 gint rlib_value_free(struct rlib_value *rval);
 struct rlib_pcode *rlib_infix_to_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *infix, gint line_number, gboolean look_at_metadata);
 struct rlib_value *rlib_execute_pcode(rlib *r, struct rlib_value *rval, struct rlib_pcode *code, struct rlib_value *this_field_value);
@@ -223,10 +230,10 @@ gfloat rlib_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, g
 gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left_margin_offset, gfloat *top_margin_offset);
 
 /* Console messages */
-void rlogit(rlib *r, const gchar *fmt, ...);
-void r_debug(rlib *r, const gchar *fmt, ...);
-void r_info(rlib *r, const gchar *fmt, ...);
-void r_warning(rlib *r, const gchar *fmt, ...);
-void r_error(rlib *r, const gchar *fmt, ...);
+void rlogit(rlib *r, const gchar *fmt, ...) __attribute__ ((format (printf, 2, 3)));
+void r_debug(rlib *r, const gchar *fmt, ...) __attribute__ ((format (printf, 2, 3)));
+void r_info(rlib *r, const gchar *fmt, ...) __attribute__ ((format (printf, 2, 3)));
+void r_warning(rlib *r, const gchar *fmt, ...) __attribute__ ((format (printf, 2, 3)));
+void r_error(rlib *r, const gchar *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 
 #endif /* RLIB_H_ */

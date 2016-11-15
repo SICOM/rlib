@@ -44,6 +44,9 @@ struct rlib_xml_results {
 	xmlNodePtr last_row;
 	xmlNodePtr this_row;
 	xmlNodePtr first_field;
+	gint rows;
+	gint cols;
+	gint atstart;
 	gint isdone;
 };
 
@@ -64,67 +67,48 @@ static const gchar* rlib_xml_get_error(gpointer input_ptr UNUSED) {
 }
 
 
-static gint rlib_xml_first(gpointer input_ptr UNUSED, gpointer result_ptr) {
+static void rlib_xml_start(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_xml_results *result = result_ptr;
 
-	result->this_row = result->first_row;
-	if (result->this_row == NULL) {
-		result->isdone = TRUE;
-		return FALSE;
-	}
+	if (result == NULL)
+		return;
 
+	result->this_row = NULL;
+	result->atstart = TRUE;
 	result->isdone = FALSE;
-	return TRUE;
 }
 
 static gint rlib_xml_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_xml_results *result = result_ptr;
 	xmlNodePtr row;
 
+	if (result == NULL)
+		return FALSE;
+
 	if (result->isdone)
 		return FALSE;
 
-	for (row = result->this_row->next; row != NULL && xmlStrcmp(row->name, (const xmlChar *) "row") != 0; row = row->next);
+	if (result->atstart) {
+		result->atstart = FALSE;
+		row = result->first_row;
+	} else
+		row = result->this_row->next;
 
-	if (row == NULL) {
-		result->isdone = TRUE;
-		return FALSE;
-	}
+	while (row != NULL && xmlStrcmp(row->name, (const xmlChar *) "row") != 0)
+		row = row->next;
 
 	result->this_row = row;
-	result->isdone = FALSE;
-	return TRUE;
+	result->isdone = (row == NULL);
+	return !result->isdone;
 }
 
 static gint rlib_xml_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_xml_results *result = result_ptr;
+
+	if (result == NULL)
+		return FALSE;
+
 	return result->isdone;
-}
-
-static gint rlib_xml_previous(gpointer input_ptr UNUSED, gpointer result_ptr) {
-	struct rlib_xml_results *result = result_ptr;
-
-	if (result->this_row == NULL)
-		return FALSE;
-
-	if (result->this_row == result->first_row)
-		return FALSE;
-
-	result->isdone = FALSE;
-
-	for (result->this_row = result->this_row->prev; xmlStrcmp(result->this_row->name, (const xmlChar *) "row") != 0; result->this_row = result->this_row->prev);
-
-	return TRUE;
-}
-
-static gint rlib_xml_last(gpointer input_ptr UNUSED, gpointer result_ptr) {
-	struct rlib_xml_results *result = result_ptr;
-
-	result->this_row = result->last_row;
-	if (result->this_row == NULL)
-		result->isdone = TRUE;
-
-	return TRUE;
 }
 
 static gchar * rlib_xml_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
@@ -158,19 +142,27 @@ static gchar * rlib_xml_get_field_value_as_string(gpointer input_ptr UNUSED, gpo
 	return (gchar *)field_value->xmlChildrenNode->content;
 }
 
+static gint rlib_xml_num_fields(gpointer input_ptr UNUSED, gpointer result_ptr) {
+	struct rlib_xml_results *results = result_ptr;
+
+	if (results == NULL)
+		return 0;
+
+	return results->cols;
+}
+
 static gpointer rlib_xml_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) { 
 	struct rlib_xml_results *results = result_ptr;
 	xmlNodePtr field;
-	gint field_index = 0;
+	gint i;
 
-	for (field = results->first_field; field != NULL; field = field->next) {
-		if (xmlStrcmp(field->name, (const xmlChar *) "field") == 0) {
-			++field_index;
+	if (results == NULL)
+		return NULL;
 
+	for (i = 1, field = results->first_field; field != NULL; field = field->next, i++)
+		if (xmlStrcmp(field->name, (const xmlChar *) "field") == 0)
 			if (xmlStrcmp(field->xmlChildrenNode->content, (const xmlChar *)name) == 0)
-				return GINT_TO_POINTER(field_index);
-		}
-	}
+				return GINT_TO_POINTER(i);
 
 	return NULL;
 }
@@ -188,6 +180,8 @@ static void *xml_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	xmlNodePtr first_field;
 	xmlDocPtr doc;
 	gchar *file;
+	gint nrows = 0;
+	gint ncols = 0;
 
 	file = get_filename(input->r, query->sql, -1, FALSE, FALSE);
 	doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
@@ -230,11 +224,13 @@ static void *xml_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 
 	first_row = NULL;
 	last_row = NULL;
+	nrows = 0;
 	for (cur = rows->xmlChildrenNode; cur; cur = cur->next) {
 		if (xmlStrcmp(cur->name, (const xmlChar *) "row") == 0) {
 			if (first_row == NULL)
 				first_row = cur;
 			last_row = cur;
+			nrows++;
 		}
 	}
 
@@ -244,9 +240,11 @@ static void *xml_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	}
 
 	first_field = NULL;
-	for (cur = fields->xmlChildrenNode; cur && first_field == NULL; cur = cur->next) {
-		if (xmlStrcmp(cur->name, (const xmlChar *) "field") == 0)
+	ncols = 0;
+	for (cur = fields->xmlChildrenNode; cur; cur = cur->next) {
+		if (first_field == NULL && xmlStrcmp(cur->name, (const xmlChar *) "field") == 0)
 			first_field = cur;
+		ncols++;
 	}
 
 	if (first_field == NULL) {
@@ -264,6 +262,8 @@ static void *xml_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	results->this_row = first_row;
 	results->first_field = first_field;
 	results->isdone = FALSE;
+	results->rows = nrows;
+	results->cols = ncols;
 	return results;
 }
 
@@ -294,10 +294,9 @@ gpointer rlib_xml_new_input_filter(rlib *r) {
 	input->r = r;
 	input->connect_with_connstr = rlib_xml_connect;
 	input->input_close = rlib_xml_input_close;
-	input->first = rlib_xml_first;
+	input->num_fields = rlib_xml_num_fields;
+	input->start = rlib_xml_start;
 	input->next = rlib_xml_next;
-	input->previous = rlib_xml_previous;
-	input->last = rlib_xml_last;
 	input->isdone = rlib_xml_isdone;
 	input->get_error = rlib_xml_get_error;
 	input->new_result_from_query = xml_new_result_from_query;

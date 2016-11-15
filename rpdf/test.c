@@ -31,8 +31,10 @@
 
 #define UNUSED __attribute__((unused))
 
-static void callback_test(gchar *data, gint len UNUSED, gpointer user_data UNUSED) {
-	sprintf(data, "IT WORKED!");
+static gchar *callback_test(gchar *data, gint len UNUSED, gpointer user_data UNUSED) {
+	static gchar *str = "IT WORKED!";
+	sprintf(data, str);
+	return str;
 }
 
 int main(void) {

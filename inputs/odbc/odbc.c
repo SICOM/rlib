@@ -41,11 +41,6 @@
 
 #define UNUSED __attribute__((unused))
 
-struct odbc_fields {
-	gint col;
-	gchar name[512];
-};
-
 struct odbc_field_values {
 	gint len;
 	gchar *value;
@@ -53,14 +48,13 @@ struct odbc_field_values {
 
 struct rlib_odbc_results {
 	gchar *name;
-	SQLHSTMT V_OD_hstmt;
 	gint tot_fields;
 	gint total_size;
+	gint atstart;
 	gint isdone;
-	gboolean forward_only;
 	GList *data;
 	GList *navigator;
-	struct odbc_fields *fields;
+	gchar **fields;
 	struct odbc_field_values *values;
 };
 
@@ -167,78 +161,33 @@ static void rlib_odbc_load_from_navigator(struct rlib_odbc_results *result) {
 		gint i=0;
 		for(data = result->navigator->data;data != NULL; data = data->next) {
 			strcpy(result->values[i++].value, data->data);
-		}	
+		}
 	}
 }
 
-static gint odbc_read_first(gpointer result_ptr) {
-	struct rlib_odbc_results *results = result_ptr;
-	gint V_OD_erg;
-	gint i;
-	SQLLEN ind;
-	if(SQL_SUCCEEDED(( V_OD_erg = SQLFetchScroll (results->V_OD_hstmt, SQL_FETCH_FIRST, 0)))) {
-		for (i=0;i<results->tot_fields;i++)
-			if (!SQL_SUCCEEDED(( V_OD_erg = SQLGetData(results->V_OD_hstmt, i + 1, SQL_C_CHAR, results->values[i].value, results->values[i].len + 1, &ind))) || ind == SQL_NULL_DATA)
-				results->values[i].value = '\0';
-		return TRUE;
-	}
-	return FALSE;
-}
-
-
-static gint rlib_odbc_first(gpointer input_ptr UNUSED, gpointer result_ptr) {
+static void rlib_odbc_start(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_odbc_results *result = result_ptr;
 
-	if(result_ptr == NULL)
-		return FALSE;
+	if (result == NULL)
+		return;
 
-	if(result->forward_only == TRUE) {
-		result->navigator = g_list_first(result->data);
-		result->isdone = FALSE;
-		rlib_odbc_load_from_navigator(result);	
-		if(result->navigator == NULL)
-			return FALSE;
-		else
-			return TRUE;
-	} else {
-		result->isdone = FALSE;
-		return odbc_read_first(result_ptr);
-	}
-}
-
-static gint odbc_read_next(gpointer result_ptr) {
-	struct rlib_odbc_results *results = result_ptr;
-	gint V_OD_erg;
-	gint i;
-	SQLLEN ind;
-	if(SQL_SUCCEEDED(( V_OD_erg = SQLFetchScroll (results->V_OD_hstmt, SQL_FETCH_NEXT, 0)))) {
-		for (i=0;i<results->tot_fields;i++)
-			if (!SQL_SUCCEEDED(( V_OD_erg = SQLGetData(results->V_OD_hstmt, i + 1, SQL_C_CHAR, results->values[i].value, results->values[i].len + 1, &ind))) || ind == SQL_NULL_DATA)
-				results->values[i].value = '\0';
-		return TRUE;
-	}
-	return FALSE;
+	result->atstart = TRUE;
+	result->navigator = NULL;
+	result->isdone = FALSE;
 }
 
 static gint rlib_odbc_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_odbc_results *result = result_ptr;
 
-	if(result->forward_only == TRUE) {
+	if (result->atstart) {
+		result->atstart = FALSE;
+		result->navigator = g_list_first(result->data);
+	} else
 		result->navigator = g_list_next(result->navigator);
-		rlib_odbc_load_from_navigator(result);	
-		if(result->navigator == NULL) {
-			result->isdone = TRUE;
-			return FALSE;
-		} else {
-			result->isdone = FALSE;
-			return TRUE;
-		}
-	} else {
-		gint ret;
-		ret = odbc_read_next(result_ptr);
-		result->isdone = !ret;
-		return ret;
-	}
+	rlib_odbc_load_from_navigator(result);
+
+	result->isdone = (result->navigator == NULL);
+	return !result->isdone;
 }
 
 static gint rlib_odbc_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
@@ -246,91 +195,26 @@ static gint rlib_odbc_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	return result->isdone;
 }
 
-static gint odbc_read_prior(gpointer result_ptr) {
-	struct rlib_odbc_results *results = result_ptr;
-	gint V_OD_erg;
-	gint i;
-	SQLLEN ind;
-	if(SQL_SUCCEEDED(( V_OD_erg = SQLFetchScroll (results->V_OD_hstmt, SQL_FETCH_PRIOR, 0)))) {
-		for (i=0;i<results->tot_fields;i++)
-			if (!SQL_SUCCEEDED(( V_OD_erg = SQLGetData (results->V_OD_hstmt, i + 1, SQL_C_CHAR, results->values[i].value, results->values[i].len + 1, &ind))) || ind == SQL_NULL_DATA)
-				results->values[i].value = '\0';
-		return TRUE;
-	}
-	return FALSE;
-}
-
-static gint rlib_odbc_previous(gpointer input_ptr UNUSED, gpointer result_ptr) {
-	struct rlib_odbc_results *result = result_ptr;
-	if(result->forward_only == TRUE) {
-		result->navigator = g_list_previous(result->navigator);
-		rlib_odbc_load_from_navigator(result);	
-		if(result->navigator == NULL) {
-			result->isdone = TRUE;
-			return FALSE;
-		} else {
-			result->isdone = FALSE;
-			return TRUE;
-		}
-	} else {
-		gint ret;
-		ret = odbc_read_prior(result_ptr);
-		result->isdone = !ret;
-		return ret;
-	}
-}
-
-static gint odbc_read_last(gpointer result_ptr) {
-	struct rlib_odbc_results *results = result_ptr;
-	gint V_OD_erg;
-	gint i;
-	SQLLEN ind;
-	if(SQL_SUCCEEDED(( V_OD_erg = SQLFetchScroll (results->V_OD_hstmt, SQL_FETCH_LAST, 0)))) {
-		for (i=0;i<results->tot_fields;i++)
-			if (!SQL_SUCCEEDED(( V_OD_erg = SQLGetData(results->V_OD_hstmt, i + 1, SQL_C_CHAR, results->values[i].value, results->values[i].len + 1, &ind))) || ind == SQL_NULL_DATA)
-				results->values[i].value = '\0';
-		return TRUE;
-	}
-	return FALSE;
-}
-
-static gint rlib_odbc_last(gpointer input_ptr UNUSED, gpointer result_ptr) {
-	struct rlib_odbc_results *result = result_ptr;
-
-	if(result->forward_only == TRUE) {
-		result->navigator = g_list_last(result->navigator);
-		rlib_odbc_load_from_navigator(result);	
-		result->isdone = TRUE;
-		if(result->navigator == NULL) {
-			return FALSE;
-		} else {
-			return TRUE;
-		}
-	} else {
-		gint ret;
-		ret = odbc_read_last(result_ptr);
-		result->isdone = TRUE;
-		return ret;
-	}
-}
-
 static gchar * rlib_odbc_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_odbc_results *results = result_ptr;
-	struct odbc_fields *the_field = field_ptr;
-	gint field = the_field->col;
-	return results->values[field].value;
+	gint col = GPOINTER_TO_INT(field_ptr) - 1;
+
+	if (results == NULL || results->atstart || results->isdone)
+		return "";
+
+	return results->values[col].value;
 }
 
 static gpointer rlib_odbc_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) {
 	struct rlib_odbc_results *results = result_ptr;
-	gint i=0;
+	gint i;
 
-	if(result_ptr == NULL)
+	if (result_ptr == NULL)
 		return NULL;
 
 	for (i = 0; i < results->tot_fields; i++) {
-		if(!strcmp(results->fields[i].name, name)) {
-			return &results->fields[i];
+		if (!strcmp(results->fields[i], name)) {
+			return GINT_TO_POINTER(i + 1);
 		}
 	}
 	return NULL;
@@ -338,95 +222,99 @@ static gpointer rlib_odbc_resolve_field_pointer(gpointer input_ptr UNUSED, gpoin
 
 gpointer odbc_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	struct rlib_odbc_results *results;
-	struct input_filter *input = input_ptr;
 	struct rlib_query *query = query_ptr;
 	SQLHSTMT V_OD_hstmt;
 	SQLSMALLINT i, ncols;
 	gint V_OD_erg;
 	SQLULEN col_size;
-	SQLUINTEGER fFuncs;
 	SQLLEN ind;
 
 	V_OD_hstmt = rlib_odbc_query(input_ptr, query->sql);
 	if(V_OD_hstmt == NULL)
 		return NULL;
-	else {
-		results = g_malloc(sizeof(struct rlib_odbc_results));
-		results->V_OD_hstmt = V_OD_hstmt;
-	}
 
-	SQLGetInfo(INPUT_PRIVATE(input)->V_OD_hdbc,SQL_SCROLL_OPTIONS,(SQLPOINTER)&fFuncs,sizeof(fFuncs),NULL);
+	results = g_malloc(sizeof(struct rlib_odbc_results));
+	if (!results)
+		return NULL;
 
-	if(fFuncs & SQL_SO_FORWARD_ONLY) 
-		results->forward_only = TRUE;
-	else
-		results->forward_only = FALSE;
+	SQLNumResultCols(V_OD_hstmt, &ncols);
 
-	SQLNumResultCols (V_OD_hstmt, &ncols);
-
-	results->fields = g_malloc(sizeof(struct odbc_fields) * ncols);
-	results->values = g_malloc(sizeof(struct odbc_field_values) * ncols);
+	results->fields = g_new(gchar *, ncols);
+	results->values = g_new(struct odbc_field_values, ncols);
 
 	results->total_size = 0;
 	for (i = 0; i < ncols; i++) {
-		SQLCHAR name[ 256 ];
+		SQLCHAR name[256];
 		SQLSMALLINT name_length;
-		V_OD_erg = SQLDescribeCol( V_OD_hstmt, i+1,	name, sizeof( name ), &name_length, NULL, &col_size, NULL, NULL );
-		results->fields[i].col = i;
-		if (SQL_SUCCEEDED(V_OD_erg)) {
-			strcpy(results->fields[i].name, (char *)name);
-		} else {
-			strcpy(results->fields[i].name, "");
+		V_OD_erg = SQLDescribeCol( V_OD_hstmt, i + 1, name, sizeof(name), &name_length, NULL, &col_size, NULL, NULL);
+		if (!SQL_SUCCEEDED(V_OD_erg)) {
+			name[0] = '\0';
 			col_size = 0;
 		}
+		results->fields[i] = g_strdup((char *)name);
+
 		results->values[i].len = col_size;
 		results->values[i].value = g_malloc(col_size+1);
-		results->total_size += col_size+1;
+		results->total_size += col_size + 1;
 	}
 	
 	results->tot_fields = ncols;
 	results->data = NULL;
 	
-	if(results->forward_only) {
-		int i;
-		results->data = NULL;
-		if(SQL_SUCCEEDED(( V_OD_erg = SQLFetchScroll (results->V_OD_hstmt, SQL_FETCH_NEXT, 0)))) {
-			do {
-				GSList *row_data = NULL;
-				for (i=0;i<results->tot_fields;i++) {
-					V_OD_erg = SQLGetData (results->V_OD_hstmt, i+1, SQL_C_CHAR, results->values[i].value, results->values[i].len+1, &ind);
-					if (SQL_SUCCEEDED(V_OD_erg) && ind != SQL_NULL_DATA)
+	results->data = NULL;
+	if (SQL_SUCCEEDED((V_OD_erg = SQLFetchScroll(V_OD_hstmt, SQL_FETCH_NEXT, 0)))) {
+		do {
+			GSList *row_data = NULL;
+			int i;
+			for (i = 0; i < results->tot_fields; i++) {
+				V_OD_erg = SQLGetData(V_OD_hstmt, i + 1, SQL_C_CHAR, results->values[i].value, results->values[i].len + 1, &ind);
+				if (SQL_SUCCEEDED(V_OD_erg) && ind != SQL_NULL_DATA) {
+					if (results->values[i].value[0])
 						row_data = g_slist_append(row_data, g_strdup(results->values[i].value));
 					else
 						row_data = g_slist_append(row_data, "");
-				}
+				} else
+					row_data = g_slist_append(row_data, "");
+			}
 
-				results->data = g_list_append(results->data, row_data);
+			results->data = g_list_append(results->data, row_data);
 
-			} while(SQL_SUCCEEDED(( V_OD_erg = SQLFetchScroll (results->V_OD_hstmt, SQL_FETCH_NEXT, 0))));
-		}
+		} while(SQL_SUCCEEDED((V_OD_erg = SQLFetchScroll(V_OD_hstmt, SQL_FETCH_NEXT, 0))));
 	}
-	
+
+	SQLFreeHandle(SQL_HANDLE_STMT, V_OD_hstmt);
+
 	return results;
 }
+
+static gint rlib_odbc_num_fields(gpointer input_ptr UNUSED, gpointer result_ptr) {
+	struct rlib_odbc_results *result = result_ptr;
+
+	if (result == NULL)
+		return 0;
+
+	return result->tot_fields;
+}
+
 
 static void rlib_odbc_rlib_free_result(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_odbc_results *results = result_ptr;
 	gint i;
-	
-	if(results->forward_only == TRUE && results->data != NULL) {
-		GList *list;
-		for(list=results->data;list != NULL; list=list->next) {
-			GSList *data;
-			for(data = list->data; data != NULL; data = data->next)
-				g_free(data->data);
-			g_slist_free(list->data);
-		}	
-		g_list_free(results->data);
+	GList *list;
+
+	for (list = results->data; list != NULL; list = list->next) {
+		GSList *data;
+		for (data = list->data; data != NULL; data = data->next) {
+			gchar *value = data->data;
+			if (value[0])
+				g_free(value);
+		}
+		g_slist_free(list->data);
 	}
+	g_list_free(results->data);
 	
-	SQLFreeHandle(SQL_HANDLE_STMT,results->V_OD_hstmt);
-	for(i=0;i<results->tot_fields;i++) {
+	for (i = 0; i < results->tot_fields;i++) {
+		g_free(results->fields[i]);
 		g_free(results->values[i].value);
 	}
 	g_free(results->fields);
@@ -459,10 +347,9 @@ DLL_EXPORT_SYM gpointer new_input_filter(rlib *r) {
 	input->r = r;
 	input->connect_local_with_credentials = rlib_odbc_connect;
 	input->input_close = rlib_odbc_input_close;
-	input->first = rlib_odbc_first;
+	input->num_fields = rlib_odbc_num_fields;
+	input->start = rlib_odbc_start;
 	input->next = rlib_odbc_next;
-	input->previous = rlib_odbc_previous;
-	input->last = rlib_odbc_last;
 	input->isdone = rlib_odbc_isdone;
 	input->new_result_from_query = odbc_new_result_from_query;
 	input->get_field_value_as_string = rlib_odbc_get_field_value_as_string;
@@ -472,5 +359,6 @@ DLL_EXPORT_SYM gpointer new_input_filter(rlib *r) {
 
 	input->free = rlib_odbc_free_input_filter;
 	input->free_result = rlib_odbc_rlib_free_result;
+
 	return input;
 }

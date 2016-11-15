@@ -56,26 +56,25 @@ gint resolve_rlib_variable(gchar *name) {
 	return 0;
 }
 
-gchar * rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
+gchar *rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 	struct input_filter *rs = INPUT(r, rf->resultset);
 #if !DISABLE_UTF8
 	gsize slen, elen;
 	gchar *ptr = NULL;
-#endif	
+#endif
 	gchar *str;
 
-
-	if(r->results[rf->resultset]->navigation_failed == TRUE)
+	if (r->results[rf->resultset]->navigation_failed == TRUE)
 		return NULL;
 
-	if(rf->field != NULL)
+	if (rf->field != NULL)
 		str = rs->get_field_value_as_string(rs, r->results[rf->resultset]->result, rf->field);
 	else
 		str = "";
 #if DISABLE_UTF8
 	return g_strdup(str);
 #else
-	if(str == NULL)
+	if (str == NULL)
 		return g_strdup("");
 	else {
 		slen = strlen(str);
@@ -151,7 +150,6 @@ static void rlib_field_resolve_pcode(rlib *r, struct rlib_part *part, struct rli
 	rf->color_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_color.xml, rf->xml_color.line, TRUE);
 	rf->bgcolor_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_bgcolor.xml, rf->xml_bgcolor.line, TRUE);
 	rf->col_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_col.xml, rf->xml_col.line, TRUE);
-	rf->delayed_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_delayed.xml, rf->xml_delayed.line, TRUE);
 	rf->width_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_width.xml, rf->xml_width.line, TRUE);
 	rf->bold_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_bold.xml, rf->xml_bold.line, TRUE);
 	rf->italics_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_italics.xml, rf->xml_italics.line, TRUE);
@@ -192,18 +190,15 @@ static void rlib_variable_resolve_pcode(rlib *r, struct rlib_part *part, struct 
 	gint t;
 
 	rv->code = rlib_infix_to_pcode(r, part, report, (gchar *)rv->xml_value.xml, rv->xml_value.line, TRUE);
-
-	code = rlib_infix_to_pcode(r, part, report, (gchar *)rv->xml_precalculate.xml, rv->xml_precalculate.line, TRUE);
 	rv->ignore_code = rlib_infix_to_pcode(r, part, report, (gchar *)rv->xml_ignore.xml, rv->xml_ignore.line, TRUE);
 
+	code = rlib_infix_to_pcode(r, part, report, (gchar *)rv->xml_precalculate.xml, rv->xml_precalculate.line, TRUE);
 	if (rlib_execute_as_boolean(r, code, &t)) {
 		rv->precalculate = t;
 	} else {
 		rv->precalculate = FALSE;
 	}
 	rlib_pcode_free(r, code);
-
-	rv->precalculated_values = NULL;
 }
 
 static void rlib_hr_resolve_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_horizontal_line * rhl) {
@@ -319,9 +314,9 @@ struct rlib_report_variable *rlib_resolve_variable(rlib *r, struct rlib_part *pa
 		name += 2;
 		for (e = report->variables; e != NULL; e = e->next) {
 			struct rlib_report_variable *rv = e->data;
-		if (!strcmp(name, (char *)rv->xml_name.xml))
-			return rv;
-		}	
+			if (!strcmp(name, (char *)rv->xml_name.xml))
+				return rv;
+		}
 		rlogit(r, "rlib_resolve_variable: Could not find [%s]\n", name);
 	}
 	return NULL;
@@ -579,11 +574,97 @@ void rlib_process_input_metadata(rlib *r) {
 }
 
 void rlib_resolve_followers(rlib *r) {
-	gint i;
-	for(i=0; i<r->resultset_followers_count; i++) {
-        	r->followers[i].leader_code = 
-			rlib_infix_to_pcode(r, NULL, NULL, r->followers[i].leader_field, -1, FALSE);
-        	r->followers[i].follower_code = 
-			rlib_infix_to_pcode(r, NULL, NULL, r->followers[i].follower_field, -1, FALSE);
+	gint i, reattached;
+
+	/*
+	 * Separate the followers list that was easier
+	 * to check in rlib_add_resultset_follower_n_to_1() and
+	 * rlib_add_resultset_follower() as a tree into two lists:
+	 * the 1:1 followers and n:1 followers_n_to_1 lists.
+	 */
+	for (i = 0; i < r->queries_count; i++) {
+		GList *list0, *list;
+		GList *new_f = NULL, *new_f_n_to_1 = NULL;
+
+		list0 = r->queries[i]->followers;
+		for (list = list0; list; list = list->next) {
+			struct rlib_resultset_followers *f = list->data;
+
+			if (f->leader_field && f->follower_field) {
+				f->leader_code = rlib_infix_to_pcode(r, NULL, NULL, f->leader_field, -1, FALSE);
+				f->follower_code = rlib_infix_to_pcode(r, NULL, NULL, f->follower_field, -1, FALSE);
+				new_f_n_to_1 = g_list_append(new_f_n_to_1, f);
+			} else
+				new_f = g_list_append(new_f, f);
+		}
+
+		r->queries[i]->followers = new_f;
+		r->queries[i]->followers_n_to_1 = new_f_n_to_1;
+
+		g_list_free(list0);
+	}
+
+	/*
+	 * Flatten followers as much as possible,
+	 * A leader -> 1:1 -> (anything) chain is equivalent to
+	 * keeping the leader -> 1:1 chain and move leafs under
+	 * the 1:1 child follower to the leader.
+	 */
+	reattached = TRUE;
+	while (reattached) {
+		reattached = FALSE;
+		for (i = r->queries_count; i; i--) {
+			struct rlib_query_internal *leader = r->queries[i - 1]->leader;
+			if (leader) {
+				GList *list, *list1;
+				for (list = leader->followers; list; list = list->next) {
+					struct rlib_resultset_followers *f = list->data;
+					struct rlib_query_internal *follower = r->queries[f->follower];
+
+					for (list1 = follower->followers; list1; list1 = list1->next) {
+						struct rlib_resultset_followers *f1 = list1->data;
+						struct rlib_query_internal *follower1 = r->queries[f1->follower];
+
+						f1->leader = leader->query_index;
+						follower1->leader = leader;
+						reattached = TRUE;
+					}
+					leader->followers = g_list_concat(leader->followers, follower->followers);
+					follower->followers = NULL;
+
+					for (list1 = follower->followers_n_to_1; list1; list1 = list1->next) {
+						struct rlib_resultset_followers *f1 = list1->data;
+						struct rlib_query_internal *follower1 = r->queries[f1->follower];
+
+						f1->leader = leader->query_index;
+						follower1->leader = leader;
+						reattached = TRUE;
+					}
+					leader->followers_n_to_1 = g_list_concat(leader->followers_n_to_1, follower->followers_n_to_1);
+					follower->followers_n_to_1 = NULL;
+				}
+			}
+		}
+	}
+}
+
+void rlib_resolve_breaks(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report) {
+	struct rlib_element *e, *f;
+
+	if (report == NULL && part != NULL)
+		report = part->only_report;
+	if (report == NULL)
+		return;
+
+	for (e = report->breaks; e; e = e->next) {
+		struct rlib_report_break *rb = e->data;
+		for (f = report->variables; f; f = f->next) {
+			struct rlib_report_variable *rv = f->data;
+
+			if (strcmp((char *)rb->xml_name.xml, (char *)rv->xml_resetonbreak.xml) == 0) {
+				rv->resetonbreak = rb;
+				rb->variables = g_slist_append(rb->variables, rv);
+			}
+		}
 	}
 }

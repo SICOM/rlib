@@ -229,10 +229,10 @@ gint rlib_format_string(rlib *r, gchar **dest, struct rlib_report_field *rf, str
 	gchar before[MAXSTRLEN], after[MAXSTRLEN];
 	gint before_len = 0, after_len = 0;
 	gboolean formatted_it = FALSE;	
-	
-	if(r->special_locale != NULL) 
+
+	if (r->special_locale != NULL)
 		setlocale(LC_ALL, r->special_locale);
-	if(rf->xml_format.xml == NULL) {
+	if (rf->xml_format.xml == NULL) {
 		rlib_format_string_default(r, rval, dest);
 	} else {
 		gchar *formatstring;

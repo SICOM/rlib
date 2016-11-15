@@ -33,7 +33,7 @@
 		<para>
 			<inlinemediaobject>
 				<imageobject>
-					<imagedata fileref="IMAGES/namedcolors.png" align=center>
+					<imagedata fileref="IMAGES/namedcolors.png" align="center"/>
 				</imageobject>
 			</inlinemediaobject>		
 		</para>

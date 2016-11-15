@@ -20,7 +20,7 @@ dnl Report bugs to rlib-devel@lists.sourceforge.net
 dnl
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([rlib],[2.0.14],[http://bugzilla.sicompos.com])
+AC_INIT([rlib],[2.0.15],[http://bugzilla.sicompos.com])
 AC_CANONICAL_TARGET
 AC_CONFIG_SRCDIR(libsrc/rlib.h)
 AC_CONFIG_MACRO_DIR([m4])
@@ -35,7 +35,7 @@ AC_SUBST(RLIB_VERSION)
 
 RLIB_LT_CURRENT=4
 RLIB_LT_AGE=3
-RLIB_LT_REVISION=14
+RLIB_LT_REVISION=15
 AC_SUBST(RLIB_LT_CURRENT)
 AC_SUBST(RLIB_LT_REVISION)
 AC_SUBST(RLIB_LT_AGE)
@@ -158,10 +158,10 @@ AC_ARG_ENABLE([mysql],
 	[AS_HELP_STRING([--disable-mysql],[disable mysql backend])],,enable_mysql=yes)
 AS_IF([test x$enable_mysql = xyes],[
 	dnl Use the standard MySQL detection from mysql.m4
-	dnl MYSQL_CLIENT sets MYSQL_CLIENT_CFLAGS and MYSQL_CLIENT_LIBS.
-	dnl Lets set out own MYSQL_CFLAGS and MYSQL_LIBS too.
 	dnl It will make ./configure bail with an error if detection fails
 	dnl instead of silently ignoring it.
+	dnl MYSQL_CLIENT() sets MYSQL_CLIENT_CFLAGS and MYSQL_CLIENT_LIBS.
+	dnl Lets set our own MYSQL_CFLAGS and MYSQL_LIBS too.
 	MYSQL_CLIENT()
 	MYSQL_CFLAGS=${MYSQL_CLIENT_CFLAGS}
 	AC_SUBST(MYSQL_CFLAGS)
@@ -452,7 +452,7 @@ dnl -D_GNU_SOURCE is needed.
 dnl For llabs(), -D_ISOC99_SOURCE is enough,
 dnl but e.g. strcasecmp is a GNU extension.
 
-CFLAGS="-D_GNU_SOURCE -Wall -Wextra -Werror"
+CFLAGS="-D_GNU_SOURCE -Wall -Wextra -Werror $CFLAGS"
 
 RLIB_CFLAGS="$LIBXML_CFLAGS $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $MYSQL_CFLAGS $POSTGRES_CFLAGS $ODBC_CFLAGS $GD_CFLAGS $NO_CYGWIN"
 RLIB_LIBS="$LIBXML_LIBS $LIBGLIB_LIBS $LIBGMODULE_LIBS $ICONVLIBS $GD_LDFLAGS $GD_LIBS $GD_LINK "
@@ -542,7 +542,7 @@ rlib-$VERSION:
      PERL entension dir:     ${perl_where}
 
    ** If you like RLIB send a postcard from where you are in the world to:
-   ** Bob Doan - 4140 Skyron Drive - Doylestown - PA - 18902 - USA
+   ** Bob Doan - 4434 Progress Meadow Drive - Doylestown - PA - 18902 - USA
 
    Music:                    RHCP / Virgin Radio	
    Having Problems:          rlib-users@lists.sf.net 	

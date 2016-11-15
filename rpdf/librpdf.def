@@ -32,3 +32,4 @@ rpdf_text_width@28
 rpdf_arc@29
 rpdf_get_buffer@30
 rpdf_free@31
+rpdf_finalize_text_callback@32

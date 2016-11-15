@@ -178,7 +178,8 @@ static void csv_start_output_section(rlib *r UNUSED, struct rlib_report_output_a
 
 static void csv_start_evil_csv(rlib *r) {
 	gint i;
-	for(i=0;i<MAX_COL;i++) {
+
+	for (i = 0; i < MAX_COL; i++) {
 		OUTPUT_PRIVATE(r)->col[i][0] = 0;
 	}
 }
@@ -341,6 +342,7 @@ void rlib_csv_new_output_filter(rlib *r) {
 	OUTPUT(r)->print_text = csv_print_text;
 	/* Fix a memory leak in layout.c */
 	OUTPUT(r)->print_text_delayed = NULL;
+	OUTPUT(r)->finalize_text_delayed = NULL;
 	OUTPUT(r)->set_fg_color = csv_set_fg_color;
 	OUTPUT(r)->set_bg_color = csv_set_bg_color;
 	OUTPUT(r)->hr = csv_hr;
