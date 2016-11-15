@@ -180,7 +180,6 @@ static GString *html_print_text_common(const gchar *text, struct rlib_line_extra
 	GString *string = g_string_new("");
 	gchar *escaped;
 	gint pos;
-	gboolean only_spaces;
 
 	g_string_append_printf(string, "<span data-col=\"%d\" data-width=\"%d\" style=\"font-size: %dpx; ", extra_data->col, extra_data->width, BIGGER_HTML_FONT(extra_data->font_point));
 
@@ -195,7 +194,9 @@ static GString *html_print_text_common(const gchar *text, struct rlib_line_extra
 
 	g_string_append(string,"\">");
 	escaped = g_markup_escape_text(text, strlen(text));
-	only_spaces = TRUE;
+
+#if 0
+	gboolean only_spaces = TRUE;
 	for (pos = 0; escaped[pos]; pos++) {
 		if (!isspace(escaped[pos])) {
 			only_spaces = FALSE;
@@ -211,7 +212,19 @@ static GString *html_print_text_common(const gchar *text, struct rlib_line_extra
 		g_free(escaped);
 		escaped = g_string_free(new_esc, FALSE);
 	}
-
+#else
+	{
+		GString *new_esc = g_string_new(NULL);
+		for (pos = 0; escaped[pos]; pos++) {
+			if (isspace(escaped[pos]))
+				g_string_append(new_esc, "&nbsp;");
+			else
+				g_string_append_c(new_esc, escaped[pos]);
+		}
+		g_free(escaped);
+		escaped = g_string_free(new_esc, FALSE);
+	}
+#endif
 	g_string_append(string, escaped);
 	g_string_append(string, "</span>");
 	g_free(escaped);
