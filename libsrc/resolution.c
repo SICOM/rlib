@@ -38,7 +38,7 @@
 	In this case r.pageno
 
 */
-gint64 resolve_rlib_variable(gchar *name) {
+gint resolve_rlib_variable(gchar *name) {
 	if(r_strlen(name) >= 3 && name[0] == 'r' && name[1] == '.') {
 		name += 2;
 		if(!strcmp(name, "pageno"))
@@ -86,8 +86,8 @@ gchar *rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 #endif
 }
 
-gint64 rlib_lookup_result(rlib *r, gchar *name) {
-	gint64 i;
+gint rlib_lookup_result(rlib *r, gchar *name) {
+	gint i;
 	for (i = 0; i < r->queries_count; i++) {
 		if (r->results[i]->name != NULL) {
 			if (!strcmp(r->results[i]->name, name))
@@ -97,9 +97,9 @@ gint64 rlib_lookup_result(rlib *r, gchar *name) {
 	return -1;
 }
 
-gint64 rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gint64 *rtn_resultset) {
-	gint64 resultset=0;
-	gint64 found = FALSE;
+gboolean rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gint *rtn_resultset) {
+	gint resultset = 0;
+	gboolean found = FALSE;
 	gchar *right_side = NULL, *result_name = NULL;
 
 	if (r->results == NULL)
@@ -575,7 +575,8 @@ void rlib_process_input_metadata(rlib *r) {
 }
 
 void rlib_resolve_followers(rlib *r) {
-	gint64 i, reattached;
+	gint i;
+	gboolean reattached;
 
 	/*
 	 * Separate the followers list that was easier

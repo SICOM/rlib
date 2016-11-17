@@ -300,7 +300,7 @@ gint rvalcmp(rlib *r, struct rlib_value *v1, struct rlib_value *v2) {
 }
 
 struct rlib_pcode_operand *rlib_new_operand(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *str, gchar *infix, gint line_number, gboolean look_at_metadata) {
-	gint64 resultset;
+	gint resultset;
 	gpointer field = NULL;
 	gchar *memresult;
 	struct rlib_pcode_operand *o;
@@ -1702,7 +1702,7 @@ gboolean rlib_execute_as_boolean(rlib *r, struct rlib_pcode *pcode, gboolean *re
 	return retval;
 }
 
-gboolean rlib_execute_as_string(rlib *r, struct rlib_pcode *pcode, gchar *buf, gint64 buf_len) {
+gboolean rlib_execute_as_string(rlib *r, struct rlib_pcode *pcode, gchar *buf, gint buf_len) {
 	struct rlib_value rval;
 	gboolean isok = FALSE;
 

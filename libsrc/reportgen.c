@@ -37,7 +37,7 @@
 
 struct _rlib_format_table {
 	gchar name[64];
-	gint64 number;
+	gint number;
 } rlib_fomat_table[] =  {
 	{ "PDF", RLIB_FORMAT_PDF},
 	{ "HTML", RLIB_FORMAT_HTML},
@@ -47,7 +47,7 @@ struct _rlib_format_table {
 	{ "", -1},
 };
 
-gint64 rlib_format_get_number(const gchar *name) {
+gint rlib_format_get_number(const gchar *name) {
 	int i = 0;
 	while (rlib_fomat_table[i].number != -1) {
 		if (strcasecmp(rlib_fomat_table[i].name, name) == 0)
@@ -57,7 +57,7 @@ gint64 rlib_format_get_number(const gchar *name) {
 	return -1;
 }
 
-const gchar * rlib_format_get_name(gint64 number) {
+const gchar * rlib_format_get_name(gint number) {
 	int i = 0;
 	while(rlib_fomat_table[i].number != -1) {
 		if (rlib_fomat_table[i].number == number)
@@ -74,8 +74,8 @@ static const gchar *orientations[] = {
 	NULL
 };
 
-gint64 get_font_point(struct rlib_part *part, struct rlib_report *report, struct rlib_report_lines *rl) {
-	gint64 use_font_point;
+gint get_font_point(struct rlib_part *part, struct rlib_report *report, struct rlib_report_lines *rl) {
+	gint use_font_point;
 	
 	if (rl->font_point > 0)
 		use_font_point = rl->font_point;
@@ -88,7 +88,7 @@ gint64 get_font_point(struct rlib_part *part, struct rlib_report *report, struct
 }	
 
 
-gint64 rlib_emit_signal(rlib *r, gint64 signal_number) {
+gint rlib_emit_signal(rlib *r, gint signal_number) {
 	gboolean (*signal_function)(rlib *, gpointer) = r->signal_functions[signal_number].signal_function;
 	gpointer data = r->signal_functions[signal_number].data;
 	if (signal_function != NULL)
@@ -98,7 +98,7 @@ gint64 rlib_emit_signal(rlib *r, gint64 signal_number) {
 }
 
 void rlib_handle_page_footer(rlib *r, struct rlib_part *part, struct rlib_report *report) {
-	gint64 i;
+	gint i;
 
 	for (i = 0; i < report->pages_across; i++) {
 		report->bottom_size[i] = get_outputs_size(part, report, report->page_footer, i);
@@ -133,8 +133,8 @@ gdouble get_output_size(struct rlib_part *part, struct rlib_report *report, stru
 	return total;
 }
 
-gdouble get_outputs_size(struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint64 page) {
-	gdouble total=0;
+gdouble get_outputs_size(struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint page) {
+	gdouble total = 0;
 	struct rlib_report_output_array *roa;
 
 	for(; e != NULL; e = e->next) {
@@ -146,7 +146,7 @@ gdouble get_outputs_size(struct rlib_part *part, struct rlib_report *report, str
 	return total;
 }
 
-gint64 rlib_will_this_fit(rlib *r, struct rlib_part *part, struct rlib_report *report, gdouble total, gint64 page) {
+gboolean rlib_will_this_fit(rlib *r, struct rlib_part *part, struct rlib_report *report, gdouble total, gint page) {
 	if (OUTPUT(r)->paginate == FALSE)
 		return TRUE;
 
@@ -156,7 +156,7 @@ gint64 rlib_will_this_fit(rlib *r, struct rlib_part *part, struct rlib_report *r
 		return (report->position_top[page - 1] + total <= report->position_bottom[page - 1]);
 }
 
-gint64 will_outputs_fit(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint64 page) {
+gboolean will_outputs_fit(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint page) {
 	gdouble size = 0;
 	struct rlib_report_output_array *roa;
 
@@ -174,7 +174,7 @@ gint64 will_outputs_fit(rlib *r, struct rlib_part *part, struct rlib_report *rep
 }
 
 void set_report_from_part(struct rlib_part *part, struct rlib_report *report, gdouble top_margin_offset) {
-	gint64 i;
+	gint i;
 	for (i = 0; i < report->pages_across; i++) {
 		report->position_top[i] = report->top_margin + part->position_top[0] + top_margin_offset;
 		report->bottom_size[i] = part->bottom_size[0];
@@ -183,8 +183,9 @@ void set_report_from_part(struct rlib_part *part, struct rlib_report *report, gd
 
 }
 
-gint64 rlib_end_page_if_line_wont_fit(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e) {
-	gint64 i, fits = TRUE;
+gboolean rlib_end_page_if_line_wont_fit(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e) {
+	gint i;
+	gboolean fits = TRUE;
 
 	for (i = 0; i < report->pages_across; i++) {
 		if (!will_outputs_fit(r,part, report, e, i + 1))
@@ -195,7 +196,7 @@ gint64 rlib_end_page_if_line_wont_fit(rlib *r, struct rlib_part *part, struct rl
 	return !fits;
 }
 
-gint64 rlib_fetch_first_rows(rlib *r) {
+gboolean rlib_fetch_first_rows(rlib *r) {
 	rlib_navigate_start(r, r->current_result);
 	return rlib_navigate_next(r, r->current_result);
 }
@@ -663,9 +664,9 @@ gint64 rlib_evaulate_single_report_variables(rlib *r, struct rlib_part *part) {
 	return TRUE;
 }
 
-gint64 rlib_make_report(rlib *r) {
-	gint64 i = 0;
-	gint64 iterations;
+gint rlib_make_report(rlib *r) {
+	gint i = 0;
+	gint iterations;
 
 	if (r->format == RLIB_FORMAT_HTML) {
 		rlib_html_new_output_filter(r);
@@ -718,7 +719,7 @@ gint64 rlib_make_report(rlib *r) {
 	return 0;
 }
 
-gint64 rlib_finalize(rlib *r) {
+gint rlib_finalize(rlib *r) {
 	OUTPUT(r)->finalize_private(r);
 	return 0;
 }

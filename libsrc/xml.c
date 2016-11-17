@@ -34,7 +34,7 @@ struct _private {
 	GString *whole_report;
 	GString **top_of_page;
 	GString **bottom_of_page;
-	gint64 page_number;
+	gint page_number;
 };
 
 
@@ -59,7 +59,7 @@ static void xml_print_text(rlib *r, gdouble left_origin UNUSED, gdouble bottom_o
 	if (extra_data->report_field && extra_data->report_field->rval) 
 		field_type = rlib_xml_value_get_type_as_str(r, extra_data->report_field->rval);
 
-	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],"<data col=\"%" PRId64 "\" width=\"%" PRId64 "\" font_point=\"%" PRId64 "\" bold=\"%d\" italics=\"%d\" align=\"%s\" ", extra_data->col, extra_data->width, extra_data->font_point, extra_data->is_bold, extra_data->is_italics, extra_data->align == RLIB_ALIGN_CENTER ? "center" : extra_data->align == RLIB_ALIGN_RIGHT ? "right" : "left");
+	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],"<data col=\"%d\" width=\"%d\" font_point=\"%d\" bold=\"%d\" italics=\"%d\" align=\"%s\" ", extra_data->col, extra_data->width, extra_data->font_point, extra_data->is_bold, extra_data->is_italics, extra_data->align == RLIB_ALIGN_CENTER ? "center" : extra_data->align == RLIB_ALIGN_RIGHT ? "right" : "left");
 	if (extra_data->found_bgcolor)
 		g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],"bgcolor=\"#%02x%02x%02x\" ", color2hex(extra_data->bgcolor.r), color2hex(extra_data->bgcolor.g), color2hex(extra_data->bgcolor.b));
 	if (extra_data->found_color)

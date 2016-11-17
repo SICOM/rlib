@@ -181,7 +181,7 @@ static GString *html_print_text_common(const gchar *text, struct rlib_line_extra
 	gchar *escaped;
 	gint pos;
 
-	g_string_append_printf(string, "<span data-col=\"%" PRId64 "\" data-width=\"%" PRId64 "\" style=\"font-size: %" PRId64 "px; ", extra_data->col, extra_data->width, BIGGER_HTML_FONT(extra_data->font_point));
+	g_string_append_printf(string, "<span data-col=\"%d\" data-width=\"%d\" style=\"font-size: %dpx; ", extra_data->col, extra_data->width, BIGGER_HTML_FONT(extra_data->font_point));
 
 	if (extra_data->found_bgcolor)
 		g_string_append_printf(string, "background-color: #%02x%02x%02x; ", color2hex(extra_data->bgcolor.r), color2hex(extra_data->bgcolor.g), color2hex(extra_data->bgcolor.b));

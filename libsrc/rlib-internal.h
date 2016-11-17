@@ -173,8 +173,8 @@ struct rlib_report_literal {
 	struct rlib_from_xml xml_link;
 	struct rlib_from_xml xml_translate;
 
-	gint64 width;
-	gint64 align;
+	gint width;
+	gint align;
 
 	struct rlib_pcode *color_code;
 	struct rlib_pcode *bgcolor_code;
@@ -208,7 +208,7 @@ struct rlib_results {
 
 struct rlib_report_field {
 	gchar *value;
-	gint64 value_line_number;
+	gint value_line_number;
 	struct rlib_from_xml xml_align;
 	struct rlib_from_xml xml_bgcolor;
 	struct rlib_from_xml xml_color;
@@ -223,8 +223,8 @@ struct rlib_report_field {
 	struct rlib_from_xml xml_memo_max_lines;
 	struct rlib_from_xml xml_memo_wrap_chars;
 
-	gint64 width;
-	gint64 align;
+	gint width;
+	gint align;
 
 	struct rlib_pcode *code;
 	struct rlib_pcode *format_code;
@@ -261,40 +261,40 @@ struct rlib_line_extra_data {
 	struct rlib_value rval_image_height;
 	struct rlib_value rval_image_textwidth;
 
-	gint64 font_point;
+	gint font_point;
 	gchar* formatted_string;
-	gint64 width;
-	gint64 col;
-	gint64 delayed;
+	gint width;
+	gint col;
+	gboolean delayed;
 	struct rlib_rgb bgcolor;
-	gint64 found_bgcolor;
+	gboolean found_bgcolor;
 	gchar *link;
 	gboolean translate;
-	gint64 found_link;
-	gint64 align;
+	gboolean found_link;
+	gint align;
 	struct rlib_rgb color;
-	gint64 found_color;
+	gboolean found_color;
 	gdouble output_width;
-	gint64 running_bgcolor_status;
+	gint running_bgcolor_status;
 	gdouble running_bg_total;
-	gint64 running_link_status;
+	gint running_link_status;
 	gdouble running_link_total;
 	gboolean is_bold;
 	gboolean is_italics;
 	gboolean is_memo;
 	GSList *memo_lines;
-	gint64 memo_line_count;
+	gint memo_line_count;
 
 	struct rlib_pcode *field_code;
 	struct rlib_report_field *report_field;
 
-	gint64 report_index;
+	gint report_index;
 };
 
 struct rlib_delayed_extra_data {
 	void *r;
 	struct rlib_line_extra_data *extra_data;
-	gint64 backwards;
+	gboolean backwards;
 	gdouble left_origin;
 	gdouble bottom_origin;
 };
@@ -310,7 +310,7 @@ struct rlib_report_output {
 
 struct rlib_report_output_array {
 	struct rlib_from_xml xml_page;
-	gint64 page;
+	gint page;
 	struct rlib_from_xml xml_suppress;
 	gboolean suppress;
 	GSList *chain; /* struct rlib_report_output **data; */
@@ -324,10 +324,10 @@ struct rlib_report_horizontal_line {
 	struct rlib_from_xml xml_font_size;
 	struct rlib_from_xml xml_suppress;
 
-	gint64 font_point;
+	gint font_point;
 	gdouble size;
-	gint64 indent;
-	gint64 length;
+	gint indent;
+	gint length;
 
 	struct rlib_pcode *bgcolor_code;
 	struct rlib_pcode *size_code;
@@ -371,7 +371,7 @@ struct rlib_report_lines {
 	struct rlib_from_xml xml_font_size;
 	struct rlib_from_xml xml_suppress;
 
-	gint64 font_point;
+	gint font_point;
 
 	struct rlib_pcode *bgcolor_code;
 	struct rlib_pcode *color_code;
@@ -392,7 +392,7 @@ struct rlib_break_fields {
 
 struct rlib_break_delayed_data {
 	struct rlib_delayed_extra_data *delayed_data;
-	gint64 backwards;
+	gboolean backwards;
 };
 
 struct rlib_report_break {
@@ -401,9 +401,9 @@ struct rlib_report_break {
 	struct rlib_from_xml xml_headernewpage;
 	struct rlib_from_xml xml_suppressblank;
 
-	gint64 didheader;
-	gint64 headernewpage;
-	gint64 suppressblank;
+	gboolean didheader;
+	gboolean headernewpage;
+	gboolean suppressblank;
 
 	struct rlib_element *header;
 	struct rlib_element *fields;
@@ -528,7 +528,7 @@ struct rlib_graph_x_minor_tick {
 	gboolean by_name;
 	gchar *graph_name;
 	gchar *x_value;
-	gint64 location;
+	gint location;
 };
 
 
@@ -706,7 +706,7 @@ struct rlib_report {
 	struct rlib_element *alternate;
 	struct rlib_graph *graph;
 	struct rlib_chart *chart;
-	gint64 mainloop_query;
+	gint mainloop_query;
 
 	struct rlib_pcode *font_size_code;
 	struct rlib_pcode *query_code;
@@ -743,8 +743,8 @@ struct input_filters {
 };
 
 struct rlib_resultset_followers {
-	gint64 leader;
-	gint64 follower;
+	gint leader;
+	gint follower;
 	gchar *leader_field;
 	gchar *follower_field;
 	struct rlib_pcode *leader_code;
@@ -769,7 +769,7 @@ struct rlib_query_internal {
 	 * Keep these in sync!!!
 	 */
 	gchar *sql;
-	gint64 sql_allocated;
+	gboolean sql_allocated;
 	gchar *name;
 	struct input_filter *input;
 	gpointer *private;
@@ -778,14 +778,14 @@ struct rlib_query_internal {
 	 * These should be invisible to the public and the
 	 * input sources.
 	 */
-	gint64 query_index;	/* index in r->queries and r->results */
-	gint64 current_row;	/* virtual current row, can be larger than
+	gint query_index;	/* index in r->queries and r->results */
+	gint current_row;	/* virtual current row, can be larger than
 						 * the actual number of rows in the input source */
-	gint64 n_to_1_empty;	/* shortcut to track 0-row resultsets */
-	gint64 n_to_1_started;/* track rows in n:1 followers */
-	gint64 n_to_1_matched;
-	gint64 fcount;
-	gint64 fcount_n1;
+	gboolean n_to_1_empty;	/* shortcut to track 0-row resultsets */
+	gboolean n_to_1_started;/* track rows in n:1 followers */
+	gboolean n_to_1_matched;
+	gint fcount;
+	gint fcount_n1;
 	struct rlib_query_internal *leader;
 	GList *followers;
 	GList *followers_n_to_1;
@@ -845,8 +845,8 @@ struct rlib {
 	GSList *graph_regions;
 	GSList *graph_minor_x_ticks;
 
-	gint64 pcode_alpha_index;
-	gint64 pcode_alpha_m_index;
+	gint pcode_alpha_index;
+	gint pcode_alpha_m_index;
 
 	GIConv xml_encoder;
 };
@@ -1012,16 +1012,12 @@ ssize_t rlib_mpfr_strfmon(char * __restrict s, size_t maxsize, const char * __re
 
 GString *get_next_format_string(const gchar *fmt, gint expected_type, gint *out_type, gint *advance, gboolean *error) __attribute__((nonnull(3,4,5)));
 
-gint rlib_number_sprintf(rlib *r, gchar **dest, gchar *fmtstr, const struct rlib_value *rval, gint64 special_format, gchar *infix, gint line_number);
+gint rlib_number_sprintf(rlib *r, gchar **dest, gchar *fmtstr, const struct rlib_value *rval, gint special_format, gchar *infix, gint line_number);
 gboolean rlib_format_string(rlib *r, gchar **buf,  struct rlib_report_field *rf, struct rlib_value *rval);
 gboolean rlib_format_money(rlib *r, gchar **dest, const gchar *moneyformat, mpfr_t value);
 gboolean rlib_format_number(rlib *r, gchar **dest, const gchar *moneyformat, mpfr_t value);
-gchar *rlib_align_text(rlib *r, char **rtn, gchar *src, gint64 align, gint64 width);
-GSList *format_split_string(gchar *data, gint64 width, gchar new_line, gchar space, gint64 *line_count);
-
-/***** PROTOTYPES: fxp.c ******************************************************/
-gint64 rlib_fxp_mul(gint64 a, gint64 b, gint64 factor);
-gint64 rlib_fxp_div(gint64 num, gint64 denom, gint64 places);
+gchar *rlib_align_text(rlib *r, char **rtn, gchar *src, gint align, gint width);
+GSList *format_split_string(gchar *data, gint width, gchar new_line, gchar space, gint *line_count);
 
 /***** PROTOTYPES: api.c ******************************************************/
 void rlib_trap(void); /* For internals debugging only */
@@ -1029,7 +1025,7 @@ gboolean use_relative_filename(rlib *r);
 gchar *get_filename(rlib *r, const char *filename, gint report_index, gboolean report, gboolean use_as_is); /* not an exported API, no rlib_ prefix */
 
 /***** PROTOTYPES: parsexml.c *************************************************/
-struct rlib_part *parse_part_file(rlib *r, gboolean allow_fail, gint64 report_index);
+struct rlib_part *parse_part_file(rlib *r, gboolean allow_fail, gint report_index);
 struct rlib_report_output *report_output_new(gint type, gpointer data);
 
 /***** PROTOTYPES: pcode.c ****************************************************/
@@ -1040,7 +1036,7 @@ gboolean rlib_value_is_empty(rlib *, struct rlib_value *rval);
 gboolean rlib_execute_as_int(rlib *r, struct rlib_pcode *pcode, gint *result);
 gboolean rlib_execute_as_int64(rlib *r, struct rlib_pcode *pcode, gint64 *result);
 gboolean rlib_execute_as_boolean(rlib *r, struct rlib_pcode *pcode, gboolean *result);
-gboolean rlib_execute_as_string(rlib *r, struct rlib_pcode *pcode, gchar *buf, gint64 buf_len);
+gboolean rlib_execute_as_string(rlib *r, struct rlib_pcode *pcode, gchar *buf, gint buf_len);
 gboolean rlib_execute_as_int64_inlist(rlib *r, struct rlib_pcode *pcode, gint64 *result, const gchar *list[]);
 gboolean rlib_execute_as_double(rlib *r, struct rlib_pcode *pcode, gdouble *result);
 void rlib_pcode_find_index(rlib *r);
@@ -1048,26 +1044,26 @@ struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, stru
 
 /***** PROTOTYPES: reportgen.c ****************************************************/
 void set_report_from_part(struct rlib_part *part, struct rlib_report *report, gdouble top_margin_offset);
-gint64 will_outputs_fit(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint64 page);
-gint64 rlib_will_this_fit(rlib *r, struct rlib_part *part, struct rlib_report *report, gdouble total, gint64 page);
-gint64 get_font_point(struct rlib_part *part, struct rlib_report *report, struct rlib_report_lines *rl);
+gboolean will_outputs_fit(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint page);
+gint rlib_will_this_fit(rlib *r, struct rlib_part *part, struct rlib_report *report, gdouble total, gint page);
+gint get_font_point(struct rlib_part *part, struct rlib_report *report, struct rlib_report_lines *rl);
 gdouble get_output_size(struct rlib_part *part, struct rlib_report *report, struct rlib_report_output_array *roa);
-gint64 rlib_fetch_first_rows(rlib *r);
-gint64 rlib_end_page_if_line_wont_fit(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e) ;
-gdouble get_outputs_size(struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint64 page);
+gboolean rlib_fetch_first_rows(rlib *r);
+gboolean rlib_end_page_if_line_wont_fit(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e) ;
+gdouble get_outputs_size(struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint page);
 void rlib_init_page(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar report_header);
-gint64 rlib_make_report(rlib *r);
-gint64 rlib_finalize(rlib *r);
-gint64 rlib_format_get_number(const gchar *name);
-const gchar * rlib_format_get_name(gint64 number);
-gint64 rlib_emit_signal(rlib *r, gint64 signal_number);
+gint rlib_make_report(rlib *r);
+gint rlib_finalize(rlib *r);
+gint rlib_format_get_number(const gchar *name);
+const gchar * rlib_format_get_name(gint number);
+gint rlib_emit_signal(rlib *r, gint signal_number);
 
 /***** PROTOTYPES: resolution.c ***********************************************/
-gint64 resolve_rlib_variable(gchar *name);
+gint resolve_rlib_variable(gchar *name);
 gchar *rlib_resolve_memory_variable(rlib *r, gchar *name);
 gchar *rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf);
-gint64 rlib_lookup_result(rlib *r, gchar *name);
-gint64 rlib_resolve_resultset_field(rlib *r, gchar *name, void **rtn_field, gint64 *rtn_resultset);
+gint rlib_lookup_result(rlib *r, gchar *name);
+gboolean rlib_resolve_resultset_field(rlib *r, gchar *name, void **rtn_field, gint *rtn_resultset);
 struct rlib_report_variable *rlib_resolve_variable(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *name);
 void rlib_resolve_report_fields(rlib *r, struct rlib_part *part, struct rlib_report *report);
 void rlib_resolve_part_fields(rlib *r, struct rlib_part *part);
@@ -1123,19 +1119,19 @@ void rlib_csv_new_output_filter(rlib *r);
 /***** PROTOTYPES: layout.c ***************************************************/
 gdouble layout_get_page_width(struct rlib_part *part);
 void rlib_layout_init_part_page(rlib *r, struct rlib_part *part, gboolean first, gboolean normal);
-gint64 rlib_layout_report_output(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gint64 backwards, gboolean page_header_layout);
-struct rlib_paper * layout_get_paper(gint64 paper_type);
-struct rlib_paper * layout_get_paper_by_name(gchar *paper_name);
-gint64 rlib_layout_report_output_with_break_headers(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean page_header_layout);
+gint rlib_layout_report_output(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gboolean backwards, gboolean page_header_layout);
+struct rlib_paper *layout_get_paper(gint paper_type);
+struct rlib_paper *layout_get_paper_by_name(gchar *paper_name);
+gint rlib_layout_report_output_with_break_headers(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean page_header_layout);
 void rlib_layout_init_report_page(rlib *r, struct rlib_part *part, struct rlib_report *report);
 void rlib_layout_report_footer(rlib *r, struct rlib_part *part, struct rlib_report *report);
 gdouble layout_get_next_line(struct rlib_part *part, gdouble position, struct rlib_report_lines *rl);
 gdouble layout_get_next_line_by_font_point(struct rlib_part *part, gdouble position, gdouble point);
-gint64 rlib_layout_end_page(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean normal);
+gint rlib_layout_end_page(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean normal);
 
 /***** PROTOTYPES: axis.c ******************************************************/
-/* void rlib_graph_find_y_range(rlib *r, gdouble a, gdouble b, gdouble *y_min, gdouble *y_max, gint64 graph_type); */
-/* gint64 rlib_graph_num_ticks(rlib *r, gdouble a, gdouble b); */
+/* void rlib_graph_find_y_range(rlib *r, gdouble a, gdouble b, gdouble *y_min, gdouble *y_max, gint graph_type); */
+/* gint rlib_graph_num_ticks(rlib *r, gdouble a, gdouble b); */
 int adjust_limits(gdouble dataMin, gdouble dataMax, gint denyMinEqualsAdjMin, gint minTMs, gint maxTMs, gint *numTms, gdouble *tmi, gdouble *adjMin, gdouble *adjMax, gint *goodIncs, gint numGoodIncs);
 
 /***** PROTOTYPES: xml_data_source.c ******************************************************/

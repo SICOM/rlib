@@ -36,9 +36,9 @@
 
 void dump_part(struct rlib_part *part);
 
-static struct rlib_report *parse_report_file(rlib *r, gboolean allow_fail, gint64 report_index, gchar *filename, gchar *query);
+static struct rlib_report *parse_report_file(rlib *r, gboolean allow_fail, gint report_index, gchar *filename, gchar *query);
 
-void safestrncpy(gchar *dest, gchar *str, gint64 n) {
+void safestrncpy(gchar *dest, gchar *str, gint n) {
 	if (!dest) return;
 	*dest = '\0';
 	if (str) g_strlcpy(dest, str, n);
@@ -65,7 +65,7 @@ static void utf8_to_8813(rlib *r, gchar *dest, gchar *str) {
 }
 #endif
 
-static gint64 ignoreElement(const char *elname) {
+static gint ignoreElement(const char *elname) {
 	const xmlChar	*xmlname = (xmlChar *)elname;
 	int result = FALSE;
 	if (!xmlStrcmp(xmlname, (xmlChar *)"comment")
@@ -100,12 +100,12 @@ static struct rlib_report_barcode * parse_barcode(xmlNodePtr cur) {
 	return rb;
 }
 
-static struct rlib_element *parse_line_array(rlib *r, gboolean allow_fail, xmlDocPtr doc, xmlNodePtr cur, gint64 *error) __attribute__((nonnull(1, 3, 4, 5)));
-static struct rlib_element *parse_line_array(rlib *r, gboolean allow_fail, xmlDocPtr doc, xmlNodePtr cur, gint64 *error) {
+static struct rlib_element *parse_line_array(rlib *r, gboolean allow_fail, xmlDocPtr doc, xmlNodePtr cur, gint *error) __attribute__((nonnull(1, 3, 4, 5)));
+static struct rlib_element *parse_line_array(rlib *r, gboolean allow_fail, xmlDocPtr doc, xmlNodePtr cur, gint *error) {
 	struct rlib_element *e = NULL;
 	struct rlib_element *last = NULL;
 	xmlChar *sp;
-	gint64 count = 0;
+	gint count = 0;
 
 	cur = cur->xmlChildrenNode;
 	while (cur != NULL) {
@@ -256,7 +256,7 @@ struct rlib_report_output * report_output_new(gint type, gpointer data) {
 	return ro;
 }
 
-static struct rlib_element *parse_report_output(rlib *r, gboolean allow_fail, xmlDocPtr doc, xmlNodePtr cur, gint64 *error) {
+static struct rlib_element *parse_report_output(rlib *r, gboolean allow_fail, xmlDocPtr doc, xmlNodePtr cur, gint *error) {
 	struct rlib_element *e = g_new0(struct rlib_element, 1);
 	struct rlib_report_output_array *roa = g_new0(struct rlib_report_output_array, 1);
 	e->next = NULL;
@@ -271,7 +271,7 @@ static struct rlib_element *parse_report_output(rlib *r, gboolean allow_fail, xm
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "Line"))) {
 			struct rlib_report_lines *rl = g_new0(struct rlib_report_lines, 1);
 			struct rlib_element *ptr;
-			gint64 error1;
+			gint error1;
 
 			get_both(&rl->xml_bgcolor, cur, "bgcolor");
 			get_both(&rl->xml_color, cur, "color");
@@ -327,13 +327,13 @@ static struct rlib_element *parse_report_output(rlib *r, gboolean allow_fail, xm
 	return e;
 }
 
-static struct rlib_element *parse_report_outputs(rlib *r, gboolean allow_fail, xmlDocPtr doc, xmlNodePtr cur, gint64 *error) {
+static struct rlib_element *parse_report_outputs(rlib *r, gboolean allow_fail, xmlDocPtr doc, xmlNodePtr cur, gint *error) {
 	struct rlib_element *e = NULL, *last = NULL;
 
 	cur = cur->xmlChildrenNode;
 	while (cur != NULL) {
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "Output"))) {
-			gint64 error1;
+			gint error1;
 			struct rlib_element *ptr = parse_report_output(r, allow_fail, doc, cur, &error1);
 
 			if (error1) {
@@ -362,7 +362,7 @@ static struct rlib_element *parse_report_outputs(rlib *r, gboolean allow_fail, x
 	return e;
 }
 
-static struct rlib_element *parse_break_field(rlib *r, gboolean allow_fail, xmlNodePtr cur, gint64 *error) {
+static struct rlib_element *parse_break_field(rlib *r, gboolean allow_fail, xmlNodePtr cur, gint *error) {
 	struct rlib_element *e = g_malloc(sizeof(struct rlib_element));
 	struct rlib_break_fields *bf = g_new0(struct rlib_break_fields, 1);
 	e->next = NULL;
@@ -385,11 +385,11 @@ static struct rlib_element *parse_break_field(rlib *r, gboolean allow_fail, xmlN
 	return e;
 }
 
-static struct rlib_element *parse_report_break(rlib *r, gboolean allow_fail, struct rlib_report *report UNUSED, xmlDocPtr doc, xmlNsPtr ns UNUSED, xmlNodePtr cur, gint64 *error) {
+static struct rlib_element *parse_report_break(rlib *r, gboolean allow_fail, struct rlib_report *report UNUSED, xmlDocPtr doc, xmlNsPtr ns UNUSED, xmlNodePtr cur, gint *error) {
 	struct rlib_element *e = g_malloc0(sizeof(struct rlib_element));
 	struct rlib_report_break *rb = g_new0(struct rlib_report_break, 1);
 	struct rlib_element *last_field = NULL;
-	gint64 error1;
+	gint error1;
 
 	e->data = rb;
 	get_both(&rb->xml_name, cur, "name");
@@ -459,14 +459,14 @@ static struct rlib_element *parse_report_break(rlib *r, gboolean allow_fail, str
 	return e;
 }
 
-static struct rlib_element *parse_report_breaks(rlib *r, gboolean allow_fail, struct rlib_report *report, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur, gint64 *error) __attribute__((warn_unused_result));
-static struct rlib_element *parse_report_breaks(rlib *r, gboolean allow_fail, struct rlib_report *report, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur, gint64 *error) {
+static struct rlib_element *parse_report_breaks(rlib *r, gboolean allow_fail, struct rlib_report *report, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur, gint *error) __attribute__((warn_unused_result));
+static struct rlib_element *parse_report_breaks(rlib *r, gboolean allow_fail, struct rlib_report *report, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur, gint *error) {
 	struct rlib_element *e = NULL, *last = NULL;
 
 	cur = cur->xmlChildrenNode;
 	while (cur != NULL) {
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "Break"))) {
-			gint64 error1;
+			gint error1;
 			struct rlib_element *ptr = parse_report_break(r, allow_fail, report, doc, ns, cur, &error1);
 
 			if (error1) {
@@ -498,7 +498,7 @@ static struct rlib_element *parse_report_breaks(rlib *r, gboolean allow_fail, st
 static struct rlib_report_detail *parse_detail(rlib *r, gboolean allow_fail, xmlDocPtr doc, xmlNodePtr cur) __attribute__((warn_unused_result));
 static struct rlib_report_detail *parse_detail(rlib *r, gboolean allow_fail, xmlDocPtr doc, xmlNodePtr cur) {
 	struct rlib_report_detail *detail = g_new0(struct rlib_report_detail, 1);
-	gint64 error1;
+	gint error1;
 
 	cur = cur->xmlChildrenNode;
 	while (cur != NULL) {
@@ -552,13 +552,13 @@ static struct rlib_report_detail *parse_detail(rlib *r, gboolean allow_fail, xml
 	return detail;
 }
 
-static struct rlib_element *parse_alternate(rlib *r, gboolean allow_fail, xmlDocPtr doc, xmlNodePtr cur, gint64 *error) __attribute__((warn_unused_result));
-static struct rlib_element *parse_alternate(rlib *r, gboolean allow_fail, xmlDocPtr doc, xmlNodePtr cur, gint64 *error) {
+static struct rlib_element *parse_alternate(rlib *r, gboolean allow_fail, xmlDocPtr doc, xmlNodePtr cur, gint *error) __attribute__((warn_unused_result));
+static struct rlib_element *parse_alternate(rlib *r, gboolean allow_fail, xmlDocPtr doc, xmlNodePtr cur, gint *error) {
 	struct rlib_element *nodata = NULL;
 	cur = cur->xmlChildrenNode;
 	while (cur != NULL) {
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "NoData"))) {
-			gint64 error1;
+			gint error1;
 			struct rlib_element *ptr = parse_report_outputs(r, allow_fail, doc, cur, &error1);
 			if (error1) {
 				rlib_free_output(r, nodata);
@@ -666,8 +666,8 @@ static struct rlib_chart_header_row *parse_chart_header_row(xmlNodePtr cur) {
 	return chr;
 }
 
-static struct rlib_chart *parse_chart(rlib *r, gboolean allow_fail, xmlNodePtr cur, gint64 *error) __attribute__((warn_unused_result));
-static struct rlib_chart *parse_chart(rlib *r, gboolean allow_fail, xmlNodePtr cur, gint64 *error) {
+static struct rlib_chart *parse_chart(rlib *r, gboolean allow_fail, xmlNodePtr cur, gint *error) __attribute__((warn_unused_result));
+static struct rlib_chart *parse_chart(rlib *r, gboolean allow_fail, xmlNodePtr cur, gint *error) {
 	struct rlib_chart *chart = g_new0(struct rlib_chart, 1);
 	gboolean have_row = FALSE;
 
@@ -771,7 +771,7 @@ static struct rlib_element *parse_report_variable(rlib *r, xmlNodePtr cur) {
 	return e;
 }
 
-static struct rlib_element *parse_report_variables(rlib *r, gboolean allow_fail, xmlNodePtr cur, gint64 *error) {
+static struct rlib_element *parse_report_variables(rlib *r, gboolean allow_fail, xmlNodePtr cur, gint *error) {
 	struct rlib_element *e = NULL, *last = NULL;
 
 	cur = cur->xmlChildrenNode;
@@ -823,7 +823,7 @@ static void parse_metadata(xmlNodePtr cur, GHashTable *ht) {
 	return;
 }
 
-static gint64 parse_metadata_item(rlib *r, gboolean allow_fail, xmlNodePtr cur, GHashTable *ht) {
+static gint parse_metadata_item(rlib *r, gboolean allow_fail, xmlNodePtr cur, GHashTable *ht) {
 	cur = cur->xmlChildrenNode;
 	while (cur != NULL) {
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "MetaData"))) {
@@ -841,7 +841,7 @@ static gint64 parse_metadata_item(rlib *r, gboolean allow_fail, xmlNodePtr cur, 
 static struct rlib_report *parse_report(rlib *r, gboolean allow_fail, struct rlib_part *part, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur, gchar *query) __attribute__((warn_unused_result));
 static struct rlib_report *parse_report(rlib *r, gboolean allow_fail, struct rlib_part *part, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur, gchar *query) {
 	struct rlib_report *report;
-	gint64 error1;
+	gint error1;
 /*	if (doc->encoding)
 		g_strlcpy(report->xml_encoding_name, doc->encoding, sizeof(report->xml_encoding_name)); */
 
@@ -996,7 +996,7 @@ static struct rlib_report *parse_report(rlib *r, gboolean allow_fail, struct rli
 			}
 			report->chart = ptr;
 		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "Breaks"))) {
-			gint64 error;
+			gint error;
 			struct rlib_element *ptr = parse_report_breaks(r, allow_fail, report, doc, ns, cur, &error);
 			if (error) {
 				rlib_free_report(r, report);
@@ -1139,7 +1139,7 @@ static struct rlib_part_tr *parse_part_tr(rlib *r, gboolean allow_fail, struct r
 static struct rlib_part *parse_part(rlib *r, gboolean allow_fail, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur) __attribute__((warn_unused_result));
 static struct rlib_part *parse_part(rlib *r, gboolean allow_fail, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur) {
 	struct rlib_part *part = g_new0(struct rlib_part, 1);
-	gint64 error1;
+	gint error1;
 
 	if (part == NULL) {
 		r_error(r, "Out of memory\n");
@@ -1245,7 +1245,7 @@ void dump_part(struct rlib_part *part) {
 	g_slist_foreach(part->part_rows, dump_part_tr, NULL);
 }
 
-struct rlib_part *parse_part_file(rlib *r, gboolean allow_fail, gint64 report_index) {
+struct rlib_part *parse_part_file(rlib *r, gboolean allow_fail, gint report_index) {
 	gchar *filename = r->reportstorun[report_index].name;
 	gchar type = r->reportstorun[report_index].type;
 	xmlDocPtr doc;
@@ -1366,7 +1366,7 @@ struct rlib_part *parse_part_file(rlib *r, gboolean allow_fail, gint64 report_in
 	return part;
 }
 
-static struct rlib_report *parse_report_file(rlib *r, gboolean allow_fail, gint64 report_index, gchar *filename, gchar *query) {
+static struct rlib_report *parse_report_file(rlib *r, gboolean allow_fail, gint report_index, gchar *filename, gchar *query) {
 	xmlDocPtr doc;
 	gchar *file;
 	struct rlib_report *report = NULL;

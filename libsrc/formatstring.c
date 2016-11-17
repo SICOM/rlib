@@ -930,7 +930,7 @@ static gboolean string_sprintf(rlib *r, gchar **dest, gchar *fmtstr, struct rlib
 
 #define MAX_NUMBER 128
 
-gint rlib_number_sprintf(rlib *r UNUSED, gchar **woot_dest, gchar *fmtstr, const struct rlib_value *rval, gint64 special_format UNUSED, gchar *infix UNUSED, gint line_number UNUSED) {
+gint rlib_number_sprintf(rlib *r UNUSED, gchar **woot_dest, gchar *fmtstr, const struct rlib_value *rval, gint special_format UNUSED, gchar *infix UNUSED, gint line_number UNUSED) {
 	GString *str;
 	gint types[2] = { RLIB_FORMATSTR_NUMBER, RLIB_FORMATSTR_LITERAL };
 	gint type_idx, type;
@@ -1109,8 +1109,8 @@ gboolean rlib_format_string(rlib *r, gchar **dest, struct rlib_report_field *rf,
 	return TRUE;
 }
 
-gchar *rlib_align_text(rlib *r, gchar **my_rtn, gchar *src, gint64 align, gint64 width) {
-	gint64 len = 0, size = 0, lastidx = 0;
+gchar *rlib_align_text(rlib *r, gchar **my_rtn, gchar *src, gint align, gint width) {
+	gint len = 0, size = 0, lastidx = 0;
 	gchar *rtn;
 
 	if (width == 0) {
@@ -1144,7 +1144,7 @@ gchar *rlib_align_text(rlib *r, gchar **my_rtn, gchar *src, gint64 align, gint64
 		/* intentionally do nothing here */
 	} else {
 		if (align == RLIB_ALIGN_RIGHT) {        
-			gint64 x = lastidx - size;
+			gint x = lastidx - size;
 			if (x > 0) {
 				memset(rtn, ' ', x);
 				if (src == NULL)
@@ -1155,7 +1155,7 @@ gchar *rlib_align_text(rlib *r, gchar **my_rtn, gchar *src, gint64 align, gint64
 		}
 		if (align == RLIB_ALIGN_CENTER) {
 			if (!(width > 0 && len > width)) {
-				gint64 x = (width - len)/2;
+				gint x = (width - len)/2;
 				if (x > 0) {
 					memset(rtn, ' ', x);
 					if (src == NULL)
@@ -1169,12 +1169,12 @@ gchar *rlib_align_text(rlib *r, gchar **my_rtn, gchar *src, gint64 align, gint64
 	return rtn;
 }
 
-GSList *format_split_string(gchar *data, gint64 width, gchar new_line, gchar space, gint64 *line_count) {
-	gint64 slen;
-	gint64 spot = 0;
-	gint64 end = 0;
-	gint64 i;
-	gint64 line_spot = 0;
+GSList *format_split_string(gchar *data, gint width, gchar new_line, gchar space, gint *line_count) {
+	gint slen;
+	gint spot = 0;
+	gint end = 0;
+	gint i;
+	gint line_spot = 0;
 	gboolean at_the_end = FALSE;
 	GSList *list = NULL;
 	
@@ -1189,7 +1189,7 @@ GSList *format_split_string(gchar *data, gint64 width, gchar new_line, gchar spa
 	slen = strlen(data);
 	while(1) {
 		gchar *this_line = g_malloc(width);
-		gint64 space_count = 0;
+		gint space_count = 0;
 		memset(this_line, 0, width);
 		end = spot + width-1;
 		if (end > slen) {
