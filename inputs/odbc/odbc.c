@@ -50,8 +50,8 @@ struct rlib_odbc_results {
 	gchar *name;
 	gint tot_fields;
 	gint total_size;
-	gint atstart;
-	gint isdone;
+	gboolean atstart;
+	gboolean isdone;
 	GList *data;
 	GList *navigator;
 	gchar **fields;

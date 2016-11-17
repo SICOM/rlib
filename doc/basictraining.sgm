@@ -6,7 +6,7 @@
 		<para>
 			In addition to being a report writer, RLIB is also an interpreted language (like Basic and FOXPRO).  RLIB handles all memory
 			management for you.  If you are familiar with FOXPRO, then you will feel at home with RLIB.  However, if you don't know
-			FOXPRO see the function reference (symbol table) to see all of the functions available to you.  In a nutshell its pretty 
+			FOXPRO see the function reference (symbol table) to see all of the functions available to you.  In a nutshell its pretty
 			powerful.  You can do stuff like this:
 			<programlisting>
 'hi' + ' ' + 'there' + database.stringfield

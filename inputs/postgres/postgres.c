@@ -41,8 +41,7 @@ struct rlib_postgres_results {
 	gint chunk;
 	gint row;
 	gint tot_fields;
-	gint isdone;
-	gint last_action;
+	gboolean isdone;
 	gint *fields;
 };
 

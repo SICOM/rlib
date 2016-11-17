@@ -282,7 +282,7 @@ DLL_EXPORT_SYM gint rlib_add_report_from_buffer(rlib *r, gchar *buffer) {
 	return r->parts_count;
 }
 
-DLL_EXPORT_SYM gboolean rlib_add_search_path(rlib *r, const gchar *path) {
+DLL_EXPORT_SYM gint rlib_add_search_path(rlib *r, const gchar *path) {
 	gchar *path_copy;
 #ifdef _WIN32
 	int i;
@@ -291,13 +291,13 @@ DLL_EXPORT_SYM gboolean rlib_add_search_path(rlib *r, const gchar *path) {
 
 	/* Don't add useless search paths */
 	if (path == NULL)
-		return FALSE;
+		return -1;
 	if (strlen(path) == 0)
-		return FALSE;
+		return -1;
 
 	path_copy = g_strdup(path);
 	if (path_copy == NULL)
-		return FALSE;
+		return -1;
 
 #ifdef _WIN32
 	len = strlen(path_copy);
@@ -307,7 +307,7 @@ DLL_EXPORT_SYM gboolean rlib_add_search_path(rlib *r, const gchar *path) {
 			path_copy[i] = '/';
 #endif
 	r->search_paths = g_slist_append(r->search_paths, path_copy);
-	return TRUE;
+	return 0;
 }
 
 /*
@@ -672,8 +672,9 @@ DLL_EXPORT_SYM gint rlib_spool(rlib *r) {
 	return -1;
 }
 
-DLL_EXPORT_SYM void rlib_set_output_format(rlib *r, gint format) {
+DLL_EXPORT_SYM gint rlib_set_output_format(rlib *r, gint format) {
 	r->format = format;
+	return 0;
 }
 
 static void duplicate_path(rlib *r, struct rlib_query_internal *query, gint *visited) {
@@ -804,7 +805,7 @@ DLL_EXPORT_SYM gchar *rlib_get_output(rlib *r) {
 }
 
 DLL_EXPORT_SYM gsize rlib_get_output_length(rlib *r) {
-	if (r->did_execute) 
+	if (r->did_execute)
 		return OUTPUT(r)->get_output_length(r);
 	else
 		return 0;
@@ -816,7 +817,7 @@ DLL_EXPORT_SYM gboolean rlib_signal_connect(rlib *r, gint signal_number, gboolea
 	return TRUE;
 }
 
-DLL_EXPORT_SYM void rlib_add_function(rlib *r, gchar *function_name, rlib_function function, gpointer user_data) {
+DLL_EXPORT_SYM gboolean rlib_add_function(rlib *r, gchar *function_name, rlib_function function, gpointer user_data) {
 	struct rlib_pcode_operator *rpo = g_new0(struct rlib_pcode_operator, 1);
 	rpo->tag = g_strconcat(function_name, "(", NULL);	
 	rpo->taglen = strlen(rpo->tag);
@@ -827,6 +828,7 @@ DLL_EXPORT_SYM void rlib_add_function(rlib *r, gchar *function_name, rlib_functi
 	rpo->execute = function;
 	rpo->user_data = user_data;
 	r->pcode_functions = g_slist_append(r->pcode_functions, rpo);
+	return TRUE;
 }
 
 DLL_EXPORT_SYM gboolean rlib_signal_connect_string(rlib *r, gchar *signal_name, gboolean (*signal_function)(rlib *, gpointer), gpointer data) {
@@ -857,12 +859,13 @@ DLL_EXPORT_SYM gboolean rlib_query_refresh(rlib *r) {
 	return TRUE;
 }
 
-DLL_EXPORT_SYM void rlib_add_parameter(rlib *r, const gchar *name, const gchar *value) {
+DLL_EXPORT_SYM gint rlib_add_parameter(rlib *r, const gchar *name, const gchar *value) {
 	/*
 	 * We don't want duplicate parameters in the hash
 	 * so don't use g_hash_table_insert().
 	 */
 	g_hash_table_replace(r->parameters, g_strdup(name), g_strdup(value));
+	return TRUE;
 }
 
 /*
