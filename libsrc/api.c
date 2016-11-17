@@ -580,9 +580,9 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 	struct timespec ts1, ts2;
 
 	if (!r->did_parse) {
-		gboolean parse = rlib_parse_internal(r, TRUE);
+		gint parse = rlib_parse_internal(r, TRUE);
 
-		if (!parse)
+		if (parse != 0)
 			return -1;
 	}
 
@@ -871,12 +871,13 @@ DLL_EXPORT_SYM gint rlib_add_parameter(rlib *r, const gchar *name, const gchar *
 /*
 *  Returns TRUE if locale was actually set, otherwise, FALSE
 */
-DLL_EXPORT_SYM void rlib_set_locale(rlib *r, gchar *locale) {
+DLL_EXPORT_SYM gboolean rlib_set_locale(rlib *r, gchar *locale) {
 #if DISABLE_UTF8
 	r->special_locale = g_strdup(locale);
 #else
 	r->special_locale = g_strdup(make_utf8_locale(locale));
 #endif
+	return TRUE;
 }
 
 DLL_EXPORT_SYM gchar * rlib_bindtextdomain(rlib *r UNUSED, gchar *domainname, gchar *dirname) {

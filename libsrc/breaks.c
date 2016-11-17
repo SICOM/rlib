@@ -28,8 +28,8 @@
 #include "rlib_input.h"
 
 static void rlib_print_break_header_output(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_break *rb, struct rlib_element *e) {
-	gint64 blank = TRUE;
-	gint64 i;
+	gboolean blank = TRUE;
+	gint i;
 
 	if (!OUTPUT(r)->do_breaks)
 		return;
@@ -73,8 +73,8 @@ static void rlib_print_break_header_output(rlib *r, struct rlib_part *part, stru
 }
 
 static void rlib_print_break_footer_output(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_report_break *rb, struct rlib_element *e) {
-	gint64 i;
-	
+	gint i;
+
 	if (!OUTPUT(r)->do_breaks)
 		return;
 
@@ -104,19 +104,6 @@ gboolean rlib_force_break_headers(rlib *r, struct rlib_part *part, struct rlib_r
 
 	if (report->breaks == NULL)
 		return TRUE;
-
-	for (e = report->breaks; e != NULL; e = e->next) {
-		gint64 dobreak = 1;
-		struct rlib_report_break *rb = e->data;
-		struct rlib_element *be;
-		for (be = rb->fields; be != NULL; be = be->next) {
-			if (dobreak && r->queries[r->current_result]->current_row < 0) {
-				dobreak = 1;
-			} else {
-				dobreak = 0;
-			}
-		}
-	}
 
 	for (e = report->breaks; e != NULL; e = e->next) {
 		struct rlib_report_break *rb = e->data;

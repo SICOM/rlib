@@ -178,7 +178,7 @@ void rlib_set_radix_character(rlib *r, gchar radix_character);
 gint rlib_set_output_format(rlib *r, gint format);
 void rlib_set_output_format_from_text(rlib *r, gchar * name);
 void rlib_set_output_parameter(rlib *r, gchar *parameter, gchar *value);
-void rlib_set_locale(rlib *r, gchar *locale);
+gboolean rlib_set_locale(rlib *r, gchar *locale);
 void rlib_set_output_encoding(rlib *r, const char *encoding);
 gint rlib_set_datasource_encoding(rlib *r, gchar *input_name, gchar *encoding);
 void rlib_set_query_cache_size(rlib *r, gint cache_size);

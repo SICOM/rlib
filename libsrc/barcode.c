@@ -147,7 +147,7 @@ static void gdImageBarcodeChar(gdImagePtr im, gint *curx, gint height, char c) {
 	gdImageBarcodeCharFromCode39String(im, curx, height, code39_table[(int) c]);
 }
 
-int gd_barcode_png_to_file(char *filename, char *barcode, gint64 height) {
+int gd_barcode_png_to_file(char *filename, char *barcode, gint height) {
 	gdImagePtr im;
 	gint white;
 	char *p = barcode;
@@ -191,7 +191,7 @@ int gd_barcode_png_to_file(char *filename, char *barcode, gint64 height) {
 
 #else
 
-int gd_barcode_png_to_file(char *filename, char *barcode, gint64 height) {
+int gd_barcode_png_to_file(char *filename, char *barcode, gint height) {
 	return FALSE;
 }
 

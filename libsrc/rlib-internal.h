@@ -1169,6 +1169,6 @@ void variable_clear(rlib *r, struct rlib_report_variable *rv, gboolean do_expres
 void rlib_datetime_format(rlib *r, gchar **dest, struct rlib_datetime *dt, const gchar *fmt);
 
 /***** PROTOTYPES: barcode.c ********************************************************/
-int gd_barcode_png_to_file(char *filename, char *barcode, gint64 height);
+int gd_barcode_png_to_file(char *filename, char *barcode, gint height);
 
 #endif /* _RLIB_INTERNAL_H */
