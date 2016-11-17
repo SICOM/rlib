@@ -1002,8 +1002,18 @@ void rlib_break_evaluate_attributes(rlib *r, struct rlib_report *report);
 ssize_t rlib_mpfr_strfmon(char * __restrict s, size_t maxsize, const char * __restrict format, ...);
 
 /***** PROTOTYPES: formatstring.c *********************************************/
-gint64 rlib_number_sprintf(rlib *r, gchar **dest, gchar *fmtstr, const struct rlib_value *rval, gint64 special_format, gchar *infix, gint line_number);
-gint64 rlib_format_string(rlib *r, gchar **buf,  struct rlib_report_field *rf, struct rlib_value *rval);
+/* Only for number formatting */
+#define RLIB_FORMATSTR_NONE		0
+#define RLIB_FORMATSTR_LITERAL	1
+#define RLIB_FORMATSTR_NUMBER	2
+#define RLIB_FORMATSTR_MONEY	3
+#define RLIB_FORMATSTR_DATE		4
+#define RLIB_FORMATSTR_STRING	5
+
+GString *get_next_format_string(const gchar *fmt, gint expected_type, gint *out_type, gint *advance, gboolean *error) __attribute__((nonnull(3,4,5)));
+
+gint rlib_number_sprintf(rlib *r, gchar **dest, gchar *fmtstr, const struct rlib_value *rval, gint64 special_format, gchar *infix, gint line_number);
+gboolean rlib_format_string(rlib *r, gchar **buf,  struct rlib_report_field *rf, struct rlib_value *rval);
 gboolean rlib_format_money(rlib *r, gchar **dest, const gchar *moneyformat, mpfr_t value);
 gboolean rlib_format_number(rlib *r, gchar **dest, const gchar *moneyformat, mpfr_t value);
 gchar *rlib_align_text(rlib *r, char **rtn, gchar *src, gint64 align, gint64 width);

@@ -123,11 +123,11 @@ static void rlib_datetime_format_time(struct rlib_datetime *dt, char *buf, gint6
 /* separate format string into 2 pcs. one with date, other with time. */
 static gchar datechars[] = "aAbBcCdDeFgGhJmuUVwWxyY";
 static gchar timechars[] = "HIklMpPrRsSTXzZ";
-static void split_tdformat(gchar **datefmt, gchar **timefmt, gint64 *order, const gchar *fmtstr) {
+static void split_tdformat(gchar **datefmt, gchar **timefmt, gint *order, const gchar *fmtstr) {
 	gchar *splitpoint = NULL;
 	gchar *s, *t = NULL;
 	gchar *pctptr;
-	gint64 mode = 0;
+	gint mode = 0;
 
 	*timefmt = *datefmt = NULL;
 	*order = 0;
@@ -178,17 +178,72 @@ static void split_tdformat(gchar **datefmt, gchar **timefmt, gint64 *order, cons
 }
 
 
-void rlib_datetime_format(rlib *r, gchar **dest, struct rlib_datetime *dt, const gchar *fmt) {
+void rlib_datetime_format(rlib *r, gchar **woot_dest, struct rlib_datetime *dt, const gchar *fmt) {
+	GString *str, *date = NULL, *last_literal = NULL;
+	gint advance;
+	gboolean found_date = FALSE;
+	gint types[2] = { RLIB_FORMATSTR_DATE, RLIB_FORMATSTR_LITERAL };
+	gint type_idx, type;
 	gchar *datefmt, *timefmt;
-	gint64 order;
+	gint order;
 	gchar datebuf[128];
 	gchar timebuf[128];
-	gint64 havedate = FALSE, havetime = FALSE;
-	gint64 max = MAXSTRLEN;
-	*dest = g_malloc(MAXSTRLEN);
-	
-	
-	split_tdformat(&datefmt, &timefmt, &order, fmt);
+	gint havedate = FALSE, havetime = FALSE;
+	gint max = MAXSTRLEN;
+	gchar *dest = g_malloc(MAXSTRLEN);
+
+	str = g_string_new("");
+	advance = 0;
+	type_idx = 0;
+	while (fmt[advance]) {
+		GString *tmp;
+		gint adv;
+		gboolean error;
+
+		tmp = get_next_format_string(fmt + advance, types[type_idx], &type, &adv, &error);
+		if (error) {
+			g_string_free(str, TRUE);
+			*woot_dest = g_string_free(tmp, FALSE);
+			return;
+		}
+
+		if (types[type_idx] == type)
+			type_idx++;
+
+		switch (type) {
+		case RLIB_FORMATSTR_LITERAL:
+			if (!found_date) {
+				g_string_append(str, tmp->str);
+				g_string_free(tmp, TRUE);
+			} else
+				last_literal = tmp;
+			break;
+		case RLIB_FORMATSTR_DATE:
+			found_date = TRUE;
+			date = tmp;
+			break;
+		default:
+			g_strlcpy(dest, "!ERR_DT_NO", max);
+			g_string_free(str, TRUE);
+			g_string_free(date, TRUE);
+			g_string_free(last_literal, TRUE);
+			*woot_dest = dest;
+			return;
+		}
+
+		advance += adv;
+	}
+
+	if (!found_date) {
+		g_strlcpy(dest, "!ERR_DT_NO", max);
+		*woot_dest = dest;
+		g_string_free(str, TRUE);
+		g_string_free(date, TRUE);
+		g_string_free(last_literal, TRUE);
+		return;
+	}
+
+	split_tdformat(&datefmt, &timefmt, &order, date->str);
 	*datebuf = *timebuf = '\0';
 	if (datefmt && rlib_datetime_valid_date(dt)) {
 		rlib_datetime_format_date(dt, datebuf, 127, datefmt);	
@@ -206,20 +261,32 @@ void rlib_datetime_format(rlib *r, gchar **dest, struct rlib_datetime *dt, const
 	}
 	switch (order) {
 	case 1:
-		g_strlcpy(*dest, datebuf, max);
-		g_strlcat(*dest, timebuf, max - r_strlen(datebuf));
+		g_strlcpy(dest, datebuf, max);
+		g_strlcat(dest, timebuf, max - r_strlen(datebuf));
 		break;
 	case 2:
-		g_strlcpy(*dest, timebuf, max);
-		g_strlcat(*dest, datebuf, max - r_strlen(timebuf));
+		g_strlcpy(dest, timebuf, max);
+		g_strlcat(dest, datebuf, max - r_strlen(timebuf));
 		break;
 	default:
-		g_strlcpy(*dest, "!ERR_DT_NO", max);
+		g_strlcpy(dest, "!ERR_DT_NO", max);
 		r_error(r, "Datetime format has no date or no format");
 		break; /* format has no date or time codes ??? */
 	}
-	if (datefmt) g_free(datefmt);
-	if (timefmt) g_free(timefmt);
+	if (datefmt)
+		g_free(datefmt);
+	if (timefmt)
+		g_free(timefmt);
+
+	g_string_append(str, dest);
+	g_free(dest);
+	g_string_free(date, TRUE);
+	if (last_literal) {
+		g_string_append(str, last_literal->str);
+		g_string_free(last_literal, TRUE);
+	}
+
+	*woot_dest = g_string_free(str, FALSE);
 }
 
 

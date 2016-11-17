@@ -52,19 +52,856 @@ void change_radix_character(rlib *r, char *s) {
 	}
 }
 
+/* Number formatstring flags */
+#define RLIB_FMTSTR_FLAG_ALTERNATE			(0x01)	/* '#' */
+#define RLIB_FMTSTR_FLAG_0PADDED			(0x02)	/* '0' */
+#define RLIB_FMTSTR_FLAG_LEFTALIGN			(0x04)	/* '-' */
+#define RLIB_FMTSTR_FLAG_SIGN_BLANK			(0x08)	/* ' ' */
+#define	RLIB_FMTSTR_FLAG_SIGN				(0x10)	/* '+' */
+#define RLIB_FMTSTR_FLAG_GROUPING			(0x20)	/* '\'' or '$' (legacy format) */
+#define RLIB_FMTSTR_FLAG_ALTERNATE_DIGITS	(0x40)	/* 'I' */
+
+/* Monetary formatstring flags */
+#define RLIB_FMTSTR_MFLAG_FILLCHAR			(0x01)	/* '=f' */
+#define RLIB_FMTSTR_MFLAG_NOGROUPING		(0x02)	/* '^' */
+#define RLIB_FMTSTR_MFLAG_NEG_PAR			(0x04)	/* '(' */
+#define RLIB_FMTSTR_MFLAG_NEG_SIGN			(0x08)	/* '+' */
+#define RLIB_FMTSTR_MFLAG_OMIT_CURRENCY		(0x10)	/* '!' */
+#define RLIB_FMTSTR_MFLAG_LEFTALIGN			(0x20)	/* '-' */
+
+struct rlib_format_string_element_t {
+	gint type;
+	gint flags;
+	gint length;
+	gint prec;
+	gchar conv;
+	GString *string;
+};
+
+static gboolean good_conv(gchar c) {
+	switch (c) {
+	case 'd': /* legacy number */
+	case 'a': /* various floating point conversions for the C format string */
+	case 'A':
+	case 'e':
+	case 'E':
+	case 'f':
+	case 'F':
+	case 'g':
+	case 'G':
+		return TRUE;
+	default:
+		return FALSE;
+	}
+}
+
+static gboolean good_money_conv(gchar c) {
+	switch (c) {
+	case 'i': /* international monetary format */
+	case 'n': /* national monetary format */
+		return TRUE;
+	default:
+		return FALSE;
+	}
+}
+
+static gint formatstring_flags(const gchar *fmt, gint *advance) {
+	gint flags = 0;
+	gint pos, quit = 0;
+
+	for (pos = 0; !quit && fmt[pos]; pos++) {
+		switch (fmt[pos]) {
+		case '#':
+			flags |= RLIB_FMTSTR_FLAG_ALTERNATE;
+			break;
+		case '0':
+			flags |= RLIB_FMTSTR_FLAG_0PADDED;
+			break;
+		case '-':
+			flags |= RLIB_FMTSTR_FLAG_LEFTALIGN;
+			break;
+		case ' ':
+			flags |= RLIB_FMTSTR_FLAG_SIGN_BLANK;
+			break;
+		case '+':
+			flags |= RLIB_FMTSTR_FLAG_SIGN;
+		case '\'':
+			flags |= RLIB_FMTSTR_FLAG_GROUPING;
+			break;
+		case 'I':
+			flags |= RLIB_FMTSTR_FLAG_ALTERNATE_DIGITS;
+			break;
+		default:
+			quit = 1;
+			break;
+		}
+		if (quit)
+			break;
+	}
+	*advance = pos;
+	return flags;
+}
+
+static gint formatstring_flags_money(const gchar *fmt, gchar *filler, gint *advance) {
+	gint flags = 0;
+	gchar fill = '\0';
+	gint pos, quit = 0;
+
+	for (pos = 0; !quit && fmt[pos]; pos++) {
+		switch (fmt[pos]) {
+		case '=':
+			if (!fmt[pos + 1]) {
+				quit = 1;
+				break;
+			}
+			pos++;
+			flags |= RLIB_FMTSTR_MFLAG_FILLCHAR;
+			fill = fmt[pos];
+			break;
+		case '^':
+			flags |= RLIB_FMTSTR_MFLAG_NOGROUPING;
+			break;
+		case '(':
+			flags |= RLIB_FMTSTR_MFLAG_NEG_PAR;
+			break;
+		case '+':
+			flags |= RLIB_FMTSTR_MFLAG_NEG_SIGN;
+			break;
+		case '!':
+			flags |= RLIB_FMTSTR_MFLAG_OMIT_CURRENCY;
+		case '-':
+			flags |= RLIB_FMTSTR_MFLAG_LEFTALIGN;
+			break;
+		default:
+			quit = 1;
+			break;
+		}
+		if (quit)
+			break;
+	}
+
+	*filler = fill;
+	*advance = pos;
+	return flags;
+}
+
+
+static void formatstring_length_prec(const gchar *fmt, gint *length, gint *prec, gint *advance) {
+	gint pos = 0;
+	GString *tmp = g_string_new("");
+
+	*length = 0;
+	*prec = 0;
+
+	for (pos = 0; fmt[pos] && isdigit(fmt[pos]); pos++)
+		g_string_append_c(tmp, fmt[pos]);
+	g_string_append_c(tmp, '\0');
+	if (strlen(tmp->str) > 0)
+		*length = atoi(tmp->str);
+
+	if (fmt[pos] != '.') {
+		g_string_free(tmp, TRUE);
+		*advance = pos;
+		return;
+	}
+
+	g_string_set_size(tmp, 0);
+	for (pos++; fmt[pos] && isdigit(fmt[pos]); pos++)
+		g_string_append_c(tmp, fmt[pos]);
+	g_string_append_c(tmp, '\0');
+
+	if (strlen(tmp->str) > 0)
+		*prec = atoi(tmp->str);
+
+	g_string_free(tmp, TRUE);
+	*advance = pos;
+	return;
+}
+
+GString *get_next_format_string(const gchar *fmt, gint expected_type, gint *out_type, gint *advance, gboolean *error) {
+	GString *str;
+	gint type = RLIB_FORMATSTR_NONE;
+	gint adv = 0;
+
+	*error = FALSE;
+
+	if (fmt == NULL) {
+		*out_type = type;
+		*advance = 0;
+		return NULL;
+	}
+
+	if (fmt[adv] == '\0') {
+		*out_type = type;
+		*advance = 0;
+		return NULL;
+	}
+
+	str = g_string_new("");
+
+	while (fmt[adv]) {
+		if (expected_type == RLIB_FORMATSTR_LITERAL) {
+			/* Shortcut when a literal is expected. */
+			while (fmt[adv]) {
+				/* Convert %% to %% but don't bother with anything else. */
+				if (fmt[adv] == '%' && fmt[adv + 1] == '%') {
+					g_string_append_c(str, '%');
+					adv += 2;
+				} else {
+					g_string_append_c(str, fmt[adv]);
+					adv++;
+				}
+			}
+			*out_type = RLIB_FORMATSTR_LITERAL;
+			*advance = adv;
+			return str;
+		}
+
+		if (fmt[adv] == '!') {
+			/* Possibly a new style format string */
+			switch (fmt[adv + 1]) {
+			case '@':
+				/* Possibly a new style date format string for strfmon style formatting. */
+				if (expected_type != RLIB_FORMATSTR_DATE) {
+					switch (type) {
+					case RLIB_FORMATSTR_NONE:
+						type = RLIB_FORMATSTR_LITERAL;
+						/* fall through */
+					case RLIB_FORMATSTR_LITERAL:
+						g_string_append_len(str, fmt + adv, 2);
+						adv += 2;
+						break;
+					default:
+						*error = TRUE;
+						g_string_printf(str, "!ERR_F_F");
+						return str;
+					}
+				} else {
+					switch (type) {
+					case RLIB_FORMATSTR_LITERAL:
+						/*
+						 * Date format specifier found but there's already
+						 * a literal before it. Let's return it now.
+						 */
+						g_string_append_c(str, '\0');
+						*out_type = type;
+						*advance = adv;
+						return str;
+					case RLIB_FORMATSTR_NONE:
+						/* Date... */
+						type = RLIB_FORMATSTR_DATE;
+						if (fmt[adv + 2] == '{') {
+							/*
+							 * Process until '}' or break with an error
+							 * if '}' is not found.
+							 */
+							int i;
+							for (i = adv; fmt[i] && fmt[i] != '}'; i++)
+								;
+
+							if (fmt[i] == '}') {
+								g_string_append_len(str, fmt + adv + 3, i - adv - 3);
+								g_string_append_c(str, '\0');
+								*out_type = type;
+								*advance = i - adv + 1;
+								return str;
+							}
+
+							g_string_printf(str, "!ERR_DT_NO");
+							*out_type = type;
+							*error = TRUE;
+							return str;
+						} else {
+							/* Process until the end of the string */
+							g_string_append(str, fmt + adv + 2);
+							adv += strlen(fmt + adv);
+							*out_type = type;
+							*advance = adv;
+							return str;
+						}
+						break;
+					default:
+						*error = TRUE;
+						g_string_printf(str, "!ERR_F_F");
+						return str;
+					}
+				}
+				break;
+			case '$':
+				/* Possibly a new style monetary number for strfmon style formatting */
+				if (expected_type != RLIB_FORMATSTR_NUMBER) {
+					switch (type) {
+					case RLIB_FORMATSTR_NONE:
+						type = RLIB_FORMATSTR_LITERAL;
+						/* fall through */
+					case RLIB_FORMATSTR_LITERAL:
+						g_string_append_len(str, fmt + adv, 2);
+						adv += 2;
+						break;
+					default:
+						*error = TRUE;
+						g_string_printf(str, "!ERR_F_F");
+						return str;
+					}
+				} else {
+					switch (type) {
+					case RLIB_FORMATSTR_LITERAL:
+						/*
+						 * Date format specifier found but there's already
+						 * a literal before it. Let's return it now.
+						 */
+						g_string_append_c(str, '\0');
+						*out_type = type;
+						*advance = adv;
+						return str;
+					case RLIB_FORMATSTR_NONE:
+						/* Monetary number... */
+						type = RLIB_FORMATSTR_MONEY;
+						if (fmt[adv + 2] == '{') {
+							/*
+							 * Process until '}' or break with an error
+							 * if '}' is not found.
+							 */
+							int i;
+							for (i = adv; fmt[i] && fmt[i] != '}'; i++)
+								;
+
+							if (fmt[i] == '}') {
+								gchar filler, conv;
+								gint adv1, adv2;
+								gint flags, length, prec;
+								g_string_append_len(str, fmt + adv + 3, i - adv - 3);
+								g_string_append_c(str, '\0');
+
+								if (str->str[0] != '%') {
+									g_string_printf(str, "!ERR_F_F");
+									*out_type = type;
+									*error = TRUE;
+									return str;
+								}
+								flags = formatstring_flags_money(str->str + 1, &filler, &adv1);
+								formatstring_length_prec(str->str + 1 + adv1, &length, &prec, &adv2);
+								if (prec > 0) {
+									g_string_printf(str, "!ERR_F_F");
+									*out_type = type;
+									*error = TRUE;
+									return str;
+								}
+
+								conv = str->str[adv1 + adv2 + 1];
+								if (!good_money_conv(conv)) {
+									g_string_printf(str, "!ERR_F_F");
+									*out_type = type;
+									*error = TRUE;
+									return str;
+								}
+
+								g_string_set_size(str, 0);
+								if ((flags & RLIB_FMTSTR_MFLAG_NOGROUPING))
+									g_string_append_c(str, '^');
+								if ((flags & RLIB_FMTSTR_MFLAG_NEG_PAR))
+									g_string_append_c(str, '(');
+								if ((flags & RLIB_FMTSTR_MFLAG_NEG_SIGN))
+									g_string_append_c(str, '+');
+								if ((flags & RLIB_FMTSTR_MFLAG_OMIT_CURRENCY))
+									g_string_append_c(str, '!');
+								if ((flags & RLIB_FMTSTR_MFLAG_LEFTALIGN))
+									g_string_append_c(str, '-');
+								if ((flags & RLIB_FMTSTR_MFLAG_FILLCHAR)) {
+									g_string_append_printf(str, "=%c", filler);
+								}
+								g_string_append_c(str, conv);
+								g_string_append_c(str, '\0');
+
+								*out_type = type;
+								*advance = i - adv + 1;
+								return str;
+							}
+
+							g_string_printf(str, "!ERR_F_F");
+							*out_type = type;
+							*error = TRUE;
+							return str;
+						} else {
+							gchar filler = '\0', conv;
+							gint adv1, adv2;
+							gint flags, length, prec;
+
+							if (fmt[adv + 2] != '%') {
+								g_string_printf(str, "!ERR_F_F");
+								*out_type = type;
+								*error = TRUE;
+								return str;
+							}
+							flags = formatstring_flags_money(fmt + adv + 3, &filler, &adv1);
+							formatstring_length_prec(fmt + adv + 3 + adv1, &length, &prec, &adv2);
+							if (prec > 0) {
+								g_string_printf(str, "!ERR_F_F");
+								*out_type = type;
+								*error = TRUE;
+								return str;
+							}
+
+							conv = fmt[adv + 3 + adv1 + adv2];
+							if (!good_money_conv(conv)) {
+								g_string_printf(str, "!ERR_F_F");
+								*out_type = type;
+								*error = TRUE;
+								return str;
+							}
+
+							g_string_set_size(str, 0);
+							if ((flags & RLIB_FMTSTR_MFLAG_NOGROUPING))
+								g_string_append_c(str, '^');
+							if ((flags & RLIB_FMTSTR_MFLAG_NEG_PAR))
+								g_string_append_c(str, '(');
+							if ((flags & RLIB_FMTSTR_MFLAG_NEG_SIGN))
+								g_string_append_c(str, '+');
+							if ((flags & RLIB_FMTSTR_MFLAG_OMIT_CURRENCY))
+								g_string_append_c(str, '!');
+							if ((flags & RLIB_FMTSTR_MFLAG_LEFTALIGN))
+								g_string_append_c(str, '-');
+							if ((flags & RLIB_FMTSTR_MFLAG_FILLCHAR)) {
+								g_string_append_printf(str, "=%c", filler);
+							}
+							g_string_append_c(str, conv);
+							g_string_append_c(str, '\0');
+
+							*out_type = type;
+							*advance = adv + adv1 + adv2 + 4;
+							return str;
+						}
+						break;
+					default:
+						*error = TRUE;
+						g_string_printf(str, "!ERR_F_F");
+						return str;
+					}
+				}
+				break;
+			case '#':
+				/* Possibly a new style number for printf style formatting */
+				if (expected_type != RLIB_FORMATSTR_NUMBER) {
+					if (expected_type != RLIB_FORMATSTR_LITERAL && (fmt[adv + 2] == '%' || (fmt[adv + 2] == '{' && fmt[adv + 3] == '%'))) {
+						switch (type) {
+						case RLIB_FORMATSTR_LITERAL:
+							/*
+							 * Number format specifier found but there's already
+							 * a literal before it. Let's return it now.
+							 */
+							g_string_append_c(str, '\0');
+							*out_type = type;
+							*advance = adv;
+							return str;
+						default:
+							*error = TRUE;
+							g_string_printf(str, "!ERR_F_F");
+							return str;
+						}
+					}
+					switch (type) {
+					case RLIB_FORMATSTR_NONE:
+						type = RLIB_FORMATSTR_LITERAL;
+						/* fall through */
+					case RLIB_FORMATSTR_LITERAL:
+						g_string_append_len(str, fmt + adv, 2);
+						adv += 2;
+						break;
+					default:
+						*error = TRUE;
+						g_string_printf(str, "!ERR_F_F");
+						return str;
+					}
+				} else {
+					switch (type) {
+					case RLIB_FORMATSTR_LITERAL:
+						/*
+						 * Number format specifier found but there's already
+						 * a literal before it. Let's return it now.
+						 */
+						g_string_append_c(str, '\0');
+						*out_type = type;
+						*advance = adv;
+						return str;
+					case RLIB_FORMATSTR_NONE:
+						/* Number... */
+						type = RLIB_FORMATSTR_NUMBER;
+						if (fmt[adv + 2] == '{') {
+							/*
+							 * Process until '}' or break with an error
+							 * if '}' is not found.
+							 */
+							int i;
+							for (i = adv; fmt[i] && fmt[i] != '}'; i++)
+								;
+
+							if (fmt[i] == '}') {
+								GString *str1;
+								gint type1, adv1;
+								gboolean error1;
+
+								g_string_append_len(str, fmt + adv + 3, i - adv - 3);
+								g_string_append_c(str, '\0');
+								*out_type = type;
+								*advance = i - adv + 1;
+								str1 = get_next_format_string(str->str, RLIB_FORMATSTR_NUMBER, &type1, &adv1, &error1);
+								g_string_free(str, TRUE);
+								return str1;
+							}
+
+							g_string_printf(str, "!ERR_F_F");
+							*out_type = type;
+							*error = TRUE;
+							return str;
+						} else if (fmt[adv + 2] == '%') {
+							gint adv2, adv3;
+							gint flags;
+							gboolean legacy = FALSE;
+							gint length, prec;
+							gchar c;
+
+							flags = formatstring_flags(fmt + adv + 3, &adv2);
+							formatstring_length_prec(fmt + adv + 3 + adv2, &length, &prec, &adv3);
+							c = fmt[adv + 3 + adv2 + adv3];
+							if ((good_conv(c) && expected_type == RLIB_FORMATSTR_NUMBER) || (c == 's' && expected_type == RLIB_FORMATSTR_STRING) ) {
+								type = expected_type;
+								if (c == 'd') {
+									/* Legacy format regarding length/precision count */
+									if (prec)
+										length += prec + 1;
+									c = 'f';
+									legacy = TRUE;
+								}
+								g_string_printf(str, "%%");
+								if ((flags & RLIB_FMTSTR_FLAG_ALTERNATE))
+									g_string_append_c(str, '#');
+								if ((flags & RLIB_FMTSTR_FLAG_0PADDED))
+									g_string_append_c(str, '0');
+								if ((flags & RLIB_FMTSTR_FLAG_LEFTALIGN))
+									g_string_append_c(str, '-');
+								if ((flags & RLIB_FMTSTR_FLAG_SIGN_BLANK))
+									g_string_append_c(str, ' ');
+								if ((flags & RLIB_FMTSTR_FLAG_SIGN))
+									g_string_append_c(str, '+');
+								if ((flags & RLIB_FMTSTR_FLAG_GROUPING))
+									g_string_append_c(str, '\'');
+								if ((flags & RLIB_FMTSTR_FLAG_ALTERNATE_DIGITS))
+									g_string_append_c(str, 'I');
+								if (expected_type == RLIB_FORMATSTR_STRING) {
+									if (length > 0 && prec == 0) {
+										prec = length;
+										length = 0;
+									}
+								}
+								if (length)
+									g_string_append_printf(str, "%d", length);
+								if (prec)
+									g_string_append_printf(str, ".%d", prec);
+								else if (legacy)
+									g_string_append(str, ".0");
+								if (expected_type == RLIB_FORMATSTR_NUMBER)
+									g_string_append_printf(str, "R%c", c);
+								else
+									g_string_append_c(str, c);
+								*advance = adv + adv2 + adv3 + 4;
+								*out_type = type;
+								return str;
+							} else {
+								g_string_printf(str, "!ERR_F_F");
+								*error = TRUE;
+								*out_type = type;
+								return str;
+							}
+						} else {
+							g_string_printf(str, "!ERR_F_F");
+							*error = TRUE;
+							*out_type = type;
+							return str;
+						}
+
+						break;
+					default:
+						*error = TRUE;
+						g_string_printf(str, "!ERR_F_F");
+						return str;
+					}
+				}
+				break;
+			default:
+				switch (type) {
+				case RLIB_FORMATSTR_NONE:
+					type = RLIB_FORMATSTR_LITERAL;
+					/* fall through */
+				case RLIB_FORMATSTR_LITERAL:
+					g_string_append_len(str, fmt + adv, 2);
+					if (fmt[adv + 1])
+						adv += 2;
+					else {
+						adv++;
+						*advance = adv;
+						*out_type = type;
+						return str;
+					}
+					break;
+				default:
+					*error = TRUE;
+					g_string_printf(str, "!ERR_F_F");
+					return str;
+				}
+			}
+		} else if (fmt[adv] == '%') {
+			/*
+			 * Legacy format string handling
+			 */
+			if (!fmt[adv + 1] || fmt[adv + 1] == '%') {
+				switch (type) {
+				case RLIB_FORMATSTR_NONE:
+					type = RLIB_FORMATSTR_LITERAL;
+					/* fall through */
+				case RLIB_FORMATSTR_LITERAL:
+					g_string_append_c(str, fmt[adv]);
+					if (fmt[adv + 1] == '%')
+						adv += 2;
+					else
+						adv++;
+					break;
+				default:
+					*error = TRUE;
+					g_string_printf(str, "!ERR_F_F");
+					return str;
+				}
+			} else if (strlen(fmt + adv + 1) > 1 && fmt[adv + 1] == '$') {
+				/* Legacy thousand grouping in numbers */
+				gint adv2, adv3;
+				gint flags;
+				gboolean legacy = FALSE;
+				gint length, prec;
+				gchar c;
+
+				type = RLIB_FORMATSTR_NUMBER;
+				flags = formatstring_flags(fmt + adv + 2, &adv2);
+				flags |= RLIB_FMTSTR_FLAG_GROUPING;
+				formatstring_length_prec(fmt + adv + 2 + adv2, &length, &prec, &adv3);
+				c = fmt[adv + 2 + adv2 + adv3];
+				if (good_conv(c)) {
+					if (c == 'd') {
+						/* Legacy format regarding length/precision count */
+						if (prec)
+							length += prec + 1;
+						c = 'f';
+						legacy = TRUE;
+					}
+					g_string_printf(str, "%%");
+					if ((flags & RLIB_FMTSTR_FLAG_ALTERNATE))
+						g_string_append_c(str, '#');
+					if ((flags & RLIB_FMTSTR_FLAG_0PADDED))
+						g_string_append_c(str, '0');
+					if ((flags & RLIB_FMTSTR_FLAG_LEFTALIGN))
+						g_string_append_c(str, '-');
+					if ((flags & RLIB_FMTSTR_FLAG_SIGN_BLANK))
+						g_string_append_c(str, ' ');
+					if ((flags & RLIB_FMTSTR_FLAG_SIGN))
+						g_string_append_c(str, '+');
+					if ((flags & RLIB_FMTSTR_FLAG_GROUPING))
+						g_string_append_c(str, '\'');
+					if ((flags & RLIB_FMTSTR_FLAG_ALTERNATE_DIGITS))
+						g_string_append_c(str, 'I');
+					if (length)
+						g_string_append_printf(str, "%d", length);
+					if (prec)
+						g_string_append_printf(str, ".%d", prec);
+					else if (legacy)
+						g_string_append(str, ".0");
+					g_string_append_printf(str, "R%c", c);
+					*advance = adv + adv2 + adv3 + 3;
+					*out_type = type;
+					return str;
+				} else {
+					g_string_printf(str, "!ERR_F_F");
+					*error = TRUE;
+					*out_type = type;
+					return str;
+				}
+			} else {
+				switch (expected_type) {
+				case RLIB_FORMATSTR_DATE:
+					switch (type) {
+					case RLIB_FORMATSTR_LITERAL:
+						/*
+						 * Date format specifier found but there's already
+						 * a literal before it. Let's return it now.
+						 */
+						g_string_append_c(str, '\0');
+						*out_type = type;
+						*advance = adv;
+						return str;
+					case RLIB_FORMATSTR_NONE:
+						/* Process until the end of the string */
+						g_string_append(str, fmt + adv);
+						adv += strlen(fmt + adv);
+						*out_type = RLIB_FORMATSTR_DATE;
+						*advance = adv;
+						return str;
+					default:
+						*error = TRUE;
+						g_string_printf(str, "!ERR_F_F");
+						return str;
+					}
+				case RLIB_FORMATSTR_NUMBER:
+				case RLIB_FORMATSTR_STRING:
+					switch (type) {
+					case RLIB_FORMATSTR_LITERAL:
+						/*
+						 * Date format specifier found but there's already
+						 * a literal before it. Let's return it now.
+						 */
+						g_string_append_c(str, '\0');
+						*out_type = type;
+						*advance = adv;
+						return str;
+					case RLIB_FORMATSTR_NONE:
+						break;
+					default:
+						*error = TRUE;
+						g_string_printf(str, "!ERR_F_F");
+						return str;
+					}
+					{
+						gint adv2, adv3;
+						gint flags;
+						gboolean legacy = FALSE;
+						gint length, prec;
+						gchar c;
+
+						flags = formatstring_flags(fmt + adv + 1, &adv2);
+						formatstring_length_prec(fmt + adv + 1 + adv2, &length, &prec, &adv3);
+						c = fmt[adv + 1 + adv2 + adv3];
+						if ((good_conv(c) && expected_type == RLIB_FORMATSTR_NUMBER) || (c == 's' && expected_type == RLIB_FORMATSTR_STRING) ) {
+							type = expected_type;
+							if (c == 'd') {
+								/* Legacy format regarding length/precision count */
+								if (prec)
+									length += prec + 1;
+								c = 'f';
+								legacy = TRUE;
+							}
+							g_string_printf(str, "%%");
+							if ((flags & RLIB_FMTSTR_FLAG_ALTERNATE))
+								g_string_append_c(str, '#');
+							if ((flags & RLIB_FMTSTR_FLAG_0PADDED))
+								g_string_append_c(str, '0');
+							if ((flags & RLIB_FMTSTR_FLAG_LEFTALIGN))
+								g_string_append_c(str, '-');
+							if ((flags & RLIB_FMTSTR_FLAG_SIGN_BLANK))
+								g_string_append_c(str, ' ');
+							if ((flags & RLIB_FMTSTR_FLAG_SIGN))
+								g_string_append_c(str, '+');
+							if ((flags & RLIB_FMTSTR_FLAG_GROUPING))
+								g_string_append_c(str, '\'');
+							if ((flags & RLIB_FMTSTR_FLAG_ALTERNATE_DIGITS))
+								g_string_append_c(str, 'I');
+							if (expected_type == RLIB_FORMATSTR_STRING) {
+								if (length > 0 && prec == 0) {
+									prec = length;
+									length = 0;
+								}
+							}
+							if (length)
+								g_string_append_printf(str, "%d", length);
+							if (prec)
+								g_string_append_printf(str, ".%d", prec);
+							else if (legacy)
+								g_string_append(str, ".0");
+							if (expected_type == RLIB_FORMATSTR_NUMBER)
+								g_string_append_printf(str, "R%c", c);
+							else
+								g_string_append_c(str, c);
+							*advance = adv + adv2 + adv3 + 2;
+							*out_type = type;
+							return str;
+						} else {
+							g_string_printf(str, "!ERR_F_F");
+							*error = TRUE;
+							*out_type = type;
+							return str;
+						}
+					}
+				}
+			}
+		} else {
+			switch (type) {
+			case RLIB_FORMATSTR_NONE:
+				type = RLIB_FORMATSTR_LITERAL;
+				/* fall through */
+			case RLIB_FORMATSTR_LITERAL:
+				g_string_append_c(str, fmt[adv]);
+				adv++;
+				break;
+			default:
+				*error = TRUE;
+				g_string_printf(str, "!ERR_F_F");
+				return str;
+			}
+		}
+	}
+
+	*advance = adv;
+	*out_type = type;
+	return str;
+}
+
+
 gboolean rlib_format_number(rlib *r, gchar **dest, const gchar *fmt, mpfr_t value) {
-	//gchar *d = strstr(fmt, "d");
-	/*
-	 * TODO TODO TODO
-	 *
-	 * This function should really look like:
-	 * - dissect the format string into pieces
-	 * - replace the format specifier character with "Rf" using the same precision
-	 * - use mpfr_asprintf() ; *dest = g_strdup() ; mpfr_free_str()
-	 */
-	double d = mpfr_get_d(value, MPFR_RNDN);
-	*dest = g_strdup_printf(fmt, d);
-	change_radix_character(r, *dest);
+	GString *str, *tmp;
+	gint types[2] = { RLIB_FORMATSTR_NUMBER, RLIB_FORMATSTR_LITERAL };
+	gint type_idx, type, advance, adv;
+	gboolean error;
+	char *num;
+
+	if (dest == NULL || fmt == NULL)
+		return FALSE;
+
+	printf("rlib_format_number CALLED with '%s'\n", fmt);
+
+	str = g_string_new("");
+	advance = 0;
+	type_idx = 0;
+	while (fmt[advance]) {
+		tmp = get_next_format_string(fmt + advance, types[type_idx], &type, &adv, &error);
+		if (error) {
+			g_string_free(str, TRUE);
+			*dest = g_string_free(tmp, FALSE);
+			return FALSE;
+		}
+
+		advance += adv;
+
+		switch (type) {
+		case RLIB_FORMATSTR_LITERAL:
+			g_string_append(str, tmp->str);
+			g_string_free(tmp, TRUE);
+			break;
+		case RLIB_FORMATSTR_NUMBER:
+			num = NULL;
+			if (mpfr_asprintf(&num, tmp->str, value) >= 0) {
+				change_radix_character(r, num);
+				g_string_append(str, num);
+				mpfr_free_str(num);
+			}
+			/*
+			 * There is a possible leak of "num" in case of an error
+			 * but it can't be avoided, as asprintf() may leave
+			 * it undefined in this case.
+			 */
+			g_string_free(tmp, TRUE);
+			break;
+		}
+
+		if (type == types[type_idx])
+			type_idx++;
+	}
+
+	*dest = g_string_free(str, FALSE);
 	return TRUE;
 }
 
@@ -93,135 +930,66 @@ static gboolean string_sprintf(rlib *r, gchar **dest, gchar *fmtstr, struct rlib
 
 #define MAX_NUMBER 128
 
-gint64 rlib_number_sprintf(rlib *r, gchar **woot_dest, gchar *fmtstr, const struct rlib_value *rval, gint64 special_format, gchar *infix, gint line_number) {
-	gint dec = 0;
-	gint left_padzero = 0;
-	gint left_pad = 0;
-	gint right_padzero = 1;
-	gint right_pad = 0;
-	gint where = 0;
-	gint commatize = 0;
-	gchar *c;
-	gchar *radixchar = nl_langinfo(RADIXCHAR);
-	GString *dest = g_string_sized_new(MAX_NUMBER);
-	gint slen;
+gint rlib_number_sprintf(rlib *r UNUSED, gchar **woot_dest, gchar *fmtstr, const struct rlib_value *rval, gint64 special_format UNUSED, gchar *infix UNUSED, gint line_number UNUSED) {
+	GString *str;
+	gint types[2] = { RLIB_FORMATSTR_NUMBER, RLIB_FORMATSTR_LITERAL };
+	gint type_idx, type;
+	gint advance, slen;
 
-	for (c = fmtstr; *c && (*c != 'd'); c++) {
-		if (*c == '$') {
-			commatize = 1;
+	printf("rlib_number_sprintf CALLED with '%s'\n", fmtstr);
+
+	str = g_string_new("");
+	advance = 0;
+	type_idx = 0;
+	while (fmtstr[advance]) {
+		gint adv;
+		gboolean error;
+		GString *str1;
+
+		str1 = get_next_format_string(fmtstr + advance, types[type_idx], &type, &adv, &error);
+		fprintf(stderr, "rlib_number_sprintf: get_next_format_string returned '%s'\n", str1->str);
+
+		if (error) {
+			g_string_free(str, TRUE);
+			slen = str1->len;
+			*woot_dest = g_string_free(str1, FALSE);
+			return slen;
 		}
-		if (*c == '%') {
-			where = 0;
-		} else if (*c == '.') {
-			dec = 1;
-			where = 1;
-		} else if (isdigit(*c)) {
-			if (where == 0) {
-				if (left_pad == 0 && (*c - '0') == 0)
-					left_padzero = 1;
-				left_pad *= 10;
-				left_pad += (*c - '0');
-			} else {
-				right_pad *= 10;
-				right_pad += (*c - '0');
+
+		switch (type) {
+		case RLIB_FORMATSTR_LITERAL:
+			g_string_append(str, str1->str);
+			break;
+		case RLIB_FORMATSTR_NUMBER:
+			{
+				char *formatted;
+
+				if (mpfr_asprintf(&formatted, str1->str, rval->mpfr_value) >= 0) {
+					g_string_append(str, formatted);
+					mpfr_free_str(formatted);
+				}
 			}
-		}
-	}
-	if (!left_pad)
-		left_padzero = 1;
-	if (!right_pad)
-		right_padzero = 1;
-	if (rval != NULL) {
-		mpfr_t tmpvalue;
-		char *tmp;
-		gchar fleft[MAX_FORMAT_STRING];
-		gchar fright[MAX_FORMAT_STRING];
-		gchar left_holding[MAX_NUMBER];
-		gchar right_holding[MAX_NUMBER];
-		gint64 ptr = 0;
-		glong left = 0, right = 0;
-
-		mpfr_init2(tmpvalue, r->numeric_precision_bits);
-
-		if (left_pad > MAX_FORMAT_STRING) {
-			r_error(r, "LINE %d FORMATTING ERROR: %s\n", line_number, infix);
-			r_error(r, "FORMATTING ERROR:  LEFT PAD IS WAY TO BIG! (%d)\n", left_pad);
-			left_pad = MAX_FORMAT_STRING;
-		}
-		if (right_pad > MAX_FORMAT_STRING) {
-			r_error(r, "LINE %d FORMATTING ERROR: %s\n", line_number, infix);
-			r_error(r, "FORMATTING ERROR:  LEFT PAD IS WAY TO BIG! (%d)\n", right_pad);
-			right_pad = MAX_FORMAT_STRING;
-		}
-
-		mpfr_trunc(tmpvalue, rval->mpfr_value);
-		mpfr_asprintf(&tmp, "%.0Rf", tmpvalue);
-		//XXX left = mpfr_get_si(rval->mpfr_value, MPFR_RNDN);
-		if (special_format)
-			left = llabs(left);
-		fleft[ptr++] = '%';
-		if (left_padzero)
-			fleft[ptr++] = '0';
-		if (left_pad)
-			if (commatize) {
-				sprintf(fleft +ptr, "%d'" PRId64, left_pad);
-			} else
-				sprintf(fleft +ptr, "%d" PRId64, left_pad);
-		else {
-			char	*int64fmt = PRId64;
-			int	i;
-
-			if (commatize)
-				fleft[ptr++] = '\'';
-			for (i = 0; int64fmt[i]; i++)
-				fleft[ptr++] = int64fmt[i];
-			fleft[ptr++] = '\0';
-		}
-		if (left_pad == 0 && left == 0) {
-			gint64 spot = 0;
-			if (mpfr_sgn(rval->mpfr_value) < 0)
-				left_holding[spot++] = '-';
-			left_holding[spot++] = '0';
-			left_holding[spot++] = 0;			
-		} else {
-			sprintf(left_holding, fleft, left);
-		}
-		mpfr_free_str(tmp);
-		dest = g_string_append(dest, left_holding);
-		if (dec) {
-			ptr = 0;
-			mpfr_frac(tmpvalue, rval->mpfr_value, MPFR_RNDN);
-			mpfr_asprintf(&tmp, "%Rf", tmpvalue, MPFR_RNDN);
-			//XXX right = llabs(RLIB_VALUE_GET_AS_NUMBER(rval)) % RLIB_DECIMAL_PRECISION;
-			fright[ptr++] = '%';
-			if (right_padzero)
-				fright[ptr++] = '0';
-			if (right_pad)
-				sprintf(&fright[ptr], "%d" PRId64, right_pad);
-			else {
-				char	*int64fmt = PRId64;
-				int	i;
-
-				for (i = 0; int64fmt[i]; i++)
-					fright[ptr++] = int64fmt[i];
-				fright[ptr++] = '\0';
+			break;
+		case RLIB_FORMATSTR_MONEY:
+			{
+				gchar *money = g_malloc(MAXSTRLEN);
+				if (rlib_mpfr_strfmon(money, MAXSTRLEN, str1->str, rval->mpfr_value) >= 0)
+					g_string_append(str, money);
+				g_free(money);
 			}
-			right /= tentothe(RLIB_FXP_PRECISION - right_pad);
-			sprintf(right_holding, fright, right);
-			dest = g_string_append(dest, radixchar);
-			dest = g_string_append(dest, right_holding);
-			mpfr_free_str(tmp);
+			break;
 		}
-		mpfr_clear(tmpvalue);
+
+		g_string_free(str1, TRUE);
+		advance += adv;
 	}
-	*woot_dest = dest->str;
-	change_radix_character(r, *woot_dest);
-	slen = dest->len;
-	g_string_free(dest, FALSE);
+
+	slen = str->len;
+	*woot_dest = g_string_free(str, FALSE);
 	return slen;
 }
 
-static gint64 rlib_format_string_default(rlib *r, struct rlib_value *rval, gchar **dest) {
+static gboolean rlib_format_string_default(rlib *r, struct rlib_value *rval, gchar **dest) {
 	if (RLIB_VALUE_IS_NUMBER(r, rval)) {
 		char *tmp;
 		mpfr_asprintf(&tmp, "%.0Rf", rval->mpfr_value);
@@ -242,11 +1010,7 @@ static gint64 rlib_format_string_default(rlib *r, struct rlib_value *rval, gchar
 	return TRUE;
 }
 
-gint64 rlib_format_string(rlib *r, gchar **dest, struct rlib_report_field *rf, struct rlib_value *rval) {
-	gchar before[MAXSTRLEN], after[MAXSTRLEN];
-	gint64 before_len = 0, after_len = 0;
-	gboolean formatted_it = FALSE;	
-
+gboolean rlib_format_string(rlib *r, gchar **dest, struct rlib_report_field *rf, struct rlib_value *rval) {
 	if (r->special_locale != NULL)
 		setlocale(LC_ALL, r->special_locale);
 	if (rf->xml_format.xml == NULL) {
@@ -259,135 +1023,90 @@ gint64 rlib_format_string(rlib *r, gchar **dest, struct rlib_report_field *rf, s
 		if (!RLIB_VALUE_IS_STRING(r, rval_fmtstr)) {
 			*dest = g_strdup_printf("!ERR_F_F");
 			rlib_value_free(r, rval_fmtstr);
-			if (r->special_locale != NULL) 
+			if (r->special_locale != NULL)
 				setlocale(LC_ALL, r->current_locale);
 			return FALSE;
 		} else {
 			formatstring = RLIB_VALUE_GET_AS_STRING(r, rval_fmtstr);
+
 			if (formatstring == NULL) {
 				rlib_format_string_default(r, rval, dest);
 			} else {
-				if (*formatstring == '!') {
-					gboolean result;
-					gchar *tfmt = formatstring + 1;
-					gboolean goodfmt = TRUE;
-					switch (*tfmt) {
-					case '$': /* Format as money */
-						if (RLIB_VALUE_IS_NUMBER(r, rval)) {
-							result = rlib_format_money(r, dest, tfmt + 1, rval->mpfr_value);
-							if (r->special_locale != NULL)
-								setlocale(LC_ALL, r->current_locale);
-							rlib_value_free(r, rval_fmtstr);
-							return result;
-						}
-						++formatstring;
+				GString *str;
+				gint types[2] = { RLIB_FORMATSTR_NONE, RLIB_FORMATSTR_LITERAL };
+				gint advance, type_idx;
+
+				if (RLIB_VALUE_IS_NUMBER(r, rval))
+					types[0] = RLIB_FORMATSTR_NUMBER;
+				else if (RLIB_VALUE_IS_DATE(r, rval))
+					types[0] = RLIB_FORMATSTR_DATE;
+				else if (RLIB_VALUE_IS_STRING(r, rval))
+					types[0] = RLIB_FORMATSTR_STRING;
+
+				str = g_string_new("");
+				advance = 0;
+				type_idx = 0;
+				while (formatstring[advance]) {
+					GString *tmp;
+					gchar *result;
+					gint type, adv;
+					gboolean error;
+
+					tmp = get_next_format_string(formatstring + advance, types[type_idx], &type, &adv, &error);
+
+					if (error) {
+						g_string_free(str, TRUE);
+						*dest = g_string_free(tmp, FALSE);
+						return FALSE;
+					}
+
+					if (types[type_idx] == type || (types[type_idx] == RLIB_FORMATSTR_NUMBER && type == RLIB_FORMATSTR_MONEY))
+						type_idx++;
+
+					switch (type) {
+					case RLIB_FORMATSTR_LITERAL:
+						g_string_append(str, tmp->str);
 						break;
-					case '#': /* Format as number */
-						if (RLIB_VALUE_IS_NUMBER(r, rval)) {
-							result = rlib_format_number(r, dest, tfmt + 1, rval->mpfr_value);
-							if (r->special_locale != NULL)
-								setlocale(LC_ALL, r->current_locale);
-							rlib_value_free(r, rval_fmtstr);
-							return result;
+					case RLIB_FORMATSTR_NUMBER:
+						if (mpfr_asprintf(&result, tmp->str, rval->mpfr_value) >= 0) {
+							g_string_append(str, result);
+							mpfr_free_str(result);
 						}
-						++formatstring;
 						break;
-					case '@': /* Format as time/date */
-						if (RLIB_VALUE_IS_DATE(r, rval)) {
+					case RLIB_FORMATSTR_MONEY:
+						result = g_malloc(MAXSTRLEN);
+						if (rlib_mpfr_strfmon(result, MAXSTRLEN, tmp->str, rval->mpfr_value) >= 0) {
+							g_string_append(str, result);
+							g_free(result);
+						}
+						break;
+					case RLIB_FORMATSTR_DATE:
+						{
 							struct rlib_datetime *dt = RLIB_VALUE_GET_AS_DATE(r, rval);
-							rlib_datetime_format(r, dest, dt, tfmt + 1);
-							formatted_it = TRUE;
+							rlib_datetime_format(r, &result, dt, tmp->str);
 						}
+						g_string_append(str, result);
+						g_free(result);
 						break;
-					default:
-						goodfmt = FALSE;
+					case RLIB_FORMATSTR_STRING:
+						string_sprintf(r, &result, tmp->str, rval);
+						g_string_append(str, result);
+						g_free(result);
 						break;
-					}
-					if (goodfmt) {
-						if (r->special_locale != NULL)
-							setlocale(LC_ALL, r->current_locale);
-						rlib_value_free(r, rval_fmtstr);
-						return TRUE;
-					}
-				}
-				if (RLIB_VALUE_IS_DATE(r, rval)) {
-					rlib_datetime_format(r, dest, RLIB_VALUE_GET_AS_DATE(r, rval), formatstring);
-				} else {	
-					gint64 i = 0, /* j = 0, pos = 0, */ fpos = 0;
-					gchar fmtstr[MAX_FORMAT_STRING];
-					gint64 special_format = 0;
-					gchar *idx;
-					gint64 len_formatstring;
-					idx = strchr(formatstring, ':');
-					fmtstr[0] = 0;
-					if (idx != NULL && RLIB_VALUE_IS_NUMBER(r, rval)) {
-						formatstring = g_strdup(formatstring);
-						idx = strchr(formatstring, ':');
-						special_format = 1;
-						if (mpfr_sgn(rval->mpfr_value) >= 0)
-							idx[0] = '\0';
-						else
-							formatstring = idx + 1;
 					}
 
-					len_formatstring = strlen(formatstring);
+					if (r->special_locale != NULL)
+						setlocale(LC_ALL, r->current_locale);
+					rlib_value_free(r, rval_fmtstr);
 
-					for (i = 0 ; i < len_formatstring; i++) {
-						if (formatstring[i] == '%' && ((i + 1) < len_formatstring && formatstring[i + 1] != '%')) {
-							int tchar;
-							while(formatstring[i] != 's' && formatstring[i] != 'd' && i <=len_formatstring) {
-								fmtstr[fpos++] = formatstring[i++];
-							}
-							fmtstr[fpos++] = formatstring[i];
-							fmtstr[fpos] = '\0';
-							tchar = fmtstr[fpos - 1];
-							if ((tchar == 'd') || (tchar == 'i') || (tchar == 'n')) {
-								if (RLIB_VALUE_IS_NUMBER(r, rval)) {
-									rlib_number_sprintf(r, dest, fmtstr, rval, special_format, (gchar *)rf->xml_format.xml, rf->xml_format.line);
-									formatted_it = TRUE;
-								} else {
-									*dest = g_strdup_printf("!ERR_F_D");
-									rlib_value_free(r, rval_fmtstr);
-									if (r->special_locale != NULL)
-										setlocale(LC_ALL, r->current_locale);
-									return FALSE;
-								}
-							} else if (tchar == 's') {
-								if (RLIB_VALUE_IS_STRING(r, rval)) {
-									string_sprintf(r, dest, fmtstr, rval);
-									formatted_it = TRUE;
-								} else {
-									*dest = g_strdup_printf("!ERR_F_S");
-									rlib_value_free(r, rval_fmtstr);
-									if (r->special_locale != NULL)
-										setlocale(LC_ALL, r->current_locale);
-									return FALSE;
-								}
-							}
-						} else {
-							if (formatted_it == FALSE) {
-								before[before_len++] = formatstring[i];
-							} else {
-								after[after_len++] = formatstring[i];
-							}
-							if (formatstring[i] == '%')
-								i++;
-						}
-					}
+					advance += adv;
 				}
+				*dest = g_string_free(str, FALSE);
 			}
 			rlib_value_free(r, rval_fmtstr);
 		}
 	}
-	
-	if (before_len > 0 || after_len > 0) {
-		gchar *new_str;
-		before[before_len] = 0;
-		after[after_len] = 0;
-		new_str = g_strconcat(before, *dest, after, NULL);
-		g_free(*dest);
-		*dest = new_str;
-	}
+
 	if (r->special_locale != NULL)
 		setlocale(LC_ALL, r->current_locale);
 	return TRUE;

@@ -101,6 +101,9 @@ src/examples/c/follower-breaks.xml
 src/examples/c/hyperinflation
 src/examples/c/hyperinflation.exe
 src/examples/c/hyperinflation.xml
+src/examples/c/formatstring
+src/examples/c/formatstring.exe
+src/examples/c/formatstring.xml
 src/examples/csharp/products.xml
 src/examples/java/*.java
 src/examples/java/*.xml
