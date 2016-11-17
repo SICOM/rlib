@@ -936,8 +936,6 @@ gint rlib_number_sprintf(rlib *r UNUSED, gchar **woot_dest, gchar *fmtstr, const
 	gint type_idx, type;
 	gint advance, slen;
 
-	printf("rlib_number_sprintf CALLED with '%s'\n", fmtstr);
-
 	str = g_string_new("");
 	advance = 0;
 	type_idx = 0;
@@ -947,7 +945,6 @@ gint rlib_number_sprintf(rlib *r UNUSED, gchar **woot_dest, gchar *fmtstr, const
 		GString *str1;
 
 		str1 = get_next_format_string(fmtstr + advance, types[type_idx], &type, &adv, &error);
-		fprintf(stderr, "rlib_number_sprintf: get_next_format_string returned '%s'\n", str1->str);
 
 		if (error) {
 			g_string_free(str, TRUE);
