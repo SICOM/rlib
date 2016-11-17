@@ -49,7 +49,6 @@ struct input_filter {
 	gpointer (*resolve_field_pointer)(gpointer, gpointer, gchar *);
 	void (*free_result)(gpointer, gpointer);
 	void (*free_query)(gpointer, gpointer);
-	gint64 (*set_encoding)(gpointer);
 	void (*set_query_cache_size)(gpointer, gint);
 };
 
@@ -59,7 +58,7 @@ struct rlib_query {
 	 * Keep these in sync!!!
 	 */
 	gchar *sql;
-	gint64 sql_allocated;
+	gboolean sql_allocated;
 	gchar *name;
 	struct input_filter *input;
 	gpointer *private;

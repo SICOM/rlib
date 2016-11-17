@@ -180,7 +180,7 @@ void rlib_set_output_format_from_text(rlib *r, gchar * name);
 void rlib_set_output_parameter(rlib *r, gchar *parameter, gchar *value);
 void rlib_set_locale(rlib *r, gchar *locale);
 void rlib_set_output_encoding(rlib *r, const char *encoding);
-gboolean rlib_set_datasource_encoding(rlib *r, gchar *input_name, gchar *encoding);
+gint rlib_set_datasource_encoding(rlib *r, gchar *input_name, gchar *encoding);
 void rlib_set_query_cache_size(rlib *r, gint cache_size);
 gboolean rlib_execute(rlib *r);
 gboolean rlib_parse(rlib *);
@@ -191,17 +191,17 @@ gsize rlib_get_output_length(rlib *r);
 
 /* Report control */
 typedef gboolean (*rlib_function)(rlib *, struct rlib_pcode *code, struct rlib_value_stack *, struct rlib_value *this_field_value, gpointer user_data);
-gboolean rlib_add_function(rlib *r, gchar *function_name, rlib_function function, gpointer user_data);
+void rlib_add_function(rlib *r, gchar *function_name, rlib_function function, gpointer user_data);
 gboolean rlib_signal_connect(rlib *r, gint signal_number, gboolean (*signal_function)(rlib *, gpointer), gpointer data);
 gboolean rlib_signal_connect_string(rlib *r, gchar *signal_name, gboolean (*signal_function)(rlib *, gpointer), gpointer data);
-gboolean rlib_add_parameter(rlib *r, const gchar *name, const gchar *value);
+void rlib_add_parameter(rlib *r, const gchar *name, const gchar *value);
 gboolean rlib_add_resultset_follower_n_to_1(rlib *r, gchar *leader, gchar *leader_field, gchar *follower,gchar *follower_field);
 gboolean rlib_add_resultset_follower(rlib *r, gchar *leader, gchar *follower);
 gboolean rlib_query_refresh(rlib *r);
 gboolean rlib_graph_add_bg_region(rlib *r, gchar *graph_name, gchar *region_label, gchar *color, gdouble start, gdouble end);
 gboolean rlib_graph_clear_bg_region(rlib *r, gchar *graph_name);
 gboolean rlib_graph_set_x_minor_tick(rlib *r, gchar *graph_name, gchar *x_value);
-gboolean rlib_graph_set_x_minor_tick_by_location(rlib *r, gchar *graph_name, gint64 location);
+gboolean rlib_graph_set_x_minor_tick_by_location(rlib *r, gchar *graph_name, gint location);
 
 /* Redirect error messages */
 void rlib_setmessagewriter(void(*writer)(rlib *r, const gchar *msg));

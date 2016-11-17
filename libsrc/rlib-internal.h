@@ -1037,6 +1037,7 @@ void rlib_value_init(rlib *r, struct rlib_value *value);
 gint rvalcmp(rlib *r, struct rlib_value *v1, struct rlib_value *v2);
 struct rlib_value *rlib_value_dup_contents(rlib *r, struct rlib_value *rval);
 gboolean rlib_value_is_empty(rlib *, struct rlib_value *rval);
+gboolean rlib_execute_as_int(rlib *r, struct rlib_pcode *pcode, gint *result);
 gboolean rlib_execute_as_int64(rlib *r, struct rlib_pcode *pcode, gint64 *result);
 gboolean rlib_execute_as_boolean(rlib *r, struct rlib_pcode *pcode, gboolean *result);
 gboolean rlib_execute_as_string(rlib *r, struct rlib_pcode *pcode, gchar *buf, gint64 buf_len);
@@ -1135,7 +1136,7 @@ gint64 rlib_layout_end_page(rlib *r, struct rlib_part *part, struct rlib_report 
 /***** PROTOTYPES: axis.c ******************************************************/
 /* void rlib_graph_find_y_range(rlib *r, gdouble a, gdouble b, gdouble *y_min, gdouble *y_max, gint64 graph_type); */
 /* gint64 rlib_graph_num_ticks(rlib *r, gdouble a, gdouble b); */
-int adjust_limits(gdouble  dataMin, gdouble dataMax, gint64 denyMinEqualsAdjMin, gint64 minTMs, gint64 maxTMs, gint64 *numTms, gdouble *tmi, gdouble *adjMin, gdouble *adjMax, gint64 *goodIncs, gint64 numGoodIncs);
+int adjust_limits(gdouble dataMin, gdouble dataMax, gint denyMinEqualsAdjMin, gint minTMs, gint maxTMs, gint *numTms, gdouble *tmi, gdouble *adjMin, gdouble *adjMax, gint *goodIncs, gint numGoodIncs);
 
 /***** PROTOTYPES: xml_data_source.c ******************************************************/
 gpointer rlib_xml_new_input_filter(rlib *r);

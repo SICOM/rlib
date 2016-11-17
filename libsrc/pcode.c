@@ -1612,6 +1612,34 @@ DLL_EXPORT_SYM struct rlib_value *rlib_execute_pcode(rlib *r, struct rlib_value 
 	return rval;
 }
 
+gboolean rlib_execute_as_int(rlib *r, struct rlib_pcode *pcode, gint *result) {
+	struct rlib_value rval;
+	gboolean isok = FALSE;
+
+	*result = 0L;
+	if (!pcode)
+		return isok;
+
+	rlib_value_init(r, &rval);
+	rlib_execute_pcode(r, &rval, pcode, NULL);
+	if (RLIB_VALUE_IS_NUMBER(r, (&rval))) {
+		*result = mpfr_get_si(rval.mpfr_value, MPFR_RNDN);
+		rlib_value_free(r, &rval);
+		isok = TRUE;
+	} else {
+		const gchar *whatgot = "don't know";
+		const gchar *gotval = "";
+		if (RLIB_VALUE_IS_STRING(r, (&rval))) {
+			whatgot = "string";
+			gotval = RLIB_VALUE_GET_AS_STRING(r, &rval);
+		}
+		r_error(r, "Expecting numeric value from pcode. Got %s=%s", whatgot, gotval);
+		rlib_value_free(r, &rval);
+	}
+
+	return isok;
+}
+
 gboolean rlib_execute_as_int64(rlib *r, struct rlib_pcode *pcode, gint64 *result) {
 	struct rlib_value rval;
 	gboolean isok = FALSE;

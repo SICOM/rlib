@@ -37,9 +37,9 @@
 
 #define MAX_COLOR_POOL 4
 
-/*static gint64 dynamic_range(gdouble a, gdouble b) {
+/*static gint dynamic_range(gdouble a, gdouble b) {
 	gdouble min, max, d;
-	gint64 n;
+	gint n;
 	
 	if(a == b)
 		return 0;
@@ -58,26 +58,26 @@
 
 #define SMALL .00000001
 
-static gint64 nsd(gdouble x) {
-	gint64 n;
+static gint nsd(gdouble x) {
+	gint n;
 	gdouble y,z;
 	gdouble close;
-	gint64 i;
-	if(x == 0)
+	gint i;
+	if (x == 0)
 		return 0;
 	n = floor(log10(fabs(x)));
 	y = fabs(x) / pow(10, n);
-	for(i=1;i<=MAXIMUM_SIGNIFICANT_DIGITS;i++) {
+	for (i = 1; i <= MAXIMUM_SIGNIFICANT_DIGITS; i++) {
 		z = trunc(y * pow(10, i)) * pow(10, -i);
 		close = fabs((z-y)/y);
-		if(close <= SMALL) {
+		if (close <= SMALL) {
 			return i + 1;
 		}
 	}
 	return 0;
 }
 
-static gint64 sd(gdouble x, gdouble m, gint64 ud) {
+static gint sd(gdouble x, gdouble m, gint ud) {
 	gdouble n;
 	n = floor(log10(fabs(x))) - m + 1;
 	if(ud == -1)
@@ -86,9 +86,9 @@ static gint64 sd(gdouble x, gdouble m, gint64 ud) {
 		return ceil(x/pow(10,n));
 }
 
-static gdouble nice_limit(gdouble z, gint64 ud) {
-	gint64 t, abs_t, n;
-	gint64 s;
+static gdouble nice_limit(gdouble z, gint ud) {
+	gint t, abs_t, n;
+	gint s;
 
 	n = floor(log10(fabs(z))) - 1;
 	t = sd(z, 2, ud);
@@ -111,16 +111,16 @@ static gdouble nice_limit(gdouble z, gint64 ud) {
 	return 5.0 * pow(10, n) * s;
 }
 
-static gdouble round_sd(gdouble z, gint64 m, gint64 ud) {
-	gint64 n = floor(log10(fabs(z))) + 1 - m;
-	gint64 t = sd(z, m, ud);
+static gdouble round_sd(gdouble z, gint m, gint ud) {
+	gint n = floor(log10(fabs(z))) + 1 - m;
+	gint t = sd(z, m, ud);
 	return t * pow(10, n);
 }
 
-static gdouble change_limit(gdouble min, gdouble max, gint64 ud) {
+static gdouble change_limit(gdouble min, gdouble max, gint ud) {
 	gdouble pdr = 1.0/15.0;
 	gdouble t;
-	gint64 sd;
+	gint sd;
 	if(min == 0)
 		return 0;
 		
@@ -136,10 +136,10 @@ static gdouble change_limit(gdouble min, gdouble max, gint64 ud) {
 	return round_sd(t,sd,ud);
 }
 
-gint64 rlib_graph_num_ticks(rlib *r, gdouble a, gdouble b) {
+gint rlib_graph_num_ticks(rlib *r, gdouble a, gdouble b) {
 	gdouble min, max;
-	gint64 d = dynamic_range(a, b);
-	gint64 sd;
+	gint d = dynamic_range(a, b);
+	gint sd;
 	if(a > b) {
 		min = b;
 		max = a;	
@@ -178,7 +178,7 @@ gint64 rlib_graph_num_ticks(rlib *r, gdouble a, gdouble b) {
 	return 10;
 }
 
-void rlib_graph_find_y_range(rlib *r, gdouble a, gdouble b, gdouble *y_min, gdouble *y_max, gint64 graph_type) {
+void rlib_graph_find_y_range(rlib *r, gdouble a, gdouble b, gdouble *y_min, gdouble *y_max, gint graph_type) {
 	gdouble contrast;
 	gdouble min, max;
 
@@ -260,12 +260,12 @@ ________________________________________________________________________________
 #define HASFACTOR(x,y) ((x)==(y)*(int)((x)/(y)))
 
 
-gint64 localError(const gchar* s) {
+gint localError(const gchar* s) {
 	fprintf(stderr, "%s\n",s);
 	return -1;
 }
 
-gint64 imod(gint64 y, gint64 x, gint64 *quo, gint64 *rem) {
+gint imod(gint y, gint x, gint *quo, gint *rem) {
 	if (x==0)   
 		return (localError("imod: received zero denominator"),-1);
 
@@ -274,7 +274,7 @@ gint64 imod(gint64 y, gint64 x, gint64 *quo, gint64 *rem) {
 	return 0;
 }
 
-gint64 zeroRem(gint64 upDown, gint64 y, gint64 x, gint64 *quo, gint64 *newY) {
+gint zeroRem(gint upDown, gint y, gint x, gint *quo, gint *newY) {
 	if (x==0) 
 		return (localError("zeroRem: received zero denominator"),-1);
 	if (upDown!=-1 && upDown!=1) 
@@ -284,7 +284,7 @@ gint64 zeroRem(gint64 upDown, gint64 y, gint64 x, gint64 *quo, gint64 *newY) {
 		*newY=y;
 		return 0;
 	} else {
-		gint64 rem;
+		gint rem;
 		imod(y,x,quo,&rem);
 		if (rem==0) {
 			*newY=y; /*leave quo as is*/
@@ -297,7 +297,7 @@ gint64 zeroRem(gint64 upDown, gint64 y, gint64 x, gint64 *quo, gint64 *newY) {
 	}
 }
 
-gint64 mapData(gdouble dataMin, gdouble dataMax, gint64 sd, gint64 *mappedDataMin, gint64 *mappedDataMax, gint64 *raise) {
+gint mapData(gdouble dataMin, gdouble dataMax, gint sd, gint *mappedDataMin, gint *mappedDataMax, gint *raise) {
 	gdouble  mx=MAX(fabs((gdouble)dataMin),fabs((gdouble)dataMax));
 	*raise=sd-(gint)(log10(mx)+Delta)-1; /*only the integer part*/
 	*mappedDataMin=ROUNDDOWN(dataMin*POWER10(*raise));
@@ -305,8 +305,8 @@ gint64 mapData(gdouble dataMin, gdouble dataMax, gint64 sd, gint64 *mappedDataMi
 	return 0;
 }
 
-static gint64 isGoodInc(gint64 inc, gint64 sd, gint64 *goodIncs, gint64 num) {
-	gint64 i, j;
+static gint isGoodInc(gint inc, gint sd, gint *goodIncs, gint num) {
+	gint i, j;
 	for (i = 0; i < num; i++)
 		for (j = 0; j < sd; j++)
 		if (inc == goodIncs[i] * ((int)(pow((double)10, (double)j) + 0.5)))
@@ -314,21 +314,21 @@ static gint64 isGoodInc(gint64 inc, gint64 sd, gint64 *goodIncs, gint64 num) {
 	return 0;
 }
 
-gint64 adjustPosAndNegLimits(gint64 mappedMin, gint64 mappedMax, gint64 minTMs, gint64 maxTMs, gint64 sd, gint64 *goodIncs, gint64 numGoodIncs, gint64 *numTms, gint64 *tmi, gint64 *adjMin, gint64 *adjMax) {
-	gint64 bestAdj = 32767;
-	gint64 inc;
-	gint64 found = 0;
-	gint64 bestNewMin = 0, bestNewMax = 0, bestTm = 0, bestInc = 0;
-	gint64 mapMax = MAPMAX(sd);
+gint adjustPosAndNegLimits(gint mappedMin, gint mappedMax, gint minTMs, gint maxTMs, gint sd, gint *goodIncs, gint numGoodIncs, gint *numTms, gint *tmi, gint *adjMin, gint *adjMax) {
+	gint bestAdj = 32767;
+	gint inc;
+	gint found = 0;
+	gint bestNewMin = 0, bestNewMax = 0, bestTm = 0, bestInc = 0;
+	gint mapMax = MAPMAX(sd);
 
 	if (MAX(abs(mappedMin),abs(mappedMax))>mapMax)
    	 return (localError("adjustPosAndNegLimits: some data is > supplied mapping upper limit"),-1);
 
 //	for (inc=1;inc<=mapMax;inc++) {
 	for (inc = 1; inc <= maxTMs; inc++) {
-		gint64 quo1, quo2;
-		gint64 newMin, newMax;
-		gint64 adj, tm;
+		gint quo1, quo2;
+		gint newMin, newMax;
+		gint adj, tm;
 
 		zeroRem(-1, mappedMin, inc, &quo1, &newMin);
 		zeroRem(1, mappedMax, inc, &quo2, &newMax);
@@ -356,7 +356,7 @@ gint64 adjustPosAndNegLimits(gint64 mappedMin, gint64 mappedMax, gint64 minTMs, 
 	return 0;
 }
 
-gint64 tryToZeroize(gdouble mn, gdouble mx, gdouble criticalRatio, gdouble *adjMn, gdouble *adjMx) {
+gint tryToZeroize(gdouble mn, gdouble mx, gdouble criticalRatio, gdouble *adjMn, gdouble *adjMx) {
 	gdouble amn=MIN(fabs(mn),fabs(mx));
 	gdouble amx=MAX(fabs(mn),fabs(mx));
 	gdouble r=amn/amx;
@@ -372,7 +372,7 @@ gint64 tryToZeroize(gdouble mn, gdouble mx, gdouble criticalRatio, gdouble *adjM
 	return 0;
 }
 
-gint64 tryToZeroizeSaved(gint64 mn, gint64 mx, gdouble criticalRatio, gint64 *adjMn, gint64 *adjMx) {
+gint tryToZeroizeSaved(gint mn, gint mx, gdouble criticalRatio, gint *adjMn, gint *adjMx) {
 	gdouble amn=MIN(abs(mn),abs(mx));
 	gdouble amx=MAX(abs(mn),abs(mx));
 	gdouble r=amn/amx;
@@ -388,20 +388,20 @@ gint64 tryToZeroizeSaved(gint64 mn, gint64 mx, gdouble criticalRatio, gint64 *ad
 	return 0;
 }
 
-int adjust_limits(gdouble  dataMin, gdouble dataMax, gint64 denyMinEqualsAdjMin, gint64 minTMs, gint64 maxTMs, gint64 *numTms, gdouble *tmi, gdouble *adjMin, gdouble *adjMax, gint64 *goodIncs, gint64 numGoodIncs) {
-	gint64 sd = 2;
-	gint64 maxPossibleGoodInc = MAPMAX(sd);
+int adjust_limits(gdouble  dataMin, gdouble dataMax, gint denyMinEqualsAdjMin, gint minTMs, gint maxTMs, gint *numTms, gdouble *tmi, gdouble *adjMin, gdouble *adjMax, gint *goodIncs, gint numGoodIncs) {
+	gint sd = 2;
+	gint maxPossibleGoodInc = MAPMAX(sd);
 	gdouble zMin, zMax;			/* zeroized limits (after unmapped above) */
 	gdouble szMin, szMax;		/* shifted zeroized limits */
-	gint64 mszMin, mszMax;		/* mapped shifted zeroized limits */
-	gint64 amszMin, amszMax;	/* adjusted mapped shifted zeroized limits */
+	gint mszMin, mszMax;		/* mapped shifted zeroized limits */
+	gint amszMin, amszMax;	/* adjusted mapped shifted zeroized limits */
 	gdouble aszMin, aszMax;		/* adjusted shifted zeroized limits */
 	gdouble azMin, azMax;		/* adjusted zeroized limits */
-	gint64 falseOrigin;			/* if true, we have decided on a false origin */
-	gint64 mTmi;				/* tick mark interval in mapped range */
-	gint64 raise;				/* power to which original limits must be raised so as to map into range specified by sd */
+	gint falseOrigin;			/* if true, we have decided on a false origin */
+	gint mTmi;				/* tick mark interval in mapped range */
+	gint raise;				/* power to which original limits must be raised so as to map into range specified by sd */
 	gint i;						/* loop index */
-	gint64 adjMaxTMs = (denyMinEqualsAdjMin ? maxTMs - 1 : maxTMs);
+	gint adjMaxTMs = (denyMinEqualsAdjMin ? maxTMs - 1 : maxTMs);
 
 	/*
 	 * This is the requested maxTMs UNLESS denyMinEqualsAdjMin is true. In that case

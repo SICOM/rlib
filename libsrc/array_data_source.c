@@ -35,18 +35,18 @@
 
 struct rlib_array_results {
 	gchar *name;
-	gint64 cols;
-	gint64 rows;
-	gint64 atstart;
-	gint64 isdone;
+	gint cols;
+	gint rows;
+	gboolean atstart;
+	gboolean isdone;
 	char **data;
-	gint64 current_row;
+	gint current_row;
 };
 
 struct _query_private {
 	char **data;
-	gint64 cols;
-	gint64 rows;
+	gint cols;
+	gint rows;
 };
 
 static void rlib_array_input_close(gpointer input_ptr UNUSED) {}

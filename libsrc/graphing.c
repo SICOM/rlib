@@ -36,10 +36,10 @@
 #include "util.h"
 #include "rlib_langinfo.h"
 
-static const gint64 goodIncs_normal[15] = { 1, 2, 3, 4, 5, 8, 10, 15, 20, 25, 30, 40, 50, 60, 75 };
-static const gint64 numGoodIncs_normal = 15;
-static const gint64 goodIncs_15[6] = { 3, 5, 7, 11, 13, 15 };
-static const gint64 numGoodIncs_15 = 6;
+static const gint goodIncs_normal[15] = { 1, 2, 3, 4, 5, 8, 10, 15, 20, 25, 30, 40, 50, 60, 75 };
+static const gint numGoodIncs_normal = 15;
+static const gint goodIncs_15[6] = { 3, 5, 7, 11, 13, 15 };
+static const gint numGoodIncs_15 = 6;
 
 #define MAX_COLOR_POOL 20 
 
@@ -49,37 +49,37 @@ const gchar *color_pool[MAX_COLOR_POOL] = { "0x4684ee", "0xdc3912", "0xff9900", 
                                             "0x888888", "0x994499", "0xdd5511", "0x22aa99", 
                                             "0x999999", "0x705770", "0x109618", "0xa32929" };
 
-static gboolean is_row_graph(gint64 graph_type) {
+static gboolean is_row_graph(gint graph_type) {
 	if (graph_type == RLIB_GRAPH_TYPE_ROW_NORMAL || graph_type == RLIB_GRAPH_TYPE_ROW_PERCENT || graph_type == RLIB_GRAPH_TYPE_ROW_STACKED)
 		return TRUE;
 	return FALSE;
 }
 
-static gboolean is_line_graph(gint64 graph_type) {
+static gboolean is_line_graph(gint graph_type) {
 	if (graph_type == RLIB_GRAPH_TYPE_LINE_NORMAL || graph_type == RLIB_GRAPH_TYPE_LINE_PERCENT || graph_type == RLIB_GRAPH_TYPE_LINE_STACKED)
 		return TRUE;
 	return FALSE;
 }
 
-static gboolean is_pie_graph(gint64 graph_type) {
+static gboolean is_pie_graph(gint graph_type) {
 	if (graph_type == RLIB_GRAPH_TYPE_PIE_NORMAL || graph_type == RLIB_GRAPH_TYPE_PIE_RING || graph_type == RLIB_GRAPH_TYPE_PIE_OFFSET)
 		return TRUE;
 	return FALSE;
 }
 
-static gboolean is_percent_graph(gint64 graph_type) {
+static gboolean is_percent_graph(gint graph_type) {
 	if (graph_type == RLIB_GRAPH_TYPE_ROW_PERCENT || graph_type == RLIB_GRAPH_TYPE_LINE_PERCENT)
 		return TRUE;
 	return FALSE;
 }
 
-static gboolean is_stacked_graph(gint64 graph_type) {
+static gboolean is_stacked_graph(gint graph_type) {
 	if (graph_type == RLIB_GRAPH_TYPE_ROW_STACKED || graph_type == RLIB_GRAPH_TYPE_LINE_STACKED)
 		return TRUE;
 	return FALSE;
 }
 
-gint64 determine_graph_type(gchar *type, gchar *subtype) {
+gint determine_graph_type(gchar *type, gchar *subtype) {
 	if (strcmp(type, "line") == 0) {
 		if (strcmp(subtype, "stacked") == 0)
 			return RLIB_GRAPH_TYPE_LINE_STACKED;
@@ -137,14 +137,14 @@ gint64 determine_graph_type(gchar *type, gchar *subtype) {
 /*
 	This is beyond evil but it seems to works.  Someone who understands floats better should really do this
 */
-static void rlib_graph_label_y_axis(rlib *r, gint64 side, gboolean for_real, gint64 y_ticks, gdouble y_min, gdouble y_max, gint64 decimal_hint) {
-	gint64 i, j, max = 0;
+static void rlib_graph_label_y_axis(rlib *r, gint side, gboolean for_real, gint y_ticks, gdouble y_min, gdouble y_max, gint decimal_hint) {
+	gint i, j, max = 0;
 	gchar format[20];
 	guint max_slen = 0;
 	if (decimal_hint < 0) {
 		for (j = 0; j < 6; j++) {
 			gboolean bad = FALSE;
-			sprintf(format, "%%.0%" PRId64 "f", j);
+			sprintf(format, "%%.0%df", j);
 			for (i = 0; i < y_ticks; i++) {
 				gchar v1[50], v2[50];
 				gdouble val = y_min + (((y_max-y_min) / y_ticks) * i);
@@ -164,7 +164,7 @@ static void rlib_graph_label_y_axis(rlib *r, gint64 side, gboolean for_real, gin
 		max = decimal_hint;
 	}
 		
-	sprintf(format, "%%.0%" PRId64 "f", max);
+	sprintf(format, "%%.0%df", max);
 
 	for (i = 0; i < y_ticks + 1; i++) {
 		gdouble val = y_min + (((y_max - y_min) / y_ticks) * i);
@@ -174,7 +174,7 @@ static void rlib_graph_label_y_axis(rlib *r, gint64 side, gboolean for_real, gin
 			max_slen = strlen(label);
 	}
 
-	sprintf(format, "%%0%" PRId64 ".0%" PRId64 "f", max_slen - max, max);
+	sprintf(format, "%%0%d.0%df", max_slen - max, max);
 
 	for (i = 0; i < y_ticks + 1; i++) {
 		gdouble val = y_min + (((y_max - y_min) / y_ticks) * i);
@@ -209,15 +209,15 @@ DLL_EXPORT_SYM gdouble rlib_graph(rlib *r, struct rlib_part *part, struct rlib_r
 	gdouble y_min[2] = {0,0};
 	gdouble y_max[2] = {0,0};
 	gdouble *row_sum = NULL, *last_row_values=NULL, *last_row_height=NULL;
-	gint64 data_plot_count = 0;
-	gint64 plot_count = 0;
-	gint64 row_count = 0;
-	gint64 y_ticks = 10, fake_y_ticks;
-	gint64 i = 0;
-	gint64 y_axis_mod = 0;
+	gint data_plot_count = 0;
+	gint plot_count = 0;
+	gint row_count = 0;
+	gint y_ticks = 10, fake_y_ticks;
+	gint i = 0;
+	gint y_axis_mod = 0;
 	gboolean draw_x_line = TRUE, draw_y_line = TRUE, bold_titles = FALSE;
 	gboolean have_right_side = FALSE;
-	gint64 side = RLIB_SIDE_LEFT;
+	gint side = RLIB_SIDE_LEFT;
 	gdouble tmp;
 	gdouble graph_width=300, graph_height=300;
 	gdouble last_height,last_height_neg,last_height_pos;
@@ -227,14 +227,14 @@ DLL_EXPORT_SYM gdouble rlib_graph(rlib *r, struct rlib_part *part, struct rlib_r
 	struct rlib_rgb plot_color;
 	gchar type[MAXSTRLEN], subtype[MAXSTRLEN], title[MAXSTRLEN], legend_bg_color[MAXSTRLEN], legend_orientation[MAXSTRLEN], x_axis_title[MAXSTRLEN];
 	gchar y_axis_title[MAXSTRLEN], y_axis_title_right[MAXSTRLEN], side_str[MAXSTRLEN], grid_color[MAXSTRLEN], name[MAXSTRLEN], color_str[MAXSTRLEN];
-	gint64 graph_type;
+	gint graph_type;
 	gboolean divide_iterations = TRUE;
 	gboolean should_label_under_tick = FALSE;
 	gdouble value = 0;
-	gint64 did_set[2] = {FALSE, FALSE};
-	gint64 *goodIncs = (gint64 *)goodIncs_normal;
-	gint64 numGoodIncs = numGoodIncs_normal;
-	gint64 left_axis_decimal_hint=-1, right_axis_decimal_hint=-1;
+	gint did_set[2] = {FALSE, FALSE};
+	gint *goodIncs = (gint *)goodIncs_normal;
+	gint numGoodIncs = numGoodIncs_normal;
+	gint left_axis_decimal_hint=-1, right_axis_decimal_hint=-1;
 	gboolean disabled, tmp_disabled;
 	gboolean minor_tick[MAX_X_TICKS];
 	gboolean executed_label_pcode = FALSE;
@@ -267,17 +267,17 @@ DLL_EXPORT_SYM gdouble rlib_graph(rlib *r, struct rlib_part *part, struct rlib_r
 		y_axis_title[0] = 0;
 	if (!rlib_execute_as_string(r, graph->y_axis_title_right_code, y_axis_title_right, MAXSTRLEN))
 		y_axis_title_right[0] = 0;
-	if (rlib_execute_as_int64(r, graph->y_axis_mod_code, &i))
+	if (rlib_execute_as_int(r, graph->y_axis_mod_code, &i))
 		y_axis_mod = i;
-	if (rlib_execute_as_int64(r, graph->y_axis_decimals_code, &i))
+	if (rlib_execute_as_int(r, graph->y_axis_decimals_code, &i))
 		left_axis_decimal_hint = i;
-	if (rlib_execute_as_int64(r, graph->y_axis_decimals_code_right, &i))
+	if (rlib_execute_as_int(r, graph->y_axis_decimals_code_right, &i))
 		right_axis_decimal_hint = i;
-	if (rlib_execute_as_int64(r, graph->draw_x_line_code, &i))
+	if (rlib_execute_as_int(r, graph->draw_x_line_code, &i))
 		draw_x_line = i;
-	if (rlib_execute_as_int64(r, graph->draw_y_line_code, &i))
+	if (rlib_execute_as_int(r, graph->draw_y_line_code, &i))
 		draw_y_line = i;
-	if (rlib_execute_as_int64(r, graph->bold_titles_code, &i))
+	if (rlib_execute_as_int(r, graph->bold_titles_code, &i))
 		bold_titles = i;
 
 	if (!rlib_will_this_fit(r, part, report, graph_height / RLIB_PDF_DPI, 1)) {
@@ -312,7 +312,7 @@ DLL_EXPORT_SYM gdouble rlib_graph(rlib *r, struct rlib_part *part, struct rlib_r
 	OUTPUT(r)->start_graph(r, part, report, left_margin_offset, layout_get_next_line_by_font_point(part, part->position_top[0]+(*top_margin_offset)+report->top_margin, 0), graph_width, graph_height, should_label_under_tick);
 
 	if (legend_orientation[0] != 0) {
-		gint64 orientation = RLIB_GRAPH_LEGEND_ORIENTATION_RIGHT;
+		gint orientation = RLIB_GRAPH_LEGEND_ORIENTATION_RIGHT;
 		if (strcmp(legend_orientation, "bottom") == 0)
 			orientation = RLIB_GRAPH_LEGEND_ORIENTATION_BOTTOM;
 
@@ -461,7 +461,7 @@ DLL_EXPORT_SYM gdouble rlib_graph(rlib *r, struct rlib_part *part, struct rlib_r
 				y_max[RLIB_SIDE_LEFT] = (((gint)y_max[RLIB_SIDE_LEFT] / y_axis_mod)+1)*y_axis_mod;
 
 			if (y_axis_mod % 15 == 0) { /* TIME */
-				goodIncs = (gint64 *)goodIncs_15;
+				goodIncs = (gint *)goodIncs_15;
 				numGoodIncs = numGoodIncs_15;
 			}
 		}
@@ -545,7 +545,7 @@ DLL_EXPORT_SYM gdouble rlib_graph(rlib *r, struct rlib_part *part, struct rlib_r
 	}
 	
 	for(i=0;i<=1;i++) {
-		gint64 use_side;
+		gint use_side;
 		if (i == 0)
 			use_side = RLIB_SIDE_LEFT;
 		else
