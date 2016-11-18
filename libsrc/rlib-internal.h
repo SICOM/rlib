@@ -1118,7 +1118,7 @@ void rlib_csv_new_output_filter(rlib *r);
 
 /***** PROTOTYPES: layout.c ***************************************************/
 gdouble layout_get_page_width(struct rlib_part *part);
-void rlib_layout_init_part_page(rlib *r, struct rlib_part *part, gboolean first, gboolean normal);
+void rlib_layout_init_part_page(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean first, gboolean normal);
 gint rlib_layout_report_output(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e, gboolean backwards, gboolean page_header_layout);
 struct rlib_paper *layout_get_paper(gint paper_type);
 struct rlib_paper *layout_get_paper_by_name(gchar *paper_name);

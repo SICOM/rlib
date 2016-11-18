@@ -588,11 +588,11 @@ static void rlib_layout_part_tr(rlib *r, struct rlib_part *part) {
 		if (rlib_execute_as_boolean(r, tr->newpage_code, &newpage)) {
 			if (newpage && OUTPUT(r)->paginate) {
 				OUTPUT(r)->end_page(r, part);
-				rlib_layout_init_part_page(r, part, FALSE, TRUE);
+				rlib_layout_init_part_page(r, part, NULL, FALSE, TRUE);
 				memset(&rrp, 0, sizeof(rrp));
 			}
 		}
-		
+
 		save_page_number = r->current_page_number;
 
 		if (rrp.position_top > 0)
@@ -699,12 +699,12 @@ gint rlib_make_report(rlib *r) {
 			rlib_evaulate_single_report_variables(r, part);
 		rlib_resolve_part_fields(r, part);
 
-		for (iterations = 0;iterations < part->iterations; iterations++) {
+		for (iterations = 0; iterations < part->iterations; iterations++) {
 			rlib_fetch_first_rows(r);
 			rlib_evaulate_part_attributes(r, part);
 			if (part->suppress == FALSE) {
 				OUTPUT(r)->start_part(r, part);
-				rlib_layout_init_part_page(r, part, TRUE, TRUE);
+				rlib_layout_init_part_page(r, part, NULL, TRUE, TRUE);
 				rlib_layout_part_tr(r, part);
 				OUTPUT(r)->end_part(r, part);
 				OUTPUT(r)->end_page(r, part);
