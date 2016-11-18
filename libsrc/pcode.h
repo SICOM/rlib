@@ -141,8 +141,6 @@ struct rlib_pcode_operand {
 	void *value;
 };
 
-#define RLIB_FXP_PRECISION 7
-
 gboolean execute_pcode(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gboolean show_stack_errors);
 void rlib_value_dump(rlib *r, struct rlib_value *rval, gint64 offset, gint64 linefeed);
 void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, gint64 offset);
