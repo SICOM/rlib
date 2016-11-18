@@ -108,7 +108,7 @@ gboolean rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gin
 	resultset = r->current_result;
 	right_side = memchr(name, '.', r_strlen(name));
 	if (right_side != NULL) {
-		gint64 t;
+		gint t;
 		result_name = g_malloc(r_strlen(name) - r_strlen(right_side) + 1);
 		memcpy(result_name, name, r_strlen(name) - r_strlen(right_side));
 		result_name[r_strlen(name) - r_strlen(right_side)] = '\0';

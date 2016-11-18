@@ -25,16 +25,16 @@
 #define RLIB_DATETIME_SECSPERDAY (60 * 60 * 24)
 
 void rlib_datetime_clear(struct rlib_datetime *t1);
-void rlib_datetime_set_date(struct rlib_datetime *dt, gint64 y, gint64 m, gint64 d);
+void rlib_datetime_set_date(struct rlib_datetime *dt, gint y, gint m, gint d);
 void rlib_datetime_set_time(struct rlib_datetime *dt, guchar h, guchar m, guchar s);
 gboolean rlib_datetime_valid_date(struct rlib_datetime *dt);
 gboolean rlib_datetime_valid_time(struct rlib_datetime *dt);
 void rlib_datetime_clear_time(struct rlib_datetime *t);
 void rlib_datetime_clear_date(struct rlib_datetime *t);
 gint rlib_datetime_compare(struct rlib_datetime *t1, struct rlib_datetime *t2);
-gint64 rlib_datetime_daysdiff(struct rlib_datetime *dt, struct rlib_datetime *dt2);
-void rlib_datetime_addto(struct rlib_datetime *dt, gint64 amt);
-gint64 rlib_datetime_secsdiff(struct rlib_datetime *dt, struct rlib_datetime *dt2);
+gint rlib_datetime_daysdiff(struct rlib_datetime *dt, struct rlib_datetime *dt2);
+void rlib_datetime_addto(struct rlib_datetime *dt, gint amt);
+gint rlib_datetime_secsdiff(struct rlib_datetime *dt, struct rlib_datetime *dt2);
 void rlib_datetime_makesamedate(struct rlib_datetime *target, struct rlib_datetime *chgto);
 void rlib_datetime_makesametime(struct rlib_datetime *target, struct rlib_datetime *chgto);
 static inline glong rlib_datetime_time_as_long(struct rlib_datetime *dt) { return dt->ltime & 0xffffff; }

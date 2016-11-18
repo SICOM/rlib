@@ -38,22 +38,22 @@ struct rlib_gd {
 #else
 	void *im;
 #endif
-	gint64 color_pool[gdMaxColors];
+	gint color_pool[gdMaxColors];
 	struct rlib_rgb rlib_color[gdMaxColors];
 	gchar *file_name;
-	gint64 white;
-	gint64 black;
+	gint white;
+	gint black;
 };
 
 /***** PROTOTYPES: gd.c ********************************************************/
-struct rlib_gd * rlib_gd_new(gint64 width, gint64 height, gchar *image_directory);
+struct rlib_gd * rlib_gd_new(gint width, gint height, gchar *image_directory);
 int rlib_gd_free(struct rlib_gd *rgd);
 int rlib_gd_spool(rlib *r, struct rlib_gd *rgd);
-int rlib_gd_text(struct rlib_gd *rgd, char *text, gint64 x, gint64 y, gboolean rotate, gboolean bold);
-int rlib_gd_color_text(struct rlib_gd *rgd, char *text, gint64 x, gint64 y, gboolean rotate, gboolean bold, struct rlib_rgb *color);
+int rlib_gd_text(struct rlib_gd *rgd, char *text, gint x, gint y, gboolean rotate, gboolean bold);
+int rlib_gd_color_text(struct rlib_gd *rgd, char *text, gint x, gint y, gboolean rotate, gboolean bold, struct rlib_rgb *color);
 int gd_get_string_width(const char *text, gboolean bold);
 int gd_get_string_height(gboolean bold);
-int rlib_gd_line(struct rlib_gd *rgd, gint64 x_1, gint64 y_1, gint64 x_2, gint64 y_2, struct rlib_rgb *color);
-int rlib_gd_rectangle(struct rlib_gd *rgd, gint64 x, gint64 y, gint64 width, gint64 height, struct rlib_rgb *color);
-int rlib_gd_arc(struct rlib_gd *rgd, gint64 x, gint64 y, gint64 radius, gint64 start_angle, gint64 end_angle, struct rlib_rgb *color);
-int rlib_gd_set_thickness(struct rlib_gd *rgd, gint64 thickness);
+int rlib_gd_line(struct rlib_gd *rgd, gint x_1, gint y_1, gint x_2, gint y_2, struct rlib_rgb *color);
+int rlib_gd_rectangle(struct rlib_gd *rgd, gint x, gint y, gint width, gint height, struct rlib_rgb *color);
+int rlib_gd_arc(struct rlib_gd *rgd, gint x, gint y, gint radius, gint start_angle, gint end_angle, struct rlib_rgb *color);
+int rlib_gd_set_thickness(struct rlib_gd *rgd, gint thickness);

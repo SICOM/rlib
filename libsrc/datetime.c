@@ -68,7 +68,7 @@ gint rlib_datetime_compare(struct rlib_datetime *t1, struct rlib_datetime *t2) {
 	return result;
 }
 
-void rlib_datetime_set_date(struct rlib_datetime *dt, gint64 y, gint64 m, gint64 d) {
+void rlib_datetime_set_date(struct rlib_datetime *dt, gint y, gint m, gint d) {
 	GDate *t;
 	if (d && m && y) {
 		t = g_date_new_dmy(d, m, y);
@@ -88,7 +88,7 @@ void rlib_datetime_set_time(struct rlib_datetime *dt, guchar h, guchar m, guchar
 }
 
 void rlib_datetime_set_time_from_long(struct rlib_datetime *dt, long t) {
-	gint64 h, m, s;
+	gint h, m, s;
 	s = t % 60;
 	t /= 60;
 	m = t % 60;
@@ -97,7 +97,7 @@ void rlib_datetime_set_time_from_long(struct rlib_datetime *dt, long t) {
 	rlib_datetime_set_time(dt, h, m, s);
 }
 
-static void rlib_datetime_format_date(struct rlib_datetime *dt, char *buf, gint64 max, const char *fmt) {
+static void rlib_datetime_format_date(struct rlib_datetime *dt, char *buf, gint max, const char *fmt) {
 	if (rlib_datetime_valid_date(dt)) {
 		g_date_strftime(buf, max, fmt, &dt->date);
 	} else {
@@ -106,7 +106,7 @@ static void rlib_datetime_format_date(struct rlib_datetime *dt, char *buf, gint6
 	}
 }
 
-static void rlib_datetime_format_time(struct rlib_datetime *dt, char *buf, gint64 max, const char *fmt) {
+static void rlib_datetime_format_time(struct rlib_datetime *dt, char *buf, gint max, const char *fmt) {
 	time_t now = time(NULL);
 	struct tm *tmp = localtime(&now);
 	if (rlib_datetime_valid_time(dt)) {
@@ -290,12 +290,12 @@ void rlib_datetime_format(rlib *r, gchar **woot_dest, struct rlib_datetime *dt, 
 }
 
 
-gint64 rlib_datetime_daysdiff(struct rlib_datetime *dt, struct rlib_datetime *dt2) {
+gint rlib_datetime_daysdiff(struct rlib_datetime *dt, struct rlib_datetime *dt2) {
 	return g_date_days_between(&dt->date, &dt2->date);
 }
 
 
-void rlib_datetime_addto(struct rlib_datetime *dt, gint64 amt) {
+void rlib_datetime_addto(struct rlib_datetime *dt, gint amt) {
 	long ndays = amt;
 	long nsecs = 0;
 	if (rlib_datetime_valid_time(dt)) {
@@ -315,7 +315,7 @@ void rlib_datetime_addto(struct rlib_datetime *dt, gint64 amt) {
 }
 
 
-gint64 rlib_datetime_secsdiff(struct rlib_datetime *dt, struct rlib_datetime *dt2) {
+gint rlib_datetime_secsdiff(struct rlib_datetime *dt, struct rlib_datetime *dt2) {
 	return dt->ltime - dt2->ltime;
 }
 

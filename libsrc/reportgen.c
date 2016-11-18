@@ -297,8 +297,8 @@ static void rlib_layout_report_delayed_data(rlib *r, struct rlib_report *report)
 }
 
 static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_report *report, gdouble left_margin_offset, gdouble top_margin_offset) {
-	gint64 processed_variables;
-	gint64 query_i, i;
+	gboolean processed_variables;
+	gint query_i, i;
 	char query[MAXSTRLEN];
 	gint64 report_percent;
 	gdouble at_least = 0.0, origional_position_top = 0.0, report_header_advance = 0.0;
@@ -401,7 +401,7 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 				if (!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
 					while (1) {
 						struct rlib_element *detail_fields = (report && report->detail ? report->detail->fields : NULL);
-						gint64 output_count = 0;
+						gint output_count = 0;
 						gdouble position_top = report->position_top[0];
 
 						if (report->detail_columns > 1 && r->detail_line_count == 0) {
@@ -507,7 +507,7 @@ void rlib_layout_part_td(rlib *r, struct rlib_part *part, GSList *part_deviation
 	for (element = part_deviations; element != NULL; element = g_slist_next(element)) {
 		struct rlib_part_td *td = element->data;
 		gdouble running_top_margin = 0;
-		gint64 i;
+		gint i;
 		gint64 width, height, border_width;
 		gchar border_color[MAXSTRLEN];
 		struct rlib_rgb bgcolor;
@@ -564,7 +564,7 @@ void rlib_layout_part_td(rlib *r, struct rlib_part *part, GSList *part_deviation
 
 static void rlib_layout_part_tr(rlib *r, struct rlib_part *part) {
 	struct rlib_report_position rrp;
-	gint64 i;
+	gint i;
 	char buf[MAXSTRLEN];
 	GSList *element;
 	memset(&rrp, 0, sizeof(rrp));
@@ -622,7 +622,7 @@ static void rlib_layout_part_tr(rlib *r, struct rlib_part *part) {
 /*
 	This is so single reports that use variable in report header and page header still work (With parts)
 */
-gint64 rlib_evaulate_single_report_variables(rlib *r, struct rlib_part *part) {
+gint rlib_evaulate_single_report_variables(rlib *r, struct rlib_part *part) {
 	GSList *element, *part_deviations, *element2;
 
 	for (element = part->part_rows; element != NULL; element = g_slist_next(element)) {
@@ -634,7 +634,7 @@ gint64 rlib_evaulate_single_report_variables(rlib *r, struct rlib_part *part) {
 			for (report_element = td->reports; report_element != NULL; report_element = g_slist_next(report_element)) {
 				struct rlib_report *report = report_element->data;
 				char query[MAXSTRLEN];
-				gint64 i;
+				gint i;
 
 				report->query_code = rlib_infix_to_pcode(r, part, report, (gchar *)report->xml_query.xml, report->xml_query.line, TRUE);
 				rlib_value_init(r, &report->uniquerow);

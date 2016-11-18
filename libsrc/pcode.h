@@ -87,18 +87,18 @@
 #define PCODE_EXECUTE	2
 
 struct rlib_pcode_instruction {
-	gchar instruction;
+	gint instruction;
+	gboolean value_allocated;
 	void *value;
-	gint64 value_allocated;
 };
 
 struct rlib_pcode_operator {
 	const gchar *tag;		/* What I expect to find in the infix string */
-	gint64 taglen;
-	gint64 precedence;
-	gint64 is_op;
-	gint64 opnum;
-	gint64 is_function;
+	gint taglen;
+	gint precedence;
+	gboolean is_op;
+	gint opnum;
+	gboolean is_function;
 	rlib_function execute;
 	gpointer user_data;
 };
@@ -142,12 +142,12 @@ struct rlib_pcode_operand {
 };
 
 gboolean execute_pcode(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gboolean show_stack_errors);
-void rlib_value_dump(rlib *r, struct rlib_value *rval, gint64 offset, gint64 linefeed);
-void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, gint64 offset);
+void rlib_value_dump(rlib *r, struct rlib_value *rval, gint offset, gboolean linefeed);
+void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, gint offset);
 gboolean rlib_pcode_has_variable(rlib *r, struct rlib_pcode *p, GSList **varlist, GSList **varlist_nonrb, gboolean include_delayed_rlib_variables);
 struct rlib_pcode *rlib_pcode_copy_replace_fields_and_immediates_with_values(rlib *r, struct rlib_pcode *p);
 void rlib_pcode_replace_variable_with_value(rlib *r, struct rlib_pcode *p, struct rlib_report_variable *var);
-const char *rlib_pcode_operand_name(gint64 type);
+const char *rlib_pcode_operand_name(gint type);
 
 gboolean rlib_pcode_operator_multiply(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gpointer user_data);
 gboolean rlib_pcode_operator_add(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gpointer user_data);

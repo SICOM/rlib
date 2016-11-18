@@ -49,7 +49,7 @@ struct _graph {
 	gboolean has_grid_color;
 	struct rlib_rgb grid_color;
 
-	gint64 legend_orientation;
+	gint legend_orientation;
 	gdouble y_label_space_left;
 	gdouble y_label_space_right;
 	gdouble y_label_width_left;
@@ -72,10 +72,10 @@ struct _graph {
 	gdouble height_offset;
 	gdouble width_offset;
 	gdouble title_height;
-	gint64 x_iterations;
-	gint64 y_iterations;
-	gint64 data_plot_count;
-	gint64 orig_data_plot_count;
+	gint x_iterations;
+	gint y_iterations;
+	gint data_plot_count;
+	gint orig_data_plot_count;
 	gboolean x_axis_labels_are_under_tick;
 	gboolean is_chart;
 	
@@ -84,8 +84,8 @@ struct _graph {
 	gboolean draw_x;
 	gboolean draw_y;
 	gchar *name;
-	gint64 region_count;
-	gint64 current_region;
+	gint region_count;
+	gint current_region;
 	gboolean bold_titles;
 	gboolean *minor_ticks;
 	gboolean vertical_x_label;
@@ -97,9 +97,9 @@ struct _private {
 	struct rpdf *pdf;
 	gchar text_on[MAX_PDF_PAGES];
 	gchar *buffer;
-	gint64 length;
-	gint64 page_diff;
-	gint64 current_page;
+	gint length;
+	gint page_diff;
+	gint current_page;
 	gboolean is_bold;
 	gboolean is_italics;
 	struct _graph graph;
@@ -150,7 +150,7 @@ static void pdf_print_text(rlib *r, gdouble left_origin, gdouble bottom_origin, 
 	rpdf_text(pdf, left_origin, bottom_origin, orientation, text);
 }
 
-static gchar *pdf_rpdf_callback(gchar *data, gint64 len, void *user_data) {
+static gchar *pdf_rpdf_callback(gchar *data, gint len, void *user_data) {
 	struct rlib_delayed_extra_data *delayed_data = user_data;
 	struct rlib_line_extra_data *extra_data = delayed_data->extra_data;
 	rlib *r = delayed_data->r;
@@ -228,7 +228,7 @@ static void pdf_start_boxurl(rlib *r, struct rlib_part *part, gdouble left_origi
 
 static void pdf_line_image(rlib *r, gdouble left_origin, gdouble bottom_origin, gchar *nname, gchar *type, gdouble nwidth, gdouble nheight) {
 	gchar	*type_lower;
-	gint64 realtype = RPDF_IMAGE_JPEG;
+	gint realtype = RPDF_IMAGE_JPEG;
 
 	type_lower = g_ascii_strdown(type, -1);
 	
@@ -293,9 +293,9 @@ static void pdf_start_new_page(rlib *r, struct rlib_part *part) {
 }
 
 static void pdf_set_working_page(rlib *r, struct rlib_part *part, gint page) {
-	gint64 pages_across = part->pages_across;
-	gint64 page_number = (r->current_page_number-1) * pages_across;
-	
+	gint pages_across = part->pages_across;
+	gint page_number = (r->current_page_number - 1) * pages_across;
+
 	rpdf_set_page(OUTPUT_PRIVATE(r)->pdf, page_number + page - OUTPUT_PRIVATE(r)->page_diff);
 
 	OUTPUT_PRIVATE(r)->current_page = page_number + page - OUTPUT_PRIVATE(r)->page_diff;
@@ -429,7 +429,7 @@ static void pdf_graph_draw_line(rlib *r, gdouble x, gdouble y, gdouble new_x, gd
 }
 
 static void pdf_graph_get_chart_layout(rlib *r, gdouble top, gdouble bottom, gint cell_height, gint rows, gint *chart_size, gint *chart_height) {
-	gint64 rows_available;
+	gint rows_available;
 	gdouble height = top - bottom;
 	gdouble intersection = .1;
 	gdouble title_height = RLIB_GET_LINE(r->current_font_point);
@@ -656,7 +656,7 @@ static void pdf_graph_set_x_tick_width(rlib *r) {
 
 static void pdf_graph_do_grid(rlib *r, gboolean just_a_box) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gint64 i;
+	gint i;
 	gdouble last_left = graph->left-graph->x_label_width;
 	
 	graph->width_offset = graph->y_label_space_left + graph->y_label_width_left +  graph->intersection ;
@@ -745,10 +745,10 @@ static void pdf_graph_do_grid(rlib *r, gboolean just_a_box) {
 }
 
 static void pdf_graph_tick_x(rlib *r) {
-	gint64 i;
+	gint i;
 	gdouble spot;
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gint64 iterations = graph->x_iterations;
+	gint iterations = graph->x_iterations;
 
 	graph->height_offset	+= graph->intersection;
 	
@@ -911,7 +911,7 @@ static void pdf_graph_draw_bar(rlib *r, gint row, gint start_iteration, gint end
 	gdouble line_width = RLIB_GET_LINE(r->current_font_point) / 3.0;
 
 	gchar label_text[MAXSTRLEN];
-	gint64 i;
+	gint i;
 
 	strcpy(label_text, label);
 	i = strlen(label_text);
@@ -1058,7 +1058,7 @@ static void pdf_label_regions(gpointer data, gpointer user_data) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	if(graph->name != NULL) {
 		if(strcmp(graph->name, gr->graph_name) == 0) {
-			gint64 iteration = graph->orig_data_plot_count + graph->current_region;
+			gint iteration = graph->orig_data_plot_count + graph->current_region;
 			gdouble offset =  ((iteration + 1) * RLIB_GET_LINE(r->current_font_point));
 			gdouble w_width = pdf_get_string_width(r, "W");
 			gdouble line_height = RLIB_GET_LINE(r->current_font_point);

@@ -135,9 +135,10 @@ void rlib_pcode_find_index(rlib *r) {
 
 static void rlib_free_operand(rlib *r, struct rlib_pcode_operand *o);
 static struct rlib_pcode *rlib_infix_to_pcode_multi(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *infix, gchar *delims, gchar **next, gint line_number, gboolean look_at_metadata);
+static struct rlib_value *rlib_value_new(struct rlib_value *rval, gint type, gint free_, gpointer value);
 
 DLL_EXPORT_SYM void rlib_pcode_free(rlib *r, struct rlib_pcode *code) {
-	gint64 i = 0;
+	gint i = 0;
 
 	if (code == NULL)
 		return;
@@ -155,14 +156,14 @@ DLL_EXPORT_SYM void rlib_pcode_free(rlib *r, struct rlib_pcode *code) {
 }
 
 struct rlib_operator_stack {
-	gint64 count;
-	gint64 pcount;
+	gint count;
+	gint pcount;
 	struct rlib_pcode_operator *op[200];
 };
 
-static struct rlib_pcode_operator *rlib_find_operator(rlib *r, gchar *ptr, struct rlib_pcode *p, gint64 have_operand) {
-	gint64 len = strlen(ptr);
-	gint64 result;
+static struct rlib_pcode_operator *rlib_find_operator(rlib *r, gchar *ptr, struct rlib_pcode *p, gboolean have_operand) {
+	gint len = strlen(ptr);
+	gint result;
 	struct rlib_pcode_operator *op;
 	GSList *list;
 	gboolean alpha = FALSE;
@@ -217,7 +218,7 @@ void rlib_pcode_init(struct rlib_pcode *p) {
 }
 
 /* This is must be called with the 3rd argument coming from rlib_new_pcode_instruction() */
-gint64 rlib_pcode_add(rlib *r, struct rlib_pcode *p, struct rlib_pcode_instruction *i) {
+gint rlib_pcode_add(rlib *r, struct rlib_pcode *p, struct rlib_pcode_instruction *i) {
 	struct rlib_pcode_instruction **iptr = g_try_realloc(p->instructions, sizeof(struct rlib_pcode_instruction *) * (p->count + 1));
 
 	if (iptr == NULL) {
@@ -230,7 +231,7 @@ gint64 rlib_pcode_add(rlib *r, struct rlib_pcode *p, struct rlib_pcode_instructi
 	return 0;
 }
 
-static struct rlib_pcode_instruction *rlib_new_pcode_instruction(gint64 instruction, gpointer value, gboolean allocated) {
+static struct rlib_pcode_instruction *rlib_new_pcode_instruction(gint instruction, gpointer value, gboolean allocated) {
 	struct rlib_pcode_instruction *rpi = g_new0(struct rlib_pcode_instruction, 1);
 
 	if (rpi == NULL)
@@ -306,10 +307,10 @@ struct rlib_pcode_operand *rlib_new_operand(rlib *r, struct rlib_part *part, str
 	struct rlib_pcode_operand *o;
 	struct rlib_report_variable *rv;
 	struct rlib_metadata *metadata;
-	gint64 rvar;
+	gint rvar;
 	o = g_new0(struct rlib_pcode_operand, 1);
 	if (str[0] == '\'') {
-		gint64 slen;
+		gint slen;
 		gchar *newstr;
 		slen = strlen(str);
 		if (slen < 2) {
@@ -471,7 +472,7 @@ static void rlib_free_operand(rlib *r, struct rlib_pcode_operand *o) {
 	g_free(o);
 }
 
-static const gchar *rlib_rlib_variable_to_name(gint64 value) {
+static const gchar *rlib_rlib_variable_to_name(gint value) {
 	switch (value) {
 	case RLIB_RLIB_VARIABLE_PAGENO:
 		return "pageno";
@@ -490,7 +491,7 @@ static const gchar *rlib_rlib_variable_to_name(gint64 value) {
 	}
 }
 
-void rlib_value_dump(rlib *r, struct rlib_value *rval, gint64 offset, gint64 linefeed) {
+void rlib_value_dump(rlib *r, struct rlib_value *rval, gint offset, gboolean linefeed) {
 	int i;
 
 	for (i = 0; i < offset * 5; i++)
@@ -516,8 +517,8 @@ void rlib_value_dump(rlib *r, struct rlib_value *rval, gint64 offset, gint64 lin
 		rlogit(r, "\n");
 }
 
-void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, gint64 offset) {
-	gint64 i,j;
+void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, gint offset) {
+	gint i, j;
 	rlogit(r, "DUMPING PCODE IT HAS %d ELEMENTS\n", p->count);
 	for (i = 0; i < p->count; i++) {
 		for (j = 0; j < offset * 5; j++)
@@ -530,8 +531,14 @@ void rlib_pcode_dump(rlib *r, struct rlib_pcode *p, gint64 offset) {
 			rlogit(r, "PUSH: ");
 			switch (o->type) {
 			case OPERAND_NUMBER:
-				rlogit(r, "%" PRId64, *((gint64 *)o->value));
+			{
+				mpfr_ptr tmp = o->value;
+				char *s = NULL;
+				mpfr_asprintf(&s, "%Rf", tmp);
+				rlogit(r, "%s", s);
+				mpfr_free_str(s);
 				break;
+			}
 			case OPERAND_STRING:
 				rlogit(r, "'%s'", (char *)o->value);
 				break;
@@ -677,7 +684,7 @@ gboolean rlib_pcode_has_variable(rlib *r UNUSED, struct rlib_pcode *p, GSList **
 	return count_vars + count_rvars;
 }
 
-const char *rlib_pcode_operand_name(gint64 type) {
+const char *rlib_pcode_operand_name(gint type) {
 	switch (type) {
 	case OPERAND_NUMBER:
 		return "OPERAND_NUMBER";
@@ -789,7 +796,7 @@ struct rlib_pcode *rlib_pcode_copy_replace_fields_and_immediates_with_values(rli
 					}
 				case OPERAND_RLIB_VARIABLE:
 					{
-						gint64 rlib_vartype = ((long)o->value);
+						gint rlib_vartype = ((long)o->value);
 
 						if (rlib_vartype == RLIB_RLIB_VARIABLE_TOTPAGES) {
 							p1->instructions[i]->value = p->instructions[i]->value;
@@ -929,8 +936,8 @@ void operator_stack_init(struct rlib_operator_stack *os) {
 	os->pcount = 0;
 }
 
-gint64 operator_stack_is_all_less(struct rlib_operator_stack *os, struct rlib_pcode_operator *op) {
-	gint64 i;
+gint operator_stack_is_all_less(struct rlib_operator_stack *os, struct rlib_pcode_operator *op) {
+	gint i;
 	if(op->tag[0] == ')' || op->tag[0] == ',')
 		return FALSE;
 
@@ -1008,7 +1015,7 @@ void smart_add_pcode(rlib *r, struct rlib_pcode *p, struct rlib_operator_stack *
 }
 
 static gchar *skip_next_closing_paren(gchar *str) {
-	gint64 ch;
+	gint ch;
 
 	while ((ch = *str) && (ch != ')'))
 		if (ch == '(') str = skip_next_closing_paren(str + 1);
@@ -1020,12 +1027,12 @@ static struct rlib_pcode *rlib_infix_to_pcode_multi(rlib *r, struct rlib_part *p
 	gchar *moving_ptr = infix;
 	gchar *op_pointer = infix;
 	GString *operand;
-	gint64 found_op_last = FALSE;
-	gint64 last_op_was_function = FALSE;
-	gint64 move_pointers = TRUE;
-	gint64 instr = 0;
-	gint64 indate = 0;
-	gint64 invector = 0;
+	gboolean found_op_last = FALSE;
+	gboolean last_op_was_function = FALSE;
+	gboolean move_pointers = TRUE;
+	gint instr = 0;
+	gint indate = 0;
+	gint invector = 0;
 	struct rlib_pcode_operator *op;
 	struct rlib_pcode *pcodes;
 	struct rlib_operator_stack os;
@@ -1117,9 +1124,9 @@ static struct rlib_pcode *rlib_infix_to_pcode_multi(rlib *r, struct rlib_part *p
 				And then idetify all the 3 inner parts, then pass in recursivly to our selfs and populate rlib_pcode_if and smaet_add_pcode that
 				*/
 				if (op->opnum == OP_IIF) {
-					gint64 in_a_string = FALSE;
-					gint64 pcount=1;
-					gint64 ccount=0;
+					gboolean in_a_string = FALSE;
+					gint pcount = 1;
+					gint ccount = 0;
 					gchar *save_ptr, *iif, *save_iif;
 					gchar *evaluation, *true=NULL, *false=NULL;
 					struct rlib_pcode_if *rpif;
@@ -1223,7 +1230,7 @@ DLL_EXPORT_SYM struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part
 	return rlib_infix_to_pcode_multi(r, part, report, infix, NULL, NULL, line_number, look_at_metadata);
 }
 
-void rlib_value_stack_init(struct rlib_value_stack *vs) {
+static void rlib_value_stack_init(struct rlib_value_stack *vs) {
 	vs->count = 0;
 }
 
@@ -1249,7 +1256,7 @@ DLL_EXPORT_SYM struct rlib_value *rlib_value_stack_pop(rlib *r UNUSED, struct rl
 	}
 }
 
-struct rlib_value *rlib_value_new(struct rlib_value *rval, gint64 type, gint64 free_, gpointer value) {
+static struct rlib_value *rlib_value_new(struct rlib_value *rval, gint type, gint free_, gpointer value) {
 	rval->type = type;
 	rval->free = free_;
 
@@ -1492,7 +1499,7 @@ struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, stru
 	} else if (o->type == OPERAND_MEMORY_VARIABLE) {
 		return rlib_value_new(rval, RLIB_VALUE_STRING, FALSE, o->value);
 	} else if (o->type == OPERAND_RLIB_VARIABLE) {
-		gint64 type = GPOINTER_TO_SIZE(o->value);
+		gint type = GPOINTER_TO_INT(o->value);
 		switch (type) {
 		case RLIB_RLIB_VARIABLE_PAGENO:
 			return rlib_value_new_number_from_long(r, rval, r->current_page_number);
@@ -1563,7 +1570,7 @@ struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, stru
 }
 
 gboolean execute_pcode(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gboolean show_stack_errors) {
-	gint64 i;
+	gint i;
 	for (i = 0; i < code->count; i++) {
 		switch (code->instructions[i]->instruction) {
 		case PCODE_PUSH:

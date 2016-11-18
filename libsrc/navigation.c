@@ -27,7 +27,7 @@
 #include "pcode.h"
 #include "rlib_input.h"
 
-static gint64 rlib_navigate_n_to_1_check_current(rlib *r, gint64 resultset_num) {
+static gboolean rlib_navigate_n_to_1_check_current(rlib *r, gint resultset_num) {
 	GList *fw;
 
 	if (INPUT(r, resultset_num)->isdone(INPUT(r, resultset_num), r->results[resultset_num]->result))
@@ -58,9 +58,9 @@ static gint64 rlib_navigate_n_to_1_check_current(rlib *r, gint64 resultset_num) 
 	return TRUE;
 }
 
-static gint64 rlib_navigate_n_to_1_check_ended(rlib *r, gint64 resultset_num) {
+static gboolean rlib_navigate_n_to_1_check_ended(rlib *r, gint resultset_num) {
 	GList *fw;
-	gint64 ended = TRUE;
+	gboolean ended = TRUE;
 
 	for (fw = r->queries[resultset_num]->followers_n_to_1; fw; fw = fw->next) {
 		struct rlib_resultset_followers *f = fw->data;
@@ -74,8 +74,8 @@ static gint64 rlib_navigate_n_to_1_check_ended(rlib *r, gint64 resultset_num) {
 	return ended;
 }
 
-static gint64 rlib_navigate_next_n_to_1(rlib *r, gint64 resultset_num) {
-	gint64 retval = FALSE;
+static gboolean rlib_navigate_next_n_to_1(rlib *r, gint resultset_num) {
+	gboolean retval = FALSE;
 
 	if (g_list_length(r->queries[resultset_num]->followers_n_to_1) == 0)
 		return retval;
@@ -150,7 +150,7 @@ static gint64 rlib_navigate_next_n_to_1(rlib *r, gint64 resultset_num) {
 
 gboolean rlib_navigate_next(rlib *r, gint resultset_num) {
 	GList *fw;
-	gint64 retval, retval11;
+	gboolean retval, retval11;
 
 	if (resultset_num < 0 || r->queries_count == 0)
 		return FALSE;
@@ -172,8 +172,8 @@ gboolean rlib_navigate_next(rlib *r, gint resultset_num) {
 	if (!r->queries[resultset_num]->n_to_1_started) {
 		struct input_filter *in = INPUT(r, resultset_num);
 		struct rlib_results *rs = r->results[resultset_num];
-		gint64 cols = in->num_fields(in, rs->result);
-		gint64 i;
+		gint cols = in->num_fields(in, rs->result);
+		gint i;
 
 		for (i = 1; i <= cols; i++) {
 			gpointer col = GINT_TO_POINTER(i);

@@ -116,7 +116,7 @@ gboolean rlib_force_break_headers(rlib *r, struct rlib_part *part, struct rlib_r
 }
 
 void rlib_handle_break_headers(rlib *r, struct rlib_part *part, struct rlib_report *report) {
-	gint64 page, i;
+	gint page, i;
 	gdouble total[RLIB_MAXIMUM_PAGES_ACROSS];
 	struct rlib_element *e;
 	GSList *breaks = NULL;
@@ -128,13 +128,13 @@ void rlib_handle_break_headers(rlib *r, struct rlib_part *part, struct rlib_repo
 		total[i] = 0;
 
 	for (e = report->breaks; e != NULL; e = e->next) {
-		gint64 dobreak = 1;
+		gboolean dobreak = TRUE;
 		struct rlib_report_break *rb = e->data;
 		struct rlib_element *be;
 		for (be = rb->fields; be != NULL; be = be->next) {
 			struct rlib_break_fields *bf = be->data;
 			struct rlib_value rval1, rval2;
-			gint64 retval;
+			gint retval;
 
 			rlib_value_init(r, &rval1);
 			rlib_value_init(r, &rval2);
@@ -146,9 +146,9 @@ void rlib_handle_break_headers(rlib *r, struct rlib_part *part, struct rlib_repo
 			retval = rvalcmp(r, &rval1, &rval2);
 
 			if (dobreak && retval) {
-				dobreak = 1;
+				dobreak = TRUE;
 			} else {
-				dobreak = 0;
+				dobreak = FALSE;
 			}
 			rlib_value_free(r, &rval1);
 			rlib_value_free(r, &rval2);
@@ -167,7 +167,7 @@ void rlib_handle_break_headers(rlib *r, struct rlib_part *part, struct rlib_repo
 	}
 
 	if (breaks != NULL && OUTPUT(r)->do_breaks) {
-		gint64 allfit = TRUE;
+		gboolean allfit = TRUE;
 		GSList *list;
 		for (page = 0; page < report->pages_across; page++) {
 			if (!rlib_will_this_fit(r, part, report, total[page], page + 1))
@@ -204,8 +204,8 @@ static void reset_variables_on_break(rlib *r, struct rlib_report *report, gchar 
 }
 
 static void rlib_break_all_below_in_reverse_order(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e) {
-	gint64 count = 0, i = 0, j = 0;
-	gint64 newpage = FALSE;
+	gint count = 0, i = 0, j = 0;
+	gboolean newpage = FALSE;
 	gboolean t;
 	struct rlib_report_break *rb;
 	struct rlib_element *xxx;
@@ -221,7 +221,7 @@ static void rlib_break_all_below_in_reverse_order(rlib *r, struct rlib_part *par
 		rb = xxx->data;
 
 		if (OUTPUT(r)->do_breaks) {
-			gint64 did_end_page = FALSE;
+			gboolean did_end_page = FALSE;
 
 			did_end_page = rlib_end_page_if_line_wont_fit(r, part, report, rb->footer);
 
@@ -285,7 +285,7 @@ void rlib_handle_break_footers(rlib *r, struct rlib_part *part, struct rlib_repo
 		return;
 
 	for (e = report->breaks; e; e = e->next) {
-		gint64 dobreak = 1;
+		gboolean dobreak = TRUE;
 		struct rlib_report_break *rb = e->data;
 		struct rlib_element *be;
 		for (be = rb->fields; be != NULL; be = be->next) {
@@ -295,7 +295,7 @@ void rlib_handle_break_footers(rlib *r, struct rlib_part *part, struct rlib_repo
 			bf = be->data;
 			if (dobreak) {
 				if (INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
-					dobreak = 1;
+					dobreak = TRUE;
 				} else {
 					struct rlib_value rval1, rval2;
 
@@ -307,15 +307,15 @@ void rlib_handle_break_footers(rlib *r, struct rlib_part *part, struct rlib_repo
 					r->use_cached_data--;
 					rlib_execute_pcode(r, &rval2, bf->code, NULL);
 					if (rvalcmp(r, &rval1, &rval2)) {
-						dobreak = 1;
+						dobreak = TRUE;
 					} else  {
-						dobreak = 0;
+						dobreak = FALSE;
 					}
 					rlib_value_free(r, &rval1);
 					rlib_value_free(r, &rval2);
 				}
 			} else {
-				dobreak = 0;
+				dobreak = FALSE;
 			}
 		}
 

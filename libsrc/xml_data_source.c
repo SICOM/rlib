@@ -44,10 +44,10 @@ struct rlib_xml_results {
 	xmlNodePtr last_row;
 	xmlNodePtr this_row;
 	xmlNodePtr first_field;
-	gint64 rows;
-	gint64 cols;
-	gint64 atstart;
-	gint64 isdone;
+	gint rows;
+	gint cols;
+	gboolean atstart;
+	gboolean isdone;
 };
 
 struct _query_private {
@@ -107,7 +107,7 @@ static gboolean rlib_xml_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) 
 
 static gchar * rlib_xml_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_xml_results *result = result_ptr;
-	gint64 field_index = GPOINTER_TO_INT(field_ptr);
+	gint field_index = GPOINTER_TO_INT(field_ptr);
 	xmlNodePtr col;
 	xmlNodePtr field_value;
 
@@ -148,7 +148,7 @@ static gint rlib_xml_num_fields(gpointer input_ptr UNUSED, gpointer result_ptr) 
 static gpointer rlib_xml_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) { 
 	struct rlib_xml_results *results = result_ptr;
 	xmlNodePtr field;
-	gint64 i;
+	gint i;
 
 	if (results == NULL)
 		return NULL;
@@ -174,8 +174,8 @@ static void *xml_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	xmlNodePtr first_field;
 	xmlDocPtr doc;
 	gchar *file;
-	gint64 nrows = 0;
-	gint64 ncols = 0;
+	gint nrows = 0;
+	gint ncols = 0;
 
 	file = get_filename(input->r, query->sql, -1, FALSE, FALSE);
 	doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
