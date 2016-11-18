@@ -1402,7 +1402,7 @@ gboolean rlib_layout_end_page(rlib *r, struct rlib_part *part, struct rlib_repor
 	return TRUE;
 }
 
-void rlib_layout_init_part_page(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean first, gboolean normal) {
+void rlib_layout_init_part_page(rlib *r, struct rlib_part *part, struct rlib_report *report UNUSED, gboolean first, gboolean normal) {
 	gint i;
 	gint save_font_size = r->font_point;
 
