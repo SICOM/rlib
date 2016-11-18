@@ -332,6 +332,9 @@ static gdouble rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part 
 						rb->delayed_data = g_slist_append(rb->delayed_data, dd);
 					}
 
+					if (!report)
+						report = part->only_report;
+
 					if (report) {
 						for (ptr = varlist_nonrb; ptr; ptr = ptr->next) {
 							struct rlib_break_delayed_data *dd = g_new0(struct rlib_break_delayed_data, 1);
