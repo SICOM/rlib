@@ -43,7 +43,6 @@ struct rlib_rgb {
 gchar *strlwrexceptquoted (gchar *s);
 gchar *rmwhitespacesexceptquoted(gchar *s);
 /* coming soon: void r_fatal(const gchar *fmt, ...); */
-gint tentothe(gint n);
 const gchar *colornames(const gchar *str);
 void rlib_parsecolor(struct rlib_rgb *color, const gchar *strx);
 struct rlib_datetime * stod(struct rlib_datetime *tm_date, gchar *str);

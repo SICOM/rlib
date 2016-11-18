@@ -254,15 +254,6 @@ DLL_EXPORT_SYM void r_warning(rlib *r, const gchar *fmt, ...) {
 	return;
 }
 
-gint tentothe(gint n) {
-	/* Previously we kept an array here with 12 elements.
-	 * double->gint conversion can give corrects values up to 10^18.
-	 */
-	if (n > 18)
-		return 0;
-	return (gint)pow(10.0, (double)n);
-}
-
 static gchar hextochar(gchar c) {
 	gint	c1;
 	c1 = toupper(c);
