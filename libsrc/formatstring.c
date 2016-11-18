@@ -218,7 +218,50 @@ static void formatstring_length_prec(const gchar *fmt, gint *length, gint *prec,
 	return;
 }
 
-GString *get_next_format_string(const gchar *fmt, gint expected_type, gint *out_type, gint *advance, gboolean *error) {
+static void formatstring_money_length_prec(const gchar *fmt, gint *length, gint *lprec, gint *prec, gint *advance) {
+	gint pos = 0;
+	GString *tmp = g_string_new("");
+
+	*length = 0;
+	*lprec = 0;
+	*prec = 0;
+
+	for (pos = 0; fmt[pos] && isdigit(fmt[pos]); pos++)
+		g_string_append_c(tmp, fmt[pos]);
+	g_string_append_c(tmp, '\0');
+	if (strlen(tmp->str) > 0)
+		*length = atoi(tmp->str);
+
+	if (fmt[pos] == '#') {
+		g_string_set_size(tmp, 0);
+		for (pos++; fmt[pos] && isdigit(fmt[pos]); pos++)
+			g_string_append_c(tmp, fmt[pos]);
+		g_string_append_c(tmp, '\0');
+
+		if (strlen(tmp->str) > 0)
+			*lprec = atoi(tmp->str);
+	}
+
+	if (fmt[pos] != '.') {
+		g_string_free(tmp, TRUE);
+		*advance = pos;
+		return;
+	}
+
+	g_string_set_size(tmp, 0);
+	for (pos++; fmt[pos] && isdigit(fmt[pos]); pos++)
+		g_string_append_c(tmp, fmt[pos]);
+	g_string_append_c(tmp, '\0');
+
+	if (strlen(tmp->str) > 0)
+		*prec = atoi(tmp->str);
+
+	g_string_free(tmp, TRUE);
+	*advance = pos;
+	return;
+}
+
+GString *get_next_format_string(rlib *r UNUSED, const gchar *fmt, gint expected_type, gint *out_type, gint *advance, gboolean *error) {
 	GString *str;
 	gint type = RLIB_FORMATSTR_NONE;
 	gint adv = 0;
@@ -369,18 +412,18 @@ GString *get_next_format_string(const gchar *fmt, gint expected_type, gint *out_
 							if (fmt[i] == '}') {
 								gchar filler, conv;
 								gint adv1, adv2;
-								gint flags, length, prec;
+								gint flags, length, lprec, prec;
 								g_string_append_len(str, fmt + adv + 3, i - adv - 3);
 								g_string_append_c(str, '\0');
 
 								if (str->str[0] != '%') {
-									g_string_printf(str, "!ERR_F_F");
 									*out_type = type;
 									*error = TRUE;
+									g_string_printf(str, "!ERR_F_F");
 									return str;
 								}
 								flags = formatstring_flags_money(str->str + 1, &filler, &adv1);
-								formatstring_length_prec(str->str + 1 + adv1, &length, &prec, &adv2);
+								formatstring_money_length_prec(str->str + 1 + adv1, &length, &lprec, &prec, &adv2);
 								if (prec > 0) {
 									g_string_printf(str, "!ERR_F_F");
 									*out_type = type;
@@ -396,7 +439,7 @@ GString *get_next_format_string(const gchar *fmt, gint expected_type, gint *out_
 									return str;
 								}
 
-								g_string_set_size(str, 0);
+								g_string_printf(str, "%%");
 								if ((flags & RLIB_FMTSTR_MFLAG_NOGROUPING))
 									g_string_append_c(str, '^');
 								if ((flags & RLIB_FMTSTR_MFLAG_NEG_PAR))
@@ -410,6 +453,12 @@ GString *get_next_format_string(const gchar *fmt, gint expected_type, gint *out_
 								if ((flags & RLIB_FMTSTR_MFLAG_FILLCHAR)) {
 									g_string_append_printf(str, "=%c", filler);
 								}
+								if (length > 0)
+									g_string_append_printf(str, "%d", length);
+								if (lprec > 0)
+									g_string_append_printf(str, "#%d", lprec);
+								if (prec > 0)
+									g_string_append_printf(str, ".%d", prec);
 								g_string_append_c(str, conv);
 								g_string_append_c(str, '\0');
 
@@ -425,7 +474,7 @@ GString *get_next_format_string(const gchar *fmt, gint expected_type, gint *out_
 						} else {
 							gchar filler = '\0', conv;
 							gint adv1, adv2;
-							gint flags, length, prec;
+							gint flags, length, lprec, prec;
 
 							if (fmt[adv + 2] != '%') {
 								g_string_printf(str, "!ERR_F_F");
@@ -434,7 +483,7 @@ GString *get_next_format_string(const gchar *fmt, gint expected_type, gint *out_
 								return str;
 							}
 							flags = formatstring_flags_money(fmt + adv + 3, &filler, &adv1);
-							formatstring_length_prec(fmt + adv + 3 + adv1, &length, &prec, &adv2);
+							formatstring_money_length_prec(fmt + adv + 3 + adv1, &length, &lprec, &prec, &adv2);
 							if (prec > 0) {
 								g_string_printf(str, "!ERR_F_F");
 								*out_type = type;
@@ -450,7 +499,7 @@ GString *get_next_format_string(const gchar *fmt, gint expected_type, gint *out_
 								return str;
 							}
 
-							g_string_set_size(str, 0);
+							g_string_printf(str, "%%");
 							if ((flags & RLIB_FMTSTR_MFLAG_NOGROUPING))
 								g_string_append_c(str, '^');
 							if ((flags & RLIB_FMTSTR_MFLAG_NEG_PAR))
@@ -464,6 +513,12 @@ GString *get_next_format_string(const gchar *fmt, gint expected_type, gint *out_
 							if ((flags & RLIB_FMTSTR_MFLAG_FILLCHAR)) {
 								g_string_append_printf(str, "=%c", filler);
 							}
+							if (length > 0)
+								g_string_append_printf(str, "%d", length);
+							if (lprec > 0)
+								g_string_append_printf(str, "#%d", lprec);
+							if (prec > 0)
+								g_string_append_printf(str, ".%d", prec);
 							g_string_append_c(str, conv);
 							g_string_append_c(str, '\0');
 
@@ -544,7 +599,7 @@ GString *get_next_format_string(const gchar *fmt, gint expected_type, gint *out_
 								g_string_append_c(str, '\0');
 								*out_type = type;
 								*advance = i - adv + 1;
-								str1 = get_next_format_string(str->str, RLIB_FORMATSTR_NUMBER, &type1, &adv1, &error1);
+								str1 = get_next_format_string(r, str->str, RLIB_FORMATSTR_NUMBER, &type1, &adv1, &error1);
 								g_string_free(str, TRUE);
 								return str1;
 							}
@@ -867,7 +922,7 @@ gboolean rlib_format_number(rlib *r, gchar **dest, const gchar *fmt, mpfr_t valu
 	advance = 0;
 	type_idx = 0;
 	while (fmt[advance]) {
-		tmp = get_next_format_string(fmt + advance, types[type_idx], &type, &adv, &error);
+		tmp = get_next_format_string(r, fmt + advance, types[type_idx], &type, &adv, &error);
 		if (error) {
 			g_string_free(str, TRUE);
 			*dest = g_string_free(tmp, FALSE);
@@ -944,7 +999,7 @@ gint rlib_number_sprintf(rlib *r UNUSED, gchar **woot_dest, gchar *fmtstr, const
 		gboolean error;
 		GString *str1;
 
-		str1 = get_next_format_string(fmtstr + advance, types[type_idx], &type, &adv, &error);
+		str1 = get_next_format_string(r, fmtstr + advance, types[type_idx], &type, &adv, &error);
 
 		if (error) {
 			g_string_free(str, TRUE);
@@ -1049,7 +1104,7 @@ gboolean rlib_format_string(rlib *r, gchar **dest, struct rlib_report_field *rf,
 					gint type, adv;
 					gboolean error;
 
-					tmp = get_next_format_string(formatstring + advance, types[type_idx], &type, &adv, &error);
+					tmp = get_next_format_string(r, formatstring + advance, types[type_idx], &type, &adv, &error);
 
 					if (error) {
 						g_string_free(str, TRUE);

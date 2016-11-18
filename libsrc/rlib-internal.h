@@ -1010,7 +1010,7 @@ ssize_t rlib_mpfr_strfmon(char * __restrict s, size_t maxsize, const char * __re
 #define RLIB_FORMATSTR_DATE		4
 #define RLIB_FORMATSTR_STRING	5
 
-GString *get_next_format_string(const gchar *fmt, gint expected_type, gint *out_type, gint *advance, gboolean *error) __attribute__((nonnull(3,4,5)));
+GString *get_next_format_string(rlib *r, const gchar *fmt, gint expected_type, gint *out_type, gint *advance, gboolean *error) __attribute__((nonnull(4,5,6)));
 
 gint rlib_number_sprintf(rlib *r, gchar **dest, gchar *fmtstr, const struct rlib_value *rval, gint special_format, gchar *infix, gint line_number);
 gboolean rlib_format_string(rlib *r, gchar **buf,  struct rlib_report_field *rf, struct rlib_value *rval);

@@ -200,7 +200,7 @@ void rlib_datetime_format(rlib *r, gchar **woot_dest, struct rlib_datetime *dt, 
 		gint adv;
 		gboolean error;
 
-		tmp = get_next_format_string(fmt + advance, types[type_idx], &type, &adv, &error);
+		tmp = get_next_format_string(r, fmt + advance, types[type_idx], &type, &adv, &error);
 		if (error) {
 			g_string_free(str, TRUE);
 			*woot_dest = g_string_free(tmp, FALSE);
