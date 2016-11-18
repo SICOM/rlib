@@ -63,9 +63,8 @@ struct _private {
 	SQLHDBC V_OD_hdbc;
 };
 
-static gint rlib_odbc_connect(gpointer input_ptr, const gchar *source, const gchar *user, const gchar *password) {
+static gboolean rlib_odbc_connect(gpointer input_ptr, const gchar *source, const gchar *user, const gchar *password) {
 	struct input_filter *input = input_ptr;
-	rlib *r = input->r;
 	gint V_OD_erg;
 	SQLINTEGER	V_OD_err;
 	SQLSMALLINT	V_OD_mlen;
@@ -74,23 +73,20 @@ static gint rlib_odbc_connect(gpointer input_ptr, const gchar *source, const gch
 
 	V_OD_erg = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &INPUT_PRIVATE(input)->V_OD_Env);
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO)) {
-		r_error(r, "Error AllocHandle\n");
-		return -1;
+		return FALSE;
 	}
 
 	V_OD_erg = SQLSetEnvAttr(INPUT_PRIVATE(input)->V_OD_Env, SQL_ATTR_ODBC_VERSION, (void*)SQL_OV_ODBC3, 0);
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO)) {
-		r_error(r, "Error SetEnv\n");
 		SQLFreeHandle(SQL_HANDLE_ENV, INPUT_PRIVATE(input)->V_OD_Env);
-		return -1;
+		return FALSE;
 	}
 
 
 	V_OD_erg = SQLAllocHandle(SQL_HANDLE_DBC, INPUT_PRIVATE(input)->V_OD_Env, &INPUT_PRIVATE(input)->V_OD_hdbc); 
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO)) {
-		r_error(r, "Error AllocHDB %d\n",V_OD_erg);
 		SQLFreeHandle(SQL_HANDLE_ENV, INPUT_PRIVATE(input)->V_OD_Env);
-		return -1;
+		return FALSE;
 	}
 
 	SQLSetConnectAttr(INPUT_PRIVATE(input)->V_OD_hdbc, SQL_LOGIN_TIMEOUT, (SQLPOINTER *)5, 0);
@@ -101,15 +97,13 @@ static gint rlib_odbc_connect(gpointer input_ptr, const gchar *source, const gch
 		unsigned char buffer[256];
 
 		SQLError(INPUT_PRIVATE(input)->V_OD_Env, INPUT_PRIVATE(input)->V_OD_hdbc, NULL, (SQLCHAR*)szState, NULL, buffer, 256, NULL);
-		printf("SQLError = %s \n", buffer); 
-		r_error(r, "Error SQLConnect %d [%s]\n",V_OD_erg, buffer);
 		SQLGetDiagRec(SQL_HANDLE_DBC, INPUT_PRIVATE(input)->V_OD_hdbc,1, V_OD_stat, &V_OD_err,V_OD_msg,100,&V_OD_mlen);
 		SQLFreeHandle(SQL_HANDLE_DBC, INPUT_PRIVATE(input)->V_OD_hdbc);
 		SQLFreeHandle(SQL_HANDLE_ENV, INPUT_PRIVATE(input)->V_OD_Env);
-		return -1;
+		return FALSE;
 	}
 
-	return 0;
+	return TRUE;
 }
 
 static void rlib_odbc_input_close(gpointer input_ptr) {

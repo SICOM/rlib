@@ -72,7 +72,6 @@ static gboolean rlib_mysql_connect_group(gpointer input_ptr, const gchar *group)
 
 	if (mysql_real_connect(mysql, mysql->options.host, mysql->options.user, mysql->options.password, mysql->options.db, mysql->options.port, mysql->options.unix_socket, 0) == NULL) {
 		mysql_close(mysql);
-		r_error(r, "Error in mysql_real_connect\n");
 		return FALSE;
 	}
 
@@ -84,14 +83,13 @@ static gboolean rlib_mysql_connect_group(gpointer input_ptr, const gchar *group)
 
 static gboolean rlib_mysql_connect_with_credentials(gpointer input_ptr, const gchar *host, guint port, const gchar *user, const gchar *password, const gchar *database) {
 	struct input_filter *input = input_ptr;
-	rlib *r = input->r;
 	MYSQL *mysql;
 	gchar *host_copy = NULL;
 
 	mysql = mysql_init(NULL);
 
 	if (mysql == NULL)
-		return -1;
+		return FALSE;
 
 	if (host) {
 		char *tmp, *port_s;
@@ -106,8 +104,8 @@ static gboolean rlib_mysql_connect_with_credentials(gpointer input_ptr, const gc
 
 	if (mysql_real_connect(mysql, host_copy, user, password, database, port, NULL, 0) == NULL) {
 		mysql_close(mysql);
-		r_error(r, "Error in mysql_real_connect\n");
-		return -1;
+		g_free(host_copy);
+		return FALSE;
 	}
 
 	g_free(host_copy);
@@ -115,7 +113,7 @@ static gboolean rlib_mysql_connect_with_credentials(gpointer input_ptr, const gc
 	mysql_select_db(mysql, database);
 
 	INPUT_PRIVATE(input)->mysql = mysql;
-	return 0;
+	return TRUE;
 }
 
 static void rlib_mysql_input_close(gpointer input_ptr) {

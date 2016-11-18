@@ -152,13 +152,13 @@ gchar *rlib_bindtextdomain(rlib *r, gchar *domainname, gchar *dirname);
  * Datasource definition
  * They return TRUE for success, FALSE for error
  */
-gboolean rlib_add_datasource_mysql(rlib *r, const gchar *input_name, const gchar *database_host, const gchar *database_user, const gchar *database_password, const gchar *database_database);
-gboolean rlib_add_datasource_mysql_from_group(rlib *r, const gchar *input_name, const gchar *group);
-gboolean rlib_add_datasource_postgres(rlib *r, const gchar *input_name, const gchar *conn);
-gboolean rlib_add_datasource_odbc(rlib *r, const gchar *input_name, const gchar *source, const gchar *user, const gchar *password);
-gboolean rlib_add_datasource_xml(rlib *r, const gchar *input_name);
-gboolean rlib_add_datasource_csv(rlib *r, const gchar *input_name);
-gboolean rlib_add_datasource_array(rlib *r, const gchar *input_name);
+gint rlib_add_datasource_mysql(rlib *r, const gchar *input_name, const gchar *database_host, const gchar *database_user, const gchar *database_password, const gchar *database_database);
+gint rlib_add_datasource_mysql_from_group(rlib *r, const gchar *input_name, const gchar *group);
+gint rlib_add_datasource_postgres(rlib *r, const gchar *input_name, const gchar *conn);
+gint rlib_add_datasource_odbc(rlib *r, const gchar *input_name, const gchar *source, const gchar *user, const gchar *password);
+gint rlib_add_datasource_xml(rlib *r, const gchar *input_name);
+gint rlib_add_datasource_csv(rlib *r, const gchar *input_name);
+gint rlib_add_datasource_array(rlib *r, const gchar *input_name);
 
 /*
  * Query definition

@@ -51,24 +51,22 @@ struct _private {
 	gint cursor_number;
 };
 
-static gint rlib_postgres_connect(gpointer input_ptr, const gchar *conninfo) {
+static gboolean rlib_postgres_connect(gpointer input_ptr, const gchar *conninfo) {
 	struct input_filter *input = input_ptr;
 	struct _private *priv = INPUT_PRIVATE(input);
-	rlib *r = input->r;
 	PGconn *conn;
 
 	conn = PQconnectdb(conninfo);
 	if (PQstatus(conn) != CONNECTION_OK) {
-		r_error(r, "rlib_postgres_connect: Cannot connect to POSTGRES\n");
 		PQfinish(conn);
-		return -1;
+		return FALSE;
 	}
 
 	priv->conn = conn;
 	priv->cursor_number = 0;
 	priv->cache_size = 1024;
 
-	return 0;
+	return TRUE;
 }
 
 static void rlib_postgres_input_close(gpointer input_ptr) {

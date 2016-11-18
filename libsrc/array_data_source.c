@@ -182,7 +182,7 @@ static gpointer rlib_array_new_input_filter(rlib *r) {
 	return input;
 }
 
-DLL_EXPORT_SYM gboolean rlib_add_datasource_array(rlib *r, const gchar *input_name) {
+DLL_EXPORT_SYM gint rlib_add_datasource_array(rlib *r, const gchar *input_name) {
 	return rlib_add_datasource(r, input_name, rlib_array_new_input_filter(r));
 }
 
