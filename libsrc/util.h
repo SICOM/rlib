@@ -26,19 +26,23 @@
 
 #include <glib.h>
 
-struct rlib_rgb {
-	gfloat r;
-	gfloat g;
-	gfloat b;
-};
+static inline gint color2hex(gdouble x) {
+	if (x > 1.0)
+		return 0xff;
+	else if (x < 0.0)
+		return 0x00;
+	return (gint)((x) * 0xff);
+}
 
+struct rlib_rgb {
+	gdouble r;
+	gdouble g;
+	gdouble b;
+};
 
 gchar *strlwrexceptquoted (gchar *s);
 gchar *rmwhitespacesexceptquoted(gchar *s);
 /* coming soon: void r_fatal(const gchar *fmt, ...); */
-gint rutil_enableSignalHandler(gint trueorfalse);
-gint64 tentothe(gint n);
-gchar hextochar(gchar c);
 const gchar *colornames(const gchar *str);
 void rlib_parsecolor(struct rlib_rgb *color, const gchar *strx);
 struct rlib_datetime * stod(struct rlib_datetime *tm_date, gchar *str);
@@ -49,7 +53,7 @@ gint daysinmonth(gint year, gint month);
 void init_signals(void);
 void make_more_space_if_necessary(gchar **str, gint *size, gint *total_size, gint len);
 gchar *str2hex(const gchar *str);
-gint64 rlib_safe_atoll(char *str);
+gint rlib_safe_atoll(char *str);
 
 #if DISABLE_UTF8
 

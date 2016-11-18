@@ -36,9 +36,9 @@
 
 void dump_part(struct rlib_part *part);
 
-static struct rlib_report *parse_report_file(rlib *r, gboolean allow_fail, int report_index, gchar *filename, gchar *query);
+static struct rlib_report *parse_report_file(rlib *r, gboolean allow_fail, gint report_index, gchar *filename, gchar *query);
 
-void safestrncpy(gchar *dest, gchar *str, int n) {
+void safestrncpy(gchar *dest, gchar *str, gint n) {
 	if (!dest) return;
 	*dest = '\0';
 	if (str) g_strlcpy(dest, str, n);
@@ -65,7 +65,7 @@ static void utf8_to_8813(rlib *r, gchar *dest, gchar *str) {
 }
 #endif
 
-static int ignoreElement(const char *elname) {
+static gint ignoreElement(const char *elname) {
 	const xmlChar	*xmlname = (xmlChar *)elname;
 	int result = FALSE;
 	if (!xmlStrcmp(xmlname, (xmlChar *)"comment")
@@ -78,7 +78,7 @@ static int ignoreElement(const char *elname) {
 static void get_both(struct rlib_from_xml *data, xmlNodePtr cur, gchar *name) {
 	xmlFree(data->xml);
 	data->xml = xmlGetProp(cur, (const xmlChar *) name);
-	data->line = xmlGetLineNo (cur);
+	data->line = xmlGetLineNo(cur);
 }
 
 static struct rlib_report_image * parse_image(xmlNodePtr cur) {
@@ -125,7 +125,7 @@ static struct rlib_element *parse_line_array(rlib *r, gboolean allow_fail, xmlDo
 
 			sp = xmlGetProp(cur, (const xmlChar *) "value");
 			if (sp == NULL) {
-				r_error(r, "Line: %d - <field> is missing 'value' attribute. \n", xmlGetLineNo (cur),cur->name);
+				r_error(r, "Line: %ld - <field> is missing 'value' attribute. (name %s)\n", xmlGetLineNo(cur), cur->name);
 				g_free(f);
 				g_free(current);
 				rlib_free_line_elements(r, e);
@@ -140,7 +140,7 @@ static struct rlib_element *parse_line_array(rlib *r, gboolean allow_fail, xmlDo
 #endif
 			xmlFree(sp);
 			/* TODO: we need to utf to 8813 all string values in single quotes */
-			f->value_line_number = xmlGetLineNo (cur);
+			f->value_line_number = xmlGetLineNo(cur);
 			get_both(&f->xml_align, cur, "align");
 			get_both(&f->xml_bgcolor, cur, "bgcolor");
 			get_both(&f->xml_color, cur, "color");
@@ -151,7 +151,6 @@ static struct rlib_element *parse_line_array(rlib *r, gboolean allow_fail, xmlDo
 			get_both(&f->xml_link, cur, "link");
 			get_both(&f->xml_translate, cur, "translate");
 			get_both(&f->xml_col, cur, "col");
-			get_both(&f->xml_delayed, cur, "delayed");
 			get_both(&f->xml_memo, cur, "memo");
 			get_both(&f->xml_memo_max_lines, cur, "memo_max_lines");
 			get_both(&f->xml_memo_wrap_chars, cur, "memo_wrap_chars");
@@ -226,7 +225,7 @@ static struct rlib_element *parse_line_array(rlib *r, gboolean allow_fail, xmlDo
 			current->data = rb;
 			current->type = RLIB_ELEMENT_BARCODE;
 		} else if (!ignoreElement((const char *)cur->name)) {
-			r_error(r, "Line: %d - Unknown element [%s] in <Line> \n", xmlGetLineNo(cur), cur->name);
+			r_error(r, "Line: %ld - Unknown element [%s] in <Line> \n", xmlGetLineNo(cur), cur->name);
 			if (!allow_fail) {
 				rlib_free_line_elements(r, e);
 				*error = 1;
@@ -315,7 +314,7 @@ static struct rlib_element *parse_report_output(rlib *r, gboolean allow_fail, xm
 			struct rlib_report_image *ri = parse_image(cur);
 			roa->chain = g_slist_append(roa->chain, report_output_new(RLIB_REPORT_PRESENTATION_DATA_IMAGE, ri));
 		} else if (!ignoreElement((const char *)cur->name)) {
-			r_error(r, "Line: %d - Unknown element [%s] in <Output>. Expected: Line, HorizontalLine or Image On Line \n",xmlGetLineNo (cur), cur->name);
+			r_error(r, "Line: %ld - Unknown element [%s] in <Output>. Expected: Line, HorizontalLine or Image On Line \n", xmlGetLineNo(cur), cur->name);
 			if (!allow_fail) {
 				rlib_free_output(r, e);
 				*error = 1;
@@ -350,7 +349,7 @@ static struct rlib_element *parse_report_outputs(rlib *r, gboolean allow_fail, x
 				last = ptr;
 			}
 		} else if (!ignoreElement((const char *)cur->name)) {
-			r_error(r, "Line: %d - Invalid element: [%s] Expected: <Output> \n",xmlGetLineNo(cur), cur->name);
+			r_error(r, "Line: %ld - Invalid element: [%s] Expected: <Output> \n", xmlGetLineNo(cur), cur->name);
 			if (!allow_fail) {
 				rlib_free_output(r, e);
 				*error = 1;
@@ -371,10 +370,9 @@ static struct rlib_element *parse_break_field(rlib *r, gboolean allow_fail, xmlN
 	cur = cur->xmlChildrenNode;
 	while (cur != NULL) {
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "BreakField"))) {
-			bf->rval = NULL;
 			get_both(&bf->xml_value, cur, "value");
 		} else if (!ignoreElement((const char *)cur->name)) {
-			r_error(r, "Line: %d - Unknown element [%s] in <Break>. Expected BreakField \n",xmlGetLineNo (cur), cur->name );
+			r_error(r, "Line: %ld - Unknown element [%s] in <Break>. Expected BreakField \n", xmlGetLineNo(cur), cur->name );
 			if (!allow_fail) {
 				rlib_free_break_fields(r, e);
 				*error = 1;
@@ -412,7 +410,7 @@ static struct rlib_element *parse_report_break(rlib *r, gboolean allow_fail, str
 				return NULL;
 			}
 			if (rb->header) {
-				r_error(r, "Line: %d - Duplicate BreakHeader\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate BreakHeader\n", xmlGetLineNo(cur));
 				rlib_free_output(r, ptr);
 				rlib_free_breaks(r, e);
 				*error = 1;
@@ -427,7 +425,7 @@ static struct rlib_element *parse_report_break(rlib *r, gboolean allow_fail, str
 				return NULL;
 			}
 			if (rb->footer) {
-				r_error(r, "Line: %d - Duplicate BreakFooter\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate BreakFooter\n", xmlGetLineNo(cur));
 				rlib_free_output(r, ptr);
 				rlib_free_breaks(r, e);
 				*error = 1;
@@ -448,7 +446,7 @@ static struct rlib_element *parse_report_break(rlib *r, gboolean allow_fail, str
 				last_field = ptr;
 			}
 		} else if (!ignoreElement((const char *)cur->name)) {
-			r_error(r, "Line: %d - Unknown element [%s] in <ReportBreak>. Expected BreakHeader, BreakFooter, BreakFieldsn \n",xmlGetLineNo (cur), cur->name );
+			r_error(r, "Line: %ld - Unknown element [%s] in <ReportBreak>. Expected BreakHeader, BreakFooter, BreakFieldsn \n", xmlGetLineNo(cur), cur->name );
 			if (!allow_fail) {
 				rlib_free_breaks(r, e);
 				*error = 1;
@@ -484,7 +482,7 @@ static struct rlib_element *parse_report_breaks(rlib *r, gboolean allow_fail, st
 				last = ptr;
 			}
 		} else if (!ignoreElement((const char *)cur->name)) {
-			r_error(r, "Line: %d - Unknown element [%s] in <Breaks>. Expected Break.\n",xmlGetLineNo (cur), cur->name );
+			r_error(r, "Line: %ld - Unknown element [%s] in <Breaks>. Expected Break.\n", xmlGetLineNo(cur), cur->name );
 			if (!allow_fail) {
 				rlib_free_breaks(r, e);
 				*error = 1;
@@ -514,7 +512,7 @@ static struct rlib_report_detail *parse_detail(rlib *r, gboolean allow_fail, xml
 				return NULL;
 			}
 			if (detail->headers) {
-				r_error(r, "Line: %d - Duplicate FieldHeaders in <Detail>\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate FieldHeaders in <Detail>\n", xmlGetLineNo(cur));
 				rlib_free_output(r, ptr);
 				rlib_free_output(r, detail->headers);
 				rlib_free_output(r, detail->fields);
@@ -532,7 +530,7 @@ static struct rlib_report_detail *parse_detail(rlib *r, gboolean allow_fail, xml
 				return NULL;
 			}
 			if (detail->fields) {
-				r_error(r, "Line: %d - Duplicate FieldDetails in <Detail>\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate FieldDetails in <Detail>\n", xmlGetLineNo(cur));
 				rlib_free_output(r, detail->headers);
 				rlib_free_output(r, detail->fields);
 				rlib_free_output(r, ptr);
@@ -541,7 +539,7 @@ static struct rlib_report_detail *parse_detail(rlib *r, gboolean allow_fail, xml
 			}
 			detail->fields = ptr;
 		} else if (!ignoreElement((const char *)cur->name)) {
-			r_error(r, "Line: %d - Unknown element [%s] in <Detail>. Expected FieldHeaders or FieldDetails\n",xmlGetLineNo (cur), cur->name);
+			r_error(r, "Line: %ld - Unknown element [%s] in <Detail>. Expected FieldHeaders or FieldDetails\n", xmlGetLineNo(cur), cur->name);
 			if (!allow_fail) {
 				rlib_free_output(r, detail->headers);
 				rlib_free_output(r, detail->fields);
@@ -568,7 +566,7 @@ static struct rlib_element *parse_alternate(rlib *r, gboolean allow_fail, xmlDoc
 				return NULL;
 			}
 			if (nodata) {
-				r_error(r, "Line: %d - Duplicate NoData in <Alternate>\n");
+				r_error(r, "Line: %ld - Duplicate NoData in <Alternate>\n", xmlGetLineNo(cur));
 				rlib_free_output(r, nodata);
 				rlib_free_output(r, ptr);
 				*error = 1;
@@ -576,7 +574,7 @@ static struct rlib_element *parse_alternate(rlib *r, gboolean allow_fail, xmlDoc
 			}
 			nodata = ptr;
 		} else if (!ignoreElement((const char *)cur->name)) {
-			r_error(r, "Line: %d - Unknown element [%s] in <Alternate>. Expected NoData\n", xmlGetLineNo(cur), cur->name);
+			r_error(r, "Line: %ld - Unknown element [%s] in <Alternate>. Expected NoData\n", xmlGetLineNo(cur), cur->name);
 			if (!allow_fail) {
 				rlib_free_output(r, nodata);
 				*error = 1;
@@ -632,7 +630,7 @@ static struct rlib_graph *parse_graph(rlib *r, gboolean allow_fail, xmlNodePtr c
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "Plot"))) {
 			graph->plots = g_slist_append(graph->plots, parse_graph_plots(cur));
 		} else if (!ignoreElement((const char *)cur->name)) {
-			r_error(r, "Line: %d - Unknown element [%s] in  <Graph>. Expected Plot\n",xmlGetLineNo (cur), cur->name );
+			r_error(r, "Line: %ld - Unknown element [%s] in  <Graph>. Expected Plot\n", xmlGetLineNo(cur), cur->name );
 			if (!allow_fail) {
 				rlib_free_graph(r, graph);
 				return NULL;
@@ -689,7 +687,7 @@ static struct rlib_chart *parse_chart(rlib *r, gboolean allow_fail, xmlNodePtr c
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "HeaderRow"))) {
 			struct rlib_chart_header_row *ptr = parse_chart_header_row(cur);
 			if (chart->header_row) {
-				r_error(r, "Line: %d - Duplicate HeaderRow in <Chart>\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate HeaderRow in <Chart>\n", xmlGetLineNo(cur));
 				rlib_free_chart_header_row(r, ptr);
 				rlib_free_chart(r, chart);
 				*error = 1;
@@ -699,7 +697,7 @@ static struct rlib_chart *parse_chart(rlib *r, gboolean allow_fail, xmlNodePtr c
 		} else if ((!xmlStrcmp(cur->name, (const xmlChar *) "Row"))) {
 			struct rlib_chart_row *ptr = parse_chart_row(cur);
 			if (chart->row) {
-				r_error(r, "Line: %d - Duplicate Row in <Chart>\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate Row in <Chart>\n", xmlGetLineNo(cur));
 				rlib_free_chart_row(r, ptr);
 				rlib_free_chart(r, chart);
 				*error = 1;
@@ -708,7 +706,7 @@ static struct rlib_chart *parse_chart(rlib *r, gboolean allow_fail, xmlNodePtr c
 			chart->row = ptr;
 			have_row = TRUE;
 		} else if (!ignoreElement((const char *)cur->name)) {
-			r_error(r, "Line: %d - Unknown element [%s] in  <Chart>. Expected Row or HeaderRow\n", xmlGetLineNo(cur), cur->name);
+			r_error(r, "Line: %ld - Unknown element [%s] in  <Chart>. Expected Row or HeaderRow\n", xmlGetLineNo(cur), cur->name);
 			if (!allow_fail) {
 				rlib_free_chart(r, chart);
 				*error = 1;
@@ -719,7 +717,7 @@ static struct rlib_chart *parse_chart(rlib *r, gboolean allow_fail, xmlNodePtr c
 	}
 
 	if (!have_row) {
-		r_error(r, "Line: %d - No Row in <Chart>\n", xmlGetLineNo(cur));
+		r_error(r, "Line: %ld - No Row in <Chart>\n", xmlGetLineNo(cur));
 		if (!allow_fail) {
 			rlib_free_chart(r, chart);
 			*error = 1;
@@ -731,7 +729,7 @@ static struct rlib_chart *parse_chart(rlib *r, gboolean allow_fail, xmlNodePtr c
 	return chart;
 }
 
-static struct rlib_element *parse_report_variable(rlib *r, gboolean allow_fail, xmlNodePtr cur) {
+static struct rlib_element *parse_report_variable(rlib *r, xmlNodePtr cur) {
 	struct rlib_element *e = g_malloc0(sizeof(struct rlib_report));
 	struct rlib_report_variable *rv = g_new0(struct rlib_report_variable, 1);
 	e->next = NULL;
@@ -744,9 +742,14 @@ static struct rlib_element *parse_report_variable(rlib *r, gboolean allow_fail, 
 	get_both(&rv->xml_precalculate, cur, "precalculate");
 	get_both(&rv->xml_ignore, cur, "ignore");
 
-	rv->type = RLIB_REPORT_VARIABLE_UNDEFINED;
-	if(rv->xml_str_type.xml != NULL && rv->xml_str_type.xml[0] != '\0') {
-		if(!strcmp((char *)rv->xml_str_type.xml, "expression") || !strcmp((char *)rv->xml_str_type.xml, "static"))
+	/*
+	 * rv->amount may not always be a number but rv->count is.
+	 */
+	rlib_value_new_none(r, &rv->amount);
+	rlib_value_new_number_from_long(r, &rv->count, 0);
+
+	if (rv->xml_str_type.xml != NULL && rv->xml_str_type.xml[0] != '\0') {
+		if (!strcmp((char *)rv->xml_str_type.xml, "expression") || !strcmp((char *)rv->xml_str_type.xml, "static"))
 			rv->type = RLIB_REPORT_VARIABLE_EXPRESSION;
 		else if(!strcmp((char *)rv->xml_str_type.xml, "count"))
 			rv->type = RLIB_REPORT_VARIABLE_COUNT;
@@ -759,11 +762,9 @@ static struct rlib_element *parse_report_variable(rlib *r, gboolean allow_fail, 
 		else if(!strcmp((char *)rv->xml_str_type.xml, "highest"))
 			rv->type = RLIB_REPORT_VARIABLE_HIGHEST;
 		else {
-			r_error(r, "Line: %d - Unknown report variable type [%s] in <Variable>\n", xmlGetLineNo (cur), rv->xml_str_type.xml);
-			if (!allow_fail) {
-				rlib_free_variables(r, e);
-				return NULL;
-			}
+			r_error(r, "Line: %ld - Unknown report variable type [%s] in <Variable>, ignoring\n", xmlGetLineNo(cur), rv->xml_str_type.xml);
+			rlib_free_variable(r, rv);
+			return NULL;
 		}
 	}
 
@@ -776,22 +777,24 @@ static struct rlib_element *parse_report_variables(rlib *r, gboolean allow_fail,
 	cur = cur->xmlChildrenNode;
 	while (cur != NULL) {
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "Variable"))) {
-			struct rlib_element *ptr = parse_report_variable(r, allow_fail, cur);
+			struct rlib_element *ptr = parse_report_variable(r, cur);
 
-			if (ptr == NULL) {
+			if (ptr == NULL && !allow_fail) {
 				rlib_free_variables(r, e);
 				*error = 1;
 				return NULL;
 			}
 
-			if (last == NULL)
-				e = last = ptr;
-			else {
-				last->next = ptr;
-				last = ptr;
+			if (ptr) {
+				if (last == NULL)
+					e = last = ptr;
+				else {
+					last->next = ptr;
+					last = ptr;
+				}
 			}
 		} else if (!ignoreElement((const char *)cur->name)) {
-			r_error(r, "Line: %d - Unknown element [%s] in <Variables>. Expected Variable.\n", xmlGetLineNo (cur), cur->name);
+			r_error(r, "Line: %ld - Unknown element [%s] in <Variables>. Expected Variable.\n", xmlGetLineNo(cur), cur->name);
 			if (!allow_fail) {
 				rlib_free_variables(r, e);
 				*error = 1;
@@ -826,7 +829,7 @@ static gint parse_metadata_item(rlib *r, gboolean allow_fail, xmlNodePtr cur, GH
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "MetaData"))) {
 			parse_metadata(cur, ht);
 		} else if (!ignoreElement((const char *)cur->name)) {
-			r_error(r, "Line: %d - Unknown element [%s] in <MetaData>. Expected MetaData.\n", xmlGetLineNo (cur), cur->name);
+			r_error(r, "Line: %ld - Unknown element [%s] in <MetaData>. Expected MetaData.\n", xmlGetLineNo(cur), cur->name);
 			if (!allow_fail)
 				return -1;
 		}
@@ -895,7 +898,7 @@ static struct rlib_report *parse_report(rlib *r, gboolean allow_fail, struct rli
 				return NULL;
 			}
 			if (report->report_header) {
-				r_error(r, "Line: %d - Duplicate ReportHeader in <Report>\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate ReportHeader in <Report>\n", xmlGetLineNo(cur));
 				rlib_free_output(r, ptr);
 				rlib_free_report(r, report);
 				return NULL;
@@ -908,7 +911,7 @@ static struct rlib_report *parse_report(rlib *r, gboolean allow_fail, struct rli
 				return NULL;
 			}
 			if (report->page_header) {
-				r_error(r, "Line: %d - Duplicate PageHeader in <Report>\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate PageHeader in <Report>\n", xmlGetLineNo(cur));
 				rlib_free_output(r, ptr);
 				rlib_free_report(r, report);
 				return NULL;
@@ -921,7 +924,7 @@ static struct rlib_report *parse_report(rlib *r, gboolean allow_fail, struct rli
 				return NULL;
 			}
 			if (report->page_footer) {
-				r_error(r, "Line: %d - Duplicate PageFooter in <Report>\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate PageFooter in <Report>\n", xmlGetLineNo(cur));
 				rlib_free_output(r, ptr);
 				rlib_free_report(r, report);
 				return NULL;
@@ -934,7 +937,7 @@ static struct rlib_report *parse_report(rlib *r, gboolean allow_fail, struct rli
 				return NULL;
 			}
 			if (report->report_footer) {
-				r_error(r, "Line: %d - Duplicate ReportFooter in <Report>\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate ReportFooter in <Report>\n", xmlGetLineNo(cur));
 				rlib_free_output(r, ptr);
 				rlib_free_report(r, report);
 				return NULL;
@@ -947,7 +950,7 @@ static struct rlib_report *parse_report(rlib *r, gboolean allow_fail, struct rli
 				return NULL;
 			}
 			if (report->detail) {
-				r_error(r, "Line: %d - Duplicate Detail in <Report>\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate Detail in <Report>\n", xmlGetLineNo(cur));
 				rlib_free_detail(r, ptr);
 				rlib_free_report(r, report);
 				return NULL;
@@ -960,7 +963,7 @@ static struct rlib_report *parse_report(rlib *r, gboolean allow_fail, struct rli
 				return NULL;
 			}
 			if (report->alternate) {
-				r_error(r, "Line: %d - Duplicate Alternate in <Report>\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate Alternate in <Report>\n", xmlGetLineNo(cur));
 				rlib_free_output(r, ptr);
 				rlib_free_report(r, report);
 				return NULL;
@@ -975,7 +978,7 @@ static struct rlib_report *parse_report(rlib *r, gboolean allow_fail, struct rli
 			if (report->graph) {
 				rlib_free_graph(r, ptr);
 				rlib_free_report(r, report);
-				r_error(r, "Line: %d - Duplicate Graph in <Report>\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate Graph in <Report>\n", xmlGetLineNo(cur));
 				return NULL;
 			}
 			report->graph = ptr;
@@ -988,7 +991,7 @@ static struct rlib_report *parse_report(rlib *r, gboolean allow_fail, struct rli
 			if (report->chart) {
 				rlib_free_chart(r, ptr);
 				rlib_free_report(r, report);
-				r_error(r, "Line: %d - Duplicate Chart in <Report>\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate Chart in <Report>\n", xmlGetLineNo(cur));
 				return NULL;
 			}
 			report->chart = ptr;
@@ -1000,7 +1003,7 @@ static struct rlib_report *parse_report(rlib *r, gboolean allow_fail, struct rli
 				return NULL;
 			}
 			if (report->breaks) {
-				r_error(r, "Line: %d - Duplicate Breaks in <Report>\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate Breaks in <Report>\n", xmlGetLineNo(cur));
 				rlib_free_breaks(r, ptr);
 				rlib_free_report(r, report);
 				return NULL;
@@ -1013,7 +1016,7 @@ static struct rlib_report *parse_report(rlib *r, gboolean allow_fail, struct rli
 				return NULL;
 			}
 			if (report->variables) {
-				r_error(r, "Line: %d - Duplicate Variables in <Report>\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate Variables in <Report>\n", xmlGetLineNo(cur));
 				rlib_free_variables(r, ptr);
 				rlib_free_report(r, report);
 				return NULL;
@@ -1025,7 +1028,7 @@ static struct rlib_report *parse_report(rlib *r, gboolean allow_fail, struct rli
 				return NULL;
 			}
 		} else if (!ignoreElement((const char *)cur->name)) { /* must be last */
-			r_error(r, "Line: %d - Unknown element [%s] in <Report>\n", xmlGetLineNo (cur), cur->name);
+			r_error(r, "Line: %ld - Unknown element [%s] in <Report>\n", xmlGetLineNo(cur), cur->name);
 			if (!allow_fail) {
 				rlib_free_report(r, report);
 				return NULL;
@@ -1047,8 +1050,8 @@ static struct rlib_report *parse_part_load(rlib *r, gboolean allow_fail, struct 
 	name =  (gchar *)xmlGetProp(cur, (const xmlChar *) "name");
 	query =  (gchar *)xmlGetProp(cur, (const xmlChar *) "query");
 
-	name_code = rlib_infix_to_pcode(r, part, NULL, name, xmlGetLineNo (cur), TRUE);
-	query_code = rlib_infix_to_pcode(r, part, NULL, query, xmlGetLineNo (cur), TRUE);
+	name_code = rlib_infix_to_pcode(r, part, NULL, name, xmlGetLineNo(cur), TRUE);
+	query_code = rlib_infix_to_pcode(r, part, NULL, query, xmlGetLineNo(cur), TRUE);
 
 	result_name = rlib_execute_as_string(r, name_code, real_name, MAXSTRLEN - 1);
 	rlib_execute_as_string(r, query_code, real_query, MAXSTRLEN - 1);
@@ -1096,7 +1099,7 @@ static struct rlib_part_td *parse_part_td(rlib *r, gboolean allow_fail, struct r
 			}
 			td->reports = g_slist_append(td->reports, report);
 		} else if (!ignoreElement((const char *)cur->name)) {
-			r_error(r, "Line: %d - Unknown element [%s] in <tr>. Expected td.\n", xmlGetLineNo (cur), cur->name);
+			r_error(r, "Line: %ld - Unknown element [%s] in <tr>. Expected td.\n", xmlGetLineNo(cur), cur->name);
 			if (!allow_fail) {
 				rlib_free_part_td(r, td);
 				return NULL;
@@ -1122,7 +1125,7 @@ static struct rlib_part_tr *parse_part_tr(rlib *r, gboolean allow_fail, struct r
 			}
 			tr->part_deviations = g_slist_append(tr->part_deviations, ptr);
 		} else if (!ignoreElement((const char *)cur->name)) {
-			r_error(r, "Line: %d - Unknown element [%s] in <tr>. Expected td.\n", xmlGetLineNo (cur), cur->name);
+			r_error(r, "Line: %ld - Unknown element [%s] in <tr>. Expected td.\n", xmlGetLineNo(cur), cur->name);
 			if (!allow_fail) {
 				rlib_free_part_tr(r, tr);
 				return NULL;
@@ -1186,7 +1189,7 @@ static struct rlib_part *parse_part(rlib *r, gboolean allow_fail, xmlDocPtr doc,
 			if (part->page_header) {
 				rlib_free_output(r, ptr);
 				rlib_free_part(r, part);
-				r_error(r, "Line: %d - Duplicate PageHeader in <Part>\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate PageHeader in <Part>\n", xmlGetLineNo(cur));
 				return NULL;
 			}
 			part->page_header = ptr;
@@ -1199,7 +1202,7 @@ static struct rlib_part *parse_part(rlib *r, gboolean allow_fail, xmlDocPtr doc,
 			if (part->report_header) {
 				rlib_free_output(r, ptr);
 				rlib_free_part(r, part);
-				r_error(r, "Line: %d - Duplicate ReportHeader in <Part>\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate ReportHeader in <Part>\n", xmlGetLineNo(cur));
 				return NULL;
 			}
 			part->report_header = ptr;
@@ -1212,13 +1215,13 @@ static struct rlib_part *parse_part(rlib *r, gboolean allow_fail, xmlDocPtr doc,
 			if (part->page_footer) {
 				rlib_free_output(r, ptr);
 				rlib_free_part(r, part);
-				r_error(r, "Line: %d - Duplicate PageFooter in <Part>\n", xmlGetLineNo(cur));
+				r_error(r, "Line: %ld - Duplicate PageFooter in <Part>\n", xmlGetLineNo(cur));
 				return NULL;
 			}
 			part->page_footer = ptr;
 		} else if (!ignoreElement((const char *)cur->name)) { /* must be last */
 			/* ignore comments, etc */
-			r_error(r, "Line: %d - Unknown element [%s] in <Part>\n", xmlGetLineNo (cur), cur->name);
+			r_error(r, "Line: %ld - Unknown element [%s] in <Part>\n", xmlGetLineNo(cur), cur->name);
 			if (!allow_fail) {
 				rlib_free_part(r, part);
 				return NULL;
@@ -1242,7 +1245,7 @@ void dump_part(struct rlib_part *part) {
 	g_slist_foreach(part->part_rows, dump_part_tr, NULL);
 }
 
-struct rlib_part *parse_part_file(rlib *r, gboolean allow_fail, int report_index) {
+struct rlib_part *parse_part_file(rlib *r, gboolean allow_fail, gint report_index) {
 	gchar *filename = r->reportstorun[report_index].name;
 	gchar type = r->reportstorun[report_index].type;
 	xmlDocPtr doc;
@@ -1363,7 +1366,7 @@ struct rlib_part *parse_part_file(rlib *r, gboolean allow_fail, int report_index
 	return part;
 }
 
-static struct rlib_report *parse_report_file(rlib *r, gboolean allow_fail, int report_index, gchar *filename, gchar *query) {
+static struct rlib_report *parse_report_file(rlib *r, gboolean allow_fail, gint report_index, gchar *filename, gchar *query) {
 	xmlDocPtr doc;
 	gchar *file;
 	struct rlib_report *report = NULL;

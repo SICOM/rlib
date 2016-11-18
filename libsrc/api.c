@@ -16,9 +16,7 @@
  * License along with this program; if not, write to the
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
- * 
- * $Id$s
- *
+
  * This module implements the C language API (Application Programming Interface)
  * for the RLIB library functions.
  */
@@ -34,6 +32,7 @@
 #include <libintl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <mpfr.h>
 
 #include "rlib-internal.h"
 #include "pcode.h"
@@ -51,7 +50,7 @@ static void string_destroyer(gpointer data) {
 static void metadata_destroyer(gpointer data) {
 	struct rlib_metadata *metadata = data;
 	rlib *r = metadata->r;
-	rlib_value_free(&metadata->rval_formula);
+	rlib_value_free(r, &metadata->rval_formula);
 	rlib_pcode_free(r, metadata->formula_code);
 	xmlFree(metadata->xml_formula.xml);
 	g_free(data);
@@ -62,7 +61,7 @@ DLL_EXPORT_SYM rlib *rlib_init_with_environment(struct environment_filter *envir
 	
 	r = g_new0(rlib, 1);
 
-	if(environment == NULL)
+	if (environment == NULL)
 		rlib_new_c_environment(r);
 	else
 		ENVIRONMENT(r) = environment;
@@ -72,7 +71,8 @@ DLL_EXPORT_SYM rlib *rlib_init_with_environment(struct environment_filter *envir
 	r->parameters = g_hash_table_new_full (g_str_hash, g_str_equal, string_destroyer, string_destroyer);
 
 	r->radix_character = '.';
-	
+	r->numeric_precision_bits = RLIB_MPFR_PRECISION_BITS;
+
 #if !DISABLE_UTF8
 	make_all_locales_utf8();
 #endif
@@ -87,13 +87,19 @@ DLL_EXPORT_SYM rlib *rlib_init(void) {
 	return rlib_init_with_environment(NULL);
 }
 
-struct rlib_query *rlib_alloc_query_space(rlib *r) {
-	struct rlib_query *query = NULL;
+static void rlib_cached_rval_destroy(gpointer data) {
+	if (data)
+		rlib_value_free(NULL, data);
+	g_free(data);
+}
+
+DLL_EXPORT_SYM struct rlib_query *rlib_alloc_query_space(rlib *r) {
+	struct rlib_query_internal *query = NULL;
 	struct rlib_results *result = NULL;
 
 	if (r->queries_count == 0) {
 		r->queries = g_malloc((r->queries_count + 1) * sizeof(gpointer));
-		r->results = g_malloc((r->queries_count + 1) * sizeof(gpointer));		
+		r->results = g_malloc((r->queries_count + 1) * sizeof(gpointer));
 
 		if (r->queries == NULL || r->results == NULL) {
 			g_free(r->queries);
@@ -102,7 +108,7 @@ struct rlib_query *rlib_alloc_query_space(rlib *r) {
 			return NULL;
 		}
 	} else {
-		struct rlib_query **queries;
+		struct rlib_query_internal **queries;
 		struct rlib_results **results;
 
 		queries = g_realloc(r->queries, (r->queries_count + 1) * sizeof(void *));
@@ -121,7 +127,7 @@ struct rlib_query *rlib_alloc_query_space(rlib *r) {
 		r->results = results;
 	}
 
-	query = g_malloc0(sizeof(struct rlib_query));
+	query = g_malloc0(sizeof(struct rlib_query_internal));
 	result = g_malloc0(sizeof(struct rlib_results));
 
 	if (query == NULL || result == NULL) {
@@ -131,21 +137,30 @@ struct rlib_query *rlib_alloc_query_space(rlib *r) {
 		return NULL;
 	}
 
+	result->cached_values = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, rlib_cached_rval_destroy);
+	if (result->cached_values == NULL) {
+		g_free(query);
+		g_free(result);
+		r_error(r, "rlib_alloc_query_space: Out of memory!\n");
+		return NULL;
+	}
+
 	r->queries[r->queries_count] = query;
+	query->query_index = r->queries_count;
 	r->results[r->queries_count] = result;
 
 	r->queries_count++;
 
-	return query;
+	return (struct rlib_query *)query;
 }
 
-static struct rlib_query *add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name) {
+static struct rlib_query_internal *add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name) {
 	gint i;
 
 	for (i = 0; i < r->inputs_count; i++) {
 		if (!strcmp(r->inputs[i].name, input_source)) {
 			gchar *name_copy;
-			struct rlib_query *query;
+			struct rlib_query_internal *query;
 
 			name_copy = g_strdup(name);
 			if (name_copy == NULL) {
@@ -153,7 +168,7 @@ static struct rlib_query *add_query_pointer_as(rlib *r, const gchar *input_sourc
 				return NULL;
 			}
 
-			query = rlib_alloc_query_space(r);
+			query = (struct rlib_query_internal *)rlib_alloc_query_space(r);
 			if (query == NULL) {
 				g_free(name_copy);
 				return NULL;
@@ -172,7 +187,7 @@ static struct rlib_query *add_query_pointer_as(rlib *r, const gchar *input_sourc
 }
 
 DLL_EXPORT_SYM gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name) {
-	struct rlib_query *query = add_query_pointer_as(r, input_source, sql, name);
+	struct rlib_query_internal *query = add_query_pointer_as(r, input_source, sql, name);
 
 	if (query == NULL)
 		return -1;
@@ -182,7 +197,7 @@ DLL_EXPORT_SYM gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source
 
 DLL_EXPORT_SYM gint rlib_add_query_as(rlib *r, const gchar *input_source, const gchar *sql, const gchar *name) {
 	gchar *sql_copy = g_strdup(sql);
-	struct rlib_query *query;
+	struct rlib_query_internal *query;
 
 	if (sql_copy == NULL)
 		return -1;
@@ -193,12 +208,12 @@ DLL_EXPORT_SYM gint rlib_add_query_as(rlib *r, const gchar *input_source, const 
 		return -1;
 	}
 
-	query->sql_allocated = 1;
+	query->sql_allocated = TRUE;
 
 	return r->queries_count;
 }
 
-DLL_EXPORT_SYM gint rlib_add_report(rlib *r, const gchar *name) {
+DLL_EXPORT_SYM gboolean rlib_add_report(rlib *r, const gchar *name) {
 	gchar *tmp;
 	int i, found_dir_sep = 0, last_dir_sep = 0;
 
@@ -312,7 +327,7 @@ gboolean use_relative_filename(rlib *r) {
  *	index to r->reportstorun[] array, or
  *	-1 to try to find relative to every reports
  */
-gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean report, gboolean relative_filename) {
+gchar *get_filename(rlib *r, const char *filename, gint report_index, gboolean report, gboolean relative_filename) {
 	int have_report_dir = 0, ri;
 	gchar *file;
 	struct stat st;
@@ -458,10 +473,10 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 	return file;
 }
 
-static gint rlib_execute_queries(rlib *r) {
+static gboolean rlib_execute_queries(rlib *r) {
 	gint i;
 	char *env;
-	gint profiling;
+	gboolean profiling;
 
 	env = getenv("RLIB_PROFILING");
 	profiling = !(env == NULL || *env == '\0');
@@ -476,6 +491,8 @@ static gint rlib_execute_queries(rlib *r) {
 		r->results[i]->input = r->queries[i]->input;
 		r->results[i]->name =  r->queries[i]->name;
 		clock_gettime(CLOCK_MONOTONIC, &ts1);
+		if (INPUT(r,i)->set_query_cache_size && r->query_cache_size)
+			INPUT(r,i)->set_query_cache_size(INPUT(r,i), r->query_cache_size);
 		r->results[i]->result = INPUT(r,i)->new_result_from_query(INPUT(r,i), r->queries[i]);
 		clock_gettime(CLOCK_MONOTONIC, &ts2);
 		if (profiling) {
@@ -498,16 +515,17 @@ static gint rlib_execute_queries(rlib *r) {
 			r_error(r, "Failed To Run A Query [%s]: %s\n", r->queries[i]->sql, INPUT(r,i)->get_error(INPUT(r,i)));
 			return FALSE;
 		} else {
-			INPUT(r,i)->first(INPUT(r,i), r->results[i]->result);
+			INPUT(r,i)->start(INPUT(r,i), r->results[i]->result);
+			INPUT(r,i)->next(INPUT(r,i), r->results[i]->result);
 		}
 	}
 	return TRUE;
 }
 
-gint rlib_parse_internal(rlib *r, gboolean allow_fail) {
+static gint rlib_parse_internal(rlib *r, gboolean allow_fail) {
 	gint i;
 	char *env;
-	gint profiling;
+	gboolean profiling;
 	struct timespec ts1, ts2;
 
 	if (r->did_parse)
@@ -558,7 +576,7 @@ DLL_EXPORT_SYM gint rlib_parse(rlib *r) {
 
 DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 	char *env;
-	gint profiling;
+	gboolean profiling;
 	struct timespec ts1, ts2;
 
 	if (!r->did_parse) {
@@ -647,74 +665,147 @@ DLL_EXPORT_SYM gchar *rlib_get_content_type_as_text(rlib *r) {
 }
 
 DLL_EXPORT_SYM gint rlib_spool(rlib *r) {
-	if(r->did_execute == TRUE) {
+	if (r->did_execute == TRUE) {
 		OUTPUT(r)->spool_private(r);
 		return 0;
 	}
 	return -1;
 }
 
-DLL_EXPORT_SYM gint rlib_set_output_format(rlib *r, int format) {
+DLL_EXPORT_SYM gint rlib_set_output_format(rlib *r, gint format) {
 	r->format = format;
 	return 0;
 }
 
-DLL_EXPORT_SYM gint rlib_add_resultset_follower_n_to_1(rlib *r, gchar *leader, gchar *leader_field, gchar *follower, gchar *follower_field) {
-	gint ptr_leader = -1, ptr_follower = -1;
-	gint x;
+static void duplicate_path(rlib *r, struct rlib_query_internal *query, gint *visited) {
+	GList *list;
 
-	if (r->resultset_followers_count > (RLIB_MAXIMUM_FOLLOWERS - 1)) {
-		return -1;
+	visited[query->query_index] = 1;
+
+	for (list = query->followers; list; list = list->next) {
+		struct rlib_resultset_followers *f = list->data;
+		gint follower_idx = f->follower;
+		duplicate_path(r, r->queries[follower_idx], visited);
 	}
+}
+
+static gint rlib_add_resultset_follower_common(rlib *r, gchar *leader, gchar *leader_field, gchar *follower, gchar *follower_field) {
+	gint *visited;
+	struct rlib_resultset_followers *f;
+	gint leader_idx = -1, follower_idx = -1;
+	gint x;
+	struct rlib_query_internal *top;
+	gboolean followers_circular = FALSE;
+
+	if (!r->queries_count)
+		return -1;
 
 	for (x = 0; x < r->queries_count; x++) {
 		if (!strcmp(r->queries[x]->name, leader))
-			ptr_leader = x;
+			leader_idx = x;
 		if (!strcmp(r->queries[x]->name, follower))
-			ptr_follower = x;
+			follower_idx = x;
 	}
-	
-	if(ptr_leader == -1) {
-		r_error(r,"rlib_add_resultset_follower: Could not find leader!\n");
+
+	if (leader_idx == -1) {
+		r_error(r, "Could not find leader!\n");
 		return -1;
 	}
-	if(ptr_follower == -1) {
-		r_error(r,"rlib_add_resultset_follower: Could not find follower!\n");
+	if (follower_idx == -1) {
+		r_error(r, "Could not find follower!\n");
 		return -1;
 	}
-	if(ptr_follower == ptr_leader) {
-		r_error(r,"rlib_add_resultset_follower: Followes can't be leaders ;)!\n");
+	if (follower_idx == leader_idx) {
+		r_error(r,"The leader and follower cannot be identical!\n");
 		return -1;
 	}
-	r->followers[r->resultset_followers_count].leader = ptr_leader;
-	r->followers[r->resultset_followers_count].leader_field = g_strdup(leader_field);
-	r->followers[r->resultset_followers_count].follower = ptr_follower;
-	r->followers[r->resultset_followers_count++].follower_field = g_strdup(follower_field);
+	if (follower_idx == 0) {
+		r_error(r, "The first added query cannot be a follower!\n");
+		return -1;
+	}
+
+	/*
+	 * Test for straight circularity
+	 */
+	top = r->queries[leader_idx];
+	while (top->leader) {
+		if (top->leader == r->queries[follower_idx]) {
+			followers_circular = TRUE;
+			break;
+		}
+		top = top->leader;
+	}
+
+	if (followers_circular) {
+		r_error(r, "Circular follower!\n");
+		return FALSE;
+	}
+
+	visited = g_new0(gint, r->queries_count);
+	if (!visited) {
+		r_error(r, "Out of memory\n");
+		return -1;
+	}
+	duplicate_path(r, top, visited);
+	if (visited[follower_idx]) {
+		g_free(visited);
+		r_error(r, "Follower cannot occur twice in the same follower tree!\n");
+		return -1;
+	}
+
+	g_free(visited);
+
+	f = g_new0(struct rlib_resultset_followers, 1);
+	if (!f) {
+		r_error(r, "Out of memory\n");
+		return -1;
+	}
+
+	r->queries[follower_idx]->leader = r->queries[leader_idx];
+	f->leader = leader_idx;
+	f->leader_field = g_strdup(leader_field);
+	f->follower = follower_idx;
+	f->follower_field = g_strdup(follower_field);
+
+	r->queries[leader_idx]->followers = g_list_append(r->queries[leader_idx]->followers, f);
+
+	if (f->leader_field && f->follower_field)
+		r->queries[leader_idx]->fcount_n1++;
+	else
+		r->queries[leader_idx]->fcount++;
 
 	return 0;
 }
 
-DLL_EXPORT_SYM gint rlib_add_resultset_follower(rlib *r, gchar *leader, gchar *follower) {
-	return rlib_add_resultset_follower_n_to_1(r, leader, NULL, follower, NULL);
+DLL_EXPORT_SYM gint rlib_add_resultset_follower_n_to_1(rlib *r, gchar *leader, gchar *leader_field, gchar *follower, gchar *follower_field) {
+	if (!leader_field || !follower_field) {
+		r_error(r, "The leader_field and follower_field both must be valid!\n");
+		return -1;
+	}
+
+	return rlib_add_resultset_follower_common(r, leader, leader_field, follower, follower_field);
 }
 
-DLL_EXPORT_SYM gint rlib_set_output_format_from_text(rlib *r, gchar *name) {
+DLL_EXPORT_SYM gint rlib_add_resultset_follower(rlib *r, gchar *leader, gchar *follower) {
+	return rlib_add_resultset_follower_common(r, leader, NULL, follower, NULL);
+}
+
+DLL_EXPORT_SYM void rlib_set_output_format_from_text(rlib *r, gchar *name) {
 	r->format = rlib_format_get_number(name);
 
 	if (r->format == -1)
 		r->format = RLIB_FORMAT_TXT;
-	return 0;
 }
 
 DLL_EXPORT_SYM gchar *rlib_get_output(rlib *r) {
-	if(r->did_execute) 
+	if (r->did_execute)
 		return OUTPUT(r)->get_output(r);
 	else
 		return NULL;
 }
 
-DLL_EXPORT_SYM gint rlib_get_output_length(rlib *r) {
-	if(r->did_execute) 
+DLL_EXPORT_SYM gsize rlib_get_output_length(rlib *r) {
+	if (r->did_execute)
 		return OUTPUT(r)->get_output_length(r);
 	else
 		return 0;
@@ -726,7 +817,7 @@ DLL_EXPORT_SYM gboolean rlib_signal_connect(rlib *r, gint signal_number, gboolea
 	return TRUE;
 }
 
-DLL_EXPORT_SYM gboolean rlib_add_function(rlib *r, gchar *function_name, gboolean (*function)(rlib *, struct rlib_pcode *code, struct rlib_value_stack *, struct rlib_value *this_field_value, gpointer user_data), gpointer user_data) {
+DLL_EXPORT_SYM gboolean rlib_add_function(rlib *r, gchar *function_name, rlib_function function, gpointer user_data) {
 	struct rlib_pcode_operator *rpo = g_new0(struct rlib_pcode_operator, 1);
 	rpo->tag = g_strconcat(function_name, "(", NULL);	
 	rpo->taglen = strlen(rpo->tag);
@@ -755,7 +846,7 @@ DLL_EXPORT_SYM gboolean rlib_signal_connect_string(rlib *r, gchar *signal_name, 
 	else if(!strcasecmp(signal_name, "precalculation_done"))
 		signal = RLIB_SIGNAL_PRECALCULATION_DONE;
 	else {
-		r_error(r,"Unknowm SIGNAL [%s]\n", signal_name);
+		r_error(r,"Unknown SIGNAL [%s]\n", signal_name);
 		return FALSE;
 	}
 	return rlib_signal_connect(r, signal, signal_function, data);
@@ -769,15 +860,18 @@ DLL_EXPORT_SYM gboolean rlib_query_refresh(rlib *r) {
 }
 
 DLL_EXPORT_SYM gint rlib_add_parameter(rlib *r, const gchar *name, const gchar *value) {
-	g_hash_table_insert(r->parameters, g_strdup(name), g_strdup(value));
+	/*
+	 * We don't want duplicate parameters in the hash
+	 * so don't use g_hash_table_insert().
+	 */
+	g_hash_table_replace(r->parameters, g_strdup(name), g_strdup(value));
 	return TRUE;
 }
 
 /*
 *  Returns TRUE if locale was actually set, otherwise, FALSE
 */
-DLL_EXPORT_SYM gint rlib_set_locale(rlib *r, gchar *locale) {
-
+DLL_EXPORT_SYM gboolean rlib_set_locale(rlib *r, gchar *locale) {
 #if DISABLE_UTF8
 	r->special_locale = g_strdup(locale);
 #else
@@ -802,7 +896,11 @@ void rlib_trap() {
 }
 
 DLL_EXPORT_SYM void rlib_set_output_parameter(rlib *r, gchar *parameter, gchar *value) {
-	g_hash_table_insert(r->output_parameters, g_strdup(parameter), g_strdup(value));
+	/*
+	 * We don't want duplicate keys in the hash
+	 * so don't use g_hash_table_insert().
+	 */
+	g_hash_table_replace(r->output_parameters, g_strdup(parameter), g_strdup(value));
 }
 
 DLL_EXPORT_SYM void rlib_set_output_encoding(rlib *r, const char *encoding) {
@@ -820,7 +918,7 @@ DLL_EXPORT_SYM gint rlib_set_datasource_encoding(rlib *r, gchar *input_name, gch
 	int i;
 	struct input_filter *tif;
 	
-	for (i=0;i<r->inputs_count;i++) {
+	for (i = 0; i < r->inputs_count; i++) {
 		tif = r->inputs[i].input;
 		if (strcmp(r->inputs[i].name, input_name) == 0) {
 			rlib_charencoder_free(tif->info.encoder);
@@ -832,8 +930,23 @@ DLL_EXPORT_SYM gint rlib_set_datasource_encoding(rlib *r, gchar *input_name, gch
 	return -1;
 }
 
-DLL_EXPORT_SYM gint rlib_graph_set_x_minor_tick(rlib *r, gchar *graph_name, gchar *x_value) {
+DLL_EXPORT_SYM void rlib_set_query_cache_size(rlib *r, gint cache_size) {
+	if (cache_size <= 0)
+		cache_size = -1;
+
+	r->query_cache_size = cache_size;
+}
+
+DLL_EXPORT_SYM void rlib_set_numeric_precision_bits(rlib *r, mpfr_prec_t prec) {
+	r->numeric_precision_bits = prec;
+}
+
+DLL_EXPORT_SYM gboolean rlib_graph_set_x_minor_tick(rlib *r, gchar *graph_name, gchar *x_value) {
 	struct rlib_graph_x_minor_tick *gmt = g_new0(struct rlib_graph_x_minor_tick, 1);
+
+	if (gmt == NULL)
+		return FALSE;
+
 	gmt->graph_name = g_strdup(graph_name);
 	gmt->x_value = g_strdup(x_value);
 	gmt->by_name = TRUE;
@@ -841,8 +954,12 @@ DLL_EXPORT_SYM gint rlib_graph_set_x_minor_tick(rlib *r, gchar *graph_name, gcha
 	return TRUE;
 }
 
-DLL_EXPORT_SYM gint rlib_graph_set_x_minor_tick_by_location(rlib *r, gchar *graph_name, gint location) {
+DLL_EXPORT_SYM gboolean rlib_graph_set_x_minor_tick_by_location(rlib *r, gchar *graph_name, gint location) {
 	struct rlib_graph_x_minor_tick *gmt = g_new0(struct rlib_graph_x_minor_tick, 1);
+
+	if (gmt == NULL)
+		return FALSE;
+
 	gmt->by_name = FALSE;
 	gmt->location = location;
 	gmt->graph_name = g_strdup(graph_name);
@@ -851,8 +968,12 @@ DLL_EXPORT_SYM gint rlib_graph_set_x_minor_tick_by_location(rlib *r, gchar *grap
 	return TRUE;
 }
 
-DLL_EXPORT_SYM gint rlib_graph_add_bg_region(rlib *r, gchar *graph_name, gchar *region_label, gchar *color, gfloat start, gfloat end) {
+DLL_EXPORT_SYM gboolean rlib_graph_add_bg_region(rlib *r, gchar *graph_name, gchar *region_label, gchar *color, gdouble start, gdouble end) {
 	struct rlib_graph_region *gr = g_new0(struct rlib_graph_region, 1);
+
+	if (gr == NULL)
+		return FALSE;
+
 	gr->graph_name = g_strdup(graph_name);
 	gr->region_label = g_strdup(region_label);
 	rlib_parsecolor(&gr->color, color);
@@ -863,7 +984,7 @@ DLL_EXPORT_SYM gint rlib_graph_add_bg_region(rlib *r, gchar *graph_name, gchar *
 	return TRUE;
 }
 
-DLL_EXPORT_SYM gint rlib_graph_clear_bg_region(rlib *r UNUSED, gchar *graph_name UNUSED) {
+DLL_EXPORT_SYM gboolean rlib_graph_clear_bg_region(rlib *r UNUSED, gchar *graph_name UNUSED) {
 	return TRUE;
 }
 

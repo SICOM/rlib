@@ -18,10 +18,12 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#include <config.h>
+
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h> 
 
-#include <config.h>
 #include "rlib-internal.h"
 #include "pcode.h"
 
@@ -36,32 +38,32 @@ struct _private {
 };
 
 
-static gfloat xml_get_string_width(rlib *r UNUSED, const gchar *text UNUSED) {
+static gdouble xml_get_string_width(rlib *r UNUSED, const gchar *text UNUSED) {
 	return 1;
 }
 
-const gchar * rlib_xml_value_get_type_as_str(struct rlib_value *v) {
-	if(RLIB_VALUE_IS_NUMBER(v))
+const gchar *rlib_xml_value_get_type_as_str(rlib *r, struct rlib_value *v) {
+	if(RLIB_VALUE_IS_NUMBER(r, v))
 		return "number";
-	if(RLIB_VALUE_IS_STRING(v))
+	if(RLIB_VALUE_IS_STRING(r, v))
 		return "string";
-	if(RLIB_VALUE_IS_DATE(v))
+	if(RLIB_VALUE_IS_DATE(r, v))
 		return "date";
 	return NULL;
 }
  
-static void xml_print_text(rlib *r, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, const gchar *text, gint backwards UNUSED, struct rlib_line_extra_data *extra_data) {
+static void xml_print_text(rlib *r, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, const gchar *text, gboolean backwards UNUSED, struct rlib_line_extra_data *extra_data) {
 	gchar *escaped = g_markup_escape_text(text, strlen(text));
 	const gchar *field_type = NULL;
 
 	if (extra_data->report_field && extra_data->report_field->rval) 
-		field_type = rlib_xml_value_get_type_as_str(extra_data->report_field->rval);
+		field_type = rlib_xml_value_get_type_as_str(r, extra_data->report_field->rval);
 
 	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],"<data col=\"%d\" width=\"%d\" font_point=\"%d\" bold=\"%d\" italics=\"%d\" align=\"%s\" ", extra_data->col, extra_data->width, extra_data->font_point, extra_data->is_bold, extra_data->is_italics, extra_data->align == RLIB_ALIGN_CENTER ? "center" : extra_data->align == RLIB_ALIGN_RIGHT ? "right" : "left");
-	if(extra_data->found_bgcolor) 
-		g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],"bgcolor=\"#%02x%02x%02x\" ", (gint)(extra_data->bgcolor.r*0xFF), (gint)(extra_data->bgcolor.g*0xFF), (gint)(extra_data->bgcolor.b*0xFF));
-	if(extra_data->found_color) 
-		g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],"color=\"#%02x%02x%02x\" ", (gint)(extra_data->color.r*0xFF), (gint)(extra_data->color.g*0xFF), (gint)(extra_data->color.b*0xFF));
+	if (extra_data->found_bgcolor)
+		g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],"bgcolor=\"#%02x%02x%02x\" ", color2hex(extra_data->bgcolor.r), color2hex(extra_data->bgcolor.g), color2hex(extra_data->bgcolor.b));
+	if (extra_data->found_color)
+		g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],"color=\"#%02x%02x%02x\" ", color2hex(extra_data->color.r), color2hex(extra_data->color.g), color2hex(extra_data->color.b));
 	if (field_type)
 		g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],"type=\"%s\" ", field_type);
 	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],">%s</data>\n", escaped);
@@ -78,7 +80,6 @@ static void xml_spool_private(rlib *r) {
 	ENVIRONMENT(r)->rlib_write_output(OUTPUT_PRIVATE(r)->whole_report->str, OUTPUT_PRIVATE(r)->whole_report->len);
 }
 
-
 static void xml_start_rlib_report(rlib *r) {
 	OUTPUT_PRIVATE(r)->whole_report = g_string_new("<rlib>\n");
 }
@@ -92,7 +93,7 @@ static void xml_start_part(rlib *r, struct rlib_part *part) {
 	int i;
 	OUTPUT_PRIVATE(r)->top_of_page = g_new0(GString *, part->pages_across);
 	OUTPUT_PRIVATE(r)->bottom_of_page = g_new0(GString *, part->pages_across);
-	for(i=0;i<part->pages_across;i++) {
+	for (i = 0; i < part->pages_across; i++) {
 		OUTPUT_PRIVATE(r)->top_of_page[i] = g_string_new("");
 		OUTPUT_PRIVATE(r)->bottom_of_page[i] = g_string_new("");
 	}
@@ -177,7 +178,7 @@ static void xml_end_part_table(rlib *r, struct rlib_part *part UNUSED) {
 }
 
 
-static void xml_start_part_td(rlib *r, struct rlib_part *part UNUSED, gfloat width, gfloat height) {
+static void xml_start_part_td(rlib *r, struct rlib_part *part UNUSED, gdouble width, gdouble height) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<td ");
 	if (width)
 		g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "width=\"%f\" ", width);
@@ -191,15 +192,15 @@ static void xml_end_part_td(rlib *r, struct rlib_part *part UNUSED) {
 }
 
 
-static void xml_start_part_pages_across(rlib *r UNUSED, struct rlib_part *part UNUSED, gfloat left_margin UNUSED, gfloat top_margin UNUSED, int width UNUSED, int height UNUSED, int border_width UNUSED, struct rlib_rgb *color UNUSED) {}
+static void xml_start_part_pages_across(rlib *r UNUSED, struct rlib_part *part UNUSED, gdouble left_margin UNUSED, gdouble top_margin UNUSED, gint width UNUSED, gint height UNUSED, gint border_width UNUSED, struct rlib_rgb *color UNUSED) {}
 
 static void xml_end_part_pages_across(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
 
-static void xml_start_line(rlib *r, gint backwards UNUSED) {
+static void xml_start_line(rlib *r, gboolean backwards UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<line>\n");
 }
 
-static void xml_end_line(rlib *r, int backwards UNUSED) {
+static void xml_end_line(rlib *r, gboolean backwards UNUSED) {
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</line>\n");
 }
 
@@ -270,7 +271,7 @@ static void xml_end_report_no_data(rlib *r, struct rlib_part *part UNUSED, struc
 	g_string_append(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "</no_data>\n");
 }
 
-static void xml_start_graph(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, gfloat left UNUSED, gfloat top UNUSED, gfloat width, gfloat height, gboolean x_axis_labels_are_under_tick UNUSED) {
+static void xml_start_graph(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, gdouble left UNUSED, gdouble top UNUSED, gdouble width, gdouble height, gboolean x_axis_labels_are_under_tick UNUSED) {
 	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<graph width=\"%f\" height=\"%f\">\n", width, height);	
 }
 
@@ -291,35 +292,34 @@ static void xml_graph_y_axis_title(rlib *r, gchar side, gchar *title) {
 	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<y_axis_title side=\"%s\">%s</y_axis_title>\n", side == RLIB_SIDE_LEFT ? "left" : "right", title);		
 }
 
-static void xml_graph_plot_line(rlib *r, gchar side, gint iteration, gfloat p1_height, gfloat p1_last_height, gfloat p2_height, gfloat p2_last_height, struct rlib_rgb * color, gfloat value, gchar *label, gint row_count UNUSED) {
+static void xml_graph_plot_line(rlib *r, gchar side, gint iteration, gdouble p1_height, gdouble p1_last_height, gdouble p2_height, gdouble p2_last_height, struct rlib_rgb * color, gdouble value, gchar *label, gint row_count UNUSED) {
 	gchar *escaped_label = g_markup_escape_text(label, strlen(label));
 
-	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], 
-		"<plot_line side=\"%s\" iteration=\"%d\" p1_height=\"%f\" p1_last_height=\"%f\" p2_height=\"%f\" p2_last_height=\"%f\" color=\"#%02x%02x%02x\" value=\"%f\" label=\"%s\"/>\n", 
-		side == RLIB_SIDE_LEFT ? "left" : "right", iteration, p1_height, p1_last_height, p2_height, p2_last_height,
-		(gint)(color->r*0xFF), (gint)(color->g*0xFF), (gint)(color->b*0xFF), value, escaped_label);			
+	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],
+		"<plot_line side=\"%s\" iteration=\"%d\" p1_height=\"%f\" p1_last_height=\"%f\" p2_height=\"%f\" p2_last_height=\"%f\" color=\"#%02x%02x%02x\" value=\"%f\" label=\"%s\"/>\n",
+		side == RLIB_SIDE_LEFT ? "left" : "right", iteration, p1_height, p1_last_height, p2_height, p2_last_height, color2hex(color->r), color2hex(color->g), color2hex(color->b), value, escaped_label);
 
 	g_free(escaped_label);
 }
 
-static void xml_graph_plot_pie(rlib *r, gfloat start, gfloat end, gboolean offset, struct rlib_rgb *color, gfloat value, gchar *label) {
+static void xml_graph_plot_pie(rlib *r, gdouble start, gdouble end, gboolean offset, struct rlib_rgb *color, gdouble value, gchar *label) {
 	gchar *escaped_label = g_markup_escape_text(label, strlen(label));
 
-	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], 
-		"<plot_pie start=\"%f\" end=\"%f\" offset=\"%s\" color=\"#%02x%02x%02x\" value=\"%f\" label=\"%s\"/>", start, end, offset ? "true" : "false", 
-		(gint)(color->r*0xFF), (gint)(color->g*0xFF), (gint)(color->b*0xFF), value, escaped_label);
+	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],
+		"<plot_pie start=\"%f\" end=\"%f\" offset=\"%s\" color=\"#%02x%02x%02x\" value=\"%f\" label=\"%s\"/>", start, end, offset ? "true" : "false",
+		color2hex(color->r), color2hex(color->g), color2hex(color->b), value, escaped_label);
 
 	g_free(escaped_label);
 }
 
-static void xml_graph_plot_bar(rlib *r, gchar side, gint iteration, gint plot, gfloat height_percent, struct rlib_rgb *color, gfloat last_height, gboolean divide_iterations, gfloat value, gchar *label) {
+static void xml_graph_plot_bar(rlib *r, gchar side, gint iteration, gint plot, gdouble height_percent, struct rlib_rgb *color, gdouble last_height, gboolean divide_iterations, gdouble value, gchar *label) {
 	gchar *escaped_label = g_markup_escape_text(label, strlen(label));
 
-	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], 
-		"<plot_bar side=\"%s\" iteration=\"%d\" plot=\"%d\" height_percent=\"%f\" color=\"#%02x%02x%02x\" last_height=\"%f\" divide_iterations=\"%s\" value=\"%f\" label=\"%s\"/>", 
+	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number],
+		"<plot_bar side=\"%s\" iteration=\"%d\" plot=\"%d\" height_percent=\"%f\" color=\"#%02x%02x%02x\" last_height=\"%f\" divide_iterations=\"%s\" value=\"%f\" label=\"%s\"/>",
 		side == RLIB_SIDE_LEFT ? "left" : "right", iteration, plot, height_percent,
-		(gint)(color->r*0xFF), (gint)(color->g*0xFF), (gint)(color->b*0xFF), last_height, divide_iterations ? "true" : "false", value, escaped_label);
-	
+		color2hex(color->r), color2hex(color->g), color2hex(color->b), last_height, divide_iterations ? "true" : "false", value, escaped_label);
+
 	g_free(escaped_label);
 }
 
@@ -333,20 +333,19 @@ static void xml_graph_do_grid(rlib *r, gboolean just_a_box) {
 }
 
 static void xml_graph_set_x_iterations(rlib *r, gint iterations) {
-	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<x_iterations>%d</x_iterations>\n", iterations);		
+	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<x_iterations>%d</x_iterations>\n", iterations);
 }
 
 static void xml_graph_tick_y(rlib *r, gint iterations) {
-	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<y_iterations>%d</y_iterations>\n", iterations);		
+	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<y_iterations>%d</y_iterations>\n", iterations);
 }
 
 static void xml_graph_label_x(rlib *r, gint iteration, gchar *label) {
-	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<x_iterations_label iteration=\"%d\">%s</x_iterations_label>\n", iteration, label);		
+	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<x_iterations_label iteration=\"%d\">%s</x_iterations_label>\n", iteration, label);
 }
 
 static void xml_graph_label_y(rlib *r, gchar side, gint iteration, gchar *label) {
-	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<y_iterations_label side=\"%s\" iteration=\"%d\">%s</y_iterations_label>\n", 
-	side == RLIB_SIDE_LEFT ? "left" : "right", iteration, label);		
+	g_string_append_printf(OUTPUT_PRIVATE(r)->top_of_page[OUTPUT_PRIVATE(r)->page_number], "<y_iterations_label side=\"%s\" iteration=\"%d\">%s</y_iterations_label>\n", side == RLIB_SIDE_LEFT ? "left" : "right", iteration, label);
 }
 
 static void xml_end_page(rlib *r, struct rlib_part *part UNUSED) {
@@ -354,34 +353,32 @@ static void xml_end_page(rlib *r, struct rlib_part *part UNUSED) {
 	r->current_line_number = 1;
 }
 
-static int xml_free(rlib *r) {
+static void xml_free(rlib *r) {
 	g_string_free(OUTPUT_PRIVATE(r)->whole_report, TRUE);	
 	g_free(OUTPUT_PRIVATE(r));
 	g_free(OUTPUT(r));
-	return 0;
 }
 
 static char *xml_get_output(rlib *r) {
 	return OUTPUT_PRIVATE(r)->whole_report->str;
 }
 
-static long xml_get_output_length(rlib *r) {
+static gsize xml_get_output_length(rlib *r) {
 	return OUTPUT_PRIVATE(r)->whole_report->len;
 }
 
-static void xml_set_working_page(rlib *r, struct rlib_part *part UNUSED, int page) {
+static void xml_set_working_page(rlib *r, struct rlib_part *part UNUSED, gint page) {
 	OUTPUT_PRIVATE(r)->page_number = page;
 }
 
-static void xml_set_fg_color(rlib *r UNUSED, gfloat red UNUSED, gfloat green UNUSED, gfloat blue UNUSED) {}
-static void xml_set_bg_color(rlib *r UNUSED, gfloat red UNUSED, gfloat green UNUSED, gfloat blue UNUSED) {}
-static void xml_hr(rlib *r UNUSED, gint backwards UNUSED, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gfloat how_long UNUSED, gfloat how_tall UNUSED, 
-struct rlib_rgb *color UNUSED, gfloat indent UNUSED, gfloat length UNUSED) {}
-static void xml_start_draw_cell_background(rlib *r UNUSED, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gfloat how_long UNUSED, gfloat how_tall UNUSED, struct rlib_rgb *color UNUSED) {}
+static void xml_set_fg_color(rlib *r UNUSED, gdouble red UNUSED, gdouble green UNUSED, gdouble blue UNUSED) {}
+static void xml_set_bg_color(rlib *r UNUSED, gdouble red UNUSED, gdouble green UNUSED, gdouble blue UNUSED) {}
+static void xml_hr(rlib *r UNUSED, gboolean backwards UNUSED, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, gdouble how_long UNUSED, gdouble how_tall UNUSED, struct rlib_rgb *color UNUSED, gdouble indent UNUSED, gdouble length UNUSED) {}
+static void xml_start_draw_cell_background(rlib *r UNUSED, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, gdouble how_long UNUSED, gdouble how_tall UNUSED, struct rlib_rgb *color UNUSED) {}
 static void xml_end_draw_cell_background(rlib *r UNUSED) {}
-static void xml_start_boxurl(rlib *r UNUSED, struct rlib_part * part UNUSED, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gfloat how_long UNUSED, gfloat how_tall UNUSED, gchar *url UNUSED, gint backwards UNUSED) {}
-static void xml_end_boxurl(rlib *r UNUSED, gint backwards UNUSED) {}
-static void xml_background_image(rlib *r UNUSED, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gchar *nname UNUSED, gchar *type UNUSED, gfloat nwidth UNUSED, gfloat nheight UNUSED) {}
+static void xml_start_boxurl(rlib *r UNUSED, struct rlib_part * part UNUSED, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, gdouble how_long UNUSED, gdouble how_tall UNUSED, gchar *url UNUSED, gboolean backwards UNUSED) {}
+static void xml_end_boxurl(rlib *r UNUSED, gboolean backwards UNUSED) {}
+static void xml_background_image(rlib *r UNUSED, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, gchar *nname UNUSED, gchar *type UNUSED, gdouble nwidth UNUSED, gdouble nheight UNUSED) {}
 static void xml_set_font_point(rlib *r UNUSED, gint point UNUSED) {}
 static void xml_set_raw_page(rlib *r UNUSED, struct rlib_part *part UNUSED, gint page UNUSED) {}
 static void xml_start_bold(rlib *r UNUSED) {}
@@ -397,7 +394,7 @@ static void xml_graph_set_data_plot_count(rlib *r UNUSED, gint count UNUSED) {}
 static void xml_graph_hint_legend(rlib *r UNUSED, gchar *label UNUSED) {}
 static void xml_graph_draw_legend(rlib *r UNUSED) {}
 static void xml_graph_draw_legend_label(rlib *r UNUSED, gint iteration UNUSED, gchar *label UNUSED, struct rlib_rgb *color UNUSED, gboolean is_line UNUSED) {}
-static void xml_graph_draw_line(rlib *r UNUSED, gfloat x UNUSED, gfloat y UNUSED, gfloat new_x UNUSED, gfloat new_y UNUSED, struct rlib_rgb *color UNUSED) {}
+static void xml_graph_draw_line(rlib *r UNUSED, gdouble x UNUSED, gdouble y UNUSED, gdouble new_x UNUSED, gdouble new_y UNUSED, struct rlib_rgb *color UNUSED) {}
 static void xml_graph_set_name(rlib *r UNUSED, gchar *name UNUSED) {}
 static void xml_graph_set_legend_bg_color(rlib *r UNUSED, struct rlib_rgb *rgb UNUSED) {}
 static void xml_graph_set_legend_orientation(rlib *r UNUSED, gint orientation UNUSED) {}
@@ -423,6 +420,7 @@ void rlib_xml_new_output_filter(rlib *r) {
 	OUTPUT(r)->set_bg_color = xml_set_bg_color;
 	/* Fix a leak in layout.c for delayed variables */
 	OUTPUT(r)->print_text_delayed = NULL;
+	OUTPUT(r)->finalize_text_delayed = NULL;
 	OUTPUT(r)->hr = xml_hr;
 	OUTPUT(r)->start_draw_cell_background = xml_start_draw_cell_background;
 	OUTPUT(r)->end_draw_cell_background = xml_end_draw_cell_background;

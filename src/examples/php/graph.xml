@@ -10,7 +10,10 @@
 			<HorizontalLine size="4" bgcolor="'black'"/>
 			<HorizontalLine size="10" bgcolor="'green'"/>
 		</Output>
-	</PageHeader>		
+	</PageHeader>
+
+	<BadTagIgnore>
+	</BadTagIgnore>
 
 	<pr>
 		<pd width="100">
@@ -215,13 +218,13 @@
 		<pd width="48">
 			<Report fontSize="12" orientation="landscape" query="'pie_data2'">
 				<Variables>
-					<Variable name="test" value="val(value)" type="sum" resetonbreak=""/>
+					<Variable name="test" value="val(value)" type="sum" precalculate="yes" resetonbreak=""/>
 				</Variables>
 				<ReportHeader>
 					<Output>
 						<Line bgcolor="'0xe5e5e5'">
 							<literal col="1">HEADER Testing SUM (Delayed): </literal>
-							<field value="v.test" width="5" align="left" col="1" delayed="yes"/>
+							<field value="v.test" width="5" align="left" col="1" />
 						</Line>
 					</Output>
 				</ReportHeader>				

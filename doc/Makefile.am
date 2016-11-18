@@ -26,7 +26,7 @@ sgml_files = basictraining.sgm examples.sgm graphing.sgm swiglicense.sgm book.sg
 all: book.pdf
 
 book.pdf: $(sgml_files)
-	docbook2pdf -d docbook-utils.dsl book.sgm
+	SP_ENCODING=XML docbook2pdf -d docbook-utils.dsl book.sgm
 
 CLEANFILES = book.pdf
 

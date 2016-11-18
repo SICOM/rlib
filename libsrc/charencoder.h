@@ -32,4 +32,3 @@ void rlib_charencoder_free(GIConv converter);
 gint rlib_charencoder_convert(GIConv converter, gchar **inbuf, gsize *inbytes_left, gchar **outbuf, gsize *outbytes_left);
 
 #endif
-

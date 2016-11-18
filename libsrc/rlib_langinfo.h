@@ -150,7 +150,7 @@ enum
   _NL_NUM
 };
 
-char *nl_langinfo(int item);
+char *nl_langinfo(gint64 item);
 
 #else
  #include <langinfo.h>

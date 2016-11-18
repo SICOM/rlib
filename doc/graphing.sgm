@@ -8,99 +8,99 @@
 		<para>
 		The following is a list of supported types with corresponding sub-types: 
 	<itemizedlist>
-    	<listitem override=bullet>
+		<listitem override="bullet">
 	<para>Line</para>
 	<para>type="'line'"</para>
-    	<para>
+		<para>
 		Sub-Types:
 		<itemizedlist>
-    			<listitem override=bullet>
-     			<para>
+				<listitem override="bullet">
+				<para>
 			subtype="'normal'"
-     			</para>
-     			<para>
+				</para>
+				<para>
 			Normal: Standard line graph.
-     			</para>
-    			</listitem>
-    			<listitem override=bullet>
-     			<para>
+				</para>
+				</listitem>
+				<listitem override="bullet">
+				<para>
 			subtype="'percent'"
-     			</para>
-     			<para>
+				</para>
+				<para>
 			Percent: The data points are presented as a percentage of the total. 	
-     			</para>
-    			</listitem>
-    			<listitem override=bullet>
-     			<para>
+				</para>
+				</listitem>
+				<listitem override="bullet">
+				<para>
 			subtype="'stacked'"
-     			</para>
-     			<para>
+				</para>
+				<para>
 			Stacked: Similiar to the Percent graph except the Stacked Plot presents each data point as a proportion of the total.
-     			</para>
-    			</listitem>
+				</para>
+				</listitem>
 		</itemizedlist>
-     	</para>
-    	</listitem>
+		</para>
+		</listitem>
 
-    	<listitem override=bullet>
+		<listitem override="bullet">
 	<para>Row (Bar)</para>
 	<para>type="'row'"</para>
-     	<para>
-	 	Sub-Types:
+		<para>
+		Sub-Types:
 		<itemizedlist>
-                        <listitem override=bullet>
-     			<para>
+						<listitem override="bullet">
+				<para>
 			subtype="'normal'"
-     			</para>
-                        <para>
-                        Normal: Standard Bar Chart.
-                        </para>
-                        </listitem>
-                        <listitem override=bullet>
-     			<para>
+				</para>
+						<para>
+						Normal: Standard Bar Chart.
+						</para>
+						</listitem>
+						<listitem override="bullet">
+				<para>
 			subtype="'percent'"
-     			</para>
-                        <para>
+				</para>
+						<para>
 			Percent: The data points are presented as a percentage of the total. 	
-                        </para>
-                        </listitem>
-                        <listitem override=bullet>
-     			<para>
+						</para>
+						</listitem>
+						<listitem override="bullet">
+				<para>
 			subtype="'stacked'"
-     			</para>
-                        <para>
+				</para>
+						<para>
 			Stacked: Similiar to the Percent graph except the Stacked Plot presents each data point as a proportion of the total.
-                        </para>
-                        </listitem>
-                </itemizedlist>
-     	</para>
-    	</listitem>
+						</para>
+						</listitem>
+				</itemizedlist>
+		</para>
+		</listitem>
 
-    	<listitem override=bullet>
+		<listitem override="bullet">
 	<para>Pie</para>
 	<para>type="'pie'"</para>
-     	<para>
-	 	Sub-Types:	
+		<para>
+		Sub-Types:
 		<itemizedlist>
-                        <listitem override=bullet>
-     			<para>
+						<listitem override="bullet">
+				<para>
 			subtype="'normal'"
-     			</para>
-                        <para>
-                        Normal: Stanard Pie Chart.
-                        </para>
-                        </listitem>
-                        <listitem override=bullet>
-     			<para>
+				</para>
+						<para>
+						Normal: Stanard Pie Chart.
+						</para>
+						</listitem>
+						<listitem override="bullet">
+				<para>
 			subtype="'offset'"
-     			</para>
-                        <para>
-                        Offset: Pieces of the "pie" are not connected to each other.
-                        </para>
-                        </listitem>
-                </itemizedlist>
-     	</para>
-    	</listitem>
+				</para>
+						<para>
+						Offset: Pieces of the "pie" are not connected to each other.
+						</para>
+						</listitem>
+				</itemizedlist>
+		</para>
+		</listitem>
 	</itemizedlist>
 	</para>
 	<para>
@@ -234,30 +234,15 @@
 		<sect2>
 		<title>axis</title>
 		<para>
-		Defines the data for the specified <emphasis>axis</emphasis>.  
+			Defines the data for the specified <emphasis>axis</emphasis>.
 			<itemizedlist>
-                        <listitem override=bullet>
-                        <para>
-			 x and y are the only valid choices.
-                        </para>
-                        </listitem>
-
-                        <listitem override=bullet>
-                        <para>
-			Only one X-Axis &lt;Plot /&gt; tag may be defined.
-                        </para>
-                        </listitem>
-
-                        <listitem override=bullet>
-                        <para>
-			Multiple Y-Axis &lt;Plot /&gt; tags may be defined.
-                        </para>
-                        </listitem>
+				<listitem override="bullet"><para>x and y are the only valid choices.</para></listitem>
+				<listitem override="bullet"><para>Only one X-Axis &lt;Plot /&gt; tag may be defined.</para></listitem>
+				<listitem override="bullet"><para>Multiple Y-Axis &lt;Plot /&gt; tags may be defined.</para></listitem>
 			</itemizedlist>
-
 		</para>
 		<para>
-		This is a <emphasis>required</emphasis> parameter.
+			This is a <emphasis>required</emphasis> parameter.
 		</para>
 		<para>
 		Usage: axis="'x'"	

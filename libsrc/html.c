@@ -17,24 +17,26 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  *
- * $Id$
- *
  * This module implements the HTML output renderer for generating an HTML
  * formatted report from the rlib object.
- *
  */
+
+#include <config.h>
+
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
 
-#include <config.h>
 #include "rlib-internal.h"
 #include "rlib_gd.h"
 
 #define TEXT 1
 #define DELAY 2
 #define BOTTOM_PAD 8
-#define BIGGER_HTML_FONT(a) (a+2)
+#define BIGGER_HTML_FONT(a) (a + 2)
+
 struct _packet {
 	char type;
 	gpointer data;
@@ -53,7 +55,7 @@ struct _graph {
 	gint legend_top;
 	gint legend_left;
 	gint width;
-	gint just_a_box;
+	gboolean just_a_box;
 	gint height;
 	gint title_height;
 	gint x_label_width;
@@ -65,7 +67,7 @@ struct _graph {
 	gint top;
 	gint y_iterations;
 	gint intersection;
-	gfloat x_tick_width;
+	gdouble x_tick_width;
 	gint x_iterations;
 	gint x_start;
 	gint y_start;
@@ -85,7 +87,7 @@ struct _graph {
 	gboolean bold_titles;
 	gboolean *minor_ticks;
 	gint last_left_x_label;
-	gint is_chart;
+	gboolean is_chart;
 };
 
 struct _private {
@@ -93,39 +95,39 @@ struct _private {
 	GSList **top;
 	GSList **bottom;
 
+	gint pages;
 	gint page_number;
 	struct rlib_gd *rgd;
 	struct _graph graph;
 };
 
-static void html_graph_get_x_label_width(rlib *r, gfloat *width) {
+static void html_graph_get_x_label_width(rlib *r, gdouble *width) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	*width = (gfloat)graph->x_label_width;
+	*width = (gdouble)graph->x_label_width;
 }
 
-static void html_graph_set_x_label_width(rlib *r, gfloat width, gint cell_width) {
+static void html_graph_set_x_label_width(rlib *r, gdouble width, gint cell_width) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	if (width == 0) {
+	if ((gint)width == 0) {
 		graph->x_label_width = cell_width;
-	}
-	else
-		graph->x_label_width = (gint)width;
+	} else
+		graph->x_label_width = width;
 
-	if ((gint)width >= cell_width - 2)
+	if (width >= cell_width - 2)
 		graph->vertical_x_label = TRUE;
 }
 
-static void html_graph_get_y_label_width(rlib *r, gfloat *width) {
+static void html_graph_get_y_label_width(rlib *r, gdouble *width) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	*width = (gfloat)graph->y_label_width_left;
+	*width = (gdouble)graph->y_label_width_left;
 }
 
-static void html_graph_set_y_label_width(rlib *r, gfloat width) {
+static void html_graph_set_y_label_width(rlib *r, gdouble width) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	if (width == 0)
 		graph->y_label_width_left = gd_get_string_width("W", FALSE) * 2;
 	else
-		graph->y_label_width_left = (gint)width;
+		graph->y_label_width_left = width;
 }
 
 static void html_graph_get_width_offset(rlib *r, gint *width_offset) {
@@ -135,14 +137,14 @@ static void html_graph_get_width_offset(rlib *r, gint *width_offset) {
 	*width_offset += graph->y_label_width_left + intersection;
 }
 
-static void print_text(rlib *r, const gchar *text, gint backwards) {
+static void print_text(rlib *r, const gchar *text, gboolean backwards) {
 	gint current_page = OUTPUT_PRIVATE(r)->page_number;
 	struct _packet *packet = NULL;
 
-	if(backwards) {
+	if (backwards) {
 		if(OUTPUT_PRIVATE(r)->bottom[current_page] != NULL)
 			packet = OUTPUT_PRIVATE(r)->bottom[current_page]->data;
-		if(packet != NULL && packet->type == TEXT) {
+		if (packet != NULL && packet->type == TEXT) {
 			g_string_append(packet->data, text);
 		} else {
 			packet = g_new0(struct _packet, 1);
@@ -151,10 +153,10 @@ static void print_text(rlib *r, const gchar *text, gint backwards) {
 			OUTPUT_PRIVATE(r)->bottom[current_page] = g_slist_prepend(OUTPUT_PRIVATE(r)->bottom[current_page], packet);
 		}
 	} else {
-		if(OUTPUT_PRIVATE(r)->top[current_page] != NULL) {
+		if (OUTPUT_PRIVATE(r)->top[current_page] != NULL) {
 			packet = OUTPUT_PRIVATE(r)->top[current_page]->data;
 		}
-		if(packet != NULL && packet->type == TEXT) {
+		if (packet != NULL && packet->type == TEXT) {
 			g_string_append(packet->data, text);
 		} else {
 			packet = g_new0(struct _packet, 1);
@@ -165,68 +167,102 @@ static void print_text(rlib *r, const gchar *text, gint backwards) {
 	}
 }
 
-static gfloat html_get_string_width(rlib *r UNUSED, const gchar *text UNUSED) {
+static gdouble html_get_string_width(rlib *r UNUSED, const gchar *text UNUSED) {
 	return 1;
 }
 
 static gchar *get_html_color(gchar *str, struct rlib_rgb *color) {
-	sprintf(str, "#%02x%02x%02x", (gint)(color->r*0xFF),
-		(gint)(color->g*0xFF), (gint)(color->b*0xFF));
+	sprintf(str, "#%02x%02x%02x", color2hex(color->r), color2hex(color->g), color2hex(color->b));
 	return str;
 }
 
-
-static void html_print_text(rlib *r, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, const gchar *text, gint backwards, struct rlib_line_extra_data *extra_data) {
+static GString *html_print_text_common(const gchar *text, struct rlib_line_extra_data *extra_data) {
 	GString *string = g_string_new("");
+	gchar *escaped;
+	gint pos;
 
 	g_string_append_printf(string, "<span data-col=\"%d\" data-width=\"%d\" style=\"font-size: %dpx; ", extra_data->col, extra_data->width, BIGGER_HTML_FONT(extra_data->font_point));
 
-	if(extra_data->found_bgcolor) 
-		g_string_append_printf(string, "background-color: #%02x%02x%02x; ", (gint)(extra_data->bgcolor.r*0xFF), (gint)(extra_data->bgcolor.g*0xFF), (gint)(extra_data->bgcolor.b*0xFF));
-	if(extra_data->found_color) 
-		g_string_append_printf(string, "color:#%02x%02x%02x ", (gint)(extra_data->color.r*0xFF), (gint)(extra_data->color.g*0xFF), (gint)(extra_data->color.b*0xFF));
-	if(extra_data->is_bold == TRUE)
+	if (extra_data->found_bgcolor)
+		g_string_append_printf(string, "background-color: #%02x%02x%02x; ", color2hex(extra_data->bgcolor.r), color2hex(extra_data->bgcolor.g), color2hex(extra_data->bgcolor.b));
+	if (extra_data->found_color)
+		g_string_append_printf(string, "color:#%02x%02x%02x ", color2hex(extra_data->color.r), color2hex(extra_data->color.g), color2hex(extra_data->color.b));
+	if (extra_data->is_bold == TRUE)
 		g_string_append(string, "font-weight: bold;");
-	if(extra_data->is_italics == TRUE)
+	if (extra_data->is_italics == TRUE)
 		g_string_append(string, "font-style: italic;");
 
-		
 	g_string_append(string,"\">");
-	gchar *escaped = g_markup_escape_text(text, strlen(text));
+	escaped = g_markup_escape_text(text, strlen(text));
+
+#if 0
+	gboolean only_spaces = TRUE;
+	for (pos = 0; escaped[pos]; pos++) {
+		if (!isspace(escaped[pos])) {
+			only_spaces = FALSE;
+			break;
+		}
+	}
+	if (only_spaces) {
+		GString *new_esc = g_string_new(NULL);
+		gint i;
+		for (i = 0; i < pos; i++) {
+			g_string_append(new_esc, "&nbsp;");
+		}
+		g_free(escaped);
+		escaped = g_string_free(new_esc, FALSE);
+	}
+#else
+	{
+		GString *new_esc = g_string_new(NULL);
+		for (pos = 0; escaped[pos]; pos++) {
+			if (isspace(escaped[pos]))
+				g_string_append(new_esc, "&nbsp;");
+			else
+				g_string_append_c(new_esc, escaped[pos]);
+		}
+		g_free(escaped);
+		escaped = g_string_free(new_esc, FALSE);
+	}
+#endif
 	g_string_append(string, escaped);
 	g_string_append(string, "</span>");
 	g_free(escaped);
 
+	return string;
+}
+
+static void html_print_text(rlib *r, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, const gchar *text, gboolean backwards, struct rlib_line_extra_data *extra_data) {
+	GString *string = html_print_text_common(text, extra_data);
 	print_text(r, string->str, backwards);
 	g_string_free(string, TRUE);
 }
 
 
-static void html_set_fg_color(rlib *r UNUSED, gfloat red UNUSED, gfloat green UNUSED, gfloat blue UNUSED) {}
+static void html_set_fg_color(rlib *r UNUSED, gdouble red UNUSED, gdouble green UNUSED, gdouble blue UNUSED) {}
 
-static void html_set_bg_color(rlib *r UNUSED, gfloat red UNUSED, gfloat green UNUSED, gfloat blue UNUSED) {}
+static void html_set_bg_color(rlib *r UNUSED, gdouble red UNUSED, gdouble green UNUSED, gdouble blue UNUSED) {}
 
-static void html_start_draw_cell_background(rlib *r, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gfloat how_long UNUSED, gfloat how_tall UNUSED,
-struct rlib_rgb *color) {
+static void html_start_draw_cell_background(rlib *r, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, gdouble how_long UNUSED, gdouble how_tall UNUSED, struct rlib_rgb *color) {
 	OUTPUT(r)->set_bg_color(r, color->r, color->g, color->b);
 }
 
 static void html_end_draw_cell_background(rlib *r UNUSED) {}
 
-static void html_start_boxurl(rlib *r, struct rlib_part *part UNUSED, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gfloat how_long UNUSED, gfloat how_tall UNUSED, gchar *url, gint backwards) {
+static void html_start_boxurl(rlib *r, struct rlib_part *part UNUSED, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, gdouble how_long UNUSED, gdouble how_tall UNUSED, gchar *url, gboolean backwards) {
 	gchar buf[MAXSTRLEN];
 	sprintf(buf, "<a href=\"%s\">", url);
 	print_text(r, buf, backwards);
 }
 
-static void html_end_boxurl(rlib *r, gint backwards) {
+static void html_end_boxurl(rlib *r, gboolean backwards) {
 	print_text(r, "</a>", backwards);
 }
 
 
 
-static void html_hr(rlib *r, gint backwards, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gfloat how_long UNUSED, gfloat how_tall,
-struct rlib_rgb *color, gfloat indent, gfloat length UNUSED) {
+static void html_hr(rlib *r, gboolean backwards, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, gdouble how_long UNUSED, gdouble how_tall,
+struct rlib_rgb *color, gdouble indent, gdouble length UNUSED) {
 	gchar buf[MAXSTRLEN];
 	gchar nbsp[MAXSTRLEN];
 	gchar color_str[40];
@@ -252,8 +288,8 @@ struct rlib_rgb *color, gfloat indent, gfloat length UNUSED) {
 	}
 }
 
-static void html_background_image(rlib *r, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gchar *nname, gchar *type UNUSED, gfloat nwidth,
-gfloat nheight) {
+static void html_background_image(rlib *r, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, gchar *nname, gchar *type UNUSED, gdouble nwidth,
+gdouble nheight) {
 	gchar buf[MAXSTRLEN];
 
 	print_text(r, "<span style=\"float: left; position:absolute;\">", FALSE);
@@ -262,8 +298,7 @@ gfloat nheight) {
 	print_text(r, "</span>", FALSE);
 }
 
-static void html_line_image(rlib *r, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, gchar *nname, gchar *type UNUSED, gfloat nwidth UNUSED,
-gfloat nheight UNUSED) {
+static void html_line_image(rlib *r, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, gchar *nname, gchar *type UNUSED, gdouble nwidth UNUSED, gdouble nheight UNUSED) {
 	gchar buf[MAXSTRLEN];
 
 	sprintf(buf, "<img src=\"%s\" alt=\"line image\"/>", nname);
@@ -283,18 +318,28 @@ static void html_start_new_page(rlib *r, struct rlib_part *part) {
 }
 
 static gchar *html_callback(struct rlib_delayed_extra_data *delayed_data) {
-	struct rlib_line_extra_data *extra_data = &delayed_data->extra_data;
+	struct rlib_line_extra_data *extra_data = delayed_data->extra_data;
 	rlib *r = delayed_data->r;
 	gchar *buf = NULL, *buf2 = NULL;
+	GString *string;
 
-	rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL);
+	if (rlib_pcode_has_variable(r, extra_data->field_code, NULL, NULL, FALSE))
+		return NULL;
+
+	rlib_value_free(r, &extra_data->rval_code);
+	if (rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL) == NULL)
+		return NULL;
 	rlib_format_string(r, &buf, extra_data->report_field, &extra_data->rval_code);
 	rlib_align_text(r, &buf2, buf, extra_data->report_field->align, extra_data->report_field->width);
 	g_free(buf);
-	return buf2;
+
+	string = html_print_text_common(buf2, extra_data);
+	g_free(buf2);
+	rlib_free_delayed_extra_data(r, delayed_data);
+	return g_string_free(string, FALSE);
 }
 
-static void html_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *delayed_data, int backwards, int rval_type UNUSED) {
+static void html_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *delayed_data, gboolean backwards, gint rval_type UNUSED) {
 	gint current_page = OUTPUT_PRIVATE(r)->page_number;
 	struct _packet *packet = g_new0(struct _packet, 1);
 	packet->type = DELAY;
@@ -304,6 +349,39 @@ static void html_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *del
 		OUTPUT_PRIVATE(r)->bottom[current_page] = g_slist_prepend(OUTPUT_PRIVATE(r)->bottom[current_page], packet);
 	else
 		OUTPUT_PRIVATE(r)->top[current_page] = g_slist_prepend(OUTPUT_PRIVATE(r)->top[current_page], packet);
+}
+
+static void html_finalize_text_delayed(rlib *r, gpointer in_ptr, gboolean backwards) {
+	int pages, i;
+
+	pages = OUTPUT_PRIVATE(r)->pages;
+	for (i = 0; i < pages; i++) {
+		GSList *list, *l;
+
+		if (backwards)
+			list = OUTPUT_PRIVATE(r)->bottom[i];
+		else
+			list = OUTPUT_PRIVATE(r)->top[i];
+
+		for (l = list; l; l = l->next) {
+			struct _packet *packet = l->data;
+			if (packet->type == DELAY && packet->data == in_ptr) {
+				gchar *text = html_callback(packet->data);
+				struct _packet *new_packet;
+
+				if (text) {
+					new_packet = g_new0(struct _packet, 1);
+					new_packet->type = TEXT;
+					new_packet->data = g_string_new(text);
+					l->data = new_packet;
+
+					g_free(text);
+					g_free(packet);
+				}
+				return;
+			}
+		}
+	}
 }
 
 static void html_start_report(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
@@ -332,28 +410,51 @@ static void html_start_rlib_report(rlib *r) {
    	if(suppress_head == NULL) {
 		char *doctype = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">\n";
 		int font_size = r->font_point;
-		if(font_size <= 0)
+		if (font_size <= 0)
 			font_size = RLIB_DEFUALT_FONTPOINT;
-		
+
 		g_string_append(OUTPUT_PRIVATE(r)->whole_report, doctype);
 		g_string_append_printf(OUTPUT_PRIVATE(r)->whole_report, "<head>\n<style type=\"text/css\">\n");
-
 
 		g_string_append_printf(OUTPUT_PRIVATE(r)->whole_report, "pre { margin:0; padding:0; margin-top:0; margin-bottom:0; font-size:%dpt;}\n", BIGGER_HTML_FONT(font_size));
 		g_string_append_printf(OUTPUT_PRIVATE(r)->whole_report, "body { background-color: #ffffff;}\n");
 		g_string_append(OUTPUT_PRIVATE(r)->whole_report, "TABLE { border: 0; border-spacing: 0; padding: 0; width:100%; }\n");
 		g_string_append(OUTPUT_PRIVATE(r)->whole_report, "</style>\n");
 		meta = g_hash_table_lookup(r->output_parameters, "meta");
-		if(meta != NULL)
-			g_string_append(OUTPUT_PRIVATE(r)->whole_report, meta);
+		if (meta != NULL) {
+			int start = 0;
+			int len = strlen(meta);
+			gboolean closed_meta = FALSE;
+
+			while (isspace(meta[start]))
+				start++;
+			if (meta[start] == '<') {
+				start++;
+				while (isspace(meta[start]))
+					start++;
+				if (strncmp(meta + start, "meta", 4) == 0 && strlen(meta + start) >= 4 && isspace(meta + start + 4)) {
+					/* Found "meta" */
+					while (len && isspace(meta[len - 1]))
+						len--;
+					if (meta[len - 1] == '>' && meta[len - 2] == '/')
+						closed_meta = TRUE;
+					else if (strcmp(meta + len - 7, "</meta>") == 0)
+						closed_meta = TRUE;
+
+					g_string_append(OUTPUT_PRIVATE(r)->whole_report, meta);
+					if (!closed_meta)
+						g_string_append(OUTPUT_PRIVATE(r)->whole_report, "</meta>");
+				}
+			}
+		}
 		g_string_append(OUTPUT_PRIVATE(r)->whole_report, "<title>RLIB Report</title></head>\n");
 		g_string_append(OUTPUT_PRIVATE(r)->whole_report, "<body>\n");
-
    	}
 }
 
 static void html_start_part(rlib *r, struct rlib_part *part) {
 	if (OUTPUT_PRIVATE(r)->top == NULL) {
+		OUTPUT_PRIVATE(r)->pages = part->pages_across;
 		OUTPUT_PRIVATE(r)->top = g_new0(GSList *, part->pages_across);
 		OUTPUT_PRIVATE(r)->bottom = g_new0(GSList *, part->pages_across);
 	}
@@ -375,9 +476,13 @@ static void process_end_part(gpointer data, gpointer user_data) {
 	if (packet->type == TEXT)
 		g_string_free(packet->data, TRUE);
 	else {
-		g_free(packet->data);
+		/*
+		 * packet->data is struct rlib_delayed_extra_data,
+		 * it was already freed by html_callback()
+		 */
 		g_free(str);
 	}
+
 	g_free(packet);
 }
 
@@ -420,7 +525,7 @@ static char *html_get_output(rlib *r) {
 	return OUTPUT_PRIVATE(r)->whole_report->str;
 }
 
-static long html_get_output_length(rlib *r) {
+static gsize html_get_output_length(rlib *r) {
 	return OUTPUT_PRIVATE(r)->whole_report->len;
 }
 
@@ -445,7 +550,7 @@ static void html_end_part_tr(rlib *r, struct rlib_part *part UNUSED) {
 	print_text(r, "</tr><!--ended from part tr-->", FALSE);
 }
 
-static void html_start_part_td(rlib *r, struct rlib_part *part UNUSED, gfloat width UNUSED, gfloat height UNUSED) {
+static void html_start_part_td(rlib *r, struct rlib_part *part UNUSED, gdouble width UNUSED, gdouble height UNUSED) {
 	print_text(r, "<td><!--started from part td-->", FALSE);
 }
 
@@ -457,16 +562,15 @@ static void html_start_report_line(rlib *r UNUSED, struct rlib_part *part UNUSED
 
 static void html_end_report_line(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 
-
-static void html_start_line(rlib *r, int backwards) {
-	print_text(r, "<div><pre style=\"font-size: 1pt\">",  backwards);
+static void html_start_line(rlib *r, gboolean backwards) {
+	print_text(r, "<div><pre style=\"font-size: 1pt\">", backwards);
 }
 
-static void html_end_line(rlib *r, int backwards) {
+static void html_end_line(rlib *r, gboolean backwards) {
 	print_text(r, "</pre></div>\n", backwards);	
 }
 
-static void html_start_part_pages_across(rlib *r, struct rlib_part *part UNUSED, gfloat left_margin UNUSED, gfloat top_margin UNUSED, int width UNUSED, int height UNUSED, int border_width UNUSED, struct rlib_rgb *color UNUSED) {
+static void html_start_part_pages_across(rlib *r, struct rlib_part *part UNUSED, gdouble left_margin UNUSED, gdouble top_margin UNUSED, gint width UNUSED, gint height UNUSED, gint border_width UNUSED, struct rlib_rgb *color UNUSED) {
 	print_text(r, "<!--start pages across-->", FALSE);
 }
 
@@ -482,14 +586,14 @@ static void html_end_bold(rlib *r UNUSED) {}
 static void html_start_italics(rlib *r UNUSED) {}
 static void html_end_italics(rlib *r UNUSED) {}
 
-static void html_graph_draw_line(rlib *r UNUSED, gfloat x UNUSED, gfloat y UNUSED, gfloat new_x UNUSED, gfloat new_y UNUSED, struct rlib_rgb *color UNUSED) {}
+static void html_graph_draw_line(rlib *r UNUSED, gdouble x UNUSED, gdouble y UNUSED, gdouble new_x UNUSED, gdouble new_y UNUSED, struct rlib_rgb *color UNUSED) {}
 
 static void html_graph_init(rlib *r) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	memset(graph, 0, sizeof(struct _graph));
 }
 
-static void html_graph_get_chart_layout(rlib *r, gfloat top UNUSED, gfloat bottom UNUSED, gint cell_height, gint rows, gint *chart_size UNUSED, gint *chart_height) {
+static void html_graph_get_chart_layout(rlib *r, gdouble top UNUSED, gdouble bottom UNUSED, gint cell_height, gint rows, gint *chart_size UNUSED, gint *chart_height) {
 	// don't do anything with chart_size
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	gint height_offset = 1;
@@ -509,7 +613,7 @@ static void html_graph_get_chart_layout(rlib *r, gfloat top UNUSED, gfloat botto
 	*chart_height = height_offset + rows * cell_height;
 }
 
-static void html_start_graph(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, gfloat left UNUSED, gfloat top UNUSED, gfloat width, gfloat height, gboolean x_axis_labels_are_under_tick) {
+static void html_start_graph(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED, gdouble left UNUSED, gdouble top UNUSED, gdouble width, gdouble height, gboolean x_axis_labels_are_under_tick) {
 	char buf[MAXSTRLEN];
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 
@@ -536,7 +640,7 @@ static void html_graph_set_limits(rlib *r, gchar side UNUSED, gdouble min, gdoub
 
 static void html_graph_set_title(rlib *r, gchar *title) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat title_width = gd_get_string_width(title, graph->bold_titles);
+	gdouble title_width = gd_get_string_width(title, graph->bold_titles);
 	graph->title_height = gd_get_string_height(graph->bold_titles);
 	rlib_gd_text(OUTPUT_PRIVATE(r)->rgd, title, ((graph->width-title_width)/2.0), 0, FALSE, graph->bold_titles);
 }
@@ -569,7 +673,7 @@ static void html_graph_set_draw_x_y(rlib *r, gboolean draw_x, gboolean draw_y) {
 	graph->draw_y = draw_y;
 }
 
-static void html_graph_set_is_chart(rlib *r, gint is_chart) {
+static void html_graph_set_is_chart(rlib *r, gboolean is_chart) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	graph->is_chart = is_chart;
 }
@@ -592,7 +696,7 @@ static void html_graph_x_axis_title(rlib *r, gchar *title) {
 	if(title[0] == 0)
 		graph->x_axis_label_height += 0;
 	else {
-		gfloat title_width = gd_get_string_width(title, graph->bold_titles);
+		gdouble title_width = gd_get_string_width(title, graph->bold_titles);
 		graph->x_axis_label_height += gd_get_string_height(graph->bold_titles);
 		rlib_gd_text(OUTPUT_PRIVATE(r)->rgd, title,  (graph->width-title_width)/2.0, graph->whole_graph_height-graph->x_axis_label_height, FALSE, graph->bold_titles);
 		graph->x_axis_label_height += gd_get_string_height(graph->bold_titles) * 0.25;
@@ -602,7 +706,7 @@ static void html_graph_x_axis_title(rlib *r, gchar *title) {
 
 static void html_graph_y_axis_title(rlib *r, gchar side, gchar *title) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat title_width = gd_get_string_width(title, graph->bold_titles);
+	gdouble title_width = gd_get_string_width(title, graph->bold_titles);
 	if(title[0] == 0) {
 
 	} else {
@@ -663,10 +767,10 @@ static void html_graph_set_x_tick_width(rlib *r) {
 		if(graph->x_iterations <= 1)
 			graph->x_tick_width = 0;
 		else
-			graph->x_tick_width = (gfloat)graph->width/((gfloat)graph->x_iterations-1.0);
+			graph->x_tick_width = (gdouble)graph->width/((gdouble)graph->x_iterations-1.0);
 	}
 	else
-		graph->x_tick_width = (gfloat)graph->width/(gfloat)graph->x_iterations;
+		graph->x_tick_width = (gdouble)graph->width/(gdouble)graph->x_iterations;
 }
 
 static void html_graph_do_grid(rlib *r, gboolean just_a_box) {
@@ -686,9 +790,9 @@ static void html_graph_do_grid(rlib *r, gboolean just_a_box) {
 			if(graph->x_iterations <= 1)
 				graph->x_tick_width = 0;
 			else
-				graph->x_tick_width = (gfloat)graph->width/((gfloat)graph->x_iterations-1.0);
+				graph->x_tick_width = (gdouble)graph->width/((gdouble)graph->x_iterations-1.0);
 		} else
-			graph->x_tick_width = (gfloat)graph->width/(gfloat)graph->x_iterations;
+			graph->x_tick_width = (gdouble)graph->width/(gdouble)graph->x_iterations;
 	}
 
 	graph->x_start = graph->y_axis_title_left + graph->intersection;
@@ -876,12 +980,12 @@ static void html_graph_tick_y(rlib *r, gint iterations) {
 
 static void html_graph_label_y(rlib *r, gchar side, gint iteration, gchar *label) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat white_space = graph->height/graph->y_iterations;
-	gfloat line_width = gd_get_string_height(FALSE) / 3.0;
-	gfloat top;
+	gdouble white_space = graph->height/graph->y_iterations;
+	gdouble line_width = gd_get_string_height(FALSE) / 3.0;
+	gdouble top;
 
 	if (graph->is_chart) {
-		gfloat l = white_space / 2 + (line_width / 1.5);
+		gdouble l = white_space / 2 + (line_width / 1.5);
 		top = graph->y_start - ((white_space * (iteration - 1)) + l);
 	}
 	else
@@ -895,7 +999,7 @@ static void html_graph_label_y(rlib *r, gchar side, gint iteration, gchar *label
 
 static void html_graph_hint_label_y(rlib *r, gchar side, gchar *label) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat width =  gd_get_string_width(label, FALSE);
+	gdouble width =  gd_get_string_width(label, FALSE);
 	if(side == RLIB_SIDE_LEFT) {
 		if(width > graph->y_label_width_left)
 			graph->y_label_width_left = width;
@@ -913,14 +1017,14 @@ static void html_graph_set_data_plot_count(rlib *r, gint count) {
 
 static void html_graph_draw_bar(rlib *r, gint row, gint start_iteration, gint end_iteration, struct rlib_rgb *color, char *label, struct rlib_rgb *label_color, gint width_pad, gint height_pad) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat bar_length = (end_iteration - start_iteration + 1) * graph->x_tick_width;
-	gfloat bar_height = graph->height / graph->y_iterations;
-	gfloat x_adjust = width_pad / graph->x_tick_width;
-	gfloat y_adjust = height_pad / bar_height;
-	gfloat left = graph->x_start + (graph->x_tick_width * (start_iteration - 1)) + (graph->x_tick_width * x_adjust);
-	gfloat start = graph->y_start - ((graph->y_iterations - row) * bar_height + bar_height * y_adjust);
-	gfloat label_width =  gd_get_string_width(label, FALSE);
-	gfloat line_width = gd_get_string_height(FALSE) / 3.0;
+	gdouble bar_length = (end_iteration - start_iteration + 1) * graph->x_tick_width;
+	gdouble bar_height = graph->height / graph->y_iterations;
+	gdouble x_adjust = width_pad / graph->x_tick_width;
+	gdouble y_adjust = height_pad / bar_height;
+	gdouble left = graph->x_start + (graph->x_tick_width * (start_iteration - 1)) + (graph->x_tick_width * x_adjust);
+	gdouble start = graph->y_start - ((graph->y_iterations - row) * bar_height + bar_height * y_adjust);
+	gdouble label_width =  gd_get_string_width(label, FALSE);
+	gdouble line_width = gd_get_string_height(FALSE) / 3.0;
 	gchar label_text[MAXSTRLEN];
 	gint i;
 
@@ -950,8 +1054,8 @@ static void html_graph_draw_bar(rlib *r, gint row, gint start_iteration, gint en
 	}
 
 	if (label_width > 0) {
-		gfloat text_left = left + bar_length / 2 - label_width / 2;
-		gfloat text_top = start - (bar_height / 2 + line_width * 3 / 2);
+		gdouble text_left = left + bar_length / 2 - label_width / 2;
+		gdouble text_top = start - (bar_height / 2 + line_width * 3 / 2);
 		//OUTPUT(r)->set_fg_color(r, label_color->r, label_color->g, label_color->b);
 		rlib_gd_color_text(OUTPUT_PRIVATE(r)->rgd, label_text,  text_left, text_top, FALSE, FALSE, label_color);
 	}
@@ -959,16 +1063,16 @@ static void html_graph_draw_bar(rlib *r, gint row, gint start_iteration, gint en
 	//OUTPUT(r)->set_bg_color(r, 0, 0, 0);
 }
 
-static void html_graph_plot_bar(rlib *r, gchar side UNUSED, gint iteration, gint plot, gfloat height_percent, struct rlib_rgb *color, gfloat last_height, gboolean divide_iterations, gfloat raw_data UNUSED, gchar *label UNUSED) {
+static void html_graph_plot_bar(rlib *r, gchar side UNUSED, gint iteration, gint plot, gdouble height_percent, struct rlib_rgb *color, gdouble last_height, gboolean divide_iterations, gdouble raw_data UNUSED, gchar *label UNUSED) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat bar_width = graph->x_tick_width *.6;
-	gfloat left = graph->x_start + (graph->x_tick_width * iteration) + (graph->x_tick_width *.2);
-	gfloat start = graph->y_start;
+	gdouble bar_width = graph->x_tick_width *.6;
+	gdouble left = graph->x_start + (graph->x_tick_width * iteration) + (graph->x_tick_width *.2);
+	gdouble start = graph->y_start;
 
 	if(graph->y_origin != graph->y_min)  {
-		gfloat n = fabs(graph->y_max)+fabs(graph->y_origin);
-		gfloat d = fabs(graph->y_min)+fabs(graph->y_max);
-		gfloat real_height =  1 - (n / d);
+		gdouble n = fabs(graph->y_max)+fabs(graph->y_origin);
+		gdouble d = fabs(graph->y_min)+fabs(graph->y_max);
+		gdouble real_height =  1 - (n / d);
 		start -= (real_height * graph->height);
 	}
 
@@ -981,20 +1085,20 @@ static void html_graph_plot_bar(rlib *r, gchar side UNUSED, gint iteration, gint
 
 }
 
-static void html_graph_plot_line(rlib *r, gchar side UNUSED, gint iteration, gfloat p1_height, gfloat p1_last_height, gfloat p2_height, gfloat p2_last_height, struct rlib_rgb * color, gfloat raw_data UNUSED, gchar *label UNUSED, gint row_count) {
+static void html_graph_plot_line(rlib *r, gchar side UNUSED, gint iteration, gdouble p1_height, gdouble p1_last_height, gdouble p2_height, gdouble p2_last_height, struct rlib_rgb * color, gdouble raw_data UNUSED, gchar *label UNUSED, gint row_count) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat p1_start = graph->y_start;
-	gfloat p2_start = graph->y_start;
-	gfloat left = graph->x_start + (graph->x_tick_width * (iteration-1));
+	gdouble p1_start = graph->y_start;
+	gdouble p2_start = graph->y_start;
+	gdouble left = graph->x_start + (graph->x_tick_width * (iteration-1));
 	if(row_count <= 0) 
 		return;
 	p1_height += p1_last_height;
 	p2_height += p2_last_height;
 
 	if(graph->y_origin != graph->y_min)  {
-		gfloat n = fabs(graph->y_max)+fabs(graph->y_origin);
-		gfloat d = fabs(graph->y_min)+fabs(graph->y_max);
-		gfloat real_height =  1 - (n / d);
+		gdouble n = fabs(graph->y_max)+fabs(graph->y_origin);
+		gdouble d = fabs(graph->y_min)+fabs(graph->y_max);
+		gdouble real_height =  1 - (n / d);
 		p1_start -= (real_height * graph->height);
 		p2_start -= (real_height * graph->height);
 	}
@@ -1006,15 +1110,15 @@ static void html_graph_plot_line(rlib *r, gchar side UNUSED, gint iteration, gfl
 	rlib_gd_set_thickness(OUTPUT_PRIVATE(r)->rgd, 1);
 }
 
-static void html_graph_plot_pie(rlib *r, gfloat start, gfloat end, gboolean offset, struct rlib_rgb *color, gfloat raw_data UNUSED, gchar *label UNUSED) {
+static void html_graph_plot_pie(rlib *r, gdouble start, gdouble end, gboolean offset, struct rlib_rgb *color, gdouble raw_data UNUSED, gchar *label UNUSED) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat start_angle = 360.0 * start;
-	gfloat end_angle = 360.0 * end;
-	gfloat x = (graph->width / 2);
-	gfloat y = graph->top + ((graph->height-graph->legend_height) / 2);
-	gfloat radius = 0;
-	gfloat offset_factor = 0;
-	gfloat rads;
+	gdouble start_angle = 360.0 * start;
+	gdouble end_angle = 360.0 * end;
+	gdouble x = (graph->width / 2);
+	gdouble y = graph->top + ((graph->height-graph->legend_height) / 2);
+	gdouble radius = 0;
+	gdouble offset_factor = 0;
+	gdouble rads;
 
 	start_angle += 90;
 	end_angle += 90;
@@ -1038,7 +1142,7 @@ static void html_graph_plot_pie(rlib *r, gfloat start, gfloat end, gboolean offs
 
 static void html_graph_hint_legend(rlib *r, gchar *label) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat width =  gd_get_string_width(label, FALSE) + gd_get_string_width("WWW", FALSE);
+	gdouble width =  gd_get_string_width(label, FALSE) + gd_get_string_width("WWW", FALSE);
 
 	if(width > graph->legend_width)
 		graph->legend_width = width;
@@ -1050,7 +1154,7 @@ static void html_count_regions(gpointer data, gpointer user_data) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	if(graph->name != NULL) {
 		if(strcmp(graph->name, gr->graph_name) == 0) {
-			gfloat width =  gd_get_string_width(gr->region_label, FALSE) + gd_get_string_width("WWW", FALSE);
+			gdouble width =  gd_get_string_width(gr->region_label, FALSE) + gd_get_string_width("WWW", FALSE);
 
 			if(width > graph->legend_width)
 				graph->legend_width = width;
@@ -1067,14 +1171,14 @@ static void html_label_regions(gpointer data, gpointer user_data) {
 	if(graph->name != NULL) {
 		if(strcmp(graph->name, gr->graph_name) == 0) {
 			gint iteration = graph->orig_data_plot_count + graph->current_region;
-			gfloat offset =  (iteration  * gd_get_string_height(FALSE));
-			gfloat picoffset = gd_get_string_height(FALSE);
-			gfloat textoffset = gd_get_string_height(FALSE)/4;
-			gfloat w_width = gd_get_string_width("W", FALSE);
-			gfloat line_height = gd_get_string_height(FALSE);
-			gfloat left = graph->legend_left + (w_width/2);
-			gfloat top = graph->legend_top + offset + picoffset;
-			gfloat bottom = top - (line_height*.6);
+			gdouble offset =  (iteration  * gd_get_string_height(FALSE));
+			gdouble picoffset = gd_get_string_height(FALSE);
+			gdouble textoffset = gd_get_string_height(FALSE)/4;
+			gdouble w_width = gd_get_string_width("W", FALSE);
+			gdouble line_height = gd_get_string_height(FALSE);
+			gdouble left = graph->legend_left + (w_width/2);
+			gdouble top = graph->legend_top + offset + picoffset;
+			gdouble bottom = top - (line_height*.6);
 
 			rlib_gd_rectangle(OUTPUT_PRIVATE(r)->rgd, graph->legend_left + (w_width/2), graph->legend_top + offset + picoffset , w_width, line_height*.6, &gr->color);
 			rlib_gd_line(OUTPUT_PRIVATE(r)->rgd, left, bottom, left, top, NULL);
@@ -1137,14 +1241,14 @@ static void html_graph_draw_legend(rlib *r) {
 
 static void html_graph_draw_legend_label(rlib *r, gint iteration, gchar *label, struct rlib_rgb *color, gboolean is_line) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
-	gfloat offset =  (iteration  * gd_get_string_height(FALSE));
-	gfloat picoffset = gd_get_string_height(FALSE);
-	gfloat textoffset = gd_get_string_height(FALSE)/4;
-	gfloat w_width = gd_get_string_width("W", FALSE);
-	gfloat line_height = gd_get_string_height(FALSE);
-	gfloat left = graph->legend_left + (w_width/2);
-	gfloat top = graph->legend_top + offset + picoffset;
-	gfloat bottom = top - (line_height*.6);
+	gdouble offset =  (iteration  * gd_get_string_height(FALSE));
+	gdouble picoffset = gd_get_string_height(FALSE);
+	gdouble textoffset = gd_get_string_height(FALSE)/4;
+	gdouble w_width = gd_get_string_width("W", FALSE);
+	gdouble line_height = gd_get_string_height(FALSE);
+	gdouble left = graph->legend_left + (w_width/2);
+	gdouble top = graph->legend_top + offset + picoffset;
+	gdouble bottom = top - (line_height*.6);
 
 	if(!is_line) {
 		rlib_gd_rectangle(OUTPUT_PRIVATE(r)->rgd, graph->legend_left + (w_width/2), graph->legend_top + offset + picoffset , w_width, line_height*.6, color);
@@ -1167,7 +1271,7 @@ static void html_init_end_page(rlib *r UNUSED) {}
 static void html_end_rlib_report(rlib *r UNUSED) {}
 
 static void html_finalize_private(rlib *r) {
-	g_string_append(OUTPUT_PRIVATE(r)->whole_report, "</body></html>");
+	g_string_append(OUTPUT_PRIVATE(r)->whole_report, "</body></html>\n");
 }
 
 static void html_start_output_section(rlib *r UNUSED, struct rlib_report_output_array *roa UNUSED) {}
@@ -1190,13 +1294,12 @@ static void html_end_report_break_footer(rlib *r UNUSED, struct rlib_part *part 
 static void html_start_report_no_data(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 static void html_end_report_no_data(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 
-static gint html_free(rlib *r) {
+static void html_free(rlib *r) {
 	g_string_free(OUTPUT_PRIVATE(r)->whole_report, TRUE);
 	g_free(OUTPUT_PRIVATE(r)->top);
 	g_free(OUTPUT_PRIVATE(r)->bottom);
 	g_free(OUTPUT_PRIVATE(r));
 	g_free(OUTPUT(r));
-	return 0;
 }
 
 void rlib_html_new_output_filter(rlib *r) {
@@ -1216,6 +1319,7 @@ void rlib_html_new_output_filter(rlib *r) {
 	OUTPUT(r)->get_string_width = html_get_string_width;
 	OUTPUT(r)->print_text = html_print_text;
 	OUTPUT(r)->print_text_delayed = html_print_text_delayed;
+	OUTPUT(r)->finalize_text_delayed = html_finalize_text_delayed;
 	OUTPUT(r)->set_fg_color = html_set_fg_color;
 	OUTPUT(r)->set_bg_color = html_set_bg_color;
 	OUTPUT(r)->hr = html_hr;

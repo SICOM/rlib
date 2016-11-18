@@ -15,7 +15,7 @@ rlib_version();
 rlib_add_datasource_array($rlib, "local_array");
 rlib_add_query_as($rlib, "local_array", "data", "data");
 
-$output_format = 'xml';
+$output_format = 'txt';
 
 if (isset($argv[1]))
 	$output_format = $argv[1];

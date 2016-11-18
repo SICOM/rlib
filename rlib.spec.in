@@ -6,12 +6,13 @@
 Summary: RLIB is a reporting engine/library.
 Name: rlib
 Version: @VERSION@
-Release: 4%{?dist}
+Release: 1%{?dist}
 License: GPL
 Group: System Environment/Libraries
 Source: https://github.com/SICOM/rlib/archive/v%{version}.tar.gz
 # Build
 BuildRequires: autoconf, automake, libtool, gettext-devel
+BuildRequires: gmp-devel, mpfr-devel
 # Build documentation
 BuildRequires: docbook-utils-pdf, texlive-ec
 # Runtime

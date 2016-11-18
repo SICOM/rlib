@@ -1,5 +1,6 @@
-<!-- $Id$ -->
-<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+	"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
 <!ENTITY intro SYSTEM "intro.sgm">
 <!ENTITY basictraining SYSTEM "basictraining.sgm">
 <!ENTITY symboltable SYSTEM "symboltable.sgm">
@@ -16,30 +17,31 @@
 		<title>RLIB Programmers Manual
 			<inlinemediaobject>
 				<imageobject>
-					<imagedata fileref="IMAGES/rlib.png" align=center>
+					<imagedata fileref="IMAGES/rlib.png" align="center"/>
 				</imageobject>
-			</inlinemediaobject>		
+			</inlinemediaobject>
 		</title>
 		<corpauthor><emphasis>SICOM Systems, INC.</emphasis></corpauthor>
-		<corpauthor><emphasis>4140 Skyron Drive, Doylestown PA 18901</emphasis></corpauthor>
+		<corpauthor><emphasis>4434 Progress Meadow Drive, Doylestown PA 18902</emphasis></corpauthor>
 		<author><firstname>Bob</firstname><surname>Doan</surname></author>
 		<author><firstname>Robert</firstname><surname>Kratz</surname></author>
 		<author><firstname>Chet</firstname><surname>Heilman</surname></author>
-		<copyright><year>2003</year><holder>SICOM Systems, INC</holder></copyright>
+		<author><firstname>Zoltán</firstname><surname>Böszörményi</surname></author>
+		<copyright><year>2003-2016</year><holder>SICOM Systems, INC</holder></copyright>
 		<legalnotice>
 			<blockquote>
 				<para>
-      			Permission is granted to copy, distribute and/or modify this document
-		      	under the terms of the GNU Free Documentation License, Version 1.2
-		      	or any later version published by the Free Software Foundation;
-		      	with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
-			 		Texts.  A copy of the license is included in the section entitled "GNU
-		      	Free Documentation License".			
+					Permission is granted to copy, distribute and/or modify this document
+					under the terms of the GNU Free Documentation License, Version 1.2
+					or any later version published by the Free Software Foundation;
+					with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+					Texts.  A copy of the license is included in the section entitled "GNU
+					Free Documentation License".
 				</para>
 			</blockquote>
 		</legalnotice>
 	</bookinfo>
-		
+
 	&intro;
 	&basictraining;
 	&symboltable;

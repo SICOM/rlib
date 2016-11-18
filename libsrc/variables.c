@@ -17,75 +17,102 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  *
- * $Id$
- * 
  * This module generates a report from the information stored in the current
  * report object.
  * The main entry point is called once at report generation time for each
  * report defined in the rlib object.
- *
  */
+
+#include <config.h>
  
 #include <stdlib.h>
 #include <string.h>
-#include <config.h>
 #include "rlib-internal.h"
 #include "pcode.h"
 #include "rlib_input.h"
 #include "rlib_langinfo.h"
 
-void variable_clear(struct rlib_report_variable *rv, gboolean do_expression) {
-	if(rv->type == RLIB_REPORT_VARIABLE_EXPRESSION && do_expression) {
-		RLIB_VARIABLE_CA(rv)->amount = *rlib_value_new_number(&RLIB_VARIABLE_CA(rv)->amount, 0);
-	} else if(rv->type == RLIB_REPORT_VARIABLE_COUNT) {
-		RLIB_VARIABLE_CA(rv)->count = *rlib_value_new_number(&RLIB_VARIABLE_CA(rv)->count, 0);
-	} else if(rv->type == RLIB_REPORT_VARIABLE_SUM) {
-		RLIB_VARIABLE_CA(rv)->amount = *rlib_value_new_number(&RLIB_VARIABLE_CA(rv)->amount, 0);
-	} else if(rv->type == RLIB_REPORT_VARIABLE_AVERAGE) {
-		RLIB_VARIABLE_CA(rv)->count = *rlib_value_new_number(&RLIB_VARIABLE_CA(rv)->count, 0);
-		RLIB_VARIABLE_CA(rv)->amount = *rlib_value_new_number(&RLIB_VARIABLE_CA(rv)->amount, 0);
-	} else if(rv->type == RLIB_REPORT_VARIABLE_LOWEST) {
-		RLIB_VARIABLE_CA(rv)->amount = *rlib_value_new_number(&RLIB_VARIABLE_CA(rv)->amount, 0);
-	} else if(rv->type == RLIB_REPORT_VARIABLE_HIGHEST) {
-		RLIB_VARIABLE_CA(rv)->amount = *rlib_value_new_number(&RLIB_VARIABLE_CA(rv)->amount, 0);
-	}
-} 
-
-void init_variables(struct rlib_report *report) {
-	struct rlib_element *e;
-	for(e = report->variables; e != NULL; e=e->next) {
-		struct rlib_report_variable *rv = e->data;
-		variable_clear(rv, TRUE);
+void variable_clear(rlib *r, struct rlib_report_variable *rv, gboolean do_expression) {
+	switch (rv->type) {
+	case RLIB_REPORT_VARIABLE_EXPRESSION:
+		if (do_expression) {
+			if (RLIB_VALUE_IS_NUMBER(r, &rv->amount))
+				mpfr_set_ui(rv->amount.mpfr_value, 0, MPFR_RNDN);
+			else {
+				rlib_value_free(r, &rv->amount);
+				rlib_value_new_number_from_long(r, &rv->amount, 0);
+			}
+		}
+		break;
+	case RLIB_REPORT_VARIABLE_COUNT:
+		mpfr_set_ui(rv->count.mpfr_value, 0, MPFR_RNDN);
+		break;
+	case RLIB_REPORT_VARIABLE_SUM:
+		if (RLIB_VALUE_IS_NUMBER(r, &rv->amount))
+			mpfr_set_ui(rv->amount.mpfr_value, 0, MPFR_RNDN);
+		else {
+			rlib_value_free(r, &rv->amount);
+			rlib_value_new_number_from_long(r, &rv->amount, 0);
+		}
+		break;
+	case RLIB_REPORT_VARIABLE_AVERAGE:
+		mpfr_set_ui(rv->count.mpfr_value, 0, MPFR_RNDN);
+		if (RLIB_VALUE_IS_NUMBER(r, &rv->amount))
+			mpfr_set_ui(rv->amount.mpfr_value, 0, MPFR_RNDN);
+		else {
+			rlib_value_free(r, &rv->amount);
+			rlib_value_new_number_from_long(r, &rv->amount, 0);
+		}
+		break;
+	case RLIB_REPORT_VARIABLE_LOWEST:
+	case RLIB_REPORT_VARIABLE_HIGHEST:
+		rlib_value_free(r, &rv->amount);
+		break;
 	}
 }
 
-void rlib_process_variables(rlib *r, struct rlib_report *report, gboolean precalculate) {
+void init_variables(rlib *r, struct rlib_report *report) {
+	struct rlib_element *e;
+	for (e = report->variables; e != NULL; e = e->next) {
+		struct rlib_report_variable *rv = e->data;
+		variable_clear(r, rv, TRUE);
+	}
+}
+
+void rlib_process_variables(rlib *r, struct rlib_report *report) {
 	struct rlib_element *e;
 	gboolean samerow = FALSE;
 
 	if (report->uniquerow_code != NULL) {
 		struct rlib_value tmp_rval;
+		rlib_value_init(r, &tmp_rval);
 		rlib_execute_pcode(r, &tmp_rval, report->uniquerow_code, NULL);
-		if (rvalcmp(&tmp_rval, &report->uniquerow) == 0) {
+		if (rvalcmp(r, &tmp_rval, &report->uniquerow) == 0) {
+			rlib_value_free(r, &tmp_rval);
 			samerow = TRUE;
 		} else {
-			rlib_value_free(&report->uniquerow);
+			rlib_value_free(r, &report->uniquerow);
 			report->uniquerow = tmp_rval;
 		}
 	}
 
 	for (e = report->variables; e != NULL; e = e->next) {
 		struct rlib_report_variable *rv = e->data;
-		struct rlib_value *count = &RLIB_VARIABLE_CA(rv)->count;
-		struct rlib_value *amount = &RLIB_VARIABLE_CA(rv)->amount;
+		struct rlib_value *count = &rv->count;
+		struct rlib_value *amount = &rv->amount;
 		struct rlib_value execute_result, *er = NULL;
 		gboolean ignore = FALSE;
+
+		rlib_value_init(r, &execute_result);
+
 		if (rv->code != NULL)
 			er = rlib_execute_pcode(r, &execute_result, rv->code, NULL);
 
 		/* rv->code was NULL or rlib_execute_pcode() returned error */
-		if (er == NULL)
+		if (er == NULL) {
+			rlib_value_init(r, &execute_result);
 			continue;
+		}
 
 		if (rv->ignore_code != NULL) {
 			gboolean test_ignore;
@@ -93,52 +120,71 @@ void rlib_process_variables(rlib *r, struct rlib_report *report, gboolean precal
 				ignore = test_ignore;
 			}
 		}
-		
+
 		if (samerow)
 			ignore = TRUE;
 
-		if (ignore == FALSE) {
-			if (rv->type == RLIB_REPORT_VARIABLE_COUNT) {
-				RLIB_VALUE_GET_AS_NUMBER(count) += RLIB_DECIMAL_PRECISION;
-			} else if (rv->type == RLIB_REPORT_VARIABLE_EXPRESSION) {
-				if (RLIB_VALUE_IS_NUMBER(er)) {
-					rlib_value_free(amount);
-					rlib_value_new_number(amount, RLIB_VALUE_GET_AS_NUMBER(er));
-				} else if (RLIB_VALUE_IS_STRING(er)) {
-					rlib_value_free(amount);
-					rlib_value_new_string(amount, RLIB_VALUE_GET_AS_STRING(er));
-				} else
-					r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER OR STRING FOR RLIB_REPORT_VARIABLE_EXPRESSION\n");
-			} else if (rv->type == RLIB_REPORT_VARIABLE_SUM) {
-				if(RLIB_VALUE_IS_NUMBER(er))
-					RLIB_VALUE_GET_AS_NUMBER(amount) += RLIB_VALUE_GET_AS_NUMBER(er);
-				else
-					r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER FOR RLIB_REPORT_VARIABLE_SUM\n");
-
-			} else if(rv->type == RLIB_REPORT_VARIABLE_AVERAGE) {
-				RLIB_VALUE_GET_AS_NUMBER(count) += RLIB_DECIMAL_PRECISION;
-				if(RLIB_VALUE_IS_NUMBER(er))
-					RLIB_VALUE_GET_AS_NUMBER(amount) += RLIB_VALUE_GET_AS_NUMBER(er);
-				else
-					r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER FOR RLIB_REPORT_VARIABLE_AVERAGE\n");
-			} else if(rv->type == RLIB_REPORT_VARIABLE_LOWEST) {
-				if(RLIB_VALUE_IS_NUMBER(er)) {
-					if(RLIB_VALUE_GET_AS_NUMBER(er) < RLIB_VALUE_GET_AS_NUMBER(amount) || RLIB_VALUE_GET_AS_NUMBER(amount) == 0) /* TODO: EVIL HACK */
-						RLIB_VALUE_GET_AS_NUMBER(amount) = RLIB_VALUE_GET_AS_NUMBER(er);
-				} else
-					r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER FOR RLIB_REPORT_VARIABLE_LOWEST\n");
-			} else if(rv->type == RLIB_REPORT_VARIABLE_HIGHEST) {
-				if(RLIB_VALUE_IS_NUMBER(er)) {
-					if(RLIB_VALUE_GET_AS_NUMBER(er) > RLIB_VALUE_GET_AS_NUMBER(amount) || RLIB_VALUE_GET_AS_NUMBER(amount) == 0) /* TODO: EVIL HACK */
-						RLIB_VALUE_GET_AS_NUMBER(amount) = RLIB_VALUE_GET_AS_NUMBER(er);
-				} else
-					r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER FOR RLIB_REPORT_VARIABLE_HIGHEST\n");
-			}
-			if(precalculate == FALSE && rv->precalculate == TRUE) {
-				if(rv->precalculated_values != NULL)
-					memcpy(&rv->data, rv->precalculated_values->data, sizeof(rv->data));
-			}
+		if (ignore) {
+			rlib_value_free(r, er);
+			continue;
 		}
+
+		switch (rv->type) {
+		case RLIB_REPORT_VARIABLE_COUNT:
+			mpfr_add_ui(count->mpfr_value, count->mpfr_value, 1, MPFR_RNDN);
+			break;
+		case RLIB_REPORT_VARIABLE_EXPRESSION:
+			if (RLIB_VALUE_IS_NUMBER(r, er)) {
+				rlib_value_free(r, amount);
+				rlib_value_new_number_from_mpfr(r, amount, er->mpfr_value);
+			} else if (RLIB_VALUE_IS_STRING(r, er)) {
+				rlib_value_free(r, amount);
+				rlib_value_new_string(r, amount, RLIB_VALUE_GET_AS_STRING(r, er));
+			} else
+				r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER OR STRING FOR RLIB_REPORT_VARIABLE_EXPRESSION\n");
+			break;
+		case RLIB_REPORT_VARIABLE_SUM:
+			if (RLIB_VALUE_IS_NUMBER(r, er)) {
+				if (RLIB_VALUE_IS_NONE(r, amount)) {
+					rlib_value_new_number_from_mpfr(r, amount, er->mpfr_value);
+				} else
+					mpfr_add(amount->mpfr_value, amount->mpfr_value, er->mpfr_value, MPFR_RNDN);
+			} else
+				r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER FOR RLIB_REPORT_VARIABLE_SUM\n");
+			break;
+		case RLIB_REPORT_VARIABLE_AVERAGE:
+			mpfr_add_ui(count->mpfr_value, count->mpfr_value, 1, MPFR_RNDN);
+			if (RLIB_VALUE_IS_NUMBER(r, er)) {
+				if (RLIB_VALUE_IS_NONE(r, amount))
+					rlib_value_new_number_from_mpfr(r, amount, er->mpfr_value);
+				else
+					mpfr_add(amount->mpfr_value, amount->mpfr_value, er->mpfr_value, MPFR_RNDN);
+			} else
+				r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER FOR RLIB_REPORT_VARIABLE_AVERAGE\n");
+			break;
+		case RLIB_REPORT_VARIABLE_LOWEST:
+			if (RLIB_VALUE_IS_NUMBER(r, er)) {
+				if (RLIB_VALUE_IS_NONE(r, amount))
+					rlib_value_new_number_from_mpfr(r, amount, er->mpfr_value);
+				else if (mpfr_cmp(er->mpfr_value, amount->mpfr_value) < 0)
+					mpfr_set(amount->mpfr_value, er->mpfr_value, MPFR_RNDN);
+			} else
+				r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER FOR RLIB_REPORT_VARIABLE_LOWEST\n");
+			break;
+		case RLIB_REPORT_VARIABLE_HIGHEST:
+			if (RLIB_VALUE_IS_NUMBER(r, er)) {
+				if (RLIB_VALUE_IS_NONE(r, amount))
+					rlib_value_new_number_from_mpfr(r, amount, er->mpfr_value);
+				else if (mpfr_cmp(er->mpfr_value, amount->mpfr_value) > 0)
+					mpfr_set(amount->mpfr_value, er->mpfr_value, MPFR_RNDN);
+			} else
+				r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER FOR RLIB_REPORT_VARIABLE_HIGHEST\n");
+			break;
+		default:
+			r_error(r, "rlib_process_variables UNKNOWN REPORT VARIABLE TYPE: %d\n", rv->type);
+			break;
+		}
+		rlib_value_free(r, er);
 	}
 }
 
@@ -146,78 +192,30 @@ void rlib_process_expression_variables(rlib *r, struct rlib_report *report) {
 	struct rlib_element *e;
 	for (e = report->variables; e != NULL; e = e->next) {
 		struct rlib_report_variable *rv = e->data;
-		struct rlib_value *amount = &RLIB_VARIABLE_CA(rv)->amount;
+		struct rlib_value *amount = &rv->amount;
 		struct rlib_value execute_result, *er = NULL;
 		if (rv->type == RLIB_REPORT_VARIABLE_EXPRESSION) {
+			rlib_value_init(r, &execute_result);
 			if (rv->code != NULL)
 				er = rlib_execute_pcode(r, &execute_result, rv->code, NULL);
-			if (er && RLIB_VALUE_IS_NUMBER(er)) {
-				rlib_value_free(amount);
-				rlib_value_new_number(amount, RLIB_VALUE_GET_AS_NUMBER(er));
-			} else if (er && RLIB_VALUE_IS_STRING(er)) {
-				rlib_value_free(amount);
-				rlib_value_new_string(amount, RLIB_VALUE_GET_AS_STRING(er));
+			if (!er) {
+				rlib_value_free(r, &execute_result);
+				continue;
+			}
+
+			if (RLIB_VALUE_IS_NUMBER(r, er)) {
+				if (RLIB_VALUE_IS_NUMBER(r, amount))
+					mpfr_set(amount->mpfr_value, er->mpfr_value, MPFR_RNDN);
+				else {
+					rlib_value_free(r, amount);
+					rlib_value_new_number_from_mpfr(r, amount, er->mpfr_value);
+				}
+			} else if (RLIB_VALUE_IS_STRING(r, er)) {
+				rlib_value_free(r, amount);
+				rlib_value_new_string(r, amount, RLIB_VALUE_GET_AS_STRING(r, er));
 			} else
 				r_error(r, "rlib_process_variables EXPECTED TYPE NUMBER OR STRING FOR RLIB_REPORT_VARIABLE_EXPRESSION\n");
+			rlib_value_free(r, er);
 		}
 	}
-}
-
-gboolean variabls_needs_precalculate(struct rlib_report *report) {
-	struct rlib_element *e;
-	for(e = report->variables; e != NULL; e=e->next) {
-		struct rlib_report_variable *rv = e->data;
-		if(rv->precalculate == TRUE)
-			return TRUE;
-	}
-	return FALSE;
-}
-
-void rlib_variables_precalculate(rlib *r, struct rlib_part *part, struct rlib_report *report) {
-	gint did_it = TRUE;
-	struct rlib_element *e;
-
-	rlib_fetch_first_rows(r);
-	rlib_process_variables(r, report, TRUE);
-
-	r->detail_line_count = 0;
-
-	if(!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
-		while (1) {
-
-			rlib_handle_break_headers(r, part, report, TRUE);
-
-			r->detail_line_count++;
-
-			if(did_it == FALSE) {
-				rlib_process_variables(r, report, TRUE);
-			}			
-			
-			if(rlib_navigate_next(r, r->current_result) == FALSE) {
-				rlib_navigate_last(r, r->current_result);
-				rlib_handle_break_footers(r, part, report, TRUE);
-				break;
-			} 
-
-			rlib_handle_break_footers(r, part, report, TRUE);
-
-			did_it = FALSE;
-		}
-	}
-	
-	for(e = report->variables; e != NULL; e=e->next) {
-		struct rlib_report_variable *rv = e->data;
-		if(rv->precalculate == TRUE && (rv->xml_resetonbreak.xml == NULL || rv->xml_resetonbreak.xml[0] == '\0')) {
-			struct rlib_count_amount *copy = g_malloc(sizeof(struct rlib_count_amount));
-			memcpy(copy, &rv->data, sizeof(struct rlib_count_amount));
-			rv->precalculated_values = g_slist_append(rv->precalculated_values, copy);				
-		}
-	}
-	
-	breaks_clear(report);
-	rlib_fetch_first_rows(r);
-	rlib_emit_signal(r, RLIB_SIGNAL_PRECALCULATION_DONE);
-	rlib_value_free(&report->uniquerow);
-	RLIB_VALUE_TYPE_NONE(&report->uniquerow);
-
 }

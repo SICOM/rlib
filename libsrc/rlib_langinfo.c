@@ -47,7 +47,7 @@ static char __langinfo[251];
 
 char *nl_langinfo(int item)
 {
-  unsigned int loc;
+  unsigned gint loc;
   
   loc = GetThreadLocale();
   
@@ -55,7 +55,7 @@ char *nl_langinfo(int item)
   {
     case CODESET:
       {
-        unsigned int cp = GetACP();
+        unsigned gint cp = GetACP();
         
         if (cp)
           sprintf(__langinfo, "CP%u", cp);

@@ -18,20 +18,18 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  * 
- * $Id$s
- *
  * This module implements a characterencoder that converts a character
  * either to or from UTF8 which is the internal language of RLIB.
  * it is implemented as a simple 'class'.
- *
  */
+
+#include <config.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include <config.h>
 #include <errno.h>
 
 #include "rlib-internal.h"

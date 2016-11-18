@@ -22,31 +22,50 @@
 
 noinst_PROGRAMS = \
 	example_mysql example_pg example_odbc \
-	relpth1 relpth1-gen relpth2 srcpth relprt graph
+	relpth1 relpth1-gen relpth2 srcpth relprt graph \
+	follower follower2 \
+	follower_n_to_1 follower_n_to_1_2 \
+	follower_n_to_1_full_cartesian \
+	follower_n_to_1_full_cartesian2 \
+	follower_n_to_1_full_cartesian3 \
+	follower_n_to_1_vectormatch \
+	follower_n_to_1_then_1_to_1 \
+	follower_1_to_1_then_n_to_1 \
+	follower_circular \
+	follower-breaks \
+	breaks breaks2 \
+	hyperinflation \
+	formatstring
 
 AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
+AM_LDFLAGS = $(top_builddir)/libsrc/libr.la
 
-example_mysql_LDADD = $(top_builddir)/libsrc/libr.la
+noinst_SCRIPTS = \
+	graph.xml products.xml follower.xml follower-breaks.xml \
+	breaks.xml breaks2.xml hyperinflation.xml formatstring.xml
 
-example_pg_LDADD = $(top_builddir)/libsrc/libr.la
-
-example_odbc_LDADD = $(top_builddir)/libsrc/libr.la
-
-relpth1_LDADD = $(top_builddir)/libsrc/libr.la
-
-relpth1_gen_LDADD = $(top_builddir)/libsrc/libr.la
-
-relpth2_LDADD = $(top_builddir)/libsrc/libr.la
-
-srcpth_LDADD = $(top_builddir)/libsrc/libr.la
-
-relprt_LDADD = $(top_builddir)/libsrc/libr.la
-
-graph_LDADD = $(top_builddir)/libsrc/libr.la
-
-noinst_SCRIPTS = products.xml
+graph.xml:
+	$(LN_S) ../php/graph.xml
 
 products.xml:
 	$(LN_S) ../common/products.xml
+
+follower.xml:
+	$(LN_S) ../php/follower.xml
+
+follower-breaks.xml:
+	$(LN_S) ../php/follower-breaks.xml
+
+breaks.xml:
+	$(LN_S) ../php/breaks.xml
+
+breaks2.xml:
+	$(LN_S) ../php/breaks2.xml
+
+hyperinflation.xml:
+	$(LN_S) ../php/hyperinflation.xml
+
+formatstring.xml:
+	$(LN_S) ../php/formatstring.xml
 
 CLEANFILES = $(noinst_SCRIPTS)

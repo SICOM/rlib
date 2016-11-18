@@ -59,7 +59,7 @@
 #define RPDF_PAPER_MONARCH   9
 #define RPDF_PAPER_FILM35MM  10
 
-#define CALLBACK void (*callback)(gchar *data, gint len, gpointer user_data)
+#define CALLBACK gchar *(*callback)(gchar *data, gint len, gpointer user_data)
 
 struct rpdf *rpdf_new(void);
 void rpdf_set_compression(struct rpdf *pdf, gboolean use_compression);
@@ -77,6 +77,7 @@ gboolean rpdf_set_page(struct rpdf *pdf, gint page);
 gboolean rpdf_set_font(struct rpdf *pdf, const gchar *font, const gchar *encoding, gdouble size);
 gboolean rpdf_set_font_size(struct rpdf *pdf, gdouble size);
 gboolean rpdf_text_callback(struct rpdf *pdf, gdouble x, gdouble y, gdouble angle, gint len, CALLBACK, gpointer user_data);
+void rpdf_finalize_text_callback(struct rpdf *pdf, gpointer user_data);
 gboolean rpdf_text(struct rpdf *pdf, gdouble x, gdouble y, gdouble angle, const gchar *text);
 gboolean rpdf_image(struct rpdf *pdf, gdouble x, gdouble y, gdouble width, gdouble height, gint image_type, gchar *file_name);
 gboolean rpdf_link(struct rpdf *pdf, gdouble start_x, gdouble start_y, gdouble end_x, gdouble end_y, const gchar *url);

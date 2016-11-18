@@ -1,6 +1,29 @@
+/*
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
+ *
+ *  Authors: Bob Doan <bdoan@sicompos.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of version 2 of the GNU General Public
+ * License as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public
+ * License along with this program; if not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ * Boston, MA 02111-1307, USA.
+ */
+
+#include <config.h>
+
+#include <string.h>
+
 #include "rlib-internal.h"
 #include "rlib_gd.h"
-#include <string.h>
 
 #ifdef HAVE_GD
 
@@ -83,7 +106,7 @@ static char *code39_table[256] = {
 	"",	"",	"",	"",	""
 };
 
-void gdImageBarcodeCharFromCode39String(gdImagePtr im, int *curx, int height, char *s) {	
+static void gdImageBarcodeCharFromCode39String(gdImagePtr im, gint *curx, gint height, char *s) {
 	char *p = s;
 	char ch;	
 	int black;
@@ -119,16 +142,16 @@ void gdImageBarcodeCharFromCode39String(gdImagePtr im, int *curx, int height, ch
 	*curx += 1;
 }
 
-void gdImageBarcodeChar(gdImagePtr im, int *curx, int height, char c) {
+static void gdImageBarcodeChar(gdImagePtr im, gint *curx, gint height, char c) {
 	/* Lookup up the correct code string for the character and draw it */
 	gdImageBarcodeCharFromCode39String(im, curx, height, code39_table[(int) c]);
 }
 
-int gd_barcode_png_to_file(char *filename, char *barcode, int height) {
+int gd_barcode_png_to_file(char *filename, char *barcode, gint height) {
 	gdImagePtr im;
-	int white;
+	gint white;
 	char *p = barcode;
-	int curx = 0;
+	gint curx = 0;
 	FILE *pngout;
 	int width = 16 * ( strlen(barcode) + 2 );
 
@@ -140,16 +163,16 @@ int gd_barcode_png_to_file(char *filename, char *barcode, int height) {
 	gdImageFilledRectangle(im, 0, 0, width-1, height-1, white);
 
 	/* Start character */
-	gdImageBarcodeChar(im,&curx,height,'*');
+	gdImageBarcodeChar(im, &curx, height, '*');
 
 	/* Now loop over the input string */
 	while (*p != '\0') {
-		gdImageBarcodeChar(im,&curx,height,*p); 
+		gdImageBarcodeChar(im, &curx, height, *p); 
 		p++;
 	}
 
 	/* End character */
-	gdImageBarcodeChar(im,&curx,height,'*');
+	gdImageBarcodeChar(im, &curx, height, '*');
 
 	/* Write it to a file */
 	pngout = fopen(filename, "wb");
@@ -168,7 +191,7 @@ int gd_barcode_png_to_file(char *filename, char *barcode, int height) {
 
 #else
 
-int gd_barcode_png_to_file(char *filename, char *barcode, int height) {
+int gd_barcode_png_to_file(char *filename, char *barcode, gint height) {
 	return FALSE;
 }
 

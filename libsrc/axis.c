@@ -17,21 +17,18 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  *
- * $Id$
- * 
  * This module generates a report from the information stored in the current
  * report object.
  * The main entry point is called once at report generation time for each
  * report defined in the rlib object.
- *
  */
- 
+
+#include <config.h>
 
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
-#include <config.h>
 #include "rlib-internal.h"
 
 #define GOOD_CONTRAST_THRESHOLD 0.5
@@ -66,14 +63,14 @@ static gint nsd(gdouble x) {
 	gdouble y,z;
 	gdouble close;
 	gint i;
-	if(x == 0)
+	if (x == 0)
 		return 0;
 	n = floor(log10(fabs(x)));
 	y = fabs(x) / pow(10, n);
-	for(i=1;i<=MAXIMUM_SIGNIFICANT_DIGITS;i++) {
+	for (i = 1; i <= MAXIMUM_SIGNIFICANT_DIGITS; i++) {
 		z = trunc(y * pow(10, i)) * pow(10, -i);
 		close = fabs((z-y)/y);
-		if(close <= SMALL) {
+		if (close <= SMALL) {
 			return i + 1;
 		}
 	}
@@ -308,51 +305,54 @@ gint mapData(gdouble dataMin, gdouble dataMax, gint sd, gint *mappedDataMin, gin
 	return 0;
 }
 
-gint isGoodInc(gint inc, gint sd, gint* goodIncs, gint num) {
-	gint i,j;
-	for(i=0;i<num;i++)
-		for(j=0;j<sd;j++)
-		if (inc==goodIncs[i]*((int)(pow((double)10,(double)j)+0.5))) 
+static gint isGoodInc(gint inc, gint sd, gint *goodIncs, gint num) {
+	gint i, j;
+	for (i = 0; i < num; i++)
+		for (j = 0; j < sd; j++)
+		if (inc == goodIncs[i] * ((int)(pow((double)10, (double)j) + 0.5)))
 			return 1;
 	return 0;
 }
 
-gint adjustPosAndNegLimits(gint mappedMin, gint mappedMax, gint minTMs, gint maxTMs, gint sd, gint *goodIncs, gint numGoodIncs,
-	gint* numTms, gint* tmi, gint* adjMin, gint* adjMax) {
-	gint bestAdj=32767;
+gint adjustPosAndNegLimits(gint mappedMin, gint mappedMax, gint minTMs, gint maxTMs, gint sd, gint *goodIncs, gint numGoodIncs, gint *numTms, gint *tmi, gint *adjMin, gint *adjMax) {
+	gint bestAdj = 32767;
 	gint inc;
-	gint found=0;
-	gint bestNewMin=0,bestNewMax=0,bestTm=0,bestInc=0;
-	gint mapMax=MAPMAX(sd);
+	gint found = 0;
+	gint bestNewMin = 0, bestNewMax = 0, bestTm = 0, bestInc = 0;
+	gint mapMax = MAPMAX(sd);
 
 	if (MAX(abs(mappedMin),abs(mappedMax))>mapMax)
    	 return (localError("adjustPosAndNegLimits: some data is > supplied mapping upper limit"),-1);
 
 //	for (inc=1;inc<=mapMax;inc++) {
-	for (inc=1;inc<=maxTMs;inc++) {
-		gint quo1,quo2;
-		gint newMin,newMax;
-		gint adj,tm;
-		zeroRem(-1,mappedMin,inc,&quo1,&newMin);
-		zeroRem(1,mappedMax,inc,&quo2,&newMax);
-		adj=abs(mappedMin-newMin)+abs(mappedMax-newMax);/* total adjustment                         */
-		tm=abs(quo1)+abs(quo2);      /* tick marks; convention here is to not include the first,
-						                 (though really it is 1 more than this).                         */
-		if (tm>=minTMs && tm<=maxTMs && adj<bestAdj && isGoodInc(inc,sd,goodIncs,numGoodIncs)) {
-			bestAdj=adj;
-			bestTm=tm;
-			bestInc=inc;
-			bestNewMin=newMin;
-			bestNewMax=newMax;
-			found=1;
+	for (inc = 1; inc <= maxTMs; inc++) {
+		gint quo1, quo2;
+		gint newMin, newMax;
+		gint adj, tm;
+
+		zeroRem(-1, mappedMin, inc, &quo1, &newMin);
+		zeroRem(1, mappedMax, inc, &quo2, &newMax);
+		adj = llabs(mappedMin - newMin) + llabs(mappedMax - newMax); /* total adjustment */
+		/*
+		 * tick marks; convention here is to not include the first,
+		 * (though really it is 1 more than this).
+		 */
+		tm = llabs(quo1) + llabs(quo2);
+		if (tm >= minTMs && tm <= maxTMs && adj < bestAdj && isGoodInc(inc, sd, goodIncs, numGoodIncs)) {
+			bestAdj = adj;
+			bestTm = tm;
+			bestInc = inc;
+			bestNewMin = newMin;
+			bestNewMax = newMax;
+			found = 1;
 		}
 	}
 	if (!found)
 		return (localError("adjustPosAndNegLimits: found no acceptable divisor into the limits"),-1);
-	*adjMin=bestNewMin;
-	*adjMax=bestNewMax;
-	*numTms=bestTm;
-	*tmi=bestInc;
+	*adjMin = bestNewMin;
+	*adjMax = bestNewMax;
+	*numTms = bestTm;
+	*tmi = bestInc;
 	return 0;
 }
 
@@ -388,25 +388,20 @@ gint tryToZeroizeSaved(gint mn, gint mx, gdouble criticalRatio, gint *adjMn, gin
 	return 0;
 }
 
-int adjust_limits(gdouble  dataMin, gdouble dataMax, gint denyMinEqualsAdjMin, gint minTMs, gint maxTMs, 
-	gint* numTms, gdouble* tmi, gdouble* adjMin, gdouble* adjMax, gint *goodIncs, gint numGoodIncs) {
-
-	int     sd = 2;
-	int     maxPossibleGoodInc=MAPMAX(sd);
-	double  zMin,zMax;      /* zeroized limits (after unmapped above) */
-	double  szMin,szMax;    /* shifted zeroized limits */
-	int     mszMin,mszMax;  /* mapped shifted zeroized limits */
-	int     amszMin,amszMax;/* adjusted mapped shifted zeroized limits */
-	double  aszMin,aszMax;  /* adjusted shifted zeroized limits */
-	double  azMin,azMax;    /* adjusted zeroized limits */
-
-	int     falseOrigin;    /* if true, we have decided on a false origin        */
-	int     mTmi;           /* tick mark interval in mapped range               */
-	int     raise;          /* power to which original limits must be raised
-                           so as to map into range specified by sd          */
-	int     i;              /* loop index */
-	int     adjMaxTMs=(denyMinEqualsAdjMin?maxTMs-1:maxTMs);
-
+int adjust_limits(gdouble  dataMin, gdouble dataMax, gint denyMinEqualsAdjMin, gint minTMs, gint maxTMs, gint *numTms, gdouble *tmi, gdouble *adjMin, gdouble *adjMax, gint *goodIncs, gint numGoodIncs) {
+	gint sd = 2;
+	gint maxPossibleGoodInc = MAPMAX(sd);
+	gdouble zMin, zMax;			/* zeroized limits (after unmapped above) */
+	gdouble szMin, szMax;		/* shifted zeroized limits */
+	gint mszMin, mszMax;		/* mapped shifted zeroized limits */
+	gint amszMin, amszMax;	/* adjusted mapped shifted zeroized limits */
+	gdouble aszMin, aszMax;		/* adjusted shifted zeroized limits */
+	gdouble azMin, azMax;		/* adjusted zeroized limits */
+	gint falseOrigin;			/* if true, we have decided on a false origin */
+	gint mTmi;				/* tick mark interval in mapped range */
+	gint raise;				/* power to which original limits must be raised so as to map into range specified by sd */
+	gint i;						/* loop index */
+	gint adjMaxTMs = (denyMinEqualsAdjMin ? maxTMs - 1 : maxTMs);
 
 	/*
 	 * This is the requested maxTMs UNLESS denyMinEqualsAdjMin is true. In that case
@@ -490,7 +485,7 @@ int adjust_limits(gdouble  dataMin, gdouble dataMax, gint denyMinEqualsAdjMin, g
 	}
 
 	/* map the data */
-	mapData(szMin,szMax,sd,&mszMin,&mszMax,&raise);
+	mapData(szMin, szMax, sd, &mszMin, &mszMax, &raise);
 
 	/* adjust limits */
 	if (adjustPosAndNegLimits(mszMin, mszMax, minTMs, adjMaxTMs, sd, goodIncs, numGoodIncs, numTms, &mTmi, &amszMin, &amszMax) == -1) {
