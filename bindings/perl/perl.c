@@ -1507,16 +1507,12 @@ SWIG_Perl_SetModule(swig_module_info *module) {
 #define SWIGTYPE_p_char swig_types[0]
 #define SWIGTYPE_p_double swig_types[1]
 #define SWIGTYPE_p_f_p_rlib_p_void__int swig_types[2]
-#define SWIGTYPE_p_gboolean swig_types[3]
-#define SWIGTYPE_p_gchar swig_types[4]
-#define SWIGTYPE_p_gdouble swig_types[5]
-#define SWIGTYPE_p_gint swig_types[6]
-#define SWIGTYPE_p_gsize swig_types[7]
-#define SWIGTYPE_p_rlib swig_types[8]
-#define SWIGTYPE_p_rlib_part swig_types[9]
-#define SWIGTYPE_p_rlib_report swig_types[10]
-static swig_type_info *swig_types[12];
-static swig_module_info swig_module = {swig_types, 11, 0, 0, 0, 0};
+#define SWIGTYPE_p_gdouble swig_types[3]
+#define SWIGTYPE_p_rlib swig_types[4]
+#define SWIGTYPE_p_rlib_part swig_types[5]
+#define SWIGTYPE_p_rlib_report swig_types[6]
+static swig_type_info *swig_types[8];
+static swig_module_info swig_module = {swig_types, 7, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1798,6 +1794,69 @@ SWIG_AsVal_int SWIG_PERL_DECL_ARGS_2(SV * obj, int *val)
   return res;
 }
 
+
+SWIGINTERNINLINE SV *
+SWIG_From_unsigned_SS_long  SWIG_PERL_DECL_ARGS_1(unsigned long value)
+{
+  SV *sv;
+  if (UVSIZE >= sizeof(value) || value <= UV_MAX)
+    sv = newSVuv(value);
+  else
+    sv = newSVpvf("%lu", value);
+  return sv_2mortal(sv);
+}
+
+
+SWIGINTERNINLINE SV *
+SWIG_From_size_t  SWIG_PERL_DECL_ARGS_1(size_t value)
+{    
+  return SWIG_From_unsigned_SS_long  SWIG_PERL_CALL_ARGS_1((unsigned long)(value));
+}
+
+
+SWIGINTERN int
+SWIG_AsCharArray(SV * obj, char *val, size_t size)
+{ 
+  char* cptr = 0; size_t csize = 0; int alloc = SWIG_OLDOBJ;
+  int res = SWIG_AsCharPtrAndSize(obj, &cptr, &csize, &alloc);
+  if (SWIG_IsOK(res)) {
+    /* special case of single char conversion when we don't need space for NUL */
+    if (size == 1 && csize == 2 && cptr && !cptr[1]) --csize;
+    if (csize <= size) {
+      if (val) {
+	if (csize) memcpy(val, cptr, csize*sizeof(char));
+	if (csize < size) memset(val + csize, 0, (size - csize)*sizeof(char));
+      }
+      if (alloc == SWIG_NEWOBJ) {
+	free((char*)cptr);
+	res = SWIG_DelNewMask(res);
+      }      
+      return res;
+    }
+    if (alloc == SWIG_NEWOBJ) free((char*)cptr);
+  }
+  return SWIG_TypeError;
+}
+
+
+SWIGINTERN int
+SWIG_AsVal_char SWIG_PERL_DECL_ARGS_2(SV * obj, char *val)
+{    
+  int res = SWIG_AsCharArray(obj, val, 1);
+  if (!SWIG_IsOK(res)) {
+    long v;
+    res = SWIG_AddCast(SWIG_AsVal_long SWIG_PERL_CALL_ARGS_2(obj, &v));
+    if (SWIG_IsOK(res)) {
+      if ((CHAR_MIN <= v) && (v <= CHAR_MAX)) {
+	if (val) *val = (char)(v);
+      } else {
+	res = SWIG_OverflowError;
+      }
+    }
+  }
+  return res;
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1871,7 +1930,7 @@ XS(_wrap_rlib_add_datasource_mysql) {
     char *buf6 = 0 ;
     int alloc6 = 0 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 6) || (items > 6)) {
@@ -1907,8 +1966,8 @@ XS(_wrap_rlib_add_datasource_mysql) {
       SWIG_exception_fail(SWIG_ArgError(res6), "in method '" "rlib_add_datasource_mysql" "', argument " "6"" of type '" "char *""'");
     }
     arg6 = (char *)(buf6);
-    result = rlib_add_datasource_mysql(arg1,arg2,arg3,arg4,arg5,arg6);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_add_datasource_mysql(arg1,arg2,arg3,arg4,arg5,arg6);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
@@ -1928,6 +1987,56 @@ XS(_wrap_rlib_add_datasource_mysql) {
 }
 
 
+XS(_wrap_rlib_add_datasource_mysql_from_group) {
+  {
+    rlib *arg1 = (rlib *) 0 ;
+    char *arg2 = (char *) 0 ;
+    char *arg3 = (char *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int res3 ;
+    char *buf3 = 0 ;
+    int alloc3 = 0 ;
+    int argvi = 0;
+    int result;
+    dXSARGS;
+    
+    if ((items < 3) || (items > 3)) {
+      SWIG_croak("Usage: rlib_add_datasource_mysql_from_group(r,input_name,group);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_rlib, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_add_datasource_mysql_from_group" "', argument " "1"" of type '" "rlib *""'"); 
+    }
+    arg1 = (rlib *)(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "rlib_add_datasource_mysql_from_group" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = (char *)(buf2);
+    res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "rlib_add_datasource_mysql_from_group" "', argument " "3"" of type '" "char *""'");
+    }
+    arg3 = (char *)(buf3);
+    result = (int)rlib_add_datasource_mysql_from_group(arg1,arg2,arg3);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
+    
+    if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
+    if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
+    if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_rlib_add_datasource_postgres) {
   {
     rlib *arg1 = (rlib *) 0 ;
@@ -1942,7 +2051,7 @@ XS(_wrap_rlib_add_datasource_postgres) {
     char *buf3 = 0 ;
     int alloc3 = 0 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 3) || (items > 3)) {
@@ -1963,8 +2072,8 @@ XS(_wrap_rlib_add_datasource_postgres) {
       SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "rlib_add_datasource_postgres" "', argument " "3"" of type '" "char *""'");
     }
     arg3 = (char *)(buf3);
-    result = rlib_add_datasource_postgres(arg1,arg2,arg3);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_add_datasource_postgres(arg1,arg2,arg3);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
@@ -2000,7 +2109,7 @@ XS(_wrap_rlib_add_datasource_odbc) {
     char *buf5 = 0 ;
     int alloc5 = 0 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 5) || (items > 5)) {
@@ -2031,8 +2140,8 @@ XS(_wrap_rlib_add_datasource_odbc) {
       SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "rlib_add_datasource_odbc" "', argument " "5"" of type '" "char *""'");
     }
     arg5 = (char *)(buf5);
-    result = rlib_add_datasource_odbc(arg1,arg2,arg3,arg4,arg5);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_add_datasource_odbc(arg1,arg2,arg3,arg4,arg5);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
@@ -2060,7 +2169,7 @@ XS(_wrap_rlib_add_datasource_xml) {
     char *buf2 = 0 ;
     int alloc2 = 0 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
@@ -2076,8 +2185,8 @@ XS(_wrap_rlib_add_datasource_xml) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "rlib_add_datasource_xml" "', argument " "2"" of type '" "char *""'");
     }
     arg2 = (char *)(buf2);
-    result = rlib_add_datasource_xml(arg1,arg2);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_add_datasource_xml(arg1,arg2);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     XSRETURN(argvi);
@@ -2099,7 +2208,7 @@ XS(_wrap_rlib_add_datasource_csv) {
     char *buf2 = 0 ;
     int alloc2 = 0 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
@@ -2115,8 +2224,8 @@ XS(_wrap_rlib_add_datasource_csv) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "rlib_add_datasource_csv" "', argument " "2"" of type '" "char *""'");
     }
     arg2 = (char *)(buf2);
-    result = rlib_add_datasource_csv(arg1,arg2);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_add_datasource_csv(arg1,arg2);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     XSRETURN(argvi);
@@ -2146,7 +2255,7 @@ XS(_wrap_rlib_add_query_as) {
     char *buf4 = 0 ;
     int alloc4 = 0 ;
     int argvi = 0;
-    gint result;
+    int result;
     dXSARGS;
     
     if ((items < 4) || (items > 4)) {
@@ -2172,8 +2281,8 @@ XS(_wrap_rlib_add_query_as) {
       SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "rlib_add_query_as" "', argument " "4"" of type '" "char *""'");
     }
     arg4 = (char *)(buf4);
-    result = rlib_add_query_as(arg1,arg2,arg3,arg4);
-    ST(argvi) = SWIG_NewPointerObj((gint *)memcpy((gint *)malloc(sizeof(gint)),&result,sizeof(gint)), SWIGTYPE_p_gint, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_add_query_as(arg1,arg2,arg3,arg4);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
@@ -2199,7 +2308,7 @@ XS(_wrap_rlib_add_search_path) {
     char *buf2 = 0 ;
     int alloc2 = 0 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
@@ -2215,8 +2324,8 @@ XS(_wrap_rlib_add_search_path) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "rlib_add_search_path" "', argument " "2"" of type '" "char const *""'");
     }
     arg2 = (char *)(buf2);
-    result = rlib_add_search_path(arg1,(char const *)arg2);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_add_search_path(arg1,(char const *)arg2);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     XSRETURN(argvi);
@@ -2312,7 +2421,7 @@ XS(_wrap_rlib_execute) {
     void *argp1 = 0 ;
     int res1 = 0 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
@@ -2323,8 +2432,8 @@ XS(_wrap_rlib_execute) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_execute" "', argument " "1"" of type '" "rlib *""'"); 
     }
     arg1 = (rlib *)(argp1);
-    result = rlib_execute(arg1);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_execute(arg1);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     XSRETURN(argvi);
   fail:
@@ -2368,7 +2477,7 @@ XS(_wrap_rlib_spool) {
     void *argp1 = 0 ;
     int res1 = 0 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
@@ -2379,8 +2488,8 @@ XS(_wrap_rlib_spool) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_spool" "', argument " "1"" of type '" "rlib *""'"); 
     }
     arg1 = (rlib *)(argp1);
-    result = rlib_spool(arg1);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_spool(arg1);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     XSRETURN(argvi);
   fail:
@@ -2399,6 +2508,7 @@ XS(_wrap_rlib_set_output_format) {
     int val2 ;
     int ecode2 = 0 ;
     int argvi = 0;
+    int result;
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
@@ -2414,8 +2524,8 @@ XS(_wrap_rlib_set_output_format) {
       SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "rlib_set_output_format" "', argument " "2"" of type '" "int""'");
     } 
     arg2 = (int)(val2);
-    rlib_set_output_format(arg1,arg2);
-    ST(argvi) = sv_newmortal();
+    result = (int)rlib_set_output_format(arg1,arg2);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     
     XSRETURN(argvi);
@@ -2487,7 +2597,7 @@ XS(_wrap_rlib_add_resultset_follower_n_to_1) {
     char *buf5 = 0 ;
     int alloc5 = 0 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 5) || (items > 5)) {
@@ -2518,8 +2628,8 @@ XS(_wrap_rlib_add_resultset_follower_n_to_1) {
       SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "rlib_add_resultset_follower_n_to_1" "', argument " "5"" of type '" "char *""'");
     }
     arg5 = (char *)(buf5);
-    result = rlib_add_resultset_follower_n_to_1(arg1,arg2,arg3,arg4,arg5);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_add_resultset_follower_n_to_1(arg1,arg2,arg3,arg4,arg5);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
@@ -2551,7 +2661,7 @@ XS(_wrap_rlib_add_resultset_follower) {
     char *buf3 = 0 ;
     int alloc3 = 0 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 3) || (items > 3)) {
@@ -2572,8 +2682,8 @@ XS(_wrap_rlib_add_resultset_follower) {
       SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "rlib_add_resultset_follower" "', argument " "3"" of type '" "char *""'");
     }
     arg3 = (char *)(buf3);
-    result = rlib_add_resultset_follower(arg1,arg2,arg3);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_add_resultset_follower(arg1,arg2,arg3);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
@@ -2593,7 +2703,7 @@ XS(_wrap_rlib_get_output) {
     void *argp1 = 0 ;
     int res1 = 0 ;
     int argvi = 0;
-    gchar *result = 0 ;
+    char *result = 0 ;
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
@@ -2604,8 +2714,8 @@ XS(_wrap_rlib_get_output) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_get_output" "', argument " "1"" of type '" "rlib *""'"); 
     }
     arg1 = (rlib *)(argp1);
-    result = (gchar *)rlib_get_output(arg1);
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_gchar, 0 | 0); argvi++ ;
+    result = (char *)rlib_get_output(arg1);
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
     XSRETURN(argvi);
   fail:
@@ -2621,7 +2731,7 @@ XS(_wrap_rlib_get_output_length) {
     void *argp1 = 0 ;
     int res1 = 0 ;
     int argvi = 0;
-    gsize result;
+    size_t result;
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
@@ -2633,7 +2743,7 @@ XS(_wrap_rlib_get_output_length) {
     }
     arg1 = (rlib *)(argp1);
     result = rlib_get_output_length(arg1);
-    ST(argvi) = SWIG_NewPointerObj((gsize *)memcpy((gsize *)malloc(sizeof(gsize)),&result,sizeof(gsize)), SWIGTYPE_p_gsize, SWIG_POINTER_OWN | 0); argvi++ ;
+    ST(argvi) = SWIG_From_size_t  SWIG_PERL_CALL_ARGS_1((size_t)(result)); argvi++ ;
     
     XSRETURN(argvi);
   fail:
@@ -2655,7 +2765,7 @@ XS(_wrap_rlib_signal_connect) {
     int ecode2 = 0 ;
     int res4 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 4) || (items > 4)) {
@@ -2681,8 +2791,8 @@ XS(_wrap_rlib_signal_connect) {
     if (!SWIG_IsOK(res4)) {
       SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "rlib_signal_connect" "', argument " "4"" of type '" "void *""'"); 
     }
-    result = rlib_signal_connect(arg1,arg2,arg3,arg4);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_signal_connect(arg1,arg2,arg3,arg4);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     
     
@@ -2711,7 +2821,7 @@ XS(_wrap_rlib_signal_connect_string) {
     int alloc2 = 0 ;
     int res4 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 4) || (items > 4)) {
@@ -2737,8 +2847,8 @@ XS(_wrap_rlib_signal_connect_string) {
     if (!SWIG_IsOK(res4)) {
       SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "rlib_signal_connect_string" "', argument " "4"" of type '" "void *""'"); 
     }
-    result = rlib_signal_connect_string(arg1,arg2,arg3,arg4);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_signal_connect_string(arg1,arg2,arg3,arg4);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     
@@ -2760,7 +2870,7 @@ XS(_wrap_rlib_query_refresh) {
     void *argp1 = 0 ;
     int res1 = 0 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
@@ -2771,8 +2881,8 @@ XS(_wrap_rlib_query_refresh) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_query_refresh" "', argument " "1"" of type '" "rlib *""'"); 
     }
     arg1 = (rlib *)(argp1);
-    result = rlib_query_refresh(arg1);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_query_refresh(arg1);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     XSRETURN(argvi);
   fail:
@@ -2796,7 +2906,7 @@ XS(_wrap_rlib_add_parameter) {
     char *buf3 = 0 ;
     int alloc3 = 0 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 3) || (items > 3)) {
@@ -2817,8 +2927,8 @@ XS(_wrap_rlib_add_parameter) {
       SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "rlib_add_parameter" "', argument " "3"" of type '" "char const *""'");
     }
     arg3 = (char *)(buf3);
-    result = rlib_add_parameter(arg1,(char const *)arg2,(char const *)arg3);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_add_parameter(arg1,(char const *)arg2,(char const *)arg3);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
@@ -2842,6 +2952,7 @@ XS(_wrap_rlib_set_locale) {
     char *buf2 = 0 ;
     int alloc2 = 0 ;
     int argvi = 0;
+    int result;
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
@@ -2857,8 +2968,8 @@ XS(_wrap_rlib_set_locale) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "rlib_set_locale" "', argument " "2"" of type '" "char *""'");
     }
     arg2 = (char *)(buf2);
-    rlib_set_locale(arg1,arg2);
-    ST(argvi) = sv_newmortal();
+    result = (int)rlib_set_locale(arg1,arg2);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     XSRETURN(argvi);
@@ -2884,7 +2995,7 @@ XS(_wrap_rlib_bindtextdomain) {
     char *buf3 = 0 ;
     int alloc3 = 0 ;
     int argvi = 0;
-    gchar *result = 0 ;
+    char *result = 0 ;
     dXSARGS;
     
     if ((items < 3) || (items > 3)) {
@@ -2905,8 +3016,8 @@ XS(_wrap_rlib_bindtextdomain) {
       SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "rlib_bindtextdomain" "', argument " "3"" of type '" "char *""'");
     }
     arg3 = (char *)(buf3);
-    result = (gchar *)rlib_bindtextdomain(arg1,arg2,arg3);
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_gchar, 0 | 0); argvi++ ;
+    result = (char *)rlib_bindtextdomain(arg1,arg2,arg3);
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
@@ -2923,11 +3034,11 @@ XS(_wrap_rlib_bindtextdomain) {
 XS(_wrap_rlib_set_radix_character) {
   {
     rlib *arg1 = (rlib *) 0 ;
-    gchar arg2 ;
+    char arg2 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
-    void *argp2 ;
-    int res2 = 0 ;
+    char val2 ;
+    int ecode2 = 0 ;
     int argvi = 0;
     dXSARGS;
     
@@ -2939,22 +3050,18 @@ XS(_wrap_rlib_set_radix_character) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_set_radix_character" "', argument " "1"" of type '" "rlib *""'"); 
     }
     arg1 = (rlib *)(argp1);
-    {
-      res2 = SWIG_ConvertPtr(ST(1), &argp2, SWIGTYPE_p_gchar,  0 );
-      if (!SWIG_IsOK(res2)) {
-        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "rlib_set_radix_character" "', argument " "2"" of type '" "gchar""'"); 
-      }  
-      if (!argp2) {
-        SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "rlib_set_radix_character" "', argument " "2"" of type '" "gchar""'");
-      } else {
-        arg2 = *((gchar *)(argp2));
-      }
-    }
+    ecode2 = SWIG_AsVal_char SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "rlib_set_radix_character" "', argument " "2"" of type '" "char""'");
+    } 
+    arg2 = (char)(val2);
     rlib_set_radix_character(arg1,arg2);
     ST(argvi) = sv_newmortal();
     
+    
     XSRETURN(argvi);
   fail:
+    
     
     SWIG_croak_null();
   }
@@ -3062,7 +3169,7 @@ XS(_wrap_rlib_set_datasource_encoding) {
     char *buf3 = 0 ;
     int alloc3 = 0 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 3) || (items > 3)) {
@@ -3083,8 +3190,8 @@ XS(_wrap_rlib_set_datasource_encoding) {
       SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "rlib_set_datasource_encoding" "', argument " "3"" of type '" "char *""'");
     }
     arg3 = (char *)(buf3);
-    result = rlib_set_datasource_encoding(arg1,arg2,arg3);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_set_datasource_encoding(arg1,arg2,arg3);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
@@ -3167,7 +3274,7 @@ XS(_wrap_rlib_graph_add_bg_region) {
     double val6 ;
     int ecode6 = 0 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 6) || (items > 6)) {
@@ -3203,8 +3310,8 @@ XS(_wrap_rlib_graph_add_bg_region) {
       SWIG_exception_fail(SWIG_ArgError(ecode6), "in method '" "rlib_graph_add_bg_region" "', argument " "6"" of type '" "double""'");
     } 
     arg6 = (double)(val6);
-    result = rlib_graph_add_bg_region(arg1,arg2,arg3,arg4,arg5,arg6);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_graph_add_bg_region(arg1,arg2,arg3,arg4,arg5,arg6);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
@@ -3234,7 +3341,7 @@ XS(_wrap_rlib_graph_clear_bg_region) {
     char *buf2 = 0 ;
     int alloc2 = 0 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
@@ -3250,8 +3357,8 @@ XS(_wrap_rlib_graph_clear_bg_region) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "rlib_graph_clear_bg_region" "', argument " "2"" of type '" "char *""'");
     }
     arg2 = (char *)(buf2);
-    result = rlib_graph_clear_bg_region(arg1,arg2);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_graph_clear_bg_region(arg1,arg2);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     XSRETURN(argvi);
@@ -3277,7 +3384,7 @@ XS(_wrap_rlib_graph_set_x_minor_tick) {
     char *buf3 = 0 ;
     int alloc3 = 0 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 3) || (items > 3)) {
@@ -3298,8 +3405,8 @@ XS(_wrap_rlib_graph_set_x_minor_tick) {
       SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "rlib_graph_set_x_minor_tick" "', argument " "3"" of type '" "char *""'");
     }
     arg3 = (char *)(buf3);
-    result = rlib_graph_set_x_minor_tick(arg1,arg2,arg3);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_graph_set_x_minor_tick(arg1,arg2,arg3);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
@@ -3326,7 +3433,7 @@ XS(_wrap_rlib_graph_set_x_minor_tick_by_location) {
     int val3 ;
     int ecode3 = 0 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 3) || (items > 3)) {
@@ -3347,8 +3454,8 @@ XS(_wrap_rlib_graph_set_x_minor_tick_by_location) {
       SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "rlib_graph_set_x_minor_tick_by_location" "', argument " "3"" of type '" "int""'");
     } 
     arg3 = (int)(val3);
-    result = rlib_graph_set_x_minor_tick_by_location(arg1,arg2,arg3);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_graph_set_x_minor_tick_by_location(arg1,arg2,arg3);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     
@@ -3436,7 +3543,7 @@ XS(_wrap_rlib_parse) {
     void *argp1 = 0 ;
     int res1 = 0 ;
     int argvi = 0;
-    gboolean result;
+    int result;
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
@@ -3447,8 +3554,8 @@ XS(_wrap_rlib_parse) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_parse" "', argument " "1"" of type '" "rlib *""'"); 
     }
     arg1 = (rlib *)(argp1);
-    result = rlib_parse(arg1);
-    ST(argvi) = SWIG_NewPointerObj((gboolean *)memcpy((gboolean *)malloc(sizeof(gboolean)),&result,sizeof(gboolean)), SWIGTYPE_p_gboolean, SWIG_POINTER_OWN | 0); argvi++ ;
+    result = (int)rlib_parse(arg1);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
     
     XSRETURN(argvi);
   fail:
@@ -3495,17 +3602,50 @@ XS(_wrap_rlib_set_query_cache_size) {
 }
 
 
+XS(_wrap_rlib_set_numeric_precision_bits) {
+  {
+    rlib *arg1 = (rlib *) 0 ;
+    long arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    long val2 ;
+    int ecode2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: rlib_set_numeric_precision_bits(r,prec);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_rlib, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "rlib_set_numeric_precision_bits" "', argument " "1"" of type '" "rlib *""'"); 
+    }
+    arg1 = (rlib *)(argp1);
+    ecode2 = SWIG_AsVal_long SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "rlib_set_numeric_precision_bits" "', argument " "2"" of type '" "long""'");
+    } 
+    arg2 = (long)(val2);
+    rlib_set_numeric_precision_bits(arg1,arg2);
+    ST(argvi) = sv_newmortal();
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    
+    SWIG_croak_null();
+  }
+}
+
+
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_double = {"_p_double", "double *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_f_p_rlib_p_void__int = {"_p_f_p_rlib_p_void__int", "int (*)(rlib *,void *)", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_gboolean = {"_p_gboolean", "gboolean *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_gchar = {"_p_gchar", "gchar *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_gdouble = {"_p_gdouble", "gdouble *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_gint = {"_p_gint", "gint *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_gsize = {"_p_gsize", "gsize *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_rlib = {"_p_rlib", "rlib *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_rlib_part = {"_p_rlib_part", "struct rlib_part *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_rlib_report = {"_p_rlib_report", "struct rlib_report *", 0, 0, (void*)0, 0};
@@ -3514,11 +3654,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_char,
   &_swigt__p_double,
   &_swigt__p_f_p_rlib_p_void__int,
-  &_swigt__p_gboolean,
-  &_swigt__p_gchar,
   &_swigt__p_gdouble,
-  &_swigt__p_gint,
-  &_swigt__p_gsize,
   &_swigt__p_rlib,
   &_swigt__p_rlib_part,
   &_swigt__p_rlib_report,
@@ -3527,11 +3663,7 @@ static swig_type_info *swig_type_initial[] = {
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_double[] = {  {&_swigt__p_double, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_f_p_rlib_p_void__int[] = {  {&_swigt__p_f_p_rlib_p_void__int, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_gboolean[] = {  {&_swigt__p_gboolean, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_gchar[] = {  {&_swigt__p_gchar, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_gdouble[] = {  {&_swigt__p_gdouble, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_gint[] = {  {&_swigt__p_gint, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_gsize[] = {  {&_swigt__p_gsize, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_rlib[] = {  {&_swigt__p_rlib, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_rlib_part[] = {  {&_swigt__p_rlib_part, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_rlib_report[] = {  {&_swigt__p_rlib_report, 0, 0, 0},{0, 0, 0, 0}};
@@ -3540,11 +3672,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_char,
   _swigc__p_double,
   _swigc__p_f_p_rlib_p_void__int,
-  _swigc__p_gboolean,
-  _swigc__p_gchar,
   _swigc__p_gdouble,
-  _swigc__p_gint,
-  _swigc__p_gsize,
   _swigc__p_rlib,
   _swigc__p_rlib_part,
   _swigc__p_rlib_report,
@@ -3565,6 +3693,7 @@ static swig_variable_info swig_variables[] = {
 static swig_command_info swig_commands[] = {
 {"rlibc::rlib_init", _wrap_rlib_init},
 {"rlibc::rlib_add_datasource_mysql", _wrap_rlib_add_datasource_mysql},
+{"rlibc::rlib_add_datasource_mysql_from_group", _wrap_rlib_add_datasource_mysql_from_group},
 {"rlibc::rlib_add_datasource_postgres", _wrap_rlib_add_datasource_postgres},
 {"rlibc::rlib_add_datasource_odbc", _wrap_rlib_add_datasource_odbc},
 {"rlibc::rlib_add_datasource_xml", _wrap_rlib_add_datasource_xml},
@@ -3601,6 +3730,7 @@ static swig_command_info swig_commands[] = {
 {"rlibc::rlib_graph", _wrap_rlib_graph},
 {"rlibc::rlib_parse", _wrap_rlib_parse},
 {"rlibc::rlib_set_query_cache_size", _wrap_rlib_set_query_cache_size},
+{"rlibc::rlib_set_numeric_precision_bits", _wrap_rlib_set_numeric_precision_bits},
 {0,0}
 };
 /* -----------------------------------------------------------------------------

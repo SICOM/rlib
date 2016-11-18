@@ -223,15 +223,15 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1init(JNIEnv *jenv, jclass jcls) {
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1datasource_1mysql(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3, jstring jarg4, jstring jarg5, jstring jarg6) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1add_1datasource_1mysql(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3, jstring jarg4, jstring jarg5, jstring jarg6) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
   char *arg5 = (char *) 0 ;
   char *arg6 = (char *) 0 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -261,12 +261,8 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1datasource_1mysql(JNIEnv *jenv,
     arg6 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg6, 0);
     if (!arg6) return 0;
   }
-  result = rlib_add_datasource_mysql(arg1,arg2,arg3,arg4,arg5,arg6);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_add_datasource_mysql(arg1,arg2,arg3,arg4,arg5,arg6);
+  jresult = (jint)result; 
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   if (arg3) (*jenv)->ReleaseStringUTFChars(jenv, jarg3, (const char *)arg3);
   if (arg4) (*jenv)->ReleaseStringUTFChars(jenv, jarg4, (const char *)arg4);
@@ -276,12 +272,12 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1datasource_1mysql(JNIEnv *jenv,
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1datasource_1postgres(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1add_1datasource_1mysql_1from_1group(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -296,26 +292,50 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1datasource_1postgres(JNIEnv *je
     arg3 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg3, 0);
     if (!arg3) return 0;
   }
-  result = rlib_add_datasource_postgres(arg1,arg2,arg3);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_add_datasource_mysql_from_group(arg1,arg2,arg3);
+  jresult = (jint)result; 
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   if (arg3) (*jenv)->ReleaseStringUTFChars(jenv, jarg3, (const char *)arg3);
   return jresult;
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1datasource_1odbc(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3, jstring jarg4, jstring jarg5) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1add_1datasource_1postgres(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3) {
+  jint jresult = 0 ;
+  rlib *arg1 = (rlib *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  int result;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = *(rlib **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg2, 0);
+    if (!arg2) return 0;
+  }
+  arg3 = 0;
+  if (jarg3) {
+    arg3 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg3, 0);
+    if (!arg3) return 0;
+  }
+  result = (int)rlib_add_datasource_postgres(arg1,arg2,arg3);
+  jresult = (jint)result; 
+  if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
+  if (arg3) (*jenv)->ReleaseStringUTFChars(jenv, jarg3, (const char *)arg3);
+  return jresult;
+}
+
+
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1add_1datasource_1odbc(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3, jstring jarg4, jstring jarg5) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
   char *arg5 = (char *) 0 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -340,12 +360,8 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1datasource_1odbc(JNIEnv *jenv, 
     arg5 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg5, 0);
     if (!arg5) return 0;
   }
-  result = rlib_add_datasource_odbc(arg1,arg2,arg3,arg4,arg5);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_add_datasource_odbc(arg1,arg2,arg3,arg4,arg5);
+  jresult = (jint)result; 
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   if (arg3) (*jenv)->ReleaseStringUTFChars(jenv, jarg3, (const char *)arg3);
   if (arg4) (*jenv)->ReleaseStringUTFChars(jenv, jarg4, (const char *)arg4);
@@ -354,11 +370,11 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1datasource_1odbc(JNIEnv *jenv, 
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1datasource_1xml(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1add_1datasource_1xml(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -368,22 +384,18 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1datasource_1xml(JNIEnv *jenv, j
     arg2 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg2, 0);
     if (!arg2) return 0;
   }
-  result = rlib_add_datasource_xml(arg1,arg2);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_add_datasource_xml(arg1,arg2);
+  jresult = (jint)result; 
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   return jresult;
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1datasource_1csv(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1add_1datasource_1csv(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -393,24 +405,20 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1datasource_1csv(JNIEnv *jenv, j
     arg2 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg2, 0);
     if (!arg2) return 0;
   }
-  result = rlib_add_datasource_csv(arg1,arg2);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_add_datasource_csv(arg1,arg2);
+  jresult = (jint)result; 
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   return jresult;
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1query_1as(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3, jstring jarg4) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1add_1query_1as(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3, jstring jarg4) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
-  gint result;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -430,12 +438,8 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1query_1as(JNIEnv *jenv, jclass 
     arg4 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg4, 0);
     if (!arg4) return 0;
   }
-  result = rlib_add_query_as(arg1,arg2,arg3,arg4);
-  {
-    gint * resultptr = (gint *) malloc(sizeof(gint));
-    memmove(resultptr, &result, sizeof(gint));
-    *(gint **)&jresult = resultptr;
-  }
+  result = (int)rlib_add_query_as(arg1,arg2,arg3,arg4);
+  jresult = (jint)result; 
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   if (arg3) (*jenv)->ReleaseStringUTFChars(jenv, jarg3, (const char *)arg3);
   if (arg4) (*jenv)->ReleaseStringUTFChars(jenv, jarg4, (const char *)arg4);
@@ -443,11 +447,11 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1query_1as(JNIEnv *jenv, jclass 
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1search_1path(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1add_1search_1path(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -457,12 +461,8 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1search_1path(JNIEnv *jenv, jcla
     arg2 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg2, 0);
     if (!arg2) return 0;
   }
-  result = rlib_add_search_path(arg1,(char const *)arg2);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_add_search_path(arg1,(char const *)arg2);
+  jresult = (jint)result; 
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   return jresult;
 }
@@ -510,20 +510,16 @@ SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1add_1report_1from_1buffer(JNIEnv *jen
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1execute(JNIEnv *jenv, jclass jcls, jlong jarg1) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1execute(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
   arg1 = *(rlib **)&jarg1; 
-  result = rlib_execute(arg1);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_execute(arg1);
+  jresult = (jint)result; 
   return jresult;
 }
 
@@ -542,33 +538,33 @@ SWIGEXPORT jstring JNICALL Java_rlibJNI_rlib_1get_1content_1type_1as_1text(JNIEn
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1spool(JNIEnv *jenv, jclass jcls, jlong jarg1) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1spool(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
   arg1 = *(rlib **)&jarg1; 
-  result = rlib_spool(arg1);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_spool(arg1);
+  jresult = (jint)result; 
   return jresult;
 }
 
 
-SWIGEXPORT void JNICALL Java_rlibJNI_rlib_1set_1output_1format(JNIEnv *jenv, jclass jcls, jlong jarg1, jint jarg2) {
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1set_1output_1format(JNIEnv *jenv, jclass jcls, jlong jarg1, jint jarg2) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   int arg2 ;
+  int result;
   
   (void)jenv;
   (void)jcls;
   arg1 = *(rlib **)&jarg1; 
   arg2 = (int)jarg2; 
-  rlib_set_output_format(arg1,arg2);
+  result = (int)rlib_set_output_format(arg1,arg2);
+  jresult = (jint)result; 
+  return jresult;
 }
 
 
@@ -589,14 +585,14 @@ SWIGEXPORT void JNICALL Java_rlibJNI_rlib_1set_1output_1format_1from_1text(JNIEn
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1resultset_1follower_1n_1to_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3, jstring jarg4, jstring jarg5) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1add_1resultset_1follower_1n_1to_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3, jstring jarg4, jstring jarg5) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
   char *arg5 = (char *) 0 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -621,12 +617,8 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1resultset_1follower_1n_1to_11(J
     arg5 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg5, 0);
     if (!arg5) return 0;
   }
-  result = rlib_add_resultset_follower_n_to_1(arg1,arg2,arg3,arg4,arg5);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_add_resultset_follower_n_to_1(arg1,arg2,arg3,arg4,arg5);
+  jresult = (jint)result; 
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   if (arg3) (*jenv)->ReleaseStringUTFChars(jenv, jarg3, (const char *)arg3);
   if (arg4) (*jenv)->ReleaseStringUTFChars(jenv, jarg4, (const char *)arg4);
@@ -635,12 +627,12 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1resultset_1follower_1n_1to_11(J
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1resultset_1follower(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1add_1resultset_1follower(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -655,28 +647,24 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1resultset_1follower(JNIEnv *jen
     arg3 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg3, 0);
     if (!arg3) return 0;
   }
-  result = rlib_add_resultset_follower(arg1,arg2,arg3);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_add_resultset_follower(arg1,arg2,arg3);
+  jresult = (jint)result; 
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   if (arg3) (*jenv)->ReleaseStringUTFChars(jenv, jarg3, (const char *)arg3);
   return jresult;
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1get_1output(JNIEnv *jenv, jclass jcls, jlong jarg1) {
-  jlong jresult = 0 ;
+SWIGEXPORT jstring JNICALL Java_rlibJNI_rlib_1get_1output(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+  jstring jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
-  gchar *result = 0 ;
+  char *result = 0 ;
   
   (void)jenv;
   (void)jcls;
   arg1 = *(rlib **)&jarg1; 
-  result = (gchar *)rlib_get_output(arg1);
-  *(gchar **)&jresult = result; 
+  result = (char *)rlib_get_output(arg1);
+  if (result) jresult = (*jenv)->NewStringUTF(jenv, (const char *)result);
   return jresult;
 }
 
@@ -684,28 +672,24 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1get_1output(JNIEnv *jenv, jclass jcl
 SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1get_1output_1length(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   jlong jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
-  gsize result;
+  size_t result;
   
   (void)jenv;
   (void)jcls;
   arg1 = *(rlib **)&jarg1; 
   result = rlib_get_output_length(arg1);
-  {
-    gsize * resultptr = (gsize *) malloc(sizeof(gsize));
-    memmove(resultptr, &result, sizeof(gsize));
-    *(gsize **)&jresult = resultptr;
-  }
+  jresult = (jlong)result; 
   return jresult;
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1signal_1connect(JNIEnv *jenv, jclass jcls, jlong jarg1, jint jarg2, jlong jarg3, jlong jarg4) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1signal_1connect(JNIEnv *jenv, jclass jcls, jlong jarg1, jint jarg2, jlong jarg3, jlong jarg4) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   int arg2 ;
   int (*arg3)(rlib *,void *) = (int (*)(rlib *,void *)) 0 ;
   void *arg4 = (void *) 0 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -713,23 +697,19 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1signal_1connect(JNIEnv *jenv, jclass
   arg2 = (int)jarg2; 
   arg3 = *(int (**)(rlib *,void *))&jarg3; 
   arg4 = *(void **)&jarg4; 
-  result = rlib_signal_connect(arg1,arg2,arg3,arg4);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_signal_connect(arg1,arg2,arg3,arg4);
+  jresult = (jint)result; 
   return jresult;
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1signal_1connect_1string(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jlong jarg3, jlong jarg4) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1signal_1connect_1string(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jlong jarg3, jlong jarg4) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   int (*arg3)(rlib *,void *) = (int (*)(rlib *,void *)) 0 ;
   void *arg4 = (void *) 0 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -741,41 +721,33 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1signal_1connect_1string(JNIEnv *jenv
   }
   arg3 = *(int (**)(rlib *,void *))&jarg3; 
   arg4 = *(void **)&jarg4; 
-  result = rlib_signal_connect_string(arg1,arg2,arg3,arg4);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_signal_connect_string(arg1,arg2,arg3,arg4);
+  jresult = (jint)result; 
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   return jresult;
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1query_1refresh(JNIEnv *jenv, jclass jcls, jlong jarg1) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1query_1refresh(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
   arg1 = *(rlib **)&jarg1; 
-  result = rlib_query_refresh(arg1);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_query_refresh(arg1);
+  jresult = (jint)result; 
   return jresult;
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1parameter(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1add_1parameter(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -790,21 +762,19 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1add_1parameter(JNIEnv *jenv, jclass 
     arg3 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg3, 0);
     if (!arg3) return 0;
   }
-  result = rlib_add_parameter(arg1,(char const *)arg2,(char const *)arg3);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_add_parameter(arg1,(char const *)arg2,(char const *)arg3);
+  jresult = (jint)result; 
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   if (arg3) (*jenv)->ReleaseStringUTFChars(jenv, jarg3, (const char *)arg3);
   return jresult;
 }
 
 
-SWIGEXPORT void JNICALL Java_rlibJNI_rlib_1set_1locale(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2) {
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1set_1locale(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -812,19 +782,21 @@ SWIGEXPORT void JNICALL Java_rlibJNI_rlib_1set_1locale(JNIEnv *jenv, jclass jcls
   arg2 = 0;
   if (jarg2) {
     arg2 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg2, 0);
-    if (!arg2) return ;
+    if (!arg2) return 0;
   }
-  rlib_set_locale(arg1,arg2);
+  result = (int)rlib_set_locale(arg1,arg2);
+  jresult = (jint)result; 
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
+  return jresult;
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1bindtextdomain(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3) {
-  jlong jresult = 0 ;
+SWIGEXPORT jstring JNICALL Java_rlibJNI_rlib_1bindtextdomain(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3) {
+  jstring jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  gchar *result = 0 ;
+  char *result = 0 ;
   
   (void)jenv;
   (void)jcls;
@@ -839,28 +811,22 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1bindtextdomain(JNIEnv *jenv, jclass 
     arg3 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg3, 0);
     if (!arg3) return 0;
   }
-  result = (gchar *)rlib_bindtextdomain(arg1,arg2,arg3);
-  *(gchar **)&jresult = result; 
+  result = (char *)rlib_bindtextdomain(arg1,arg2,arg3);
+  if (result) jresult = (*jenv)->NewStringUTF(jenv, (const char *)result);
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   if (arg3) (*jenv)->ReleaseStringUTFChars(jenv, jarg3, (const char *)arg3);
   return jresult;
 }
 
 
-SWIGEXPORT void JNICALL Java_rlibJNI_rlib_1set_1radix_1character(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_rlibJNI_rlib_1set_1radix_1character(JNIEnv *jenv, jclass jcls, jlong jarg1, jchar jarg2) {
   rlib *arg1 = (rlib *) 0 ;
-  gchar arg2 ;
-  gchar *argp2 ;
+  char arg2 ;
   
   (void)jenv;
   (void)jcls;
   arg1 = *(rlib **)&jarg1; 
-  argp2 = *(gchar **)&jarg2; 
-  if (!argp2) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "Attempt to dereference null gchar");
-    return ;
-  }
-  arg2 = *argp2; 
+  arg2 = (char)jarg2; 
   rlib_set_radix_character(arg1,arg2);
 }
 
@@ -906,12 +872,12 @@ SWIGEXPORT void JNICALL Java_rlibJNI_rlib_1set_1output_1encoding(JNIEnv *jenv, j
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1set_1datasource_1encoding(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1set_1datasource_1encoding(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -926,12 +892,8 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1set_1datasource_1encoding(JNIEnv *je
     arg3 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg3, 0);
     if (!arg3) return 0;
   }
-  result = rlib_set_datasource_encoding(arg1,arg2,arg3);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_set_datasource_encoding(arg1,arg2,arg3);
+  jresult = (jint)result; 
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   if (arg3) (*jenv)->ReleaseStringUTFChars(jenv, jarg3, (const char *)arg3);
   return jresult;
@@ -960,15 +922,15 @@ SWIGEXPORT jstring JNICALL Java_rlibJNI_rlib_1version(JNIEnv *jenv, jclass jcls)
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1graph_1add_1bg_1region(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3, jstring jarg4, jdouble jarg5, jdouble jarg6) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1graph_1add_1bg_1region(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3, jstring jarg4, jdouble jarg5, jdouble jarg6) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
   double arg5 ;
   double arg6 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -990,12 +952,8 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1graph_1add_1bg_1region(JNIEnv *jenv,
   }
   arg5 = (double)jarg5; 
   arg6 = (double)jarg6; 
-  result = rlib_graph_add_bg_region(arg1,arg2,arg3,arg4,arg5,arg6);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_graph_add_bg_region(arg1,arg2,arg3,arg4,arg5,arg6);
+  jresult = (jint)result; 
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   if (arg3) (*jenv)->ReleaseStringUTFChars(jenv, jarg3, (const char *)arg3);
   if (arg4) (*jenv)->ReleaseStringUTFChars(jenv, jarg4, (const char *)arg4);
@@ -1003,11 +961,11 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1graph_1add_1bg_1region(JNIEnv *jenv,
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1graph_1clear_1bg_1region(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1graph_1clear_1bg_1region(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -1017,23 +975,19 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1graph_1clear_1bg_1region(JNIEnv *jen
     arg2 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg2, 0);
     if (!arg2) return 0;
   }
-  result = rlib_graph_clear_bg_region(arg1,arg2);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_graph_clear_bg_region(arg1,arg2);
+  jresult = (jint)result; 
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   return jresult;
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1graph_1set_1x_1minor_1tick(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1graph_1set_1x_1minor_1tick(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -1048,24 +1002,20 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1graph_1set_1x_1minor_1tick(JNIEnv *j
     arg3 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg3, 0);
     if (!arg3) return 0;
   }
-  result = rlib_graph_set_x_minor_tick(arg1,arg2,arg3);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_graph_set_x_minor_tick(arg1,arg2,arg3);
+  jresult = (jint)result; 
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   if (arg3) (*jenv)->ReleaseStringUTFChars(jenv, jarg3, (const char *)arg3);
   return jresult;
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1graph_1set_1x_1minor_1tick_1by_1location(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jint jarg3) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1graph_1set_1x_1minor_1tick_1by_1location(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jint jarg3) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   int arg3 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
@@ -1076,12 +1026,8 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1graph_1set_1x_1minor_1tick_1by_1loca
     if (!arg2) return 0;
   }
   arg3 = (int)jarg3; 
-  result = rlib_graph_set_x_minor_tick_by_location(arg1,arg2,arg3);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_graph_set_x_minor_tick_by_location(arg1,arg2,arg3);
+  jresult = (jint)result; 
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   return jresult;
 }
@@ -1113,20 +1059,16 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1graph(JNIEnv *jenv, jclass jcls, jlo
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1parse(JNIEnv *jenv, jclass jcls, jlong jarg1) {
-  jlong jresult = 0 ;
+SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1parse(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+  jint jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
-  gboolean result;
+  int result;
   
   (void)jenv;
   (void)jcls;
   arg1 = *(rlib **)&jarg1; 
-  result = rlib_parse(arg1);
-  {
-    gboolean * resultptr = (gboolean *) malloc(sizeof(gboolean));
-    memmove(resultptr, &result, sizeof(gboolean));
-    *(gboolean **)&jresult = resultptr;
-  }
+  result = (int)rlib_parse(arg1);
+  jresult = (jint)result; 
   return jresult;
 }
 
@@ -1140,6 +1082,18 @@ SWIGEXPORT void JNICALL Java_rlibJNI_rlib_1set_1query_1cache_1size(JNIEnv *jenv,
   arg1 = *(rlib **)&jarg1; 
   arg2 = (int)jarg2; 
   rlib_set_query_cache_size(arg1,arg2);
+}
+
+
+SWIGEXPORT void JNICALL Java_rlibJNI_rlib_1set_1numeric_1precision_1bits(JNIEnv *jenv, jclass jcls, jlong jarg1, jint jarg2) {
+  rlib *arg1 = (rlib *) 0 ;
+  long arg2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = *(rlib **)&jarg1; 
+  arg2 = (long)jarg2; 
+  rlib_set_numeric_precision_bits(arg1,arg2);
 }
 
 

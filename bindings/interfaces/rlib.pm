@@ -51,6 +51,7 @@ package rlib;
 
 *rlib_init = *rlibc::rlib_init;
 *rlib_add_datasource_mysql = *rlibc::rlib_add_datasource_mysql;
+*rlib_add_datasource_mysql_from_group = *rlibc::rlib_add_datasource_mysql_from_group;
 *rlib_add_datasource_postgres = *rlibc::rlib_add_datasource_postgres;
 *rlib_add_datasource_odbc = *rlibc::rlib_add_datasource_odbc;
 *rlib_add_datasource_xml = *rlibc::rlib_add_datasource_xml;
@@ -87,6 +88,7 @@ package rlib;
 *rlib_graph = *rlibc::rlib_graph;
 *rlib_parse = *rlibc::rlib_parse;
 *rlib_set_query_cache_size = *rlibc::rlib_set_query_cache_size;
+*rlib_set_numeric_precision_bits = *rlibc::rlib_set_numeric_precision_bits;
 
 # ------- VARIABLE STUBS --------
 

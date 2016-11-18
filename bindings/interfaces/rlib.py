@@ -99,6 +99,10 @@ def rlib_add_datasource_mysql(r, input_name, database_host, database_user, datab
     return _rlib.rlib_add_datasource_mysql(r, input_name, database_host, database_user, database_password, database_database)
 rlib_add_datasource_mysql = _rlib.rlib_add_datasource_mysql
 
+def rlib_add_datasource_mysql_from_group(r, input_name, group):
+    return _rlib.rlib_add_datasource_mysql_from_group(r, input_name, group)
+rlib_add_datasource_mysql_from_group = _rlib.rlib_add_datasource_mysql_from_group
+
 def rlib_add_datasource_postgres(r, input_name, conn):
     return _rlib.rlib_add_datasource_postgres(r, input_name, conn)
 rlib_add_datasource_postgres = _rlib.rlib_add_datasource_postgres
@@ -242,6 +246,10 @@ rlib_parse = _rlib.rlib_parse
 def rlib_set_query_cache_size(r, cache_size):
     return _rlib.rlib_set_query_cache_size(r, cache_size)
 rlib_set_query_cache_size = _rlib.rlib_set_query_cache_size
+
+def rlib_set_numeric_precision_bits(r, prec):
+    return _rlib.rlib_set_numeric_precision_bits(r, prec)
+rlib_set_numeric_precision_bits = _rlib.rlib_set_numeric_precision_bits
 # This file is compatible with both classic and new-style classes.
 
 
