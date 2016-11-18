@@ -272,5 +272,4 @@ static gpointer rlib_php_array_new_input_filter() {
 gint rlib_add_datasource_php_array(void *r, gchar *input_name) {
 	rlib_add_datasource(r, input_name, rlib_php_array_new_input_filter());
 	return TRUE;
-
 }
