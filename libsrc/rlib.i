@@ -59,7 +59,7 @@ int rlib_graph_add_bg_region(rlib *r, char *graph_name, char *region_label, char
 int rlib_graph_clear_bg_region(rlib *r, char *graph_name);
 int rlib_graph_set_x_minor_tick(rlib *r, char *graph_name, char *x_value);
 int rlib_graph_set_x_minor_tick_by_location(rlib *r, char *graph_name, int location);
-gdouble rlib_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, double left_margin_offset, double *top_margin_offset);
+double rlib_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, double left_margin_offset, double *top_margin_offset);
 int rlib_parse(rlib *r);
 void rlib_set_query_cache_size(rlib *r, int cache_size);
 void rlib_set_numeric_precision_bits(rlib *r, long prec);

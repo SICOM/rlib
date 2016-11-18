@@ -153,8 +153,8 @@ public class rlib {
     return rlibJNI.rlib_graph_set_x_minor_tick_by_location(SWIGTYPE_p_rlib.getCPtr(r), graph_name, location);
   }
 
-  public static SWIGTYPE_p_gdouble rlib_graph(SWIGTYPE_p_rlib r, SWIGTYPE_p_rlib_part part, SWIGTYPE_p_rlib_report report, double left_margin_offset, SWIGTYPE_p_double top_margin_offset) {
-    return new SWIGTYPE_p_gdouble(rlibJNI.rlib_graph(SWIGTYPE_p_rlib.getCPtr(r), SWIGTYPE_p_rlib_part.getCPtr(part), SWIGTYPE_p_rlib_report.getCPtr(report), left_margin_offset, SWIGTYPE_p_double.getCPtr(top_margin_offset)), true);
+  public static double rlib_graph(SWIGTYPE_p_rlib r, SWIGTYPE_p_rlib_part part, SWIGTYPE_p_rlib_report report, double left_margin_offset, SWIGTYPE_p_double top_margin_offset) {
+    return rlibJNI.rlib_graph(SWIGTYPE_p_rlib.getCPtr(r), SWIGTYPE_p_rlib_part.getCPtr(part), SWIGTYPE_p_rlib_report.getCPtr(report), left_margin_offset, SWIGTYPE_p_double.getCPtr(top_margin_offset));
   }
 
   public static int rlib_parse(SWIGTYPE_p_rlib r) {

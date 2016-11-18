@@ -2985,12 +2985,11 @@ SWIG_Python_NonDynamicSetAttr(PyObject *obj, PyObject *name, PyObject *value) {
 #define SWIGTYPE_p_char swig_types[0]
 #define SWIGTYPE_p_double swig_types[1]
 #define SWIGTYPE_p_f_p_rlib_p_void__int swig_types[2]
-#define SWIGTYPE_p_gdouble swig_types[3]
-#define SWIGTYPE_p_rlib swig_types[4]
-#define SWIGTYPE_p_rlib_part swig_types[5]
-#define SWIGTYPE_p_rlib_report swig_types[6]
-static swig_type_info *swig_types[8];
-static swig_module_info swig_module = {swig_types, 7, 0, 0, 0, 0};
+#define SWIGTYPE_p_rlib swig_types[3]
+#define SWIGTYPE_p_rlib_part swig_types[4]
+#define SWIGTYPE_p_rlib_report swig_types[5]
+static swig_type_info *swig_types[7];
+static swig_module_info swig_module = {swig_types, 6, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -3390,6 +3389,9 @@ SWIG_AsVal_char (PyObject * obj, char *val)
   }
   return res;
 }
+
+
+  #define SWIG_From_double   PyFloat_FromDouble 
 
 #ifdef __cplusplus
 extern "C" {
@@ -4821,7 +4823,7 @@ SWIGINTERN PyObject *_wrap_rlib_graph(PyObject *SWIGUNUSEDPARM(self), PyObject *
   PyObject * obj2 = 0 ;
   PyObject * obj3 = 0 ;
   PyObject * obj4 = 0 ;
-  gdouble result;
+  double result;
   
   if (!PyArg_ParseTuple(args,(char *)"OOOOO:rlib_graph",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4849,8 +4851,8 @@ SWIGINTERN PyObject *_wrap_rlib_graph(PyObject *SWIGUNUSEDPARM(self), PyObject *
     SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "rlib_graph" "', argument " "5"" of type '" "double *""'"); 
   }
   arg5 = (double *)(argp5);
-  result = rlib_graph(arg1,arg2,arg3,arg4,arg5);
-  resultobj = SWIG_NewPointerObj((gdouble *)memcpy((gdouble *)malloc(sizeof(gdouble)),&result,sizeof(gdouble)), SWIGTYPE_p_gdouble, SWIG_POINTER_OWN |  0 );
+  result = (double)rlib_graph(arg1,arg2,arg3,arg4,arg5);
+  resultobj = SWIG_From_double((double)(result));
   return resultobj;
 fail:
   return NULL;
@@ -4990,7 +4992,6 @@ static PyMethodDef SwigMethods[] = {
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_double = {"_p_double", "double *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_f_p_rlib_p_void__int = {"_p_f_p_rlib_p_void__int", "int (*)(rlib *,void *)", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_gdouble = {"_p_gdouble", "gdouble *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_rlib = {"_p_rlib", "rlib *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_rlib_part = {"_p_rlib_part", "struct rlib_part *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_rlib_report = {"_p_rlib_report", "struct rlib_report *", 0, 0, (void*)0, 0};
@@ -4999,7 +5000,6 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_char,
   &_swigt__p_double,
   &_swigt__p_f_p_rlib_p_void__int,
-  &_swigt__p_gdouble,
   &_swigt__p_rlib,
   &_swigt__p_rlib_part,
   &_swigt__p_rlib_report,
@@ -5008,7 +5008,6 @@ static swig_type_info *swig_type_initial[] = {
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_double[] = {  {&_swigt__p_double, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_f_p_rlib_p_void__int[] = {  {&_swigt__p_f_p_rlib_p_void__int, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_gdouble[] = {  {&_swigt__p_gdouble, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_rlib[] = {  {&_swigt__p_rlib, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_rlib_part[] = {  {&_swigt__p_rlib_part, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_rlib_report[] = {  {&_swigt__p_rlib_report, 0, 0, 0},{0, 0, 0, 0}};
@@ -5017,7 +5016,6 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_char,
   _swigc__p_double,
   _swigc__p_f_p_rlib_p_void__int,
-  _swigc__p_gdouble,
   _swigc__p_rlib,
   _swigc__p_rlib_part,
   _swigc__p_rlib_report,

@@ -296,7 +296,7 @@ class rlibPINVOKE {
   public static extern int rlib_graph_set_x_minor_tick_by_location(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, int jarg3);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_graph")]
-  public static extern global::System.IntPtr rlib_graph(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2, global::System.Runtime.InteropServices.HandleRef jarg3, double jarg4, global::System.Runtime.InteropServices.HandleRef jarg5);
+  public static extern double rlib_graph(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2, global::System.Runtime.InteropServices.HandleRef jarg3, double jarg4, global::System.Runtime.InteropServices.HandleRef jarg5);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_parse")]
   public static extern int rlib_parse(global::System.Runtime.InteropServices.HandleRef jarg1);

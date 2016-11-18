@@ -1033,14 +1033,14 @@ SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1graph_1set_1x_1minor_1tick_1by_1locat
 }
 
 
-SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1graph(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2, jlong jarg3, jdouble jarg4, jlong jarg5) {
-  jlong jresult = 0 ;
+SWIGEXPORT jdouble JNICALL Java_rlibJNI_rlib_1graph(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2, jlong jarg3, jdouble jarg4, jlong jarg5) {
+  jdouble jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   struct rlib_part *arg2 = (struct rlib_part *) 0 ;
   struct rlib_report *arg3 = (struct rlib_report *) 0 ;
   double arg4 ;
   double *arg5 = (double *) 0 ;
-  gdouble result;
+  double result;
   
   (void)jenv;
   (void)jcls;
@@ -1049,12 +1049,8 @@ SWIGEXPORT jlong JNICALL Java_rlibJNI_rlib_1graph(JNIEnv *jenv, jclass jcls, jlo
   arg3 = *(struct rlib_report **)&jarg3; 
   arg4 = (double)jarg4; 
   arg5 = *(double **)&jarg5; 
-  result = rlib_graph(arg1,arg2,arg3,arg4,arg5);
-  {
-    gdouble * resultptr = (gdouble *) malloc(sizeof(gdouble));
-    memmove(resultptr, &result, sizeof(gdouble));
-    *(gdouble **)&jresult = resultptr;
-  }
+  result = (double)rlib_graph(arg1,arg2,arg3,arg4,arg5);
+  jresult = (jdouble)result; 
   return jresult;
 }
 

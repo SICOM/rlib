@@ -800,26 +800,22 @@ SWIGEXPORT int SWIGSTDCALL CSharp_rlib_graph_set_x_minor_tick_by_location(void *
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_rlib_graph(void * jarg1, void * jarg2, void * jarg3, double jarg4, void * jarg5) {
-  void * jresult ;
+SWIGEXPORT double SWIGSTDCALL CSharp_rlib_graph(void * jarg1, void * jarg2, void * jarg3, double jarg4, void * jarg5) {
+  double jresult ;
   rlib *arg1 = (rlib *) 0 ;
   struct rlib_part *arg2 = (struct rlib_part *) 0 ;
   struct rlib_report *arg3 = (struct rlib_report *) 0 ;
   double arg4 ;
   double *arg5 = (double *) 0 ;
-  gdouble result;
+  double result;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (struct rlib_part *)jarg2; 
   arg3 = (struct rlib_report *)jarg3; 
   arg4 = (double)jarg4; 
   arg5 = (double *)jarg5; 
-  result = rlib_graph(arg1,arg2,arg3,arg4,arg5);
-  {
-    gdouble * resultptr = (gdouble *) malloc(sizeof(gdouble));
-    memmove(resultptr, &result, sizeof(gdouble));
-    jresult = resultptr;
-  }
+  result = (double)rlib_graph(arg1,arg2,arg3,arg4,arg5);
+  jresult = result; 
   return jresult;
 }
 
