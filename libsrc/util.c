@@ -84,7 +84,7 @@ int locale_codes[] = {
 gchar *strlwrexceptquoted (char *s) {
 	gchar c;
 	gchar *ptr = s;
-	gint64 quote=0;
+	gint quote=0;
 	while ((c = tolower(*s)) != '\0') {
 		if (*s == '\'') {
 			if (quote)
@@ -103,8 +103,8 @@ gchar *strlwrexceptquoted (char *s) {
 gchar *rmwhitespacesexceptquoted(gchar *s) {
 	gchar *backptr = s;
 	gchar *orig = s;
-	gint64 spacecount=0;
-	gint64 quote=0;
+	gint spacecount=0;
+	gint quote=0;
 	while(*s != '\0') {
 		if (*s == '\'') {
 			if (quote)
@@ -254,13 +254,13 @@ DLL_EXPORT_SYM void r_warning(rlib *r, const gchar *fmt, ...) {
 	return;
 }
 
-gint64 tentothe(gint64 n) {
+gint tentothe(gint n) {
 	/* Previously we kept an array here with 12 elements.
-	 * double->gint64 conversion can give corrects values up to 10^18.
+	 * double->gint conversion can give corrects values up to 10^18.
 	 */
 	if (n > 18)
 		return 0;
-	return (gint64)pow(10.0, (double)n);
+	return (gint)pow(10.0, (double)n);
 }
 
 static gchar hextochar(gchar c) {
@@ -359,7 +359,7 @@ gchar *strproper (gchar *s) {
 	return ptr;
 #else
 	gchar *ptr, *s1, *ptr1;
-	gint64 len, first;
+	gint len, first;
 	gunichar c;
 
 	if (!s)
@@ -405,7 +405,7 @@ gchar *strproper (gchar *s) {
 
 
 /* TODO: Change this to use a g_string instead of this.. Bob agree's */
-void make_more_space_if_necessary(gchar **str, gint64 *size, gint64 *total_size, gint64 len) {
+void make_more_space_if_necessary(gchar **str, gint *size, gint *total_size, gint len) {
 	if (*total_size == 0) {
 		*str = g_malloc(MAXSTRLEN);
 		memset(*str, 0, MAXSTRLEN);
@@ -426,7 +426,7 @@ gchar *make_utf8_locale(const gchar *encoding) {
 	gchar *locale, *codeset = NULL, *extra = NULL;
 	gchar buf[256];
 	gchar *t;
-	gint64 len = r_strlen(encoding);
+	gint len = r_strlen(encoding);
 
 	if ((encoding == NULL) || (r_strlen(encoding) < 2)) {
 		// shows in apache error_log
@@ -487,8 +487,8 @@ gchar *str2hex(const gchar *str) {
 	return result;
 }
 
-gint64 rlib_safe_atoll(char *str) {
+gint rlib_safe_atoll(char *str) {
 	if (str == NULL)
 		return 0;
-	return (gint64)atoll(str);
+	return (gint)atoll(str);
 }

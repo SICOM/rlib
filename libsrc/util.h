@@ -43,18 +43,18 @@ struct rlib_rgb {
 gchar *strlwrexceptquoted (gchar *s);
 gchar *rmwhitespacesexceptquoted(gchar *s);
 /* coming soon: void r_fatal(const gchar *fmt, ...); */
-gint64 tentothe(gint64 n);
+gint tentothe(gint n);
 const gchar *colornames(const gchar *str);
 void rlib_parsecolor(struct rlib_rgb *color, const gchar *strx);
 struct rlib_datetime * stod(struct rlib_datetime *tm_date, gchar *str);
-void bumpday(gint64 *year, gint64 *month, gint64 *day);
-void bumpdaybackwords(gint64 *year, gint64 *month, gint64 *day);
+void bumpday(gint *year, gint *month, gint *day);
+void bumpdaybackwords(gint *year, gint *month, gint *day);
 gchar *strproper (gchar *s);
-gint64 daysinmonth(gint64 year, gint64 month);
+gint daysinmonth(gint year, gint month);
 void init_signals(void);
-void make_more_space_if_necessary(gchar **str, gint64 *size, gint64 *total_size, gint64 len);
+void make_more_space_if_necessary(gchar **str, gint *size, gint *total_size, gint len);
 gchar *str2hex(const gchar *str);
-gint64 rlib_safe_atoll(char *str);
+gint rlib_safe_atoll(char *str);
 
 #if DISABLE_UTF8
 

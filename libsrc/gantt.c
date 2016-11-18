@@ -42,9 +42,9 @@
 #define MAX_ROWS 300
 
 struct bar {
-	gint64 row;
-	gint64 start;
-	gint64 stop;
+	gint row;
+	gint start;
+	gint stop;
 	gchar row_label[MAXSTRLEN];
 	gchar bar_label[MAXSTRLEN];
 	struct rlib_rgb bar_color;
@@ -52,7 +52,7 @@ struct bar {
 };
 
 static void string_copy(gchar *dest, gchar *src) {
-	gint64 len = strlen(src);
+	gint len = strlen(src);
 	if (len > MAXSTRLEN - 1)
 		len = MAXSTRLEN - 1;
 	if (len > 0) {
@@ -62,7 +62,7 @@ static void string_copy(gchar *dest, gchar *src) {
 }
 
 static void free_chart(GSList *row_list[]) {
-	gint64 i;
+	gint i;
 	for (i = 0; i < MAX_ROWS; i++) {
 		if (row_list[i] != NULL) {
 			GSList *element = row_list[i];
@@ -77,7 +77,7 @@ static void free_chart(GSList *row_list[]) {
 }
 
 DLL_EXPORT_SYM gdouble rlib_chart(rlib *r, struct rlib_part *part, struct rlib_report *report, gdouble left_margin_offset, gdouble *top_margin_offset) {
-	gint64 i = 0;
+	gint i = 0;
 	struct rlib_rgb bar_color;
 	struct rlib_rgb label_color;
 	gboolean minor_tick[MAX_X_TICKS];
@@ -89,23 +89,23 @@ DLL_EXPORT_SYM gdouble rlib_chart(rlib *r, struct rlib_part *part, struct rlib_r
 	gdouble hint_label_x;
 	gdouble hint_label_y;
 	gchar color[MAXSTRLEN];
-	gint64 row_count = 0;
-	gint64 col_count = 0;
+	gint row_count = 0;
+	gint col_count = 0;
 	gint64 cols = -1;
 	gint64 rows = -1;
 	gint64 cell_width = -1;
 	gint64 cell_height  = -1;
 	gint64 cell_width_padding = -1;
 	gint64 cell_height_padding = -1;
-	gint64 chart_width = 600;
-	gint64 chart_height = 400;
+	gint chart_width = 600;
+	gint chart_height = 400;
 	struct rlib_chart *chart = report->chart;
-	gint64 header_row_result_num;
-	gint64 width_offset;
-	gint64 iteration_count = 0;
+	gint header_row_result_num;
+	gint width_offset;
+	gint iteration_count = 0;
 
-	gint64 chart_size;
-	gint64 last_row;
+	gint chart_size;
+	gint last_row;
 
 	gdouble top_margin = 0;
 	gdouble bottom_margin = 0;
@@ -266,7 +266,8 @@ DLL_EXPORT_SYM gdouble rlib_chart(rlib *r, struct rlib_part *part, struct rlib_r
 	rlib_fetch_first_rows(r);
 	if(!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
 		while(1) {
-			gint64 t, row = -1, start = 0, stop = 0;
+			gint64 t;
+			gint row = -1, start = 0, stop = 0;
 			if (rlib_execute_as_int64(r, chart->row->row_code, &t))
 				row = t;
 			if (row > 0 && row <= MAX_ROWS) {
@@ -306,7 +307,7 @@ DLL_EXPORT_SYM gdouble rlib_chart(rlib *r, struct rlib_part *part, struct rlib_r
 				if (bar->stop == 0 && bar->start > 0)
 					bar->stop = cols;
 				if (bar->stop < bar->start) {
-					r_error(r, "data index [%" PRId64 "], bar start (%" PRId64 ") greater than stop (%" PRId64 ")\n", row_count, start, stop);
+					r_error(r, "data index [%d], bar start (%d) greater than stop (%d)\n", row_count, start, stop);
 					t = bar->stop;
 					bar->stop = bar->start;
 					bar->start = t;
