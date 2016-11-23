@@ -211,7 +211,7 @@ static void html_print_text(rlib *r, gfloat left_origin, gfloat bottom_origin, c
 	}
 
 	if (only_spaces) {
-		g_string_append(string, "&nbsp");
+		g_string_append(string, "&nbsp;");
 		g_string_append(string, escaped + 1);
 	} else
 		g_string_append(string, escaped);
