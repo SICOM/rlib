@@ -706,6 +706,22 @@ gint rlib_make_report(rlib *r) {
 				OUTPUT(r)->start_part(r, part);
 				rlib_layout_init_part_page(r, part, NULL, TRUE, TRUE);
 				rlib_layout_part_tr(r, part);
+				if (part->delayed_data && OUTPUT(r)->finalize_text_delayed) {
+					GSList *list;
+
+					for (list = part->delayed_data; list; list = list->next) {
+						struct rlib_break_delayed_data *dd = list->data;
+
+						r->use_cached_data++;
+						OUTPUT(r)->finalize_text_delayed(r, dd->delayed_data, dd->backwards);
+						r->use_cached_data--;
+
+						g_free(dd);
+					}
+				}
+				g_slist_free(part->delayed_data);
+				part->delayed_data = NULL;
+
 				OUTPUT(r)->end_part(r, part);
 				OUTPUT(r)->end_page(r, part);
 

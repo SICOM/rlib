@@ -238,8 +238,8 @@ static gdouble rlib_layout_output_extras_start(rlib *r, struct rlib_part *part, 
 }
 
 //BOBD: Extra_data seems to have all the stuff which needs to get passed in JSON
-static gdouble rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report, gboolean backwards, gdouble left_origin, gdouble bottom_origin, struct rlib_line_extra_data *extra_data, gint flag, gint memo_line) __attribute__((nonnull(1,7)));
-static gdouble rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part UNUSED, struct rlib_report *report, gboolean backwards, gdouble left_origin, gdouble bottom_origin, struct rlib_line_extra_data *extra_data, gint flag, gint memo_line) {
+static gdouble rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean backwards, gdouble left_origin, gdouble bottom_origin, struct rlib_line_extra_data *extra_data, gint flag, gint memo_line) __attribute__((nonnull(1,7)));
+static gdouble rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean backwards, gdouble left_origin, gdouble bottom_origin, struct rlib_line_extra_data *extra_data, gint flag, gint memo_line) {
 	gdouble rtn_width;
 	gchar *text = extra_data->formatted_string;
 	gint i, slen;
@@ -321,6 +321,8 @@ static gdouble rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part 
 
 				if (has_variable) {
 					GSList *ptr;
+					gboolean added = 0;
+
 					for (ptr = varlist; ptr; ptr = ptr->next) {
 						struct rlib_report_variable *rv = ptr->data;
 						struct rlib_report_break *rb = rv->resetonbreak;
@@ -330,6 +332,7 @@ static gdouble rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part 
 						dd->backwards = backwards;
 
 						rb->delayed_data = g_slist_append(rb->delayed_data, dd);
+						added++;
 					}
 
 					if (!report)
@@ -343,7 +346,14 @@ static gdouble rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part 
 							dd->backwards = backwards;
 
 							report->delayed_data = g_slist_append(report->delayed_data, dd);
+							added++;
 						}
+					}
+
+					if (!added) {
+						struct rlib_break_delayed_data *dd = g_new0(struct rlib_break_delayed_data, 1);
+						dd->delayed_data = delayed_data;
+						part->delayed_data = g_slist_append(part->delayed_data, dd);
 					}
 				}
 			} else {

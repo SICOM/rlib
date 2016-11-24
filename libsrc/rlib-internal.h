@@ -515,6 +515,7 @@ struct rlib_part {
 	gboolean suppress;
 	gboolean has_only_one_report;
 	struct rlib_report *only_report;
+	GSList *delayed_data;
 	gdouble *position_top;
 	gdouble *position_bottom;
 	gdouble *bottom_size;
