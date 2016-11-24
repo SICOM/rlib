@@ -68,12 +68,12 @@ static struct rlib_paper paper[] = {
 	{RLIB_PAPER_LEGAL, 612, 1008, "LEGAL"},
 	{RLIB_PAPER_A4, 595, 842, "A4"},
 	{RLIB_PAPER_B5, 499, 708, "B5"},
-	{RLIB_PAPER_C5, 459, 649, "C5"},
-	{RLIB_PAPER_DL, 312, 624, "DL"},
+	//{RLIB_PAPER_C5, 459, 649, "C5"},
+	//{RLIB_PAPER_DL, 312, 624, "DL"},
 	{RLIB_PAPER_EXECUTIVE, 522, 756, "EXECUTIVE"},
 	{RLIB_PAPER_COMM10, 297, 684, "COMM10"},
-	{RLIB_PAPER_MONARCH, 279, 540, "MONARCH"},
-	{RLIB_PAPER_FILM35MM, 528, 792, "FILM35MM"},
+	//{RLIB_PAPER_MONARCH, 279, 540, "MONARCH"},
+	//{RLIB_PAPER_FILM35MM, 528, 792, "FILM35MM"},
 	{0, 0, 0, ""},
 };
 
@@ -82,7 +82,9 @@ struct rlib_paper *layout_get_paper(gint paper_type) {
 	for (i = 0; paper[i].type != 0; i++)
 		if (paper[i].type == paper_type)
 			return &paper[i];
-	return NULL;
+
+	/* default paper size LETTER */
+	return &paper[0];
 }
 
 struct rlib_paper *layout_get_paper_by_name(gchar *paper_name) {
@@ -93,7 +95,9 @@ struct rlib_paper *layout_get_paper_by_name(gchar *paper_name) {
 	for (i = 0; paper[i].type != 0; i++)
 		if (!strcasecmp(paper[i].name, paper_name))
 			return &paper[i];
-	return NULL;
+
+	/* default paper size LETTER */
+	return &paper[0];
 }
 
 static gdouble rlib_layout_advance_horizontal_margin(rlib *r, gdouble margin, gint chars) {

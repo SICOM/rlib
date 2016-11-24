@@ -30,6 +30,7 @@
 #include <time.h>
 #include <glib.h>
 
+#include <rpdf.h>
 #include "rlib.h"
 #include "charencoder.h"
 #include "datetime.h"
@@ -97,16 +98,16 @@ typedef enum {
 #define RLIB_FILE_BREAK 		950
 #define RLIB_FILE_BREAK_FIELD	975
 
-#define RLIB_PAPER_LETTER     1
-#define RLIB_PAPER_LEGAL      2
-#define RLIB_PAPER_A4         3
-#define RLIB_PAPER_B5         4
-#define RLIB_PAPER_C5         5
-#define RLIB_PAPER_DL         6
-#define RLIB_PAPER_EXECUTIVE  7
-#define RLIB_PAPER_COMM10     8
-#define RLIB_PAPER_MONARCH    9
-#define RLIB_PAPER_FILM35MM   10
+#define RLIB_PAPER_LETTER		RPDF_PAPER_LETTER
+#define RLIB_PAPER_LEGAL		RPDF_PAPER_LEGAL
+#define RLIB_PAPER_A4			RPDF_PAPER_A4
+#define RLIB_PAPER_B5			RPDF_PAPER_B5
+//#define RLIB_PAPER_C5			???
+//#define RLIB_PAPER_DL			???
+#define RLIB_PAPER_EXECUTIVE	RPDF_PAPER_EXECUTIVE
+#define RLIB_PAPER_COMM10		RPDF_PAPER_COMM10
+//#define RLIB_PAPER_MONARCH	???
+//#define RLIB_PAPER_FILM35MM	??
 
 #define RLIB_PDF_DPI 72.0f
 

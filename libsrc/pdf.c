@@ -256,8 +256,8 @@ static void pdf_set_font_point_actual(rlib *r, gint point) {
 		which_font += ITALICS;
 
 	fontname = pdffontname ? pdffontname : font_names[which_font];
-	
-	rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, fontname, "WinAnsiEncoding", point);
+
+	rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, fontname, RPDF_FONT_STYLE_REGULAR, "WinAnsiEncoding", point);
 }
 
 static void pdf_set_font_point(rlib *r, gint point) {
@@ -279,13 +279,13 @@ static void pdf_start_new_page(rlib *r, struct rlib_part *part) {
 	sprintf(paper_type, "0 0 %ld %ld", part->paper->width, part->paper->height);
 	for (i = 0; i < pages_across; i++) {
 		if (part->orientation == RLIB_ORIENTATION_LANDSCAPE) {
-			part->position_bottom[i] = (part->paper->width/RLIB_PDF_DPI)-part->bottom_margin;
-			rpdf_new_page(OUTPUT_PRIVATE(r)->pdf, part->paper->type, RPDF_LANDSCAPE); 
-			rpdf_translate(OUTPUT_PRIVATE(r)->pdf, 0.0, (part->paper->height/RLIB_PDF_DPI));	
-		   rpdf_rotate(OUTPUT_PRIVATE(r)->pdf, -90.0);
+			part->position_bottom[i] = (part->paper->width / RLIB_PDF_DPI) - part->bottom_margin;
+			rpdf_new_page(OUTPUT_PRIVATE(r)->pdf, part->paper->type, RPDF_LANDSCAPE);
+			rpdf_translate(OUTPUT_PRIVATE(r)->pdf, 0.0, (part->paper->height / RLIB_PDF_DPI));
+			rpdf_rotate(OUTPUT_PRIVATE(r)->pdf, -90.0);
 			part->landscape = TRUE;
 		} else {
-			part->position_bottom[i] = (part->paper->height/RLIB_PDF_DPI)-part->bottom_margin;
+			part->position_bottom[i] = (part->paper->height / RLIB_PDF_DPI) - part->bottom_margin;
 			rpdf_new_page(OUTPUT_PRIVATE(r)->pdf, part->paper->type, RPDF_PORTRAIT); 
 			part->landscape = FALSE;
 		}
@@ -331,6 +331,7 @@ static void pdf_end_rlib_report(rlib *r UNUSED) {}
 static void pdf_finalize_private(rlib *r) {
 	guint length;
 	rpdf_finalize(OUTPUT_PRIVATE(r)->pdf);
+	g_free(OUTPUT_PRIVATE(r)->buffer);
 	OUTPUT_PRIVATE(r)->buffer = rpdf_get_buffer(OUTPUT_PRIVATE(r)->pdf, &length);
 	OUTPUT_PRIVATE(r)->length = length;
 }
@@ -341,7 +342,7 @@ static void pdf_spool_private(rlib *r) {
 
 static void pdf_end_page(rlib *r, struct rlib_part *part) {
 	int i;
-	for(i=0;i<part->pages_across;i++)
+	for (i = 0; i < part->pages_across; i++)
 		pdf_set_working_page(r, part, i);
 /*	r->current_page_number++; */
 	r->current_line_number = 1;
@@ -350,6 +351,7 @@ static void pdf_end_page(rlib *r, struct rlib_part *part) {
 static void pdf_end_page_again(rlib *r UNUSED, struct rlib_part *part UNUSED, struct rlib_report *report UNUSED) {}
 
 static void pdf_free(rlib *r) {
+	g_free(OUTPUT_PRIVATE(r)->buffer);
 	rpdf_free(OUTPUT_PRIVATE(r)->pdf);
 	g_free(OUTPUT_PRIVATE(r));
 	g_free(OUTPUT(r));
@@ -488,11 +490,11 @@ static void pdf_graph_set_title(rlib *r, gchar *title) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
 	gdouble title_width = pdf_get_string_width(r, title);
 	graph->title_height = RLIB_GET_LINE(r->current_font_point);
-	if(graph->bold_titles)
-		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[1], "WinAnsiEncoding", r->current_font_point);
+	if (graph->bold_titles)
+		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[1], RPDF_FONT_STYLE_BOLD, "WinAnsiEncoding", r->current_font_point);
 	pdf_print_text(r, graph->left + ((graph->width-title_width)/2.0), graph->top-graph->title_height, title, 0);
-	if(graph->bold_titles)
-		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[0], "WinAnsiEncoding", r->current_font_point);
+	if (graph->bold_titles)
+		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[0], RPDF_FONT_STYLE_REGULAR, "WinAnsiEncoding", r->current_font_point);
 }
 
 static void pdf_graph_set_name(rlib *r, gchar *name) {
@@ -543,8 +545,8 @@ static void pdf_graph_x_axis_title(rlib *r, gchar *title) {
 	graph->height_offset = 0;
 	
 
-	if(graph->bold_titles)
-		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[1], "WinAnsiEncoding", r->current_font_point);
+	if (graph->bold_titles)
+		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[1], RPDF_FONT_STYLE_BOLD, "WinAnsiEncoding", r->current_font_point);
 
 	if(graph->legend_orientation == RLIB_GRAPH_LEGEND_ORIENTATION_BOTTOM)
 		graph->height_offset += graph->legend_height;	
@@ -557,9 +559,8 @@ static void pdf_graph_x_axis_title(rlib *r, gchar *title) {
 		pdf_print_text(r, graph->left + ((graph->width-title_width)/2.0), graph->bottom+graph->height_offset - (RLIB_GET_LINE(r->current_font_point)*1.3), title, 0);
 	}
 
-	if(graph->bold_titles)
-		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[0], "WinAnsiEncoding", r->current_font_point);
-
+	if (graph->bold_titles)
+		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[0], RPDF_FONT_STYLE_REGULAR, "WinAnsiEncoding", r->current_font_point);
 }
 
 static void pdf_graph_y_axis_title(rlib *r, gchar side, gchar *title) {
@@ -567,13 +568,12 @@ static void pdf_graph_y_axis_title(rlib *r, gchar side, gchar *title) {
 	gdouble title_width;
 	
 	if(graph->bold_titles)
-		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[1], "WinAnsiEncoding", r->current_font_point);
+		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[1], RPDF_FONT_STYLE_BOLD, "WinAnsiEncoding", r->current_font_point);
 
 	title_width = pdf_get_string_width(r, title);
-	if(title[0] == 0) {
-	
+	if (title[0] == 0) {
 	} else {
-		if(side == RLIB_SIDE_LEFT) {
+		if (side == RLIB_SIDE_LEFT) {
 			pdf_print_text(r, graph->left+(pdf_get_string_width(r, "W")*1.25), graph->bottom+graph->legend_height+((graph->height - graph->legend_height - title_width)/2.0), title,  90);
 			graph->y_label_space_left = pdf_get_string_width(r, "W") * 1.5;
 		} else {
@@ -582,8 +582,8 @@ static void pdf_graph_y_axis_title(rlib *r, gchar side, gchar *title) {
 		}
 	}
 
-	if(graph->bold_titles)
-		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[0], "WinAnsiEncoding", r->current_font_point);
+	if (graph->bold_titles)
+		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[0], RPDF_FONT_STYLE_REGULAR, "WinAnsiEncoding", r->current_font_point);
 
 }
 
@@ -1024,7 +1024,6 @@ static void pdf_graph_plot_pie(rlib *r, gdouble start, gdouble end, gboolean off
 	OUTPUT(r)->set_bg_color(r, color->r, color->g, color->b);
 	rpdf_arc(OUTPUT_PRIVATE(r)->pdf, x, y, radius, start_angle, end_angle);
 	rpdf_fill(OUTPUT_PRIVATE(r)->pdf);
-	rpdf_stroke(OUTPUT_PRIVATE(r)->pdf); 
 	OUTPUT(r)->set_bg_color(r, 0, 0, 0);
 }
 

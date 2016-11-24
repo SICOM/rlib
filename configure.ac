@@ -84,20 +84,15 @@ AC_C_CONST
 dnl Checks for libraries.
 AC_CHECK_LIB(c, exit)
 AC_CHECK_LIB(m, exp)
-AC_CHECK_HEADER([zlib.h],
-	[AC_CHECK_LIB(z, zlibVersion,
-		enable_compressed_pdf=yes,
-		enable_compressed_pdf=no)],
-	[enable_compressed_pdf=no])
-AS_IF([test x$enable_compressed_pdf = xyes],
-	[AC_DEFINE([RPDF_COMPRESS_STREAM], [1], [RPDF can compress streams])
-	 ZLIB_LIBS="-lz"])
-AC_SUBST(ZLIB_LIBS)
 
 AC_CHECK_HEADERS(gmp.h mpfr.h mpf2mpfr.h,,[AC_MSG_ERROR([GNU MP and MPFR headers not found!])])
 AC_CHECK_LIB(mpfr, mpfr_init2,[MPFR_LIBS="-lmpfr"],[AC_MSG_ERROR([GNU MPFR library not found!])])
 AC_CHECK_LIB(gmp, __gmpf_init2,[MPFR_LIBS="$MPFR_LIBS -lgmp"],[AC_MSG_ERROR([GNU MP library not found!])])
 AC_SUBST(MPFR_LIBS)
+
+AC_CHECK_HEADERS(hpdf.h,,[AC_MSG_ERROR([libharu headers not found!])])
+AC_CHECK_LIB(hpdf, HPDF_New,[HPDF_LIBS=-lhpdf],[AC_MSG_ERROR([libharu library not found!])])
+AC_SUBST(HPDF_LIBS)
 
 PKG_CHECK_MODULES(LIBXML, libxml-2.0 >= 2.6.0)
 AC_SUBST(LIBXML_LIBS)
@@ -110,6 +105,10 @@ AC_SUBST(LIBGLIB_CFLAGS)
 PKG_CHECK_MODULES(LIBGMODULE, gmodule-2.0 >= 0.0.1)
 AC_SUBST(LIBGMODULE_LIBS)
 AC_SUBST(LIBGMODULE_CFLAGS)
+
+PKG_CHECK_MODULES(FONTCONFIG, fontconfig >= 2.11.94)
+AC_SUBST(FONTCONFIG_LIBS)
+AC_SUBST(FONTCONFIG_CFLAGS)
 
 case "$target" in
   *-*-cygwin*|*-*-mingw*)
@@ -469,8 +468,8 @@ RLIB_LIBS="$LIBXML_LIBS $LIBGLIB_LIBS $LIBGMODULE_LIBS $ICONVLIBS $GD_LDFLAGS $G
 AC_SUBST(RLIB_CFLAGS)
 AC_SUBST(RLIB_LIBS)
 
-RPDF_CFLAGS="-D_GNU_SOURCE -Wall -Wextra -Werror $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $NO_CYGWIN"
-RPDF_LIBS="$LIBGLIB_LIBS $LIBGMODULE_LIBS $ZLIB_LIBS"
+RPDF_CFLAGS="-D_GNU_SOURCE -Wall -Wextra -Werror $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $FONTCONFIG_CFLAGS $NO_CYGWIN"
+RPDF_LIBS="$LIBGLIB_LIBS $LIBGMODULE_LIBS $HPDF_LIBS $FONTCONFIG_LIBS $ZLIB_LIBS"
 AC_SUBST(RPDF_CFLAGS)
 AC_SUBST(RPDF_LIBS)
 
@@ -526,7 +525,7 @@ rlib-$VERSION:
     ODBC:                    ${enable_odbc} built-in: ${enable_built_in_odbc}
 
    COMPRESSION:
-    PDF:                     ${enable_compressed_pdf}
+    PDF:                     Always
 
    GRAPHING:
     PDF:                     Always
