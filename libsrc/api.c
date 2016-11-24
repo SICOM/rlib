@@ -73,9 +73,7 @@ DLL_EXPORT_SYM rlib *rlib_init_with_environment(struct environment_filter *envir
 	r->radix_character = '.';
 	r->numeric_precision_bits = RLIB_MPFR_PRECISION_BITS;
 
-#if !DISABLE_UTF8
 	make_all_locales_utf8();
-#endif
 /*	strcpy(r->pdf_encoding, "WinAnsiEncoding"); */
 	r->did_execute = FALSE;
 	r->current_locale = g_strdup(setlocale(LC_ALL, NULL));
@@ -646,12 +644,8 @@ DLL_EXPORT_SYM gchar *rlib_get_content_type_as_text(rlib *r) {
 				return buf;
 			}
 		} else {
-#if DISABLE_UTF8		
-			const char *charset = "ISO-8859-1";
-#else
-			const char *charset = r->output_encoder_name != NULL ? r->output_encoder_name: "UTF-8";
-#endif
-			if(r->format == RLIB_CONTENT_TYPE_HTML) {
+			const char *charset = (r->output_encoder_name ? r->output_encoder_name : "UTF-8");
+			if (r->format == RLIB_CONTENT_TYPE_HTML) {
 				g_snprintf(buf, sizeof(buf), RLIB_WEB_CONTENT_TYPE_HTML, charset);
 				return buf;
 			} else {
@@ -872,11 +866,7 @@ DLL_EXPORT_SYM gint rlib_add_parameter(rlib *r, const gchar *name, const gchar *
 *  Returns TRUE if locale was actually set, otherwise, FALSE
 */
 DLL_EXPORT_SYM gboolean rlib_set_locale(rlib *r, gchar *locale) {
-#if DISABLE_UTF8
-	r->special_locale = g_strdup(locale);
-#else
 	r->special_locale = g_strdup(make_utf8_locale(locale));
-#endif
 	return TRUE;
 }
 
@@ -995,11 +985,7 @@ DLL_EXPORT_SYM gboolean rlib_graph_clear_bg_region(rlib *r UNUSED, gchar *graph_
 const gchar *rpdf_version(void);
 DLL_EXPORT_SYM const gchar *rlib_version(void) {
 #if 0
-#if DISABLE_UTF8
-const gchar *charset="8859-1";
-#else
 const gchar *charset="UTF8";
-#endif
 r_debug("rlib_version: version=[%s], CHARSET=%s, RPDF=%s", VERSION, charset, rpdf_version());
 #endif
 	return VERSION;

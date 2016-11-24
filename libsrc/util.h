@@ -55,19 +55,6 @@ void make_more_space_if_necessary(gchar **str, gint *size, gint *total_size, gin
 gchar *str2hex(const gchar *str);
 gint rlib_safe_atoll(char *str);
 
-#if DISABLE_UTF8
-
-#define r_strlen(s) (strlen(s))
-#define r_strchr(s, len, chr) (strchr(s, chr))
-#define r_nextchr(s) (s+1)
-#define r_getchr(s) (*s)
-#define r_strcmp(s1,s2) (strcmp(s1, s2))
-#define r_strupr(s) (g_ascii_strup(s, -1))
-#define r_strlwr(s) (g_ascii_strdown(s, -1))
-#define r_ptrfromindex(s, idx) (s+idx)
-
-#else
-
 #define r_strlen(s) (g_utf8_strlen(s, -1))
 #define r_strchr(t, len, chr) (g_utf8_strchr(t, len, chr))
 #define r_nextchr(t) (g_utf8_next_char(t))
@@ -76,8 +63,6 @@ gint rlib_safe_atoll(char *str);
 #define r_strupr(a) (g_utf8_strup(a, -1))
 #define r_strlwr(a) (g_utf8_strdown(a, -1))
 #define r_ptrfromindex(s, idx) (g_utf8_offset_to_pointer(s, idx))
-
-#endif
 
 void make_all_locales_utf8(void);
 gchar *make_utf8_locale(const gchar *encoding);

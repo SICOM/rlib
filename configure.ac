@@ -473,11 +473,6 @@ RPDF_LIBS="$LIBGLIB_LIBS $LIBGMODULE_LIBS $HPDF_LIBS $FONTCONFIG_LIBS $ZLIB_LIBS
 AC_SUBST(RPDF_CFLAGS)
 AC_SUBST(RPDF_LIBS)
 
-AC_ARG_ENABLE([utf8],
-	[AS_HELP_STRING([--enable-utf8],[enable utf8])],
-	[AS_IF([test x$enable_utf8 = xno],[AC_DEFINE(DISABLE_UTF8,1,[DISABLE UTF8])])],
-	enable_utf8=yes)
-
 AC_CONFIG_FILES([
 Makefile
 rlib.pc
@@ -515,7 +510,7 @@ rlib-$VERSION:
 
    prefix:                   ${prefix}
    compiler:                 ${CC}
-   UTF8 enabled:             ${enable_utf8}
+   UTF8 enabled:             Always
    WIN32 build:              ${enable_win32}
    Documentation:            ${enable_doc}
 

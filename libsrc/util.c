@@ -332,23 +332,6 @@ struct rlib_datetime * stod(struct rlib_datetime *dt, gchar *str) {
 }
 
 gchar *strproper (gchar *s) {
-#if DISABLE_UTF8
-	gchar c;
-	gchar *ptr;
-
-	if (!s)
-		return NULL;
-
-	ptr = g_strdup(s);
-	if (!ptr)
-		return NULL;
-	s = ptr;
-	*s = toupper(*s);
-	s++;
-	while ((c = tolower(*s)) != '\0')
-		*s++ = c;
-	return ptr;
-#else
 	gchar *ptr, *s1, *ptr1;
 	gint len, first;
 	gunichar c;
@@ -391,7 +374,6 @@ gchar *strproper (gchar *s) {
 	*ptr1 = '\0';
 
 	return s1;
-#endif
 }
 
 
