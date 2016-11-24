@@ -1127,6 +1127,7 @@ struct rlib_paper *layout_get_paper_by_name(gchar *paper_name);
 gint rlib_layout_report_output_with_break_headers(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean page_header_layout);
 void rlib_layout_init_report_page(rlib *r, struct rlib_part *part, struct rlib_report *report);
 void rlib_layout_report_footer(rlib *r, struct rlib_part *part, struct rlib_report *report);
+gchar *rlib_encode_text(rlib *r, const gchar *text, gchar **result);
 gdouble layout_get_next_line(struct rlib_part *part, gdouble position, struct rlib_report_lines *rl);
 gdouble layout_get_next_line_by_font_point(struct rlib_part *part, gdouble position, gdouble point);
 gint rlib_layout_end_page(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean normal);

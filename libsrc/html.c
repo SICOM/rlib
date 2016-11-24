@@ -177,11 +177,14 @@ static gchar *get_html_color(gchar *str, struct rlib_rgb *color) {
 	return str;
 }
 
-static GString *html_print_text_common(const gchar *text, struct rlib_line_extra_data *extra_data) {
+static GString *html_print_text_common(rlib *r, const gchar *text, struct rlib_line_extra_data *extra_data) {
+	gchar *new_text;
 	GString *string = g_string_new("");
 	gchar *escaped;
 	gint pos;
 	gboolean only_spaces = TRUE;
+
+	rlib_encode_text(r, text, &new_text);
 
 	g_string_append_printf(string, "<span data-col=\"%d\" data-width=\"%d\" style=\"font-size: %dpx; ", extra_data->col, extra_data->width, BIGGER_HTML_FONT(extra_data->font_point));
 
@@ -195,7 +198,7 @@ static GString *html_print_text_common(const gchar *text, struct rlib_line_extra
 		g_string_append(string, "font-style: italic;");
 
 	g_string_append(string,"\">");
-	escaped = g_markup_escape_text(text, strlen(text));
+	escaped = g_markup_escape_text(new_text, strlen(new_text));
 	for (pos = 0; escaped[pos]; pos++) {
 #if 0
 		if (!isspace(escaped[pos])) {
@@ -215,11 +218,13 @@ static GString *html_print_text_common(const gchar *text, struct rlib_line_extra
 	g_string_append(string, "</span>");
 	g_free(escaped);
 
+	g_free(new_text);
+
 	return string;
 }
 
 static void html_print_text(rlib *r, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, const gchar *text, gboolean backwards, struct rlib_line_extra_data *extra_data) {
-	GString *string = html_print_text_common(text, extra_data);
+	GString *string = html_print_text_common(r, text, extra_data);
 	print_text(r, string->str, backwards);
 	g_string_free(string, TRUE);
 }
@@ -319,7 +324,7 @@ static gchar *html_callback(struct rlib_delayed_extra_data *delayed_data) {
 	rlib_align_text(r, &buf2, buf, extra_data->report_field->align, extra_data->report_field->width);
 	g_free(buf);
 
-	string = html_print_text_common(buf2, extra_data);
+	string = html_print_text_common(r, buf2, extra_data);
 	g_free(buf2);
 	rlib_free_delayed_extra_data(r, delayed_data);
 	return g_string_free(string, FALSE);
@@ -394,12 +399,12 @@ static void html_start_rlib_report(rlib *r) {
 
    	suppress_head = g_hash_table_lookup(r->output_parameters, "suppress_head");
    	if(suppress_head == NULL) {
-		char *doctype = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">\n";
+		char *doctype = "<?xml version=\"1.0\" encoding=\"%s\"?>\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">\n";
 		int font_size = r->font_point;
 		if (font_size <= 0)
 			font_size = RLIB_DEFUALT_FONTPOINT;
 
-		g_string_append(OUTPUT_PRIVATE(r)->whole_report, doctype);
+		g_string_append_printf(OUTPUT_PRIVATE(r)->whole_report, doctype, (r->output_encoder_name ? r->output_encoder_name : "UTF-8"));
 		g_string_append_printf(OUTPUT_PRIVATE(r)->whole_report, "<head>\n<style type=\"text/css\">\n");
 
 		g_string_append_printf(OUTPUT_PRIVATE(r)->whole_report, "pre { margin:0; padding:0; margin-top:0; margin-bottom:0; font-size:%dpt;}\n", BIGGER_HTML_FONT(font_size));

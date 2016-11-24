@@ -53,8 +53,13 @@ const gchar *rlib_xml_value_get_type_as_str(rlib *r, struct rlib_value *v) {
 }
  
 static void xml_print_text(rlib *r, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, const gchar *text, gboolean backwards UNUSED, struct rlib_line_extra_data *extra_data) {
-	gchar *escaped = g_markup_escape_text(text, strlen(text));
+	gchar *new_text;
+	gchar *escaped;
 	const gchar *field_type = NULL;
+
+	rlib_encode_text(r, text, &new_text);
+	escaped = g_markup_escape_text(new_text, strlen(new_text));
+	g_free(new_text);
 
 	if (extra_data->report_field && extra_data->report_field->rval) 
 		field_type = rlib_xml_value_get_type_as_str(r, extra_data->report_field->rval);
@@ -70,7 +75,6 @@ static void xml_print_text(rlib *r, gdouble left_origin UNUSED, gdouble bottom_o
 	g_free(escaped);
 }
 
-
 static void xml_start_new_page(rlib *r UNUSED, struct rlib_part *part UNUSED) {}
 
 static void xml_init_end_page(rlib *r UNUSED) {}
@@ -81,7 +85,8 @@ static void xml_spool_private(rlib *r) {
 }
 
 static void xml_start_rlib_report(rlib *r) {
-	OUTPUT_PRIVATE(r)->whole_report = g_string_new("<rlib>\n");
+	OUTPUT_PRIVATE(r)->whole_report = g_string_new(NULL);
+	g_string_append_printf(OUTPUT_PRIVATE(r)->whole_report, "<?xml version=\"1.0\" encoding=\"%s\" ?>\n<rlib>\n", (r->output_encoder_name ? r->output_encoder_name : "UTF-8"));
 }
 
 static void xml_end_rlib_report(rlib *r) {

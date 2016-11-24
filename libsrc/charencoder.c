@@ -40,8 +40,10 @@ GIConv rlib_charencoder_new(const gchar *to_codeset UNUSED, const gchar *from_co
 #ifdef DISABLE_UTF8
 	return (GIConv)-1;
 #else
+	if (strcasecmp(to_codeset, from_codeset) == 0)
+		return (GIConv)-1;
 	return g_iconv_open(to_codeset, from_codeset);
-#endif	
+#endif
 }
 
 void rlib_charencoder_free(GIConv converter UNUSED) {
@@ -51,7 +53,7 @@ void rlib_charencoder_free(GIConv converter UNUSED) {
 #endif
 }
 
-gint rlib_charencoder_convert(GIConv converter UNUSED, gchar **inbuf, gsize *inbytes_left UNUSED, gchar **outbuf, gsize *outbytes_left UNUSED) {
+gint rlib_charencoder_convert(GIConv converter UNUSED, const gchar **inbuf, gsize *inbytes_left UNUSED, gchar **outbuf, gsize *outbytes_left UNUSED) {
 #ifdef DISABLE_UTF8
 	/* The strlen is passed in here so we bump it by 1 */
 	*outbuf = g_strdup(*inbuf);

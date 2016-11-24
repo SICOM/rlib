@@ -906,6 +906,9 @@ DLL_EXPORT_SYM void rlib_set_output_parameter(rlib *r, gchar *parameter, gchar *
 DLL_EXPORT_SYM void rlib_set_output_encoding(rlib *r, const char *encoding) {
 	const char *new_encoding = (encoding ? encoding : "UTF-8");
 
+	g_free(r->output_encoder_name);
+	rlib_charencoder_free(r->output_encoder);
+
 	if (strcasecmp(new_encoding, "UTF-8") == 0 ||
 			strcasecmp(new_encoding, "UTF8") == 0)
 		r->output_encoder = (GIConv) -1;

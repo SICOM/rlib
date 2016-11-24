@@ -42,19 +42,24 @@ struct _private {
 };
 
 static void print_text(rlib *r, const gchar *text, gboolean backwards UNUSED, gint col, gint rval_type) {
+	gchar *new_text;
+
+	rlib_encode_text(r, text, &new_text);
+
 	if (col < MAX_COL) {
 		OUTPUT_PRIVATE(r)->rval_type[col] = rval_type;
 		if (OUTPUT_PRIVATE(r)->col[col][0] == 0)
-			strcpy(OUTPUT_PRIVATE(r)->col[col], text);
+			strcpy(OUTPUT_PRIVATE(r)->col[col], new_text);
 		else {
 			gchar *tmp;
-			tmp = g_strdup_printf("%s %s", OUTPUT_PRIVATE(r)->col[col], text);
+			tmp = g_strdup_printf("%s %s", OUTPUT_PRIVATE(r)->col[col], new_text);
 			if (strlen(tmp) > MAXSTRLEN)
 				tmp[MAXSTRLEN] = 0;
 			strncpy(OUTPUT_PRIVATE(r)->col[col], tmp, MAXSTRLEN);
 			g_free(tmp);
 		}
 	}
+	g_free(new_text);
 }
 
 static gdouble csv_get_string_width(rlib *r UNUSED, const gchar *text UNUSED) {
@@ -307,8 +312,7 @@ static void csv_free(rlib *r) {
 void rlib_csv_new_output_filter(rlib *r) {
 	gchar *csv_delimeter = NULL;
 	OUTPUT(r) = g_malloc(sizeof(struct output_filter));
-	r->o->private = g_malloc(sizeof(struct _private));
-	memset(OUTPUT_PRIVATE(r), 0, sizeof(struct _private));
+	r->o->private = g_malloc0(sizeof(struct _private));
 	OUTPUT_PRIVATE(r)->top = NULL;
 	OUTPUT_PRIVATE(r)->top_size = 0;
 	OUTPUT_PRIVATE(r)->top_total_size = 0;

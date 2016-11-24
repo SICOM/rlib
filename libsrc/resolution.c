@@ -63,7 +63,7 @@ gchar *rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 	gsize slen, elen;
 	gchar *ptr = NULL;
 #endif
-	gchar *str;
+	const gchar *str;
 
 	if (r->results[rf->resultset]->navigation_failed == TRUE)
 		return NULL;

@@ -76,7 +76,10 @@ static gdouble txt_get_string_width(rlib *r UNUSED, const gchar *text UNUSED) {
 }
 
 static void txt_print_text(rlib *r, gdouble left_origin UNUSED, gdouble bottom_origin UNUSED, const gchar *text, gboolean backwards, struct rlib_line_extra_data *extra_data UNUSED) {
-	print_text(r, text, backwards);
+	gchar *new_text;
+	rlib_encode_text(r, text, &new_text);
+	print_text(r, new_text, backwards);
+	g_free(new_text);
 }
 
 static void txt_start_new_page(rlib *r, struct rlib_part *part) {
@@ -167,12 +170,17 @@ static void txt_finalize_text_delayed(rlib *r, struct rlib_delayed_extra_data *d
 				struct _packet *new_packet;
 
 				if (text) {
+					gchar *new_text;
+
+					rlib_encode_text(r, text, &new_text);
+
 					new_packet = g_new0(struct _packet, 1);
 					new_packet->type = TEXT;
-					new_packet->data = g_string_new(text);
+					new_packet->data = g_string_new(new_text);
 					l->data = new_packet;
 
 					g_free(text);
+					g_free(new_text);
 					g_free(packet);
 				}
 				return;
