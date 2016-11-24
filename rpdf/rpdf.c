@@ -91,7 +91,6 @@ DLL_EXPORT_SYM struct rpdf *rpdf_new(void) {
 
 	pdf->pdf = HPDF_New(error_handler, NULL);
 	pdf->fonts = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
-	pdf->delayed_texts = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, g_free);
 
 	pdf->convs = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, rpdf_destroy_gconv);
 
@@ -114,30 +113,6 @@ DLL_EXPORT_SYM gboolean rpdf_get_compression(struct rpdf *pdf) {
 }
 
 static void rpdf_text_common(struct rpdf *pdf, HPDF_Page page, gdouble x, gdouble y, gdouble angle, const gchar *text);
-
-static void rpdf_finalize_text_callback_common(struct rpdf *pdf, struct rpdf_delayed_text *dt) {
-	struct rpdf_page_info *page_info = pdf->page_info[dt->page_number];
-	gchar *callback_data;
-
-	HPDF_Page_SetFontAndSize(page_info->page, dt->font, dt->fontsize);
-
-	callback_data = g_malloc0(dt->len + 1);
-	if (dt->callback(callback_data, dt->len + 1, dt->user_data) != NULL)
-		rpdf_text_common(pdf, page_info->page, dt->x, dt->y, dt->angle, callback_data);
-
-	g_free(callback_data);
-}
-
-static void rpdf_print_remaining_delayed_texts(gpointer key UNUSED, gpointer value, gpointer user_data) {
-	struct rpdf *pdf = user_data;
-	struct rpdf_delayed_text *dt = value;
-
-	rpdf_finalize_text_callback_common(pdf, dt);
-}
-
-DLL_EXPORT_SYM void rpdf_finalize(struct rpdf *pdf) {
-	g_hash_table_foreach(pdf->delayed_texts, rpdf_print_remaining_delayed_texts, pdf);
-}
 
 DLL_EXPORT_SYM void rpdf_set_title(struct rpdf *pdf, const gchar *title) {
 	HPDF_SetInfoAttr(pdf->pdf, HPDF_INFO_TITLE, title);
@@ -399,9 +374,12 @@ DLL_EXPORT_SYM void rpdf_text(struct rpdf *pdf, gdouble x, gdouble y, gdouble an
 	rpdf_text_common(pdf, page_info->page, x, y, angle, text);
 }
 
-DLL_EXPORT_SYM gboolean rpdf_text_callback(struct rpdf *pdf, gdouble x, gdouble y, gdouble angle, gint len, CALLBACK, gpointer user_data) {
+DLL_EXPORT_SYM gpointer rpdf_text_callback(struct rpdf *pdf, gdouble x, gdouble y, gdouble angle, gint len) {
 	struct rpdf_page_info *page_info = pdf->page_info[pdf->current_page];
 	struct rpdf_delayed_text *dt = g_new0(struct rpdf_delayed_text, 1);
+
+	if (dt == NULL)
+		return NULL;
 
 	dt->page_number = pdf->current_page;
 	dt->font = page_info->current_font;
@@ -409,28 +387,30 @@ DLL_EXPORT_SYM gboolean rpdf_text_callback(struct rpdf *pdf, gdouble x, gdouble 
 	dt->x = x;
 	dt->y = y;
 	dt->angle = angle;
+	dt->r = page_info->r;
+	dt->g = page_info->g;
+	dt->b = page_info->b;
 	dt->len = len;
-	dt->callback = callback;
-	dt->user_data = user_data;
 
-	g_hash_table_insert(pdf->delayed_texts, user_data, dt);
-
-	return TRUE;
+	return dt;
 }
 
-DLL_EXPORT_SYM void rpdf_finalize_text_callback(struct rpdf *pdf, gpointer user_data) {
+DLL_EXPORT_SYM void rpdf_finalize_text_callback(struct rpdf *pdf, gpointer user_data, const gchar *text) {
 	struct rpdf_delayed_text *dt;
+	struct rpdf_page_info *page_info;
 
 	if (user_data == NULL)
 		return;
 
-	dt = g_hash_table_lookup(pdf->delayed_texts, user_data);
-	if (dt == NULL)
-		return;
+	dt = user_data;
+	page_info = pdf->page_info[dt->page_number];
 
-	rpdf_finalize_text_callback_common(pdf, dt);
+	HPDF_Page_SetFontAndSize(page_info->page, dt->font, dt->fontsize);
+	HPDF_Page_SetRGBFill(page_info->page, dt->r, dt->g, dt->b);
+	HPDF_Page_SetRGBStroke(page_info->page, dt->r, dt->g, dt->b);
+	rpdf_text_common(pdf, page_info->page, dt->x, dt->y, dt->angle, text);
 
-	g_hash_table_remove(pdf->delayed_texts, user_data);
+	g_free(dt);
 }
 
 DLL_EXPORT_SYM void rpdf_image(struct rpdf *pdf, gdouble x, gdouble y, gdouble width, gdouble height, gint image_type, gchar *file_name) {
@@ -520,6 +500,9 @@ DLL_EXPORT_SYM void rpdf_setrgbcolor(struct rpdf *pdf, gdouble r, gdouble g, gdo
 	struct rpdf_page_info *page_info = pdf->page_info[pdf->current_page];
 	HPDF_Page_SetRGBFill(page_info->page, r, g, b);
 	HPDF_Page_SetRGBStroke(page_info->page, r, g, b);
+	page_info->r = r;
+	page_info->g = g;
+	page_info->b = b;
 }
 
 DLL_EXPORT_SYM gdouble rpdf_text_width(struct rpdf *pdf, const gchar *text) {
@@ -596,7 +579,6 @@ DLL_EXPORT_SYM void rpdf_free(struct rpdf *pdf) {
 	HPDF_Free(pdf->pdf);
 
 	g_hash_table_destroy(pdf->fonts);
-	g_hash_table_destroy(pdf->delayed_texts);
 	g_hash_table_destroy(pdf->convs);
 
 	for (i = 0; i < pdf->page_count; i++)

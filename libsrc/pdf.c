@@ -95,6 +95,7 @@ struct _graph {
 struct _private {
 	struct rlib_rgb current_color;
 	struct rpdf *pdf;
+	GHashTable *delayed_data;
 	gchar text_on[MAX_PDF_PAGES];
 	gchar *buffer;
 	gint length;
@@ -150,8 +151,7 @@ static void pdf_print_text(rlib *r, gdouble left_origin, gdouble bottom_origin, 
 	rpdf_text(pdf, left_origin, bottom_origin, orientation, text);
 }
 
-static gchar *pdf_rpdf_callback(gchar *data, gint len, void *user_data) {
-	struct rlib_delayed_extra_data *delayed_data = user_data;
+static gchar *pdf_callback(struct rlib_delayed_extra_data *delayed_data) {
 	struct rlib_line_extra_data *extra_data = delayed_data->extra_data;
 	rlib *r = delayed_data->r;
 	gchar *buf = NULL, *buf2 = NULL;
@@ -162,26 +162,28 @@ static gchar *pdf_rpdf_callback(gchar *data, gint len, void *user_data) {
 	rlib_value_free(r, &extra_data->rval_code);
 	if (rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL) == NULL)
 		return NULL;
+
 	rlib_format_string(r, &buf, extra_data->report_field, &extra_data->rval_code);
 	rlib_align_text(r, &buf2, buf, extra_data->report_field->align, extra_data->report_field->width);
-	memcpy(data, buf2, len);
 	g_free(buf);
-	g_free(buf2);
-	data[len - 1] = 0;
-
 	rlib_free_delayed_extra_data(r, delayed_data);
-
-	return data;
+	return buf2;
 }
 
 static void pdf_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *delayed_data, gboolean backwards UNUSED, gint rval_type UNUSED) {
 	struct rpdf *pdf = OUTPUT_PRIVATE(r)->pdf;
-	rpdf_text_callback(pdf, delayed_data->left_origin, delayed_data->bottom_origin, 0, delayed_data->extra_data->width, pdf_rpdf_callback, delayed_data);
+	delayed_data->driver_private = rpdf_text_callback(pdf, delayed_data->left_origin, delayed_data->bottom_origin, 0.0, delayed_data->extra_data->width);
 }
 
-static void pdf_finalize_text_delayed(rlib *r, gpointer in_ptr, gboolean backwards UNUSED) {
+static void pdf_finalize_text_delayed(rlib *r, struct rlib_delayed_extra_data *delayed_data, gboolean backwards UNUSED) {
 	struct rpdf *pdf = OUTPUT_PRIVATE(r)->pdf;
-	rpdf_finalize_text_callback(pdf, in_ptr);
+	gpointer driver_private = delayed_data->driver_private;
+	gchar *text = pdf_callback(delayed_data);
+
+	if (text) {
+		rpdf_finalize_text_callback(pdf, driver_private, text);
+		g_free(text);
+	}
 }
 
 static void pdf_print_text_API(rlib *r, gdouble left_origin, gdouble bottom_origin, const gchar *text, gboolean backwards UNUSED, struct rlib_line_extra_data *extra_data UNUSED) {
@@ -322,7 +324,7 @@ static void pdf_start_rlib_report(rlib *r) {
 	if (compress != NULL) {
 		rpdf_set_compression(pdf, TRUE);
 	}
-	
+
 	OUTPUT_PRIVATE(r)->pdf = pdf;
 }
 
@@ -330,7 +332,6 @@ static void pdf_end_rlib_report(rlib *r UNUSED) {}
 
 static void pdf_finalize_private(rlib *r) {
 	guint length;
-	rpdf_finalize(OUTPUT_PRIVATE(r)->pdf);
 	g_free(OUTPUT_PRIVATE(r)->buffer);
 	OUTPUT_PRIVATE(r)->buffer = rpdf_get_buffer(OUTPUT_PRIVATE(r)->pdf, &length);
 	OUTPUT_PRIVATE(r)->length = length;

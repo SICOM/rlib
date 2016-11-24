@@ -26,6 +26,7 @@ struct rpdf_page_info {
 	HPDF_Page page;
 	HPDF_Font current_font;
 	gdouble font_size;
+	gdouble r, g, b;
 };
 
 struct rpdf_delayed_text {
@@ -35,9 +36,8 @@ struct rpdf_delayed_text {
 	gdouble x;
 	gdouble y;
 	gdouble angle;
+	gdouble r, g, b;
 	gint len;
-	CALLBACK;
-	gpointer user_data;
 };
 
 struct rpdf {
@@ -48,7 +48,6 @@ struct rpdf {
 	struct rpdf_page_info **page_info;
 
 	GHashTable *fonts;
-	GHashTable *delayed_texts;
 	GHashTable *convs;
 
 	gint use_compression;

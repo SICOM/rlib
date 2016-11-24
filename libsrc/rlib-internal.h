@@ -295,6 +295,7 @@ struct rlib_line_extra_data {
 struct rlib_delayed_extra_data {
 	void *r;
 	struct rlib_line_extra_data *extra_data;
+	gpointer driver_private;
 	gboolean backwards;
 	gdouble left_origin;
 	gdouble bottom_origin;
@@ -872,7 +873,7 @@ struct output_filter {
 	gdouble (*get_string_width)(rlib *, const char *);
 	void (*print_text)(rlib *, gdouble, gdouble, const char *, gboolean, struct rlib_line_extra_data *);
 	void (*print_text_delayed)(rlib *, struct rlib_delayed_extra_data *, gboolean, gint);
-	void (*finalize_text_delayed)(rlib *, gpointer, gboolean);
+	void (*finalize_text_delayed)(rlib *, struct rlib_delayed_extra_data *, gboolean);
 	void (*set_fg_color)(rlib *, gdouble, gdouble, gdouble);
 	void (*set_bg_color)(rlib *, gdouble, gdouble, gdouble);
 	void (*hr)(rlib *, gboolean, gdouble, gdouble, gdouble, gdouble, struct rlib_rgb *, gdouble, gdouble);

@@ -148,7 +148,7 @@ static void txt_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *dela
 		OUTPUT_PRIVATE(r)->top[current_page] = g_slist_prepend(OUTPUT_PRIVATE(r)->top[current_page], packet);
 }
 
-static void txt_finalize_text_delayed(rlib *r, gpointer in_ptr, gboolean backwards) {
+static void txt_finalize_text_delayed(rlib *r, struct rlib_delayed_extra_data *delayed_data, gboolean backwards) {
 	int pages, i;
 
 	pages = OUTPUT_PRIVATE(r)->pages;
@@ -162,7 +162,7 @@ static void txt_finalize_text_delayed(rlib *r, gpointer in_ptr, gboolean backwar
 
 		for (l = list; l; l = l->next) {
 			struct _packet *packet = l->data;
-			if (packet->type == DELAY && packet->data == in_ptr) {
+			if (packet->type == DELAY && packet->data == delayed_data) {
 				gchar *text = txt_callback(packet->data);
 				struct _packet *new_packet;
 

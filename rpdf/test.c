@@ -28,21 +28,8 @@
 #include <string.h>
 #include "rpdf.h"
 
-#define UNUSED __attribute__((unused))
-
-static gchar *callback_test(gchar *data, gint len UNUSED, gpointer user_data UNUSED) {
-	static gchar *str = "IT WORKED!";
-	sprintf(data, str);
-	return str;
-}
-
-static gchar *callback_test2(gchar *data, gint len UNUSED, gpointer user_data UNUSED) {
-	static gchar *str = "IT WORKED THE SECOND TIME!";
-	sprintf(data, str);
-	return str;
-}
-
 int main(void) {
+	gpointer delayed1, delayed2;
 	ssize_t	byteswritten;
 	size_t pos;
 	guint pdf_size;
@@ -54,10 +41,8 @@ int main(void) {
 /*	rpdf_text(pdf, 1.0, 10.0, 0.0, "FARK - BOB KRATZ LOVES BACON ))"); */
 	rpdf_set_font(pdf, "Times-Italic", RPDF_FONT_STYLE_REGULAR, "MacRomanEncoding", 20.0);
 	rpdf_text(pdf, 2.0, 9.0, 0.0, "WOOT");
-	/* This gets only executed at rpdf_finalize() */
-	rpdf_text_callback(pdf, 2.0, 9.5, 0.0, 50, callback_test, NULL);
-	/* We know the pointer we passed in, this is executed in rpdf_finalize_text_callback() */
-	rpdf_text_callback(pdf, 2.0, 10.0, 0.0, 50, callback_test2, GINT_TO_POINTER(1));
+	delayed1 = rpdf_text_callback(pdf, 2.0, 9.5, 0.0, 50);
+	delayed2 = rpdf_text_callback(pdf, 2.0, 10.0, 0.0, 50);
 	rpdf_set_font(pdf, "Courier", RPDF_FONT_STYLE_REGULAR, "MacRomanEncoding", 16.0);
 	rpdf_text(pdf, 3.0, 8.0, 0.0, "FARK");
 	rpdf_set_font(pdf, "Courier", RPDF_FONT_STYLE_REGULAR, "MacRomanEncoding", 20.0);
@@ -135,8 +120,8 @@ int main(void) {
 	}
 
 /*	rpdf_image(pdf, 1, 1, 100, 100, RPDF_IMAGE_JPEG, "logo.jpg"); */
-	rpdf_finalize_text_callback(pdf, GINT_TO_POINTER(1));
-	rpdf_finalize(pdf);
+	rpdf_finalize_text_callback(pdf, delayed2, "IT WORKED THE SECOND TIME!");
+	rpdf_finalize_text_callback(pdf, delayed1, "IT WORKED!");
 	pos = 0;
 	buf = rpdf_get_buffer(pdf, &pdf_size);
 	while (pos < pdf_size) {
