@@ -35,14 +35,16 @@ noinst_PROGRAMS = \
 	follower-breaks \
 	breaks breaks2 \
 	hyperinflation \
-	formatstring
+	formatstring \
+	hungary
 
 AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
 AM_LDFLAGS = $(top_builddir)/libsrc/libr.la
 
 noinst_SCRIPTS = \
 	graph.xml products.xml follower.xml follower-breaks.xml \
-	breaks.xml breaks2.xml hyperinflation.xml formatstring.xml
+	breaks.xml breaks2.xml hyperinflation.xml formatstring.xml \
+	hungary.xml
 
 graph.xml:
 	$(LN_S) ../php/graph.xml
@@ -67,5 +69,8 @@ hyperinflation.xml:
 
 formatstring.xml:
 	$(LN_S) ../php/formatstring.xml
+
+hungary.xml:
+	$(LN_S) ../php/hungary.xml
 
 CLEANFILES = $(noinst_SCRIPTS)

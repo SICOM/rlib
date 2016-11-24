@@ -42,8 +42,8 @@
 	rlib_add_report($rlib, "hungary.xml");
 	rlib_set_output_format_from_text($rlib, "pdf");
 	rlib_set_output_encoding($rlib, "ISO8859-2");
-//	rlib_set_output_encoding($rlib, "UTF-8");
-	
+	rlib_set_output_parameter($rlib, "pdf_fontname", "Liberation Mono");
+
 	rlib_execute($rlib);
 	header(rlib_get_content_type($rlib));
 	rlib_spool($rlib);

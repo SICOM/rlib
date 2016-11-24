@@ -98,6 +98,9 @@ src/examples/c/follower-breaks
 src/examples/c/follower-breaks.exe
 src/examples/c/follower.xml
 src/examples/c/follower-breaks.xml
+src/examples/c/hungary
+src/examples/c/hungary.exe
+src/examples/c/hungary.xml
 src/examples/c/hyperinflation
 src/examples/c/hyperinflation.exe
 src/examples/c/hyperinflation.xml
