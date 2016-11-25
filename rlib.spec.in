@@ -17,6 +17,8 @@ BuildRequires: gmp-devel, mpfr-devel
 BuildRequires: docbook-utils-pdf, texlive-ec
 # Runtime
 BuildRequires: libxml2-devel, glib2-devel, zlib-devel
+BuildRequires: gmp-devel, mpfr-devel
+BuildRequires: libharu-devel, fontconfig-devel
 # Bindings
 BuildRequires: perl-devel, php-devel, python-devel
 # Input datasources
