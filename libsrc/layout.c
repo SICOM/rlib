@@ -331,7 +331,7 @@ static gdouble rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part,
 						dd->delayed_data = delayed_data;
 						dd->backwards = backwards;
 
-						rb->delayed_data = g_slist_append(rb->delayed_data, dd);
+						rb->delayed_data = g_slist_prepend(rb->delayed_data, dd);
 						added++;
 					}
 
@@ -345,7 +345,7 @@ static gdouble rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part,
 							dd->delayed_data = delayed_data;
 							dd->backwards = backwards;
 
-							report->delayed_data = g_slist_append(report->delayed_data, dd);
+							report->delayed_data = g_slist_prepend(report->delayed_data, dd);
 							added++;
 						}
 					}
@@ -353,7 +353,7 @@ static gdouble rlib_layout_text_from_extra_data(rlib *r, struct rlib_part *part,
 					if (!added) {
 						struct rlib_break_delayed_data *dd = g_new0(struct rlib_break_delayed_data, 1);
 						dd->delayed_data = delayed_data;
-						part->delayed_data = g_slist_append(part->delayed_data, dd);
+						part->delayed_data = g_slist_prepend(part->delayed_data, dd);
 					}
 				}
 			} else {
