@@ -58,14 +58,21 @@ static void metadata_destroyer(gpointer data) {
 
 DLL_EXPORT_SYM rlib *rlib_init_with_environment(struct environment_filter *environment) {
 	rlib *r;
-	
+	char *env;
+
 	r = g_new0(rlib, 1);
 
 	if (environment == NULL)
 		rlib_new_c_environment(r);
 	else
 		ENVIRONMENT(r) = environment;
-	
+
+	env = getenv("RLIB_PROFILING");
+	r->profiling = !(env == NULL || *env == '\0');
+
+	env = getenv("RLIB_DEBUGGING");
+	r->debug = !(env == NULL || *env == '\0');
+
 	r->output_parameters = g_hash_table_new_full (g_str_hash, g_str_equal, string_destroyer, string_destroyer);
 	r->input_metadata = g_hash_table_new_full (g_str_hash, g_str_equal, string_destroyer, metadata_destroyer);
 	r->parameters = g_hash_table_new_full (g_str_hash, g_str_equal, string_destroyer, string_destroyer);
@@ -473,12 +480,6 @@ gchar *get_filename(rlib *r, const char *filename, gint report_index, gboolean r
 
 static gboolean rlib_execute_queries(rlib *r) {
 	gint i;
-	char *env;
-	gboolean profiling;
-
-	env = getenv("RLIB_PROFILING");
-	profiling = !(env == NULL || *env == '\0');
-
 	for (i = 0; i < r->queries_count; i++) {
 		r->results[i]->input = NULL;
 		r->results[i]->result = NULL;
@@ -493,7 +494,7 @@ static gboolean rlib_execute_queries(rlib *r) {
 			INPUT(r,i)->set_query_cache_size(INPUT(r,i), r->query_cache_size);
 		r->results[i]->result = INPUT(r,i)->new_result_from_query(INPUT(r,i), r->queries[i]);
 		clock_gettime(CLOCK_MONOTONIC, &ts2);
-		if (profiling) {
+		if (r->profiling) {
 			gchar *name = NULL;
 			int j;
 			long diff = (ts2.tv_sec - ts1.tv_sec) * 1000000 + (ts2.tv_nsec - ts1.tv_nsec) / 1000;
@@ -522,15 +523,10 @@ static gboolean rlib_execute_queries(rlib *r) {
 
 static gint rlib_parse_internal(rlib *r, gboolean allow_fail) {
 	gint i;
-	char *env;
-	gboolean profiling;
 	struct timespec ts1, ts2;
 
 	if (r->did_parse)
 		return 0;
-
-	env = getenv("RLIB_PROFILING");
-	profiling = !(env == NULL || *env == '\0');
 
 	clock_gettime(CLOCK_MONOTONIC, &ts1);
 
@@ -557,7 +553,7 @@ static gint rlib_parse_internal(rlib *r, gboolean allow_fail) {
 
 	clock_gettime(CLOCK_MONOTONIC, &ts2);
 
-	if (profiling) {
+	if (r->profiling) {
 		long diff = (ts2.tv_sec - ts1.tv_sec) * 1000000 + (ts2.tv_nsec - ts1.tv_nsec) / 1000;
 
 		r_warning(r, "rlib_parse: parsing the report took %ld microseconds\n", diff);
