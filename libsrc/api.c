@@ -59,6 +59,8 @@ static void metadata_destroyer(gpointer data) {
 
 DLL_EXPORT_SYM rlib *rlib_init_with_environment(struct environment_filter *environment) {
 	rlib *r;
+	char *env;
+
 	
 	r = g_new0(rlib, 1);
 
@@ -67,6 +69,12 @@ DLL_EXPORT_SYM rlib *rlib_init_with_environment(struct environment_filter *envir
 	else
 		ENVIRONMENT(r) = environment;
 	
+	env = getenv("RLIB_PROFILING");
+	r->profiling = !(env == NULL || *env == '\0');
+
+	env = getenv("RLIB_DEBUGGING");
+	r->debug = !(env == NULL || *env == '\0');
+
 	r->output_parameters = g_hash_table_new_full (g_str_hash, g_str_equal, string_destroyer, string_destroyer);
 	r->input_metadata = g_hash_table_new_full (g_str_hash, g_str_equal, string_destroyer, metadata_destroyer);
 	r->parameters = g_hash_table_new_full (g_str_hash, g_str_equal, string_destroyer, string_destroyer);
@@ -460,12 +468,6 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 
 static gint rlib_execute_queries(rlib *r) {
 	gint i;
-	char *env;
-	gint profiling;
-
-	env = getenv("RLIB_PROFILING");
-	profiling = !(env == NULL || *env == '\0');
-
 	for (i = 0; i < r->queries_count; i++) {
 		r->results[i]->input = NULL;
 		r->results[i]->result = NULL;
@@ -478,7 +480,7 @@ static gint rlib_execute_queries(rlib *r) {
 		clock_gettime(CLOCK_MONOTONIC, &ts1);
 		r->results[i]->result = INPUT(r,i)->new_result_from_query(INPUT(r,i), r->queries[i]);
 		clock_gettime(CLOCK_MONOTONIC, &ts2);
-		if (profiling) {
+		if (r->profiling) {
 			gchar *name = NULL;
 			int j;
 			long diff = (ts2.tv_sec - ts1.tv_sec) * 1000000 + (ts2.tv_nsec - ts1.tv_nsec) / 1000;
