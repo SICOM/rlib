@@ -98,8 +98,8 @@ struct _private {
 
 	gint pages;
 	gint page_number;
-	struct rlib_gd *rgd;
 	gint image_counter;
+	struct rlib_gd *rgd;
 	struct _graph graph;
 };
 
