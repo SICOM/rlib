@@ -178,7 +178,39 @@ implement_signal_call(rlib *rlib_ptr UNUSED,  void *user_data) {
 	return 1;
 }
 
-static gchar * rlib_python_resolve_memory_variable(gchar *name) {
+static GString *rlib_python_dump_memory_variables(void) {
+	GString *dump;
+	PyObject *moduledict = PyImport_GetModuleDict();
+	PyObject *mainmodule;
+	PyObject *dict;
+	PyObject *key, *value;
+	Py_ssize_t pos = 0;
+
+	dump = g_string_new("");
+
+	mainmodule = PyDict_GetItemString(moduledict, "__main__");
+	if (!PyModule_Check(mainmodule)) {
+		PyErr_SetString(RLIBError, "could not find main module");
+		return dump;
+	}
+
+	dict = PyModule_GetDict(mainmodule);
+
+	while (PyDict_Next(dict, &pos, &key, &value)) {
+		const char *k;
+		const char *v;
+		Py_ssize_t k_len, v_len;
+
+		if (PyObject_AsCharBuffer(key, &k, &k_len) != 0 || PyObject_AsCharBuffer(value, &v, &v_len) != 0)
+			continue;
+
+		g_string_append_printf(dump, "%s=%s\n", k, v);
+	}
+
+	return dump;
+}
+
+static gchar *rlib_python_resolve_memory_variable(gchar *name) {
 	PyObject	*moduledict = PyImport_GetModuleDict();
 	PyObject	*mainmodule;
 	PyObject	*dict;
@@ -224,6 +256,7 @@ static void rlib_python_free(rlib *r) {
 static struct environment_filter *rlib_python_new_environment() {
 	struct environment_filter *ef;
 	ef = g_malloc(sizeof(struct environment_filter));
+	ef->rlib_dump_memory_variables = rlib_python_dump_memory_variables;
 	ef->rlib_resolve_memory_variable = rlib_python_resolve_memory_variable;
 	ef->rlib_write_output = rlib_python_write_output;
 	ef->free = rlib_python_free;
