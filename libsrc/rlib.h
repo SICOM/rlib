@@ -66,6 +66,7 @@ typedef struct rlib rlib;
 /* Used by rlib_init_with_environment() */
 struct environment_filter {
 	gpointer private;
+	GString *(*rlib_dump_memory_variables)(void);
 	gchar *(*rlib_resolve_memory_variable)(char *);
 	gint (*rlib_write_output)(char *, gint);
 	void (*free)(rlib *);

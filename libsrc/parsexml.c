@@ -1323,6 +1323,9 @@ struct rlib_part *parse_part_file(rlib *r, gboolean allow_fail, gint report_inde
 		return NULL;
 	}
 
+	if (r->output_testcase)
+		xmlDocDumpFormatMemory(doc, &part->xml_dump, &part->xml_dump_len, 1);
+
 	xmlFreeDoc(doc);
 
 	return part;
