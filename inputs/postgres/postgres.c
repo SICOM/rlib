@@ -42,7 +42,6 @@ struct rlib_postgres_results {
 	gint row;
 	gint tot_fields;
 	gboolean isdone;
-	gint *fields;
 };
 
 struct _private {
@@ -180,11 +179,21 @@ static gint rlib_postgres_isdone(gpointer input_ptr UNUSED, gpointer result_ptr)
 	return result->isdone;
 }
 
-static gchar * rlib_postgres_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
+static gchar *rlib_postgres_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_postgres_results *results = result_ptr;
 	gint field = GPOINTER_TO_INT(field_ptr);
 	field -= 1;
 	return (results->row < 0 ? "" : PQgetvalue(results->result, results->row, field));
+}
+
+static gchar *rlib_postgres_get_field_name(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
+	struct rlib_postgres_results *result = result_ptr;
+	gint field = GPOINTER_TO_INT(field_ptr) - 1;
+
+	if (result == NULL)
+		return NULL;
+
+	return PQfname(result->result, field);
 }
 
 static gpointer rlib_postgres_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) {
@@ -192,12 +201,12 @@ static gpointer rlib_postgres_resolve_field_pointer(gpointer input_ptr UNUSED, g
 	gint i;
 
 	if (result == NULL)
-		return "";
+		return NULL;
 
 	for (i = 0; i < result->tot_fields; i++)
 		if (!strcmp(PQfname(result->result, i), name))
-			return GINT_TO_POINTER(result->fields[i]);
-	return "";
+			return GINT_TO_POINTER(i + 1);
+	return NULL;
 }
 
 static gpointer postgres_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
@@ -205,7 +214,6 @@ static gpointer postgres_new_result_from_query(gpointer input_ptr, gpointer quer
 	struct rlib_query *query = query_ptr;
 	struct rlib_postgres_results *results;
 	PGresult *result;
-	guint count, i;
 
 	if (input_ptr == NULL)
 		return NULL;
@@ -226,11 +234,7 @@ static gpointer postgres_new_result_from_query(gpointer input_ptr, gpointer quer
 
 	results->result = result;
 
-	count = PQnfields(result);
-	results->fields = g_malloc(sizeof(int) * count);
-	for (i = 0; i < count; i++)
-		results->fields[i] = i + 1;
-	results->tot_fields = count;
+	results->tot_fields = PQnfields(result);
 
 	return results;
 }
@@ -260,7 +264,6 @@ static void rlib_postgres_free_result(gpointer input_ptr, gpointer result_ptr) {
 		PQclear(result);
 		g_string_free(q, TRUE);
 
-		g_free(results->fields);
 		g_string_free(results->cursor_name, TRUE);
 		g_string_free(results->fetchstmt, TRUE);
 		g_free(results);
@@ -306,6 +309,7 @@ DLL_EXPORT_SYM gpointer new_input_filter(rlib *r) {
 	input->next = rlib_postgres_next;
 	input->isdone = rlib_postgres_isdone;
 	input->new_result_from_query = postgres_new_result_from_query;
+	input->get_field_name = rlib_postgres_get_field_name;
 	input->get_field_value_as_string = rlib_postgres_get_field_value_as_string;
 	input->get_error = rlib_postgres_get_error;
 

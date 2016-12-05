@@ -161,6 +161,22 @@ static gpointer rlib_xml_resolve_field_pointer(gpointer input_ptr UNUSED, gpoint
 	return NULL;
 }
 
+static gchar *rlib_xml_get_field_name(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
+	struct rlib_xml_results *results = result_ptr;
+	xmlNodePtr field;
+	gint i, fieldnum = GPOINTER_TO_INT(field_ptr);
+
+	if (results == NULL)
+		return NULL;
+
+	for (i = 1, field = results->first_field; field != NULL; field = field->next, i++)
+		if (xmlStrcmp(field->name, (const xmlChar *) "field") == 0)
+			if (fieldnum == i)
+				return (gchar *)field->xmlChildrenNode->content;
+
+	return NULL;
+}
+
 static void *xml_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	struct input_filter *input = input_ptr;
 	struct rlib_query *query = query_ptr;
@@ -292,6 +308,7 @@ gpointer rlib_xml_new_input_filter(rlib *r) {
 	input->isdone = rlib_xml_isdone;
 	input->get_error = rlib_xml_get_error;
 	input->new_result_from_query = xml_new_result_from_query;
+	input->get_field_name = rlib_xml_get_field_name;
 	input->get_field_value_as_string = rlib_xml_get_field_value_as_string;
 	input->resolve_field_pointer = rlib_xml_resolve_field_pointer;
 	input->free = rlib_xml_free_input_filter;

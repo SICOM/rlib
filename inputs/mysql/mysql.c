@@ -177,24 +177,10 @@ static gboolean rlib_mysql_isdone(gpointer input_ptr UNUSED, gpointer result_ptr
 		return TRUE;
 }
 
-static gchar *rlib_mysql_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
-	struct rlib_mysql_results *result = result_ptr;
-	gint field = GPOINTER_TO_INT(field_ptr);
-
-	if (result_ptr == NULL)
-		return (gchar *)"";
-
-	field -= 1;
-	if (result->this_row == NULL)
-		return (gchar *)"";
-
-	return result->this_row[field];
-}
-
-static gpointer rlib_mysql_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) {
+static gchar *rlib_mysql_get_field_name(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_mysql_results *result = result_ptr;
 	struct rlib_query *query;
-	gint x = 0;
+	gint x, fieldnum = GPOINTER_TO_INT(field_ptr) - 1;
 	MYSQL_FIELD *field;
 
 	if (!result)
@@ -204,11 +190,46 @@ static gpointer rlib_mysql_resolve_field_pointer(gpointer input_ptr UNUSED, gpoi
 
 	mysql_field_seek(QUERY_PRIVATE(query)->result, 0);
 
+	x = 0;
 	while ((field = mysql_fetch_field(QUERY_PRIVATE(query)->result))) {
+		if (x == fieldnum)
+			return field->name;
 		x++;
-		if (!strcmp(field->name, name)) {
-			return GINT_TO_POINTER(x);
-		}
+	}
+	return NULL;
+}
+
+static gchar *rlib_mysql_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
+	struct rlib_mysql_results *result = result_ptr;
+	gint field = GPOINTER_TO_INT(field_ptr) - 1;
+
+	if (result_ptr == NULL)
+		return (gchar *)"";
+
+	if (result->this_row == NULL)
+		return (gchar *)"";
+
+	return result->this_row[field];
+}
+
+static gpointer rlib_mysql_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) {
+	struct rlib_mysql_results *result = result_ptr;
+	struct rlib_query *query;
+	gint x;
+	MYSQL_FIELD *field;
+
+	if (!result)
+		return NULL;
+
+	query = result->query;
+
+	mysql_field_seek(QUERY_PRIVATE(query)->result, 0);
+
+	x = 0;
+	while ((field = mysql_fetch_field(QUERY_PRIVATE(query)->result))) {
+		if (!strcmp(field->name, name))
+			return GINT_TO_POINTER(x + 1);
+		x++;
 	}
 	return NULL;
 }
@@ -290,6 +311,7 @@ DLL_EXPORT_SYM gpointer new_input_filter(rlib *r) {
 	input->isdone = rlib_mysql_isdone;
 	input->get_error = rlib_mysql_get_error;
 	input->new_result_from_query = mysql_new_result_from_query;
+	input->get_field_name = rlib_mysql_get_field_name;
 	input->get_field_value_as_string = rlib_mysql_get_field_value_as_string;
 
 	input->resolve_field_pointer = rlib_mysql_resolve_field_pointer;

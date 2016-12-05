@@ -45,6 +45,7 @@ struct input_filter {
 	gboolean (*next)(gpointer, gpointer);
 	gboolean (*isdone)(gpointer, gpointer);
 	const gchar * (*get_error)(gpointer);
+	gchar *(*get_field_name)(gpointer, gpointer, gpointer);
 	gchar *(*get_field_value_as_string)(gpointer, gpointer, gpointer);
 	gpointer (*resolve_field_pointer)(gpointer, gpointer, gchar *);
 	void (*free_result)(gpointer, gpointer);

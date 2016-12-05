@@ -862,9 +862,11 @@ struct rlib {
 
 	/* For creating a test case */
 	gboolean output_testcase;
+	gchar *testcase_dir;
 	GString *testcase;
 	GString **testcase_datasources;
 	GString *testcase_code;
+	GString *testcase_code2;
 };
 
 #define INPUT(r, i) (r->results[i]->input)

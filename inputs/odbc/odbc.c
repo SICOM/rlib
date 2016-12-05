@@ -213,6 +213,16 @@ static gpointer rlib_odbc_resolve_field_pointer(gpointer input_ptr UNUSED, gpoin
 	return NULL;
 }
 
+static gchar *rlib_odbc_get_field_name(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
+	struct rlib_odbc_results *results = result_ptr;
+	gint field = GPOINTER_TO_INT(field_ptr) - 1;
+
+	if (result_ptr == NULL)
+		return NULL;
+
+	return results->fields[field];
+}
+
 gpointer odbc_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	struct rlib_odbc_results *results;
 	struct rlib_query *query = query_ptr;
@@ -344,6 +354,7 @@ DLL_EXPORT_SYM gpointer new_input_filter(rlib *r) {
 	input->next = rlib_odbc_next;
 	input->isdone = rlib_odbc_isdone;
 	input->new_result_from_query = odbc_new_result_from_query;
+	input->get_field_name = rlib_odbc_get_field_name;
 	input->get_field_value_as_string = rlib_odbc_get_field_value_as_string;
 	input->get_error = rlib_odbc_get_error;
 

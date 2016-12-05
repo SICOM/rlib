@@ -129,6 +129,21 @@ static gpointer rlib_csv_resolve_field_pointer(gpointer input_ptr UNUSED, gpoint
 	return NULL;
 }
 
+static gchar *rlib_csv_get_field_name(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
+	struct rlib_csv_results *results = result_ptr;
+	gint i, field = GPOINTER_TO_INT(field_ptr);
+	GSList *data;
+
+	if (results == NULL || results->header == NULL)
+		return NULL;
+
+	for (i = 1, data = results->header; data != NULL; data = data->next, i++)
+		if (i == field)
+			return data->data;
+
+	return NULL;
+}
+
 static gint rlib_csv_num_fields(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_csv_results *results = result_ptr;
 
@@ -266,10 +281,10 @@ gpointer rlib_csv_new_input_filter(rlib *r) {
 	input->isdone = rlib_csv_isdone;
 	input->get_error = rlib_csv_get_error;
 	input->new_result_from_query = csv_new_result_from_query;
+	input->get_field_name = rlib_csv_get_field_name;
 	input->get_field_value_as_string = rlib_csv_get_field_value_as_string;
 	input->resolve_field_pointer = rlib_csv_resolve_field_pointer;
 	input->free = rlib_csv_free_input_filter;
 	input->free_result = rlib_csv_rlib_free_result;
 	return input;
 }
- 

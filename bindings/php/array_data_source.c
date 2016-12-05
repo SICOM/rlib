@@ -116,6 +116,16 @@ static gpointer rlib_php_array_resolve_field_pointer(gpointer input_ptr UNUSED, 
 	return NULL;
 }
 
+static gchar *rlib_php_array_get_field_name(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
+	struct rlib_php_array_results *result = result_ptr;
+	int field = GPOINTER_TO_INT(field_ptr) - 1;
+
+	if (result == NULL)
+		return NULL;
+
+	return result->data[field];
+}
+
 static void *php_array_new_result_from_query(gpointer input_ptr UNUSED, gpointer query_ptr) {
 	struct rlib_query *query = query_ptr;
 	struct rlib_php_array_results *result = emalloc(sizeof(struct rlib_php_array_results));
@@ -260,6 +270,7 @@ static gpointer rlib_php_array_new_input_filter() {
 	input->get_error = rlib_php_array_get_error;
 	input->isdone = rlib_php_array_isdone;
 	input->new_result_from_query = php_array_new_result_from_query;
+	input->get_field_name = rlib_php_array_get_field_name;
 	input->get_field_value_as_string = rlib_php_array_get_field_value_as_string;
 
 	input->resolve_field_pointer = rlib_php_array_resolve_field_pointer;

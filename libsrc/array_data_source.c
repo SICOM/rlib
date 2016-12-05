@@ -90,6 +90,13 @@ static gboolean rlib_array_isdone(gpointer input_ptr UNUSED, gpointer result_ptr
 	return result->isdone;
 }
 
+static gchar *rlib_array_get_field_name(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
+	struct rlib_array_results *result = result_ptr;
+	int which_field = GPOINTER_TO_INT(field_ptr) - 1;
+
+	return result->data[which_field];
+}
+
 static gchar *rlib_array_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_array_results *result = result_ptr;
 	int which_field = GPOINTER_TO_INT(field_ptr) - 1;
@@ -171,6 +178,7 @@ static gpointer rlib_array_new_input_filter(rlib *r) {
 	input->get_error = rlib_array_get_error;
 	input->isdone = rlib_array_isdone;
 	input->new_result_from_query = rlib_array_new_result_from_query;
+	input->get_field_name = rlib_array_get_field_name;
 	input->get_field_value_as_string = rlib_array_get_field_value_as_string;
 
 	input->resolve_field_pointer = rlib_array_resolve_field_pointer;
