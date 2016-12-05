@@ -627,6 +627,9 @@ DLL_EXPORT_SYM gint rlib_parse(rlib *r) {
 	return rlib_parse_internal(r, FALSE);
 }
 
+G_LOCK_DEFINE_STATIC(testcase_lock);
+static int testcase_count = 0;
+
 DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 	struct timespec ts1, ts2;
 
@@ -704,13 +707,18 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 		if (r->output_testcase) {
 			GString *filename;
 			FILE *tc_file;
-			int i;
+			int i, tc_num;
+
+			G_LOCK(testcase_lock);
+			tc_num = testcase_count;
+			testcase_count++;
+			G_UNLOCK(testcase_lock);
 
 			filename = g_string_new(NULL);
 			if (r->testcase_dir)
-				g_string_printf(filename, "%s/testcase-%d.c", r->testcase_dir, getpid());
+				g_string_printf(filename, "%s/testcase-%d-%d.c", r->testcase_dir, getpid(), tc_num);
 			else
-				g_string_printf(filename, "testcase-%d.c", getpid());
+				g_string_printf(filename, "testcase-%d-%d.c", getpid(), tc_num);
 
 			tc_file = fopen(filename->str, "w+");
 			if (tc_file) {
@@ -801,9 +809,9 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 			}
 
 			if (r->testcase_dir)
-				g_string_printf(filename, "%s/testcase-%d.test", r->testcase_dir, getpid());
+				g_string_printf(filename, "%s/testcase-%d-%d.test", r->testcase_dir, getpid(), tc_num);
 			else
-				g_string_printf(filename, "testcase-%d.test", getpid());
+				g_string_printf(filename, "testcase-%d-%d.test", getpid(), tc_num);
 
 			tc_file = fopen(filename->str, "w+");
 			if (tc_file) {
