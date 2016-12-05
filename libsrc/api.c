@@ -632,6 +632,7 @@ static int testcase_count = 0;
 
 DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 	struct timespec ts1, ts2;
+	int tc_num = 0;
 
 	if (!r->did_parse) {
 		gint parse = rlib_parse_internal(r, TRUE);
@@ -644,6 +645,11 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 		int l = 0;
 		int i;
 
+		G_LOCK(testcase_lock);
+		tc_num = testcase_count;
+		testcase_count++;
+		G_UNLOCK(testcase_lock);
+
 		/* Worst case, every character must be escaped */
 		for (i = 0; i < r->parts_count; i++)
 			l += r->parts[i]->xml_dump_len * 2;
@@ -651,7 +657,7 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 		r->testcase = g_string_sized_new(l);
 		g_string_printf(r->testcase, "/*\n * Automatic test case created by RLIB %s\n", rlib_version());
 		g_string_append(r->testcase, " * Compile it with:\n");
-		g_string_append_printf(r->testcase, " * gcc -Wall `pkg-config --cflags --libs rlib glib-2.0` -o testcase-%d testcase-%d.c\n */\n\n", getpid(), getpid());
+		g_string_append_printf(r->testcase, " * gcc -Wall `pkg-config --cflags --libs rlib glib-2.0` -o testcase-%d-%d testcase-%d-%d.c\n */\n\n", getpid(), tc_num, getpid(), tc_num);
 		g_string_append(r->testcase, "#include <stdio.h>\n");
 		g_string_append(r->testcase, "#include <rlib.h>\n\n");
 
@@ -707,12 +713,7 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 		if (r->output_testcase) {
 			GString *filename;
 			FILE *tc_file;
-			int i, tc_num;
-
-			G_LOCK(testcase_lock);
-			tc_num = testcase_count;
-			testcase_count++;
-			G_UNLOCK(testcase_lock);
+			int i;
 
 			filename = g_string_new(NULL);
 			if (r->testcase_dir)
