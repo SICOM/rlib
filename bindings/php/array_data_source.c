@@ -25,6 +25,7 @@
 #include <string.h>
 #include <glib.h>
 #include <php.h>
+#include <Zend/zend.h>
 
 #include "rlib.h"
 #include "rlib_input.h"

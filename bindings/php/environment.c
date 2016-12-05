@@ -91,6 +91,10 @@ static char * rlib_php_resolve_memory_variable(char *name) {
 
 	memset(dstr, 0, 1024);
 
+#if PHP_MAJOR_VERSION >= 7
+	if (Z_TYPE_P(result) == IS_INDIRECT)
+		result = Z_INDIRECT_P(result);
+#endif
 	if (Z_TYPE_P(result) == IS_STRING)
 		data_result = Z_STRVAL_P(result);
 	else if (Z_TYPE_P(result) == IS_LONG) {
