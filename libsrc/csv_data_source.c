@@ -200,52 +200,61 @@ static gboolean parse_line(gchar **ptr, GSList **all_items) {
 	return eof;
 }
 
-void * csv_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
+void *csv_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	struct rlib_csv_results *results = NULL;
 	struct input_filter *input = input_ptr;
 	struct rlib_query *query = query_ptr;
+	struct stat st;
 	gchar *file;
 	gint fd;
 	gint size;
 	gchar *contents;
+	gchar *ptr;
 	GSList *line_items;
 	gint row = 0;
 
 	INPUT_PRIVATE(input)->error = "";
 
 	file = get_filename(input->r, query->sql, -1, FALSE, FALSE);
-	fd = open(file, O_RDONLY, 6);
-	g_free(file);
-	if(fd > 0) {
-		size = lseek(fd, 0L, SEEK_END);
-		lseek(fd, 0L, SEEK_SET);
-		contents = g_malloc(size+1);
-		contents[size] = 0;
-		if(read(fd, contents, size) == size) {
-			gchar *ptr;
-			results = g_new0(struct rlib_csv_results, 1);
-			results->isdone = FALSE;
-			results->contents = contents;
-			ptr = contents;
-			while(!parse_line(&ptr, &line_items)) {
-				if(row == 0)
-					results->header = line_items;
-				else
-					results->detail = g_list_append(results->detail, line_items);
-				row++;			
-			}
-			results->navigator = NULL;
-		} else {
-			INPUT_PRIVATE(input)->error = "Error Reading File";
-			g_free(contents);
-		}
-		close(fd);
-	} else {
+	if (stat(file, &st) != 0) {
 		INPUT_PRIVATE(input)->error = "Error Opening File";
+		return NULL;
 	}
 
+	size = st.st_size;
+
+	fd = open(file, O_RDONLY, 6);
+	g_free(file);
+	if (fd < 0) {
+		INPUT_PRIVATE(input)->error = "Error Opening File";
+		return NULL;
+	}
+
+	contents = g_malloc(st.st_size + 1);
+	contents[size] = 0;
+	if (read(fd, contents, size) != size) {
+		g_free(contents);
+		INPUT_PRIVATE(input)->error = "Error Reading File";
+		return NULL;
+	}
+
+	results = g_new0(struct rlib_csv_results, 1);
+	results->isdone = FALSE;
+	results->contents = contents;
+	ptr = contents;
+	while (!parse_line(&ptr, &line_items)) {
+		if (row == 0)
+			results->header = line_items;
+		else
+			results->detail = g_list_append(results->detail, line_items);
+		row++;
+	}
+
+	results->navigator = NULL;
 	results->rows = row;
 	results->cols = g_slist_length(results->header);
+
+	close(fd);
 
 	return results;
 }
