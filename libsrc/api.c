@@ -79,6 +79,9 @@ DLL_EXPORT_SYM rlib *rlib_init_with_environment(struct environment_filter *envir
 	r->input_metadata = g_hash_table_new_full (g_str_hash, g_str_equal, string_destroyer, metadata_destroyer);
 	r->parameters = g_hash_table_new_full (g_str_hash, g_str_equal, string_destroyer, string_destroyer);
 
+	r->headers[2] = "";
+	r->header_buf = g_string_sized_new(256);
+
 	r->radix_character = '.';
 	
 #if !DISABLE_UTF8
@@ -613,38 +616,59 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 }
 
 DLL_EXPORT_SYM gchar *rlib_get_content_type_as_text(rlib *r) {
-	static __thread char buf[256];
-
-	if (r->did_execute == TRUE) {
-		if (r->format == RLIB_CONTENT_TYPE_PDF) {
-			sprintf(buf, RLIB_WEB_CONTENT_TYPE_PDF, OUTPUT(r)->get_output_length(r));
-			return buf;
-		}
-		if (r->format == RLIB_CONTENT_TYPE_CSV) {
-			gchar *filename = g_hash_table_lookup(r->output_parameters, "csv_file_name");
-			if (filename == NULL)
-				return (gchar *)RLIB_WEB_CONTENT_TYPE_CSV;
-			else {
-				sprintf(buf, RLIB_WEB_CONTENT_TYPE_CSV_FORMATTED, filename);
-				return buf;
-			}
-		} else {
-#if DISABLE_UTF8		
-			const char *charset = "ISO-8859-1";
+	gchar *filename;
+#if DISABLE_UTF8        
+	const char *charset = "ISO-8859-1";
 #else
-			const char *charset = r->output_encoder_name != NULL ? r->output_encoder_name: "UTF-8";
+	const char *charset = (r->output_encoder_name ? r->output_encoder_name : "UTF-8");
 #endif
-			if(r->format == RLIB_CONTENT_TYPE_HTML) {
-				g_snprintf(buf, sizeof(buf), RLIB_WEB_CONTENT_TYPE_HTML, charset);
-				return buf;
-			} else {
-				g_snprintf(buf, sizeof(buf), RLIB_WEB_CONTENT_TYPE_TEXT, charset);
-				return buf;
+	int header_idx;
+
+	if (r->header_pos == 0) {
+		if (!r->did_execute) {
+			r_error(r,"Content type code unknown");
+			r->headers[0] = "Content-Type: application/octet-stream";
+			r->headers[1] = "";
+		} else {
+			switch (r->format) {
+			case RLIB_FORMAT_PDF:
+				r->headers[0] = RLIB_WEB_CONTENT_TYPE_PDF;
+				g_string_printf(r->header_buf, RLIB_WEB_CONTENT_TYPE_PDF_LEN, OUTPUT(r)->get_output_length(r));
+				r->headers[1] = r->header_buf->str;
+				break;
+			case RLIB_FORMAT_CSV:
+				r->headers[0] = RLIB_WEB_CONTENT_TYPE_CSV;
+				filename = g_hash_table_lookup(r->output_parameters, "csv_file_name");
+				if (filename == NULL)
+					r->headers[1] = RLIB_WEB_CONTENT_TYPE_CSV_DFLT;
+				else {
+					g_string_printf(r->header_buf, RLIB_WEB_CONTENT_TYPE_CSV_FILE, filename);
+					r->headers[1] = r->header_buf->str;
+				}
+				break;
+			case RLIB_FORMAT_HTML:
+				g_string_printf(r->header_buf, RLIB_WEB_CONTENT_TYPE_HTML, charset);
+				r->headers[0] = r->header_buf->str;
+				r->headers[1] = "";
+				break;
+			case RLIB_FORMAT_TXT:
+				g_string_printf(r->header_buf, RLIB_WEB_CONTENT_TYPE_TEXT, charset);
+				r->headers[0] = r->header_buf->str;
+				r->headers[1] = "";
+				break;
+			case RLIB_FORMAT_XML:
+				g_string_printf(r->header_buf, RLIB_WEB_CONTENT_TYPE_XML, charset);
+				r->headers[0] = r->header_buf->str;
+				r->headers[1] = "";
+				break;
 			}
 		}
 	}
-	r_error(r,"Content type code unknown");
-	return (gchar *)"Content-Type: application/octet-stream";
+
+	header_idx = r->header_pos++;
+	if (r->header_pos > HEADERS || r->headers[header_idx][0] == '\0')
+		r->header_pos = 0;
+	return r->headers[header_idx];
 }
 
 DLL_EXPORT_SYM gint rlib_spool(rlib *r) {
@@ -656,8 +680,12 @@ DLL_EXPORT_SYM gint rlib_spool(rlib *r) {
 }
 
 DLL_EXPORT_SYM gint rlib_set_output_format(rlib *r, int format) {
-	r->format = format;
-	return 0;
+	if (format >= RLIB_FORMAT_PDF && format <= RLIB_FORMAT_XML) {
+		r->header_pos = 0;
+		r->format = format;
+		return 0;
+	} else
+		return -1;
 }
 
 DLL_EXPORT_SYM gint rlib_add_resultset_follower_n_to_1(rlib *r, gchar *leader, gchar *leader_field, gchar *follower, gchar *follower_field) {

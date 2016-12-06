@@ -680,6 +680,7 @@ DLL_EXPORT_SYM gint rlib_free(rlib *r) {
 	rlib_free_follower(r);
 	g_free(r->special_locale);
 	g_free(r->current_locale);
+	g_string_free(r->header_buf, TRUE);
 
 	g_free(r);
 	return 0;
