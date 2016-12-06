@@ -22,23 +22,7 @@
 #include <unistd.h>
 #include <glib.h>
 
-#ifndef _GNU_SOURCE
-extern char **environ;
-#endif
-
 #include "rlib-internal.h"
-
-static GString *rlib_c_dump_memory_variables() {
-	GString *dump;
-	int pos;
-
-	dump = g_string_new("");
-
-	for (pos = 0; environ[pos]; pos++)
-		g_string_append_printf(dump, "%s\n", environ[pos]);
-
-	return dump;
-}
 
 static gchar * rlib_c_resolve_memory_variable(gchar *name) {
 	return (gchar *)g_getenv(name);
@@ -55,7 +39,6 @@ void rlib_c_free(rlib *r) {
 void rlib_new_c_environment(rlib *r) {
 	ENVIRONMENT(r) = g_malloc0(sizeof(struct environment_filter));
 
-	ENVIRONMENT(r)->rlib_dump_memory_variables = rlib_c_dump_memory_variables;
 	ENVIRONMENT(r)->rlib_resolve_memory_variable = rlib_c_resolve_memory_variable;
 	ENVIRONMENT(r)->rlib_write_output = rlib_c_write_output;
 	ENVIRONMENT(r)->free = rlib_c_free;

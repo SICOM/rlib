@@ -68,19 +68,12 @@ DLL_EXPORT_SYM rlib *rlib_init_with_environment(struct environment_filter *envir
 		rlib_new_c_environment(r);
 	else
 		ENVIRONMENT(r) = environment;
-
-	env = ENVIRONMENT(r)->rlib_resolve_memory_variable("RLIB_PROFILING");
+	
+	env = getenv("RLIB_PROFILING");
 	r->profiling = !(env == NULL || *env == '\0');
 
-	env = ENVIRONMENT(r)->rlib_resolve_memory_variable("RLIB_DEBUGGING");
+	env = getenv("RLIB_DEBUGGING");
 	r->debug = !(env == NULL || *env == '\0');
-
-	env = ENVIRONMENT(r)->rlib_resolve_memory_variable("RLIB_CREATE_TEST_CASE");
-	r->output_testcase = !(env == NULL || *env == '\0');
-
-	r->testcase = g_string_new("/* Automatic test case created by RLIB %s */\n\n");
-	r->testcase_code = g_string_new("int main(int argv, char **argv) {\n");
-	g_string_append(r->testcase_code, "\trlib *r;\n\n\tr = rlib_init()");
 
 	r->output_parameters = g_hash_table_new_full (g_str_hash, g_str_equal, string_destroyer, string_destroyer);
 	r->input_metadata = g_hash_table_new_full (g_str_hash, g_str_equal, string_destroyer, metadata_destroyer);

@@ -507,10 +507,6 @@ struct rlib_part {
 	gint landscape;
 	gint suppress_page_header_first_page;
 	gint report_index;
-
-	/* For creating a test case */
-	xmlChar *xml_dump;
-	int xml_dump_len;
 };
 
 struct rlib_graph_x_minor_tick {
@@ -812,12 +808,6 @@ struct rlib {
 
 	gboolean profiling;
 	gboolean debug;
-
-	/* For creating a test case */
-	gboolean output_testcase;
-	GString *testcase;
-	GString **testcase_datasources;
-	GString *testcase_code;
 };
 
 #define INPUT(r, i) (r->results[i]->input)
