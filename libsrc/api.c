@@ -857,17 +857,16 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 }
 
 DLL_EXPORT_SYM gchar *rlib_get_content_type_as_text(rlib *r) {
-	static char buf[256];
-	gchar *filename = g_hash_table_lookup(r->output_parameters, "csv_file_name");
-	
-	if(r->did_execute == TRUE) {
-		if(r->format == RLIB_CONTENT_TYPE_PDF) {
-			sprintf(buf, "Content-Type: application/pdf\nContent-Length: %ld%c", OUTPUT(r)->get_output_length(r), 10);
+	static __thread char buf[256];
+
+	if (r->did_execute == TRUE) {
+		if (r->format == RLIB_CONTENT_TYPE_PDF) {
+			sprintf(buf, RLIB_WEB_CONTENT_TYPE_PDF, OUTPUT(r)->get_output_length(r));
 			return buf;
 		}
-		if(r->format == RLIB_CONTENT_TYPE_CSV) {
-			
-			if(filename == NULL)
+		if (r->format == RLIB_CONTENT_TYPE_CSV) {
+			gchar *filename = g_hash_table_lookup(r->output_parameters, "csv_file_name");
+			if (filename == NULL)
 				return (gchar *)RLIB_WEB_CONTENT_TYPE_CSV;
 			else {
 				sprintf(buf, RLIB_WEB_CONTENT_TYPE_CSV_FORMATTED, filename);
@@ -885,7 +884,7 @@ DLL_EXPORT_SYM gchar *rlib_get_content_type_as_text(rlib *r) {
 		}
 	}
 	r_error(r,"Content type code unknown");
-	return (gchar *)"UNKNOWN";
+	return (gchar *)"Content-Type: application/octet-stream";
 }
 
 DLL_EXPORT_SYM gint rlib_spool(rlib *r) {
