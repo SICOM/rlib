@@ -425,7 +425,7 @@ void make_more_space_if_necessary(gchar **str, gint *size, gint *total_size, gin
  * en_GB, utf8 and euro. Then it recombines the parts using a "utf8" encoding.
  */
 gchar *make_utf8_locale(const gchar *encoding) {
-	static char result[256];
+	static __thread char result[256];
 	gchar *locale, *codeset = NULL, *extra = NULL;
 	gchar buf[256];
 	gchar *t;

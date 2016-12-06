@@ -38,12 +38,6 @@
 #define RLIB_CONTENT_TYPE_TXT		3
 #define RLIB_CONTENT_TYPE_CSV		4
 
-#define RLIB_WEB_CONTENT_TYPE_HTML "Content-Type: text/html; charset=%s\n"
-#define RLIB_WEB_CONTENT_TYPE_TEXT "Content-Type: text/plain; charset=%s\n"
-#define RLIB_WEB_CONTENT_TYPE_PDF "Content-Type: application/pdf\n"
-#define RLIB_WEB_CONTENT_TYPE_CSV "Content-type: application/octet-stream\nContent-Disposition: attachment; filename=report.csv\n"
-#define RLIB_WEB_CONTENT_TYPE_CSV_FORMATTED "Content-type: application/octet-stream\nContent-Disposition: attachment; filename=%s\n"
-
 #define RLIB_FORMAT_PDF 	1
 #define RLIB_FORMAT_HTML	2
 #define RLIB_FORMAT_TXT 	3
