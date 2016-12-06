@@ -730,6 +730,7 @@ DLL_EXPORT_SYM void rlib_free(rlib *r) {
 	g_hash_table_destroy(r->parameters);
 	g_free(r->special_locale);
 	g_free(r->current_locale);
+	g_string_free(r->header_buf, TRUE);
 
 	g_free(r);
 }

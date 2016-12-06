@@ -1248,19 +1248,19 @@ initrlib(void) {
 	PyDict_SetItemString(d, "FORMAT_CSV", i);
 	Py_DECREF(i);
 
-	i = PyInt_FromLong(RLIB_CONTENT_TYPE_PDF);
+	i = PyInt_FromLong(RLIB_FORMAT_PDF);
 	PyDict_SetItemString(d, "CONTENT_TYPE_PDF", i);
 	Py_DECREF(i);
 
-	i = PyInt_FromLong(RLIB_CONTENT_TYPE_HTML);
+	i = PyInt_FromLong(RLIB_FORMAT_HTML);
 	PyDict_SetItemString(d, "CONTENT_TYPE_HTML", i);
 	Py_DECREF(i);
 
-	i = PyInt_FromLong(RLIB_CONTENT_TYPE_TXT);
+	i = PyInt_FromLong(RLIB_FORMAT_TXT);
 	PyDict_SetItemString(d, "CONTENT_TYPE_TXT", i);
 	Py_DECREF(i);
 
-	i = PyInt_FromLong(RLIB_CONTENT_TYPE_CSV);
+	i = PyInt_FromLong(RLIB_FORMAT_CSV);
 	PyDict_SetItemString(d, "CONTENT_TYPE_CSV", i);
 	Py_DECREF(i);
 
