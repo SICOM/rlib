@@ -277,12 +277,14 @@ static const gchar *rpdf_embed_font_fc(struct rpdf *pdf, const char *fontfamily,
 }
 
 DLL_EXPORT_SYM gboolean rpdf_set_font(struct rpdf *pdf, const gchar *font, const gchar *style, const gchar *encoding, gdouble size) {
+	gboolean found = FALSE;
 	gint i = 0;
 	const gchar *font_name = NULL;
 	HPDF_Font hfont;
 	struct rpdf_page_info *page_info = pdf->page_info[pdf->current_page];
 	gchar *three;
 
+again:
 	three = g_strconcat(font, style, encoding, NULL);
 	hfont = g_hash_table_lookup(pdf->fonts, three);
 
@@ -290,6 +292,7 @@ DLL_EXPORT_SYM gboolean rpdf_set_font(struct rpdf *pdf, const gchar *font, const
 		while (base_fonts[i]) {
 			if (strcmp(base_fonts[i], font) == 0) {
 				font_name = base_fonts[i];
+				found = TRUE;
 				break;
 			}
 			i++;
@@ -299,10 +302,13 @@ DLL_EXPORT_SYM gboolean rpdf_set_font(struct rpdf *pdf, const gchar *font, const
 			font_name = rpdf_embed_font_fc(pdf, font, style);
 
 		if (font_name == NULL) {
-			rpdf_error("FONT NOT FOUND: font name '%s' font style '%s'\n", font, style);
+			rpdf_error("FONT NOT FOUND: font name '%s' font style '%s', using Courier\n", font, style);
 			g_free(three);
-			return FALSE;
-		}
+			font = base_fonts[0];
+			style = RPDF_FONT_STYLE_REGULAR;
+			goto again;
+		} else
+			found = TRUE;
 
 		hfont = HPDF_GetFont(pdf->pdf, font_name, encoding);
 		g_hash_table_insert(pdf->fonts, three, hfont);
@@ -321,7 +327,7 @@ DLL_EXPORT_SYM gboolean rpdf_set_font(struct rpdf *pdf, const gchar *font, const
 
 	page_info->font_size = size;
 
-	return TRUE;
+	return found;
 }
 
 DLL_EXPORT_SYM void rpdf_set_font_size(struct rpdf *pdf, gdouble size) {
