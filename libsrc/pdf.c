@@ -237,14 +237,14 @@ static void pdf_set_font_point_actual(rlib *r, gint point) {
 
 	pdffontname = g_hash_table_lookup(r->output_parameters, "pdf_fontname");
 
-	if(OUTPUT_PRIVATE(r)->is_bold)
+	if (OUTPUT_PRIVATE(r)->is_bold)
 		which_font += BOLD;
 
-	if(OUTPUT_PRIVATE(r)->is_italics)
+	if (OUTPUT_PRIVATE(r)->is_italics)
 		which_font += ITALICS;
 
 	fontname = pdffontname ? pdffontname : font_names[which_font];
-	
+
 	rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, fontname, "WinAnsiEncoding", point);
 }
 
