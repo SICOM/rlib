@@ -73,8 +73,8 @@ DLL_EXPORT_SYM gint rlib_add_datasource_mysql(rlib *r UNUSED, const gchar *input
 	}
 
 	if (!g_module_symbol(handle, "new_input_filter", (gpointer)&new_input_filter)) {
-		g_module_close(handle);
 		g_free(name_copy);
+		g_module_close(handle);
 		r_error(r, "Could Not Load MYSQL Input [%s]\n", g_module_error());
 		return -1;
 	}
@@ -107,6 +107,9 @@ DLL_EXPORT_SYM gint rlib_add_datasource_mysql(rlib *r UNUSED, const gchar *input
 		g_free(host_copy);
 		g_free(name_copy);
 		input->free(input);
+#ifndef HAVE_MYSQL_BUILTIN
+		g_module_close(handle);
+#endif
 		r_error(r,"ERROR: Could not connect to MYSQL\n");
 		return -1;
 	}
@@ -175,11 +178,11 @@ DLL_EXPORT_SYM gboolean rlib_add_datasource_mysql_from_group(rlib *r UNUSED, con
 	}
 
 	if (!input->connect_with_connstr(input, group)) {
+		g_free(name_copy);
+		input->free(input);
 #ifndef HAVE_MYSQL_BUILTIN
 		g_module_close(handle);
 #endif
-		g_free(name_copy);
-		input->free(input);
 		r_error(r,"ERROR: Could not connect to MYSQL\n");
 		return -1;
 	}
@@ -246,11 +249,11 @@ DLL_EXPORT_SYM gboolean rlib_add_datasource_postgres(rlib *r UNUSED, const gchar
 	}
 
 	if (!input->connect_with_connstr(input, conn)) {
+		g_free(name_copy);
+		input->free(input);
 #ifndef HAVE_POSTGRES_BUILTIN
 		g_module_close(handle);
 #endif
-		g_free(name_copy);
-		input->free(input);
 		r_error(r,"ERROR: Could not connect to POSTGRES\n");
 		return -1;
 	}
@@ -317,11 +320,11 @@ DLL_EXPORT_SYM gboolean rlib_add_datasource_odbc(rlib *r UNUSED, const gchar *in
 	}
 
 	if (!input->connect_local_with_credentials(input, source, user, password)) {
+		g_free(name_copy);
+		input->free(input);
 #ifndef HAVE_ODBC_BUILTIN
 		g_module_close(handle);
 #endif
-		g_free(name_copy);
-		input->free(input);
 		r_error(r,"ERROR: Could not connect to ODBC\n");
 		return -1;
 	}
