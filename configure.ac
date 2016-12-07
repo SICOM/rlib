@@ -481,7 +481,6 @@ libsrc/Makefile
 src/Makefile
 src/examples/Makefile
 src/examples/common/Makefile
-src/examples/c/Makefile
 src/examples/php/Makefile
 src/examples/python/Makefile
 src/examples/java/Makefile
