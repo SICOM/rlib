@@ -396,6 +396,7 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 				rlib_navigate_first(r, r->current_result);
 				if(!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
 					while (1) {
+						struct rlib_element *detail_fields = (report && report->detail ? report->detail->fields : NULL);
 						gint output_count = 0;
 						gfloat position_top = report->position_top[0];
 						if(report->detail_columns > 1 && r->detail_line_count == 0) {
@@ -411,7 +412,7 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 						rlib_break_evaluate_attributes(r, report);
 						rlib_handle_break_headers(r, part, report, FALSE);
 
-						if(rlib_end_page_if_line_wont_fit(r, part, report, report->detail->fields)) {
+						if (rlib_end_page_if_line_wont_fit(r, part, report, detail_fields)) {
 							rlib_force_break_headers(r, part, report, FALSE);
 						}
 
@@ -427,7 +428,7 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 								OUTPUT(r)->start_report_field_details(r, part, report);	
 							}
 							
-							output_count = rlib_layout_report_output(r, part, report, report->detail->fields, FALSE, FALSE);
+							output_count = rlib_layout_report_output(r, part, report, detail_fields, FALSE, FALSE);
 
 							for(i=0;i<report->pages_across;i++) {
 								OUTPUT(r)->set_working_page(r, part, i);
