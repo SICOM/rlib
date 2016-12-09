@@ -189,6 +189,8 @@ static void *xml_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	xmlDocPtr doc;
 	gchar *file;
 
+	query->private = (gpointer)g_new0(struct _query_private, 1);
+
 	file = get_filename(input->r, query->sql, -1, FALSE, FALSE);
 	doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
 	g_free(file);
