@@ -230,8 +230,10 @@ ssize_t rlib_mpfr_strfmon(char * __restrict s, size_t maxsize, const char * __re
 
 		if (flags & USE_INTL_CURRENCY) {
 			currency_symbol = strdup(lc->int_curr_symbol);
-			if (currency_symbol != NULL)
-				space_char = *(currency_symbol+3);
+			if (currency_symbol != NULL) {
+				space_char = *(currency_symbol + 3);
+				*(currency_symbol + 3) = '\0';
+			}
 		} else
 			currency_symbol = strdup(lc->currency_symbol);
 
