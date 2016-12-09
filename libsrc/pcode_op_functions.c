@@ -674,10 +674,11 @@ gboolean rlib_pcode_operator_logical_and(rlib *r, struct rlib_pcode *code, struc
 	v2 = rlib_value_stack_pop(r, vs);
 	if (v1 && v2) {
 		if (RLIB_VALUE_IS_NUMBER(r, v1) && RLIB_VALUE_IS_NUMBER(r, v2)) {
+			gint v1val = mpfr_get_si(v1->mpfr_value, MPFR_RNDN);
+			gint v2val = mpfr_get_si(v2->mpfr_value, MPFR_RNDN);
 			mpfr_t result;
-			int cmpresult = !mpfr_cmp_si(v2->mpfr_value, 0) && !mpfr_cmp_si(v1->mpfr_value, 0);
 			mpfr_init2(result, r->numeric_precision_bits);
-			mpfr_set_ui(result, cmpresult, MPFR_RNDN);
+			mpfr_set_ui(result, !!(v1val && v2val), MPFR_RNDN);
 			rlib_value_free(r, v1);
 			rlib_value_free(r, v2);
 			rlib_value_stack_push(r, vs, rlib_value_new_number_from_mpfr(r, &rval_rtn, result));
@@ -744,10 +745,11 @@ gboolean rlib_pcode_operator_logical_or(rlib *r, struct rlib_pcode *code, struct
 	v2 = rlib_value_stack_pop(r, vs);
 	if (v1 && v2) {
 		if (RLIB_VALUE_IS_NUMBER(r, v1) && RLIB_VALUE_IS_NUMBER(r, v2)) {
+			gint v1val = mpfr_get_si(v1->mpfr_value, MPFR_RNDN);
+			gint v2val = mpfr_get_si(v2->mpfr_value, MPFR_RNDN);
 			mpfr_t result;
-			int cmpresult = !mpfr_cmp_si(v2->mpfr_value, 0) || !mpfr_cmp_si(v1->mpfr_value, 0);
 			mpfr_init2(result, r->numeric_precision_bits);
-			mpfr_set_ui(result, cmpresult, MPFR_RNDN);
+			mpfr_set_ui(result, !!(v1val || v2val), MPFR_RNDN);
 			rlib_value_free(r, v1);
 			rlib_value_free(r, v2);
 			rlib_value_stack_push(r, vs, rlib_value_new_number_from_mpfr(r, &rval_rtn, result));
