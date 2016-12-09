@@ -269,7 +269,7 @@ static void txt_end_part(rlib *r, struct rlib_part *part) {
 		OUTPUT_PRIVATE(r)->top[i] = NULL;		
 
 	}
-	OUTPUT_PRIVATE(r)->length = strlen(OUTPUT_PRIVATE(r)->both);
+	OUTPUT_PRIVATE(r)->length = (OUTPUT_PRIVATE(r) && OUTPUT_PRIVATE(r)->both ? strlen(OUTPUT_PRIVATE(r)->both) : 0);
 }
 
 static void txt_end_page(rlib *r, struct rlib_part *part UNUSED) {

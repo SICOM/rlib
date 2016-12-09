@@ -72,6 +72,9 @@ static gint rlib_php_array_next(gpointer input_ptr UNUSED, gpointer result_ptr) 
 	if (result == NULL)
 		return FALSE;
 
+	if (result->isdone)
+		return FALSE;
+
 	result->current_row++;
 	result->atstart = FALSE;
 	result->isdone = (result->current_row >= result->rows);
@@ -87,19 +90,18 @@ static gint rlib_php_array_isdone(gpointer input_ptr UNUSED, gpointer result_ptr
 	return result->isdone;
 }
 
-static gchar * rlib_php_array_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
+static gchar *rlib_php_array_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_php_array_results *result = result_ptr;
-	int which_field;
+	gchar *str;
 
-	if (result == NULL || result->atstart || result->isdone)
-		return "";
+	if (result == NULL || result->atstart || result->isdone) {
+		str = "";
+	} else {
+		int which_field = GPOINTER_TO_INT(field_ptr) - 1;
+		str = result->data[result->current_row * result->cols + which_field];
+	}
 
-	which_field = GPOINTER_TO_INT(field_ptr) - 1;
-
-	if (result->rows <= 1 || result->current_row >= result->rows)
-		return "";
-
-	return result->data[result->current_row * result->cols + which_field];
+	return str;
 }
 
 static gpointer rlib_php_array_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) {
@@ -239,7 +241,7 @@ static void *php_array_new_result_from_query(gpointer input_ptr UNUSED, gpointer
 		row++;
 		zend_hash_move_forward_ex(ht1, &pos1);
 	}
-	
+
 	return result;
 }
 

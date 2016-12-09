@@ -99,12 +99,16 @@ static gchar *rlib_array_get_field_name(gpointer input_ptr UNUSED, gpointer resu
 
 static gchar *rlib_array_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_array_results *result = result_ptr;
-	int which_field = GPOINTER_TO_INT(field_ptr) - 1;
+	gchar *str;
 
-	if (result == NULL || result->atstart || result->isdone)
-		return "";
+	if (result == NULL || result->atstart || result->isdone) {
+		str = "";
+	} else {
+		int which_field = GPOINTER_TO_INT(field_ptr) - 1;
+		str = result->data[(result->current_row * result->cols) + which_field];
+	}
 
-	return result->data[(result->current_row * result->cols) + which_field];
+	return str;
 }
 
 static gpointer rlib_array_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) {
@@ -123,9 +127,13 @@ static gpointer rlib_array_resolve_field_pointer(gpointer input_ptr UNUSED, gpoi
 	return NULL;
 }
 
-static void *rlib_array_new_result_from_query(gpointer input_ptr UNUSED, gpointer query_ptr) {
+static void *rlib_array_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
+	struct input_filter *input = input_ptr;
 	struct rlib_array_results *result;
 	struct rlib_query *query = (struct rlib_query *)query_ptr;
+
+	if (input == NULL)
+		return NULL;
 
 	if (query_ptr == NULL)
 		return NULL;
