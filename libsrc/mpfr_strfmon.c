@@ -277,16 +277,16 @@ ssize_t rlib_mpfr_strfmon(char * __restrict s, size_t maxsize, const char * __re
 		 * = 0 - symbol succeeds the value
 		 *
 		 * p_sep_by_space & n_sep_by_space
-                 *
+		 *
 		 * = 0 - no space separates $currency_symbol
 		 *       from the value for a monetary quantity with a
 		 *	 non-negative value
 		 * = 1 - space separates the symbol from the value
 		 * = 2 - space separates the symbol and the sign string,
 		 *       if adjacent.
-                 *
+		 *
 		 * p_sign_posn & n_sign_posn
-                 *
+		 *
 		 * = 0 - parentheses enclose the quantity and the
 		 *	 $currency_symbol
 		 * = 1 - the sign string precedes the quantity and the 
@@ -295,7 +295,6 @@ ssize_t rlib_mpfr_strfmon(char * __restrict s, size_t maxsize, const char * __re
 		 *       $currency_symbol
 		 * = 3 - the sign string precedes the $currency_symbol
 		 * = 4 - the sign string succeeds the $currency_symbol
-                 *
 		 */
 
 		tmpptr = dst;
@@ -524,10 +523,10 @@ static char *__format_grouped_mpfr(mpfr_ptr value, int *flags, int left_prec, in
 
 	/* fill right_prec with default value */
 	if (right_prec == -1) {
-                if (*flags & USE_INTL_CURRENCY)
-                        right_prec = lc->int_frac_digits;
-                else
-                        right_prec = lc->frac_digits;
+		if (*flags & USE_INTL_CURRENCY)
+			right_prec = lc->int_frac_digits;
+		else
+			right_prec = lc->frac_digits;
 
 		if (right_prec == CHAR_MAX)	/* POSIX locale ? */
 			right_prec = 2;
