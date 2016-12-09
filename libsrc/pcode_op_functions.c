@@ -1029,7 +1029,7 @@ gboolean rlib_pcode_operator_fxpval(rlib *r, struct rlib_pcode *code, struct rli
 			mpfr_set_str(result, RLIB_VALUE_GET_AS_STRING(r, v2), 10, MPFR_RNDN);
 			mpfr_set_si(powoften, 10, MPFR_RNDN);
 			mpfr_pow(powoften, powoften, v1->mpfr_value, MPFR_RNDN);
-			mpfr_mul(result, result, powoften, MPFR_RNDN);
+			mpfr_div(result, result, powoften, MPFR_RNDN);
 			mpfr_clear(powoften);
 			rlib_value_free(r, v1);
 			rlib_value_free(r, v2);
