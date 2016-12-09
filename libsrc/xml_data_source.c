@@ -193,6 +193,8 @@ static void *xml_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	gint nrows = 0;
 	gint ncols = 0;
 
+	query->private = (gpointer)g_new0(struct _query_private, 1);
+
 	file = get_filename(input->r, query->sql, -1, FALSE, FALSE);
 	doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
 	g_free(file);
@@ -283,7 +285,6 @@ static void rlib_xml_free_query(gpointer input_ptr UNUSED, gpointer query_ptr) {
 	xmlFreeDoc(QUERY_PRIVATE(query)->doc);
 	QUERY_PRIVATE(query)->doc = NULL;
 }
-
 
 static void rlib_xml_rlib_free_result(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_xml_results *results = result_ptr;
