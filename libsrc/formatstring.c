@@ -476,12 +476,22 @@ GString *get_next_format_string(rlib *r UNUSED, const gchar *fmt, gint expected_
 							gint adv1, adv2;
 							gint flags, length, lprec, prec;
 
-							if (fmt[adv + 2] != '%') {
+							/*
+							 * Accept any filler char as ornament
+							 * before the actual format string
+							 */
+							while (fmt[adv + 2] != '\0' && fmt[adv + 2] != '%') {
+								g_string_append_c(str, fmt[adv + 2]);
+								adv++;
+							}
+
+							if (fmt[adv + 2] == '\0') {
 								g_string_printf(str, "!ERR_F_F");
 								*out_type = type;
 								*error = TRUE;
 								return str;
 							}
+
 							flags = formatstring_flags_money(fmt + adv + 3, &filler, &adv1);
 							formatstring_money_length_prec(fmt + adv + 3 + adv1, &length, &lprec, &prec, &adv2);
 							if (prec > 0) {
@@ -499,7 +509,7 @@ GString *get_next_format_string(rlib *r UNUSED, const gchar *fmt, gint expected_
 								return str;
 							}
 
-							g_string_printf(str, "%%");
+							g_string_append_c(str, '%');
 							if ((flags & RLIB_FMTSTR_MFLAG_NOGROUPING))
 								g_string_append_c(str, '^');
 							if ((flags & RLIB_FMTSTR_MFLAG_NEG_PAR))
@@ -608,12 +618,28 @@ GString *get_next_format_string(rlib *r UNUSED, const gchar *fmt, gint expected_
 							*out_type = type;
 							*error = TRUE;
 							return str;
-						} else if (fmt[adv + 2] == '%') {
+						} else {
 							gint adv2, adv3;
 							gint flags;
 							gboolean legacy = FALSE;
 							gint length, prec;
 							gchar c;
+
+							/*
+							 * Accept any filler char as ornament
+							 * before the actual format string.
+							 */
+							while (fmt[adv + 2] != '\0' && fmt[adv + 2] != '%') {
+								g_string_append_c(str, fmt[adv + 2]);
+								adv++;
+							}
+
+							if (fmt[adv + 2] == '\0') {
+								g_string_printf(str, "!ERR_F_F");
+								*out_type = type;
+								*error = TRUE;
+								return str;
+							}
 
 							flags = formatstring_flags(fmt + adv + 3, &adv2);
 							formatstring_length_prec(fmt + adv + 3 + adv2, &length, &prec, &adv3);
@@ -627,7 +653,7 @@ GString *get_next_format_string(rlib *r UNUSED, const gchar *fmt, gint expected_
 									c = 'f';
 									legacy = TRUE;
 								}
-								g_string_printf(str, "%%");
+								g_string_append_c(str, '%');
 								if ((flags & RLIB_FMTSTR_FLAG_ALTERNATE))
 									g_string_append_c(str, '#');
 								if ((flags & RLIB_FMTSTR_FLAG_0PADDED))
@@ -667,11 +693,6 @@ GString *get_next_format_string(rlib *r UNUSED, const gchar *fmt, gint expected_
 								*out_type = type;
 								return str;
 							}
-						} else {
-							g_string_printf(str, "!ERR_F_F");
-							*error = TRUE;
-							*out_type = type;
-							return str;
 						}
 
 						break;
