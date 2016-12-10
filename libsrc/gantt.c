@@ -185,7 +185,7 @@ DLL_EXPORT_SYM gdouble rlib_chart(rlib *r, struct rlib_part *part, struct rlib_r
 	OUTPUT(r)->graph_init(r);
 
 	rlib_fetch_first_rows(r);
-	if(!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
+	if (!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->queries[r->current_result]->result)) {
 		while(1) {
 			label[0] = 0;
 			if (rlib_execute_as_string(r, chart->row->label_code, label, MAXSTRLEN))
@@ -211,7 +211,7 @@ DLL_EXPORT_SYM gdouble rlib_chart(rlib *r, struct rlib_part *part, struct rlib_r
 		}
 		rlib_fetch_first_rows(r);
 		//rlib_pcode_dump(r, chart->header_row.field_code, 0);
-		if(!INPUT(r, header_row_result_num)->isdone(INPUT(r, header_row_result_num), r->results[header_row_result_num]->result)) {
+		if (!INPUT(r, header_row_result_num)->isdone(INPUT(r, header_row_result_num), r->queries[header_row_result_num]->result)) {
 			while (1) {
 				if (!rlib_execute_as_string(r, chart->header_row->field_code, field_header_row, MAXSTRLEN))
 					field_header_row[0] = 0;
@@ -264,8 +264,8 @@ DLL_EXPORT_SYM gdouble rlib_chart(rlib *r, struct rlib_part *part, struct rlib_r
 
 	row_count = 1;
 	rlib_fetch_first_rows(r);
-	if(!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
-		while(1) {
+	if (!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->queries[r->current_result]->result)) {
+		while (1) {
 			gint64 t;
 			gint row = -1, start = 0, stop = 0;
 			if (rlib_execute_as_int64(r, chart->row->row_code, &t))

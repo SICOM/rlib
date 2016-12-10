@@ -30,14 +30,14 @@
 static gboolean rlib_navigate_n_to_1_check_current(rlib *r, gint resultset_num) {
 	GList *fw;
 
-	if (INPUT(r, resultset_num)->isdone(INPUT(r, resultset_num), r->results[resultset_num]->result))
+	if (INPUT(r, resultset_num)->isdone(INPUT(r, resultset_num), r->queries[resultset_num]->result))
 		return FALSE;
 
 	for (fw = r->queries[resultset_num]->followers_n_to_1; fw; fw = fw->next) {
 		struct rlib_resultset_followers *f = fw->data;
 		struct rlib_value rval_leader, rval_follower;
 
-		if (INPUT(r, f->follower)->isdone(INPUT(r, f->follower), r->results[f->follower]->result))
+		if (INPUT(r, f->follower)->isdone(INPUT(r, f->follower), r->queries[f->follower]->result))
 			return FALSE;
 
 		rlib_value_init(r, &rval_leader);
@@ -65,7 +65,7 @@ static gboolean rlib_navigate_n_to_1_check_ended(rlib *r, gint resultset_num) {
 	for (fw = r->queries[resultset_num]->followers_n_to_1; fw; fw = fw->next) {
 		struct rlib_resultset_followers *f = fw->data;
 
-		if (!INPUT(r, f->follower)->isdone(INPUT(r, f->follower), r->results[f->follower]->result)) {
+		if (!INPUT(r, f->follower)->isdone(INPUT(r, f->follower), r->queries[f->follower]->result)) {
 			ended = FALSE;
 			break;
 		}
@@ -91,7 +91,7 @@ static gboolean rlib_navigate_next_n_to_1(rlib *r, gint resultset_num) {
 		for (fw = r->queries[resultset_num]->followers_n_to_1; fw; fw = fw->next) {
 			struct rlib_resultset_followers *f = fw->data;
 			rlib_navigate_next(r, f->follower);
-			if (INPUT(r, f->follower)->isdone(INPUT(r, f->follower), r->results[f->follower]->result))
+			if (INPUT(r, f->follower)->isdone(INPUT(r, f->follower), r->queries[f->follower]->result))
 				r->queries[f->follower]->n_to_1_empty = TRUE;
 		}
 	} else {
@@ -128,7 +128,7 @@ static gboolean rlib_navigate_next_n_to_1(rlib *r, gint resultset_num) {
 			if (r->queries[f->follower]->n_to_1_empty)
 				continue;
 
-			if (INPUT(r, f->follower)->isdone(INPUT(r, f->follower), r->results[f->follower]->result)) {
+			if (INPUT(r, f->follower)->isdone(INPUT(r, f->follower), r->queries[f->follower]->result)) {
 				for (fw1 = r->queries[resultset_num]->followers_n_to_1; fw1 && fw1 != fw; fw1 = fw1->next) {
 					struct rlib_resultset_followers *f1 = fw1->data;
 					rlib_navigate_start(r, f1->follower);
@@ -171,24 +171,24 @@ gboolean rlib_navigate_next(rlib *r, gint resultset_num) {
 
 	if (!r->queries[resultset_num]->n_to_1_started) {
 		struct input_filter *in = INPUT(r, resultset_num);
-		struct rlib_results *rs = r->results[resultset_num];
-		gint cols = in->num_fields(in, rs->result);
+		struct rlib_query_internal *q = r->queries[resultset_num];
+		gint cols = in->num_fields(in, q->result);
 		gint i;
 
 		for (i = 1; i <= cols; i++) {
 			gpointer col = GINT_TO_POINTER(i);
-			gchar *str = in->get_field_value_as_string(in, rs->result, col);
+			gchar *str = in->get_field_value_as_string(in, q->result, col);
 			struct rlib_value *rval = g_new0(struct rlib_value, 1);
 
 			if (r->queries[resultset_num]->current_row >= 0)
 				rlib_value_new_string(r, rval, (str ? str : ""));
 			else
 				rlib_value_new_none(r, rval);
-			g_hash_table_replace(rs->cached_values, col, rval);
+			g_hash_table_replace(q->cached_values, col, rval);
 		}
 
 		r->queries[resultset_num]->current_row++;
-		if (!INPUT(r, resultset_num)->next(INPUT(r, resultset_num), r->results[resultset_num]->result))
+		if (!INPUT(r, resultset_num)->next(INPUT(r, resultset_num), r->queries[resultset_num]->result))
 			return FALSE;
 	}
 
@@ -220,12 +220,12 @@ void rlib_navigate_start(rlib *r, gint resultset_num) {
 	if (resultset_num < 0 || r->queries_count == 0)
 		return;
 
-	if (r->results[resultset_num]->result == NULL) {
-		r->results[resultset_num]->navigation_failed = TRUE;
+	if (r->queries[resultset_num]->result == NULL) {
+		r->queries[resultset_num]->navigation_failed = TRUE;
 		return;
 	}
 
-	INPUT(r, resultset_num)->start(INPUT(r, resultset_num), r->results[resultset_num]->result);
+	INPUT(r, resultset_num)->start(INPUT(r, resultset_num), r->queries[resultset_num]->result);
 	r->queries[resultset_num]->current_row = -1;
 	r->queries[resultset_num]->n_to_1_empty = FALSE;
 	r->queries[resultset_num]->n_to_1_started = FALSE;

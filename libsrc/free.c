@@ -644,9 +644,9 @@ void rlib_free_results(rlib *r) {
 	int i;
 
 	for (i = 0; i < r->queries_count; i++) {
-		if (r->results[i]->result && INPUT(r, i)->free_result)
-			INPUT(r, i)->free_result(INPUT(r, i), r->results[i]->result);
-		r->results[i]->result = NULL;
+		if (r->queries[i]->result && INPUT(r, i)->free_result)
+			INPUT(r, i)->free_result(INPUT(r, i), r->queries[i]->result);
+		r->queries[i]->result = NULL;
 	}
 }
 
@@ -658,13 +658,11 @@ static void rlib_free_results_and_queries(rlib *r) {
 	int i;
 
 	for (i = 0; i < r->queries_count; i++) {
-		if (r->results[i]->result && INPUT(r, i)->free_result) {
-			INPUT(r, i)->free_result(INPUT(r, i), r->results[i]->result);
-			r->results[i]->result = NULL;
+		if (r->queries[i]->result && INPUT(r, i)->free_result) {
+			INPUT(r, i)->free_result(INPUT(r, i), r->queries[i]->result);
+			r->queries[i]->result = NULL;
 		}
-		g_hash_table_destroy(r->results[i]->cached_values);
-		g_free(r->results[i]);
-		r->results[i] = NULL;
+		g_hash_table_destroy(r->queries[i]->cached_values);
 		if (QUERY(r, i) && QUERY(r, i)->input && QUERY(r, i)->input->free_query)
 			QUERY(r, i)->input->free_query(QUERY(r, i)->input, QUERY(r, i));
 		if (r->queries[i]->sql_allocated)
@@ -673,8 +671,6 @@ static void rlib_free_results_and_queries(rlib *r) {
 		g_free(r->queries[i]);
 		r->queries[i] = NULL;
 	}
-	g_free(r->results);
-	r->results = NULL;
 	g_free(r->queries);
 	r->queries = NULL;
 	r->queries_count = 0;

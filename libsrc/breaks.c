@@ -265,7 +265,7 @@ static void rlib_break_all_below_in_reverse_order(rlib *r, struct rlib_part *par
 			newpage = t;
 	}
 	if (newpage && OUTPUT(r)->do_breaks) {
-		if (!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
+		if (!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->queries[r->current_result]->result)) {
 			if (OUTPUT(r)->paginate)
 				rlib_layout_end_page(r, part, report, TRUE);
 			rlib_force_break_headers(r, part, report);
@@ -294,7 +294,7 @@ void rlib_handle_break_footers(rlib *r, struct rlib_part *part, struct rlib_repo
 			rlib_value_init(r, &rval_tmp);
 			bf = be->data;
 			if (dobreak) {
-				if (INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
+				if (INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->queries[r->current_result]->result)) {
 					dobreak = TRUE;
 				} else {
 					struct rlib_value rval1, rval2;

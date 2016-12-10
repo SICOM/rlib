@@ -63,11 +63,11 @@ gchar *rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 	gchar *ptr = NULL;
 	const gchar *str;
 
-	if (r->results[rf->resultset]->navigation_failed == TRUE)
+	if (r->queries[rf->resultset]->navigation_failed == TRUE)
 		return NULL;
 
 	if (rf->field != NULL)
-		str = rs->get_field_value_as_string(rs, r->results[rf->resultset]->result, rf->field);
+		str = rs->get_field_value_as_string(rs, r->queries[rf->resultset]->result, rf->field);
 	else
 		str = "";
 	if (str == NULL)
@@ -83,8 +83,8 @@ gchar *rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 gint rlib_lookup_result(rlib *r, gchar *name) {
 	gint i;
 	for (i = 0; i < r->queries_count; i++) {
-		if (r->results[i]->name != NULL) {
-			if (!strcmp(r->results[i]->name, name))
+		if (r->queries[i]->name != NULL) {
+			if (!strcmp(r->queries[i]->name, name))
 				return i;
 		}
 	}
@@ -96,7 +96,7 @@ gboolean rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gin
 	gboolean found = FALSE;
 	gchar *right_side = NULL, *result_name = NULL;
 
-	if (r->results == NULL)
+	if (r->queries == NULL)
 		return FALSE;
 
 	resultset = r->current_result;
@@ -120,7 +120,7 @@ gboolean rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gin
 			}
 		}
 	}
-	*rtn_field = INPUT(r, resultset)->resolve_field_pointer(INPUT(r, resultset), r->results[resultset]->result, name);
+	*rtn_field = INPUT(r, resultset)->resolve_field_pointer(INPUT(r, resultset), r->queries[resultset]->result, name);
 
 	if(*rtn_field != NULL)
 		found = TRUE;

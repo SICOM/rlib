@@ -311,7 +311,7 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 	if (report->query_code != NULL) {
 		rlib_execute_as_string(r, report->query_code, query, MAXSTRLEN);
 		for (query_i = 0; query_i < r->queries_count; query_i++) {
-			if (query != NULL && r->results[query_i]->name != NULL && !strcmp(r->results[query_i]->name, query)) {
+			if (query != NULL && r->queries[query_i]->name != NULL && !strcmp(r->queries[query_i]->name, query)) {
 				r->current_result = query_i;		
 				break;
 			}
@@ -398,7 +398,7 @@ static gboolean rlib_layout_report(rlib *r, struct rlib_part *part, struct rlib_
 				}
 			} else {
 				rlib_fetch_first_rows(r);
-				if (!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
+				if (!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->queries[r->current_result]->result)) {
 					while (1) {
 						struct rlib_element *detail_fields = (report && report->detail ? report->detail->fields : NULL);
 						gint output_count = 0;
@@ -643,7 +643,7 @@ gint rlib_evaulate_single_report_variables(rlib *r, struct rlib_part *part) {
 				if (report->query_code != NULL) {
 					rlib_execute_as_string(r, report->query_code, query, MAXSTRLEN);
 					for (i = 0; i < r->queries_count; i++) {
-						if (!strcmp(r->results[i]->name, query)) {
+						if (!strcmp(r->queries[i]->name, query)) {
 							r->current_result = i;		
 							break;
 						}

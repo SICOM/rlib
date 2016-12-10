@@ -139,21 +139,16 @@ static void rlib_cached_rval_destroy(gpointer data) {
 
 DLL_EXPORT_SYM struct rlib_query *rlib_alloc_query_space(rlib *r) {
 	struct rlib_query_internal *query = NULL;
-	struct rlib_results *result = NULL;
 
 	if (r->queries_count == 0) {
 		r->queries = g_malloc((r->queries_count + 1) * sizeof(gpointer));
-		r->results = g_malloc((r->queries_count + 1) * sizeof(gpointer));
 
-		if (r->queries == NULL || r->results == NULL) {
-			g_free(r->queries);
-			g_free(r->results);
+		if (r->queries == NULL) {
 			r_error(r, "rlib_alloc_query_space: Out of memory!\n");
 			return NULL;
 		}
 	} else {
 		struct rlib_query_internal **queries;
-		struct rlib_results **results;
 
 		queries = g_realloc(r->queries, (r->queries_count + 1) * sizeof(void *));
 		if (queries == NULL) {
@@ -161,37 +156,25 @@ DLL_EXPORT_SYM struct rlib_query *rlib_alloc_query_space(rlib *r) {
 			return NULL;
 		}
 
-		results = g_realloc(r->results, (r->queries_count + 1) * sizeof(void *));
-		if (results == NULL) {
-			r_error(r, "rlib_alloc_query_space: Out of memory!\n");
-			return NULL;
-		}
-
 		r->queries = queries;
-		r->results = results;
 	}
 
 	query = g_malloc0(sizeof(struct rlib_query_internal));
-	result = g_malloc0(sizeof(struct rlib_results));
 
-	if (query == NULL || result == NULL) {
-		g_free(query);
-		g_free(result);
+	if (query == NULL) {
 		r_error(r, "rlib_alloc_query_space: Out of memory!\n");
 		return NULL;
 	}
 
-	result->cached_values = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, rlib_cached_rval_destroy);
-	if (result->cached_values == NULL) {
+	query->cached_values = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, rlib_cached_rval_destroy);
+	if (query->cached_values == NULL) {
 		g_free(query);
-		g_free(result);
 		r_error(r, "rlib_alloc_query_space: Out of memory!\n");
 		return NULL;
 	}
 
 	r->queries[r->queries_count] = query;
 	query->query_index = r->queries_count;
-	r->results[r->queries_count] = result;
 
 	r->queries_count++;
 
@@ -542,19 +525,16 @@ gchar *get_filename(rlib *r, const char *filename, gint report_index, gboolean r
 
 static gboolean rlib_execute_queries(rlib *r) {
 	gint i;
-	for (i = 0; i < r->queries_count; i++) {
-		r->results[i]->input = NULL;
-		r->results[i]->result = NULL;
-	}
+
+	for (i = 0; i < r->queries_count; i++)
+		r->queries[i]->result = NULL;
 
 	for (i = 0; i < r->queries_count; i++) {
 		struct timespec ts1, ts2;
-		r->results[i]->input = r->queries[i]->input;
-		r->results[i]->name =  r->queries[i]->name;
 		clock_gettime(CLOCK_MONOTONIC, &ts1);
 		if (INPUT(r,i)->set_query_cache_size && r->query_cache_size)
 			INPUT(r,i)->set_query_cache_size(INPUT(r,i), r->query_cache_size);
-		r->results[i]->result = INPUT(r,i)->new_result_from_query(INPUT(r,i), r->queries[i]);
+		r->queries[i]->result = INPUT(r,i)->new_result_from_query(INPUT(r,i), r->queries[i]);
 		clock_gettime(CLOCK_MONOTONIC, &ts2);
 		if (r->profiling) {
 			gchar *name = NULL;
@@ -562,23 +542,24 @@ static gboolean rlib_execute_queries(rlib *r) {
 			long diff = (ts2.tv_sec - ts1.tv_sec) * 1000000 + (ts2.tv_nsec - ts1.tv_nsec) / 1000;
 
 			for (j = 0; j < r->inputs_count; j++) {
-				if (r->inputs[j].input == r->results[i]->input) {
+				if (r->inputs[j].input == r->queries[i]->input) {
 					name = r->inputs[j].name;
 					break;
 				}
 			}
 			r_warning(r, "rlib_execute_queries: executing query %s:%s took %ld microseconds\n",
-						(name ? name : "<unknown>"), r->results[i]->name, diff);
+						(name ? name : "<unknown>"), r->queries[i]->name, diff);
 		}
-		r->results[i]->next_failed = FALSE;
-		r->results[i]->navigation_failed = FALSE;
-		if (r->results[i]->result == NULL) {
+		r->queries[i]->next_failed = FALSE;
+		r->queries[i]->navigation_failed = FALSE;
+		if (r->queries[i]->result == NULL) {
 			r_error(r, "Failed To Run A Query [%s]: %s\n", r->queries[i]->sql, INPUT(r,i)->get_error(INPUT(r,i)));
 			return FALSE;
-		} else {
-			INPUT(r,i)->start(INPUT(r,i), r->results[i]->result);
-			INPUT(r,i)->next(INPUT(r,i), r->results[i]->result);
 		}
+#if 0
+		INPUT(r,i)->start(INPUT(r,i), r->results[i]->result);
+		INPUT(r,i)->next(INPUT(r,i), r->results[i]->result);
+#endif
 	}
 	return TRUE;
 }
@@ -732,9 +713,9 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 
 				for (i = 0; i < r->queries_count; i++) {
 					struct input_filter *in = INPUT(r, i);
-					struct rlib_results *rs = r->results[i];
+					struct rlib_query_internal *q = r->queries[i];
 					char *qname = r->queries[i]->name;
-					int nfields = in->num_fields(in, rs->result);
+					int nfields = in->num_fields(in, q->result);
 					int nrows = 0;
 					int i;
 
@@ -744,17 +725,17 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 					for (i = 0; i < nfields; i++) {
 						if (i)
 							fprintf(tc_file, ", ");
-						fprintf(tc_file, "\"%s\"", in->get_field_name(in, rs->result, GINT_TO_POINTER(i + 1)));
+						fprintf(tc_file, "\"%s\"", in->get_field_name(in, q->result, GINT_TO_POINTER(i + 1)));
 					}
 
 					fprintf(tc_file, " }\n");
 
-					in->start(in, rs->result);
-					while (in->next(in, rs->result)) {
+					in->start(in, q->result);
+					while (in->next(in, q->result)) {
 						nrows++;
 						fprintf(tc_file, "\t, { ");
 						for (i = 0; i < nfields; i++) {
-							gchar *value = in->get_field_value_as_string(in, rs->result, GINT_TO_POINTER(i + 1));
+							gchar *value = in->get_field_value_as_string(in, q->result, GINT_TO_POINTER(i + 1));
 							int pos;
 
 							if (i)
@@ -789,7 +770,7 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 					 * Reset the datasource for the actual
 					 * report execution below.
 					 */
-					in->start(in, rs->result);
+					in->start(in, q->result);
 
 					/* ... print contents ... */
 					fprintf(tc_file, "};\n\n");

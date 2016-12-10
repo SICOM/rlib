@@ -197,20 +197,6 @@ struct rlib_resultset_field {
 	gpointer field;
 };
 
-struct rlib_results {
-	gchar *name;
-	gpointer result;
-	gboolean next_failed;
-	gboolean navigation_failed;
-	struct input_filter *input;
-	/*
-	 * Hash of struct rlib_value values,
-	 * the hash key is the "gpointer field"
-	 * from struct rlib_resultset_field
-	 */
-	GHashTable *cached_values;
-};
-
 struct rlib_report_field {
 	gchar *value;
 	gint value_line_number;
@@ -800,6 +786,17 @@ struct rlib_query_internal {
 	struct rlib_query_internal *leader;
 	GList *followers;
 	GList *followers_n_to_1;
+
+	/* Formerly rlib_results */
+	gpointer result;
+	gboolean next_failed;
+	gboolean navigation_failed;
+	/*
+	 * Hash of struct rlib_value values,
+	 * the hash key is the "gpointer field"
+	 * from struct rlib_resultset_field
+	 */
+	GHashTable *cached_values;
 };
 
 #define HEADERS 3
@@ -836,7 +833,6 @@ struct rlib {
 	gint current_result;
 	gint use_cached_data;
 	struct rlib_query_internal **queries;
-	struct rlib_results **results;
 
 	GSList *search_paths;
 
@@ -880,7 +876,7 @@ struct rlib {
 	GString *testcase_code2;
 };
 
-#define INPUT(r, i) (r->results[i]->input)
+#define INPUT(r, i) (r->queries[i]->input)
 #define QUERY(r, i) (r->queries[i])
 #define ENVIRONMENT(r) (r->environment)
 #define ENVIRONMENT_PRIVATE(r) (((struct _private *)r->evnironment->private))

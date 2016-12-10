@@ -299,7 +299,7 @@ DLL_EXPORT_SYM gdouble rlib_graph(rlib *r, struct rlib_part *part, struct rlib_r
 			
 	row_count = 0;
 	rlib_fetch_first_rows(r);
-	if (!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
+	if (!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->queries[r->current_result]->result)) {
 		while(1) {
 			row_count++;
 			if (rlib_navigate_next(r, r->current_result) == FALSE)
@@ -337,7 +337,7 @@ DLL_EXPORT_SYM gdouble rlib_graph(rlib *r, struct rlib_part *part, struct rlib_r
 	OUTPUT(r)->graph_set_bold_titles(r, bold_titles);
 	
 	rlib_fetch_first_rows(r);
-	if (!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
+	if (!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->queries[r->current_result]->result)) {
 		while (1) {
 			data_plot_count = 0;
 			stacked_y_value_max[RLIB_SIDE_LEFT] = 0;;
@@ -579,7 +579,7 @@ DLL_EXPORT_SYM gdouble rlib_graph(rlib *r, struct rlib_part *part, struct rlib_r
 	last_row_values[0] = 0;
 	last_row_height[0] = 0;
 	rlib_fetch_first_rows(r);
-	if (!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
+	if (!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->queries[r->current_result]->result)) {
 		while (1) {
 			data_plot_count = 0;
 			last_height_pos=0;

@@ -1475,11 +1475,11 @@ struct rlib_value *rlib_operand_get_value(rlib *r, struct rlib_value *rval, stru
 		return rlib_value_new(rval, RLIB_VALUE_DATE, FALSE, o->value);
 	} else if (o->type == OPERAND_FIELD) {
 		struct rlib_resultset_field *rf = o->value;
-		struct rlib_results *rs = r->results[rf->resultset];
+		struct rlib_query_internal *q = r->queries[rf->resultset];
 		gchar *field_value;
 
 		if (r->use_cached_data) {
-			struct rlib_value *rval2 = g_hash_table_lookup(rs->cached_values, rf->field);
+			struct rlib_value *rval2 = g_hash_table_lookup(q->cached_values, rf->field);
 
 			if (rval2) {
 				/*
