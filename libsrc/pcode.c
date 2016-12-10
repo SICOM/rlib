@@ -1316,8 +1316,12 @@ DLL_EXPORT_SYM struct rlib_value *rlib_value_alloc(rlib *r UNUSED) {
 }
 
 DLL_EXPORT_SYM void rlib_value_init(rlib *r UNUSED, struct rlib_value *rval) {
+#if 0
 	rval->alloc = FALSE;
 	rval->type = RLIB_VALUE_NONE;
+#else
+	memset(rval, 0, sizeof(struct rlib_value));
+#endif
 }
 
 DLL_EXPORT_SYM void rlib_value_free(rlib *r UNUSED, struct rlib_value *rval) {
