@@ -212,12 +212,19 @@ static void free_fields(rlib *r, struct rlib_report_output_array *roa) {
 
 	for (ptr = roa->chain; ptr; ptr = g_slist_next(ptr)) {
 		struct rlib_report_output *ro = ptr->data;
-		if (ro->type == RLIB_REPORT_PRESENTATION_DATA_LINE) {
+		switch (ro->type) {
+		case RLIB_REPORT_PRESENTATION_DATA_LINE:
 			rlib_free_lines(r, (struct rlib_report_lines *)ro->data);
-		} else if(ro->type == RLIB_REPORT_PRESENTATION_DATA_HR) {
+			break;
+		case RLIB_REPORT_PRESENTATION_DATA_HR:
 			hr_free_pcode(r, (struct rlib_report_horizontal_line *)ro->data);
-		} else if(ro->type == RLIB_REPORT_PRESENTATION_DATA_IMAGE) {
+			break;
+		case RLIB_REPORT_PRESENTATION_DATA_IMAGE:
 			image_free_pcode(r, (struct rlib_report_image *)ro->data);
+			break;
+		default:
+			r_error(r, "free_fields: Unknown type %d\n", ro->type);
+			break;
 		}
 		g_free(ro);
 	}

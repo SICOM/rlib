@@ -254,7 +254,6 @@ static void rlib_resolve_fields2(rlib *r, struct rlib_part *part, struct rlib_re
 		rlib_pcode_free(r, code);
 	} else
 		roa->suppress = FALSE;
-
 	
 	for (ptr = roa->chain; ptr; ptr = g_slist_next(ptr)) {
 		struct rlib_report_output *ro = ptr->data;
@@ -269,7 +268,7 @@ static void rlib_resolve_fields2(rlib *r, struct rlib_part *part, struct rlib_re
 			rl->italics_code = rlib_infix_to_pcode(r, part, report, (gchar *)rl->xml_italics.xml, rl->xml_italics.line, TRUE);
 
 			for (; e != NULL; e = e->next) {
-				if(e->type == RLIB_ELEMENT_FIELD) {
+				if (e->type == RLIB_ELEMENT_FIELD) {
 					rlib_field_resolve_pcode(r, part, report, ((struct rlib_report_field *)e->data));
 				} else if(e->type == RLIB_ELEMENT_LITERAL) {
 					rlib_literal_resolve_pcode(r, part, report, ((struct rlib_report_literal *)e->data));
@@ -537,11 +536,11 @@ void rlib_resolve_part_fields(rlib *r, struct rlib_part *part) {
 	rlib_resolve_outputs(r, part, NULL, part->report_header);
 }
 
-gchar * rlib_resolve_memory_variable(rlib *r, gchar *name) {
+gchar *rlib_resolve_memory_variable(rlib *r, gchar *name) {
 	if(r_strlen(name) >= 3 && name[0] == 'm' && name[1] == '.') {
 		gchar *value;
 		value = g_hash_table_lookup(r->parameters, name+2);
-		if(value != NULL)
+		if (value != NULL)
 			return g_strdup(value);
 		return ENVIRONMENT(r)->rlib_resolve_memory_variable(name+2);
 	}
