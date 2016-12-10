@@ -715,7 +715,7 @@ const char *rlib_pcode_operand_name(gint type) {
 
 struct rlib_pcode *rlib_pcode_copy_replace_fields_and_immediates_with_values(rlib *r, struct rlib_pcode *p) {
 	struct rlib_pcode *p1;
-	int i, quit;
+	int i, quit = 0;
 
 	if (p == NULL)
 		return NULL;

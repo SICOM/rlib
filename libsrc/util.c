@@ -312,7 +312,7 @@ void rlib_parsecolor(struct rlib_rgb *color, const gchar *strx) {
 	guchar r, g, b;
 
 	if (str == NULL || r_strlen(str) != 8)
-		strx = colornames("white");
+		str = colornames("white");
 
 	r = (((gint)(guchar)hextochar(str[2])) << 4) | hextochar(str[3]);
 	g = (((gint)(guchar)hextochar(str[4])) << 4) | hextochar(str[5]);
