@@ -286,6 +286,8 @@ static void rlib_layout_report_delayed_data(rlib *r, struct rlib_report *report)
 			}
 		}
 
+		g_slist_free(list);
+
 		r->use_cached_data++;
 		OUTPUT(r)->finalize_text_delayed(r, dd->delayed_data, dd->backwards);
 		r->use_cached_data--;

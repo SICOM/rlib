@@ -1173,6 +1173,8 @@ gboolean rlib_format_string(rlib *r, gchar **dest, struct rlib_report_field *rf,
 					rlib_value_free(r, rval_fmtstr);
 
 					advance += adv;
+
+					g_string_free(tmp, TRUE);
 				}
 				*dest = g_string_free(str, FALSE);
 			}
