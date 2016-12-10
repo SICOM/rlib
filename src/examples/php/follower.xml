@@ -32,35 +32,7 @@
 			</Line>
 			<HorizontalLine size="4" bgcolor="'white'"/>
 		</Output>
-	</ReportHeader>		
-	<Breaks>	
-		<Break name="break0" newpage="no" headernewpage="yes">
-			<BreakHeader>
-				<Output>
-					<Line>
-						<field value="group" width="20" align="left" col="1"/>					
-					</Line>
-				</Output>								
-			</BreakHeader>
-			<BreakFields>
-				<BreakField value="group"/>
-			</BreakFields>
-			<BreakFooter>
-				<Output>
-					<HorizontalLine size="4" bgcolor="'white'"/>
-					<HorizontalLine size="2" bgcolor="'black'"/>
-					<HorizontalLine size="4" bgcolor="'white'"/>
-					<Line>
-						<literal>FOOTER</literal>
-						<field value="group" width="20" align="left" col="1"/>					
-					</Line>
-					<HorizontalLine size="4" bgcolor="'white'"/>
-					<HorizontalLine size="2" bgcolor="'black'"/>
-					<HorizontalLine size="4" bgcolor="'white'"/>
-				</Output>
-			</BreakFooter>
-		</Break>
-	</Breaks>
+	</ReportHeader>
 	<Detail>
 		<FieldHeaders>
 			<Output>
@@ -86,6 +58,14 @@
 					<field value="color" width="20" align="left" col="3"/>
 					<literal width="1"/>
 					<field value="more_data.initials" width="5" align="left" col="3"/>
+					<literal width="1"/>
+					<field value="iif([data.first_name;data.last_name]==[more_data.first_name;more_data.last_name],'MATCH','NO_MATCH')" width="8" align="left" col="3" />
+					<literal width="1"/>
+					<field value="iif([data.first_name;data.last_name]!=[more_data.first_name;more_data.last_name],'NO_MATCH','MATCH')" width="8" align="left" col="3" />
+					<literal width="1"/>
+					<field value="iif([data.first_name;[data.last_name]]==[more_data.first_name;[more_data.last_name]],'MATCH','NO_MATCH')" width="8" align="left" col="3" />
+					<literal width="1"/>
+					<field value="iif([upper(data.first_name);upper(data.last_name)]==[upper(more_data.first_name);upper(more_data.last_name)],'MATCH','NO_MATCH')" width="8" align="left" col="3" />
 				</Line>
 			</Output>
 		</FieldDetails>

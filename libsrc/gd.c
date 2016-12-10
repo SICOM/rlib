@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -17,15 +17,15 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  *
- * $Id$
- * 
  * This module generates a report from the information stored in the current
  * report object.
  * The main entry point is called once at report generation time for each
  * report defined in the rlib object.
- *
  */
- 
+
+#include <config.h>
+
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -39,27 +39,36 @@
 #endif
 #include <glib.h>
 
-#include <config.h>
 #include "rlib-internal.h"
 #include "rlib_gd.h"
 
 #ifdef HAVE_GD
-static char *unique_file_name(gchar *buf, gchar *image_directory) {
+static char *unique_file_name(rlib *r, gchar *buf, gchar *image_directory, gint image_counter) {
 #ifdef HAVE_SYS_TIME_H
-	struct timeval tv;
-	gint pid = getpid();
-	static gint counter;
+	if (r->debug) {
+		if (image_directory != NULL)
+			sprintf(buf, "%s/RLIB_IMAGE_FILE_%d.png", image_directory, image_counter);
+		else
+			sprintf(buf, "RLIB_IMAGE_FILE_%d.png", image_counter);
+	} else {
+		struct timeval tv;
+		gint pid = getpid();
 
-	gettimeofday(&tv, NULL);
-	if(image_directory != NULL)
-		sprintf(buf, "%s/RLIB_IMAGE_FILE_%d_%ld_%ld_%d.png", image_directory, pid, tv.tv_sec, tv.tv_usec, counter++);
-	else
-		sprintf(buf, "RLIB_IMAGE_FILE_%d_%ld_%ld_%d.png", pid, tv.tv_sec, tv.tv_usec, counter++);
+		gettimeofday(&tv, NULL);
+		if (image_directory != NULL)
+			sprintf(buf, "%s/RLIB_IMAGE_FILE_%d_%ld_%ld_%d.png", image_directory, pid, tv.tv_sec, tv.tv_usec, image_counter);
+		else
+			sprintf(buf, "RLIB_IMAGE_FILE_%d_%ld_%ld_%d.png", pid, tv.tv_sec, tv.tv_usec, image_counter);
+	}
 #else
-	/* tempnam() accepts NULL as directory name and it's a standard
+	/*
+	 * tempnam() accepts NULL as directory name and it's a standard
 	 * part of <stdio.h>. Most importantly, it also exists under MingW.
 	 */
-	sprintf(buf, "%s.png", tempnam(image_directory, "RLIB_IMAGE_FILE_XXXXX"));
+	if (r->debug)
+		sprintf(buf, "%s/RLIB_IMAGE_FILE_%d.png", image_directory, image_counter);
+	else
+		sprintf(buf, "%s.png", tempnam(image_directory, "RLIB_IMAGE_FILE_XXXXX"));
 #endif
 	return buf;
 }
@@ -80,24 +89,23 @@ int get_color_pool(struct rlib_gd *rgd, struct rlib_rgb *rgb) {
 	return -1;
 }
 
-struct rlib_gd * rlib_gd_new(gint width, gint height, gchar *image_directory) {
+struct rlib_gd *rlib_gd_new(rlib *r, gint width, gint height, gchar *image_directory, gint image_counter) {
 	struct rlib_gd *rgd = g_malloc(sizeof(struct rlib_gd));
 	char file_name[MAXSTRLEN];
 	int fd;
 	int i;
 	
 	memset(rgd, 0, sizeof(struct rlib_gd));
-	
-	for(i=0;i<gdMaxColors;i++)
+
+	for (i = 0; i < gdMaxColors; i++)
 		rgd->color_pool[i] = -1;
 	
-	
 	rgd->im =  gdImageCreate(width, height);
-	
-	while(1) {
-		unique_file_name(file_name, image_directory);
+
+	while (1) {
+		unique_file_name(r, file_name, image_directory, image_counter);
 		fd = open(file_name, O_RDONLY, 0);
-		if(fd < 0) {
+		if (fd < 0) {
 			fd = open(file_name, O_CREAT, 0666);
 			close(fd);
 			break;
@@ -126,7 +134,7 @@ int rlib_gd_spool(rlib *r, struct rlib_gd *rgd) {
 	return TRUE;
 }
 
-int rlib_gd_text(struct rlib_gd *rgd, char *text, int x, int y, gboolean rotate, gboolean bold) {
+int rlib_gd_text(struct rlib_gd *rgd, char *text, gint x, gint y, gboolean rotate, gboolean bold) {
 	if(bold) {
 		if(rotate)
 			gdImageStringUp(rgd->im, gdFontMediumBold,	x,	y,	(unsigned char *)text, rgd->black);
@@ -141,7 +149,7 @@ int rlib_gd_text(struct rlib_gd *rgd, char *text, int x, int y, gboolean rotate,
 	return TRUE;
 }
 
-int rlib_gd_color_text(struct rlib_gd *rgd, char *text, int x, int y, gboolean rotate, gboolean bold, struct rlib_rgb *color) {
+int rlib_gd_color_text(struct rlib_gd *rgd, char *text, gint x, gint y, gboolean rotate, gboolean bold, struct rlib_rgb *color) {
 	gint gd_color = get_color_pool(rgd, color);
 	if(bold) {
 		if(rotate)
@@ -171,7 +179,7 @@ int gd_get_string_height(gboolean bold) {
 		return gdFontMedium->h;
 }
 
-int rlib_gd_set_thickness(struct rlib_gd *rgd, int thickness) {
+int rlib_gd_set_thickness(struct rlib_gd *rgd, gint thickness) {
 	gdImageSetThickness(rgd->im, thickness);
 	return TRUE;
 }
@@ -236,11 +244,11 @@ struct rlib_gd * rlib_gd_new(gint width, gint height, gchar *image_directory) {
 	return NULL;
 }
 
-int rlib_gd_text(struct rlib_gd *rgd, char *text, int x, int y, int rotate, gboolean bold) {
+int rlib_gd_text(struct rlib_gd *rgd, char *text, gint x, gint y, gint rotate, gboolean bold) {
 	return TRUE;
 }
 
-int rlib_gd_color_text(struct rlib_gd *rgd, char *text, int x, int y, gboolean rotate, gboolean bold, struct rlib_rgb *color) {
+int rlib_gd_color_text(struct rlib_gd *rgd, char *text, gint x, gint y, gboolean rotate, gboolean bold, struct rlib_rgb *color) {
 	return TRUE;
 }
 
@@ -252,7 +260,7 @@ int gd_get_string_height(gboolean bold UNUSED) {
 	return 0;
 }
 
-int rlib_gd_set_thickness(struct rlib_gd *rgd, int thickness) {
+int rlib_gd_set_thickness(struct rlib_gd *rgd, gint thickness) {
 	return TRUE;
 }
 

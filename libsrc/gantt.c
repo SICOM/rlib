@@ -17,19 +17,17 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  *
- * $Id$
- * 
  * This module generates a report from the information stored in the current
  * report object.
  * The main entry point is called once at report generation time for each
  * report defined in the rlib object.
- *
  */
- 
-#include <stdlib.h>
-#include <string.h>
+
 #include <config.h>
 
+#include <inttypes.h>
+#include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
 #include "rlib-internal.h"
@@ -78,7 +76,7 @@ static void free_chart(GSList *row_list[]) {
 	}
 }
 
-DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left_margin_offset, gfloat *top_margin_offset) {
+DLL_EXPORT_SYM gdouble rlib_chart(rlib *r, struct rlib_part *part, struct rlib_report *report, gdouble left_margin_offset, gdouble *top_margin_offset) {
 	gint i = 0;
 	struct rlib_rgb bar_color;
 	struct rlib_rgb label_color;
@@ -88,17 +86,17 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 	gchar header_row[MAXSTRLEN];
 	gchar header_row_query[MAXSTRLEN];
 	gchar field_header_row[MAXSTRLEN];
-	gfloat hint_label_x;
-	gfloat hint_label_y;
+	gdouble hint_label_x;
+	gdouble hint_label_y;
 	gchar color[MAXSTRLEN];
 	gint row_count = 0;
 	gint col_count = 0;
-	gint cols = -1;
-	gint rows = -1;
-	gint cell_width = -1;
-	gint cell_height  = -1;
-	gint cell_width_padding = -1;
-	gint cell_height_padding = -1;
+	gint64 cols = -1;
+	gint64 rows = -1;
+	gint64 cell_width = -1;
+	gint64 cell_height  = -1;
+	gint64 cell_width_padding = -1;
+	gint64 cell_height_padding = -1;
 	gint chart_width = 600;
 	gint chart_height = 400;
 	struct rlib_chart *chart = report->chart;
@@ -109,8 +107,8 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 	gint chart_size;
 	gint last_row;
 
-	gfloat top_margin = 0;
-	gfloat bottom_margin = 0;
+	gdouble top_margin = 0;
+	gdouble bottom_margin = 0;
 
 	gchar x_label[MAX_COLS][MAXSTRLEN];
 	gboolean already_labeled[MAX_ROWS];
@@ -133,37 +131,37 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 	if(!rlib_execute_as_string(r, chart->title_code, title, MAXSTRLEN))
 		title[0] = 0;
 
-	if (rlib_execute_as_int(r, chart->cols_code, &cols)) {
+	if (rlib_execute_as_int64(r, chart->cols_code, &cols)) {
 		if (cols <= 0) {
 			r_error(r, "cols must be a positive number\n");
 			return FALSE;
 		}
 	}
-	if (rlib_execute_as_int(r, chart->rows_code, &rows)) {
+	if (rlib_execute_as_int64(r, chart->rows_code, &rows)) {
 		if (rows <= 0) {
 			r_error(r, "rows must be a positive number\n");
 			return FALSE;
 		}
 	}
-	if (rlib_execute_as_int(r, chart->cell_width_code, &cell_width)) {
+	if (rlib_execute_as_int64(r, chart->cell_width_code, &cell_width)) {
 		if (cell_width <= 0) {
 			r_error(r, "cell_width must be a positive number\n");
 			return FALSE;
 		}
 	}
-	if (rlib_execute_as_int(r, chart->cell_height_code, &cell_height)) {
+	if (rlib_execute_as_int64(r, chart->cell_height_code, &cell_height)) {
 		if (cell_height <= 0) {
 			r_error(r, "cell_height must be a positive number\n");
 			return FALSE;
 		}
 	}
-	if (rlib_execute_as_int(r, chart->cell_width_padding_code, &cell_width_padding)) {
+	if (rlib_execute_as_int64(r, chart->cell_width_padding_code, &cell_width_padding)) {
 		if (cell_width_padding < 0) {
 			r_error(r, "cell_width_padding cannot be less than 0\n");
 			return FALSE;
 		}
 	}
-	if (rlib_execute_as_int(r, chart->cell_height_padding_code, &cell_height_padding)) {
+	if (rlib_execute_as_int64(r, chart->cell_height_padding_code, &cell_height_padding)) {
 		if (cell_height_padding < 0) {
 			r_error(r, "cell_height_padding cannot be less than 0\n");
 			return FALSE;
@@ -187,7 +185,7 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 	OUTPUT(r)->graph_init(r);
 
 	rlib_fetch_first_rows(r);
-	if(!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
+	if (!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->queries[r->current_result]->result)) {
 		while(1) {
 			label[0] = 0;
 			if (rlib_execute_as_string(r, chart->row->label_code, label, MAXSTRLEN))
@@ -213,7 +211,7 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 		}
 		rlib_fetch_first_rows(r);
 		//rlib_pcode_dump(r, chart->header_row.field_code, 0);
-		if(!INPUT(r, header_row_result_num)->isdone(INPUT(r, header_row_result_num), r->results[header_row_result_num]->result)) {
+		if (!INPUT(r, header_row_result_num)->isdone(INPUT(r, header_row_result_num), r->queries[header_row_result_num]->result)) {
 			while (1) {
 				if (!rlib_execute_as_string(r, chart->header_row->field_code, field_header_row, MAXSTRLEN))
 					field_header_row[0] = 0;
@@ -266,10 +264,11 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 
 	row_count = 1;
 	rlib_fetch_first_rows(r);
-	if(!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->results[r->current_result]->result)) {
-		while(1) {
-			gint t, row = -1, start = 0, stop = 0;
-			if (rlib_execute_as_int(r, chart->row->row_code, &t))
+	if (!INPUT(r, r->current_result)->isdone(INPUT(r, r->current_result), r->queries[r->current_result]->result)) {
+		while (1) {
+			gint64 t;
+			gint row = -1, start = 0, stop = 0;
+			if (rlib_execute_as_int64(r, chart->row->row_code, &t))
 				row = t;
 			if (row > 0 && row <= MAX_ROWS) {
 				// allocate bar and append to list
@@ -287,7 +286,7 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 
 				bar->start = 0;
 				bar->stop = 0;
-				if (rlib_execute_as_int(r, chart->row->bar_start_code, &t)) {
+				if (rlib_execute_as_int64(r, chart->row->bar_start_code, &t)) {
 					if (t > 0) {
 						start = t;
 						bar->start = t;
@@ -295,7 +294,7 @@ DLL_EXPORT_SYM gfloat rlib_chart(rlib *r, struct rlib_part *part, struct rlib_re
 							bar->start = cols;
 					}
 				}
-				if (rlib_execute_as_int(r, chart->row->bar_end_code, &t)) {
+				if (rlib_execute_as_int64(r, chart->row->bar_end_code, &t)) {
 					if (t > 0) {
 						stop = t;
 						bar->stop = t;

@@ -20,7 +20,7 @@ dnl Report bugs to rlib-devel@lists.sourceforge.net
 dnl
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([rlib],[2.0.14],[http://bugzilla.sicompos.com])
+AC_INIT([rlib],[3.0.0],[http://bugzilla.sicompos.com])
 AC_CANONICAL_TARGET
 AC_CONFIG_SRCDIR(libsrc/rlib.h)
 AC_CONFIG_MACRO_DIR([m4])
@@ -30,12 +30,12 @@ AM_INIT_AUTOMAKE()
 AC_CONFIG_HEADERS(config.h)
 AM_MAINTAINER_MODE
 
-RLIB_VERSION=2.0.10
+RLIB_VERSION=3.0.0
 AC_SUBST(RLIB_VERSION)
 
-RLIB_LT_CURRENT=4
-RLIB_LT_AGE=3
-RLIB_LT_REVISION=14
+RLIB_LT_CURRENT=2
+RLIB_LT_AGE=0
+RLIB_LT_REVISION=0
 AC_SUBST(RLIB_LT_CURRENT)
 AC_SUBST(RLIB_LT_REVISION)
 AC_SUBST(RLIB_LT_AGE)
@@ -57,7 +57,7 @@ AC_SUBST(LIBLTDL)
 
 AC_CHECK_HEADERS(langinfo.h sys/time.h)
 
-AC_CHECK_FUNCS([localtime_r strfmon])
+AC_CHECK_FUNCS([localtime_r])
 
 gl_VISIBILITY
 AS_IF([test x$gl_cv_cc_visibility = xyes],
@@ -76,18 +76,23 @@ AC_TRY_LINK_FLAG([-Wl,--no-copy-dt-needed-entries],[ac_cv_Wl_no_copy_dt_needed_e
 AS_IF([test x$ac_cv_Wl_no_copy_dt_needed_entries = xno],
 	[AC_TRY_LINK_FLAG([-Wl,--no-add-needed],[ac_cv_Wl_no_add_needed])])
 
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS(fcntl.h unistd.h)
+AC_C_CONST
+
 dnl Checks for libraries.
 AC_CHECK_LIB(c, exit)
 AC_CHECK_LIB(m, exp)
-AC_CHECK_HEADER([zlib.h],
-	[AC_CHECK_LIB(z, zlibVersion,
-		enable_compressed_pdf=yes,
-		enable_compressed_pdf=no)],
-	[enable_compressed_pdf=no])
-AS_IF([test x$enable_compressed_pdf = xyes],
-	[AC_DEFINE([RPDF_COMPRESS_STREAM], [1], [RPDF can compress streams])
-	 ZLIB_LIBS="-lz"])
-AC_SUBST(ZLIB_LIBS)
+
+AC_CHECK_HEADERS(gmp.h mpfr.h mpf2mpfr.h,,[AC_MSG_ERROR([GNU MP and MPFR headers not found!])])
+AC_CHECK_LIB(mpfr, mpfr_init2,[MPFR_LIBS="-lmpfr"],[AC_MSG_ERROR([GNU MPFR library not found!])])
+AC_CHECK_LIB(gmp, __gmpf_init2,[MPFR_LIBS="$MPFR_LIBS -lgmp"],[AC_MSG_ERROR([GNU MP library not found!])])
+AC_SUBST(MPFR_LIBS)
+
+AC_CHECK_HEADERS(hpdf.h,,[AC_MSG_ERROR([libharu headers not found!])])
+AC_CHECK_LIB(hpdf, HPDF_New,[HPDF_LIBS=-lhpdf],[AC_MSG_ERROR([libharu library not found!])])
+AC_SUBST(HPDF_LIBS)
 
 PKG_CHECK_MODULES(LIBXML, libxml-2.0 >= 2.6.0)
 AC_SUBST(LIBXML_LIBS)
@@ -100,6 +105,10 @@ AC_SUBST(LIBGLIB_CFLAGS)
 PKG_CHECK_MODULES(LIBGMODULE, gmodule-2.0 >= 0.0.1)
 AC_SUBST(LIBGMODULE_LIBS)
 AC_SUBST(LIBGMODULE_CFLAGS)
+
+PKG_CHECK_MODULES(FONTCONFIG, fontconfig)
+AC_SUBST(FONTCONFIG_LIBS)
+AC_SUBST(FONTCONFIG_CFLAGS)
 
 case "$target" in
   *-*-cygwin*|*-*-mingw*)
@@ -158,10 +167,10 @@ AC_ARG_ENABLE([mysql],
 	[AS_HELP_STRING([--disable-mysql],[disable mysql backend])],,enable_mysql=yes)
 AS_IF([test x$enable_mysql = xyes],[
 	dnl Use the standard MySQL detection from mysql.m4
-	dnl MYSQL_CLIENT sets MYSQL_CLIENT_CFLAGS and MYSQL_CLIENT_LIBS.
-	dnl Lets set out own MYSQL_CFLAGS and MYSQL_LIBS too.
 	dnl It will make ./configure bail with an error if detection fails
 	dnl instead of silently ignoring it.
+	dnl MYSQL_CLIENT() sets MYSQL_CLIENT_CFLAGS and MYSQL_CLIENT_LIBS.
+	dnl Lets set our own MYSQL_CFLAGS and MYSQL_LIBS too.
 	MYSQL_CLIENT()
 	MYSQL_CFLAGS=${MYSQL_CLIENT_CFLAGS}
 	AC_SUBST(MYSQL_CFLAGS)
@@ -452,27 +461,17 @@ dnl -D_GNU_SOURCE is needed.
 dnl For llabs(), -D_ISOC99_SOURCE is enough,
 dnl but e.g. strcasecmp is a GNU extension.
 
-CFLAGS="-D_GNU_SOURCE -Wall -Wextra -Werror"
+CFLAGS="-D_GNU_SOURCE -Wall -Wextra -Werror $CFLAGS"
 
 RLIB_CFLAGS="$LIBXML_CFLAGS $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $MYSQL_CFLAGS $POSTGRES_CFLAGS $ODBC_CFLAGS $GD_CFLAGS $NO_CYGWIN"
-RLIB_LIBS="$LIBXML_LIBS $LIBGLIB_LIBS $LIBGMODULE_LIBS $ICONVLIBS $GD_LDFLAGS $GD_LIBS $GD_LINK "
+RLIB_LIBS="$LIBXML_LIBS $LIBGLIB_LIBS $LIBGMODULE_LIBS $ICONVLIBS $GD_LDFLAGS $GD_LIBS $GD_LINK $MPFR_LIBS"
 AC_SUBST(RLIB_CFLAGS)
 AC_SUBST(RLIB_LIBS)
 
-RPDF_CFLAGS="-D_GNU_SOURCE -Wall -Wextra -Werror $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $NO_CYGWIN"
-RPDF_LIBS="$LIBGLIB_LIBS $LIBGMODULE_LIBS $ZLIB_LIBS"
+RPDF_CFLAGS="-D_GNU_SOURCE -Wall -Wextra -Werror $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $FONTCONFIG_CFLAGS $NO_CYGWIN"
+RPDF_LIBS="$LIBGLIB_LIBS $LIBGMODULE_LIBS $HPDF_LIBS $FONTCONFIG_LIBS $ZLIB_LIBS"
 AC_SUBST(RPDF_CFLAGS)
 AC_SUBST(RPDF_LIBS)
-
-dnl Checks for header files.
-AC_HEADER_STDC
-AC_CHECK_HEADERS(fcntl.h unistd.h)
-AC_C_CONST
-
-AC_ARG_ENABLE([utf8],
-	[AS_HELP_STRING([--enable-utf8],[enable utf8])],
-	[AS_IF([test x$enable_utf8 = xno],[AC_DEFINE(DISABLE_UTF8,1,[DISABLE UTF8])])],
-	enable_utf8=yes)
 
 AC_CONFIG_FILES([
 Makefile
@@ -482,7 +481,6 @@ libsrc/Makefile
 src/Makefile
 src/examples/Makefile
 src/examples/common/Makefile
-src/examples/c/Makefile
 src/examples/php/Makefile
 src/examples/python/Makefile
 src/examples/java/Makefile
@@ -511,7 +509,7 @@ rlib-$VERSION:
 
    prefix:                   ${prefix}
    compiler:                 ${CC}
-   UTF8 enabled:             ${enable_utf8}
+   UTF8 enabled:             Always
    WIN32 build:              ${enable_win32}
    Documentation:            ${enable_doc}
 
@@ -521,7 +519,7 @@ rlib-$VERSION:
     ODBC:                    ${enable_odbc} built-in: ${enable_built_in_odbc}
 
    COMPRESSION:
-    PDF:                     ${enable_compressed_pdf}
+    PDF:                     Always
 
    GRAPHING:
     PDF:                     Always
@@ -542,7 +540,7 @@ rlib-$VERSION:
      PERL entension dir:     ${perl_where}
 
    ** If you like RLIB send a postcard from where you are in the world to:
-   ** Bob Doan - 4140 Skyron Drive - Doylestown - PA - 18902 - USA
+   ** Bob Doan - 4434 Progress Meadow Drive - Doylestown - PA - 18902 - USA
 
    Music:                    RHCP / Virgin Radio	
    Having Problems:          rlib-users@lists.sf.net 	

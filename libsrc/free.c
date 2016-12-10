@@ -16,14 +16,13 @@
  * License along with this program; if not, write to the
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
- *
- * $Id$
  */
+
+#include <config.h>
 
 #include <stdlib.h>
 #include <gmodule.h>
 
-#include <config.h>
 #include "rlib-internal.h"
 #include "pcode.h"
 #include "rlib_input.h"
@@ -104,7 +103,6 @@ static void field_free_pcode(rlib *r, struct rlib_report_field *rf) {
 	rlib_pcode_free(r, rf->color_code);
 	rlib_pcode_free(r, rf->bgcolor_code);
 	rlib_pcode_free(r, rf->col_code);
-	rlib_pcode_free(r, rf->delayed_code);
 	rlib_pcode_free(r, rf->width_code);
 	rlib_pcode_free(r, rf->bold_code);
 	rlib_pcode_free(r, rf->italics_code);
@@ -122,7 +120,6 @@ static void field_free_pcode(rlib *r, struct rlib_report_field *rf) {
 	xmlFree(rf->xml_link.xml);
 	xmlFree(rf->xml_translate.xml);
 	xmlFree(rf->xml_col.xml);
-	xmlFree(rf->xml_delayed.xml);
 	xmlFree(rf->xml_memo.xml);
 	xmlFree(rf->xml_memo_max_lines.xml);
 	xmlFree(rf->xml_memo_wrap_chars.xml);
@@ -176,6 +173,37 @@ void rlib_free_lines(rlib *r, struct rlib_report_lines *rl) {
 	g_free(rl);
 }
 
+void rlib_free_extra_data(rlib *r, struct rlib_line_extra_data *extra_data) {
+	rlib_pcode_free(r, extra_data->field_code);
+
+	rlib_value_free(r, &extra_data->rval_code);
+	rlib_value_free(r, &extra_data->rval_link);
+	rlib_value_free(r, &extra_data->rval_bgcolor);
+	rlib_value_free(r, &extra_data->rval_color);
+	rlib_value_free(r, &extra_data->rval_col);
+	rlib_value_free(r, &extra_data->rval_bold);
+	rlib_value_free(r, &extra_data->rval_italics);
+	rlib_value_free(r, &extra_data->rval_image_name);
+	rlib_value_free(r, &extra_data->rval_image_type);
+	rlib_value_free(r, &extra_data->rval_image_width);
+	rlib_value_free(r, &extra_data->rval_image_height);
+	rlib_value_free(r, &extra_data->rval_image_textwidth);
+	g_free(extra_data->formatted_string);
+
+	if (extra_data->memo_lines != NULL) {
+		GSList *list;
+		for (list = extra_data->memo_lines; list != NULL; list = list->next)
+			g_free(list->data);
+		g_slist_free(list);
+	}
+	g_free(extra_data);
+}
+
+void rlib_free_delayed_extra_data(rlib *r, struct rlib_delayed_extra_data *delayed_data) {
+	rlib_free_extra_data(r, delayed_data->extra_data);
+	g_free(delayed_data);
+}
+
 static void free_fields(rlib *r, struct rlib_report_output_array *roa) {
 	GSList *ptr;
 
@@ -184,12 +212,19 @@ static void free_fields(rlib *r, struct rlib_report_output_array *roa) {
 
 	for (ptr = roa->chain; ptr; ptr = g_slist_next(ptr)) {
 		struct rlib_report_output *ro = ptr->data;
-		if (ro->type == RLIB_REPORT_PRESENTATION_DATA_LINE) {
+		switch (ro->type) {
+		case RLIB_REPORT_PRESENTATION_DATA_LINE:
 			rlib_free_lines(r, (struct rlib_report_lines *)ro->data);
-		} else if(ro->type == RLIB_REPORT_PRESENTATION_DATA_HR) {
+			break;
+		case RLIB_REPORT_PRESENTATION_DATA_HR:
 			hr_free_pcode(r, (struct rlib_report_horizontal_line *)ro->data);
-		} else if(ro->type == RLIB_REPORT_PRESENTATION_DATA_IMAGE) {
+			break;
+		case RLIB_REPORT_PRESENTATION_DATA_IMAGE:
 			image_free_pcode(r, (struct rlib_report_image *)ro->data);
+			break;
+		default:
+			r_error(r, "free_fields: Unknown type %d\n", ro->type);
+			break;
 		}
 		g_free(ro);
 	}
@@ -385,8 +420,28 @@ void rlib_free_breaks(rlib *r, struct rlib_element *e) {
 		xmlFree(rb->xml_newpage.xml);
 		xmlFree(rb->xml_headernewpage.xml);
 		xmlFree(rb->xml_suppressblank.xml);
+
+		g_slist_free(rb->variables);
+
 		g_free(rb);
 	}
+}
+
+void rlib_free_variable(rlib *r, struct rlib_report_variable *rv) {
+	rlib_value_free(r, &rv->count);
+	rlib_value_free(r, &rv->amount);
+
+	rlib_pcode_free(r, rv->code);
+	rlib_pcode_free(r, rv->ignore_code);
+
+	xmlFree(rv->xml_name.xml);
+	xmlFree(rv->xml_str_type.xml);
+	xmlFree(rv->xml_value.xml);
+	xmlFree(rv->xml_resetonbreak.xml);
+	xmlFree(rv->xml_precalculate.xml);
+	xmlFree(rv->xml_ignore.xml);
+
+	g_free(rv);
 }
 
 void rlib_free_variables(rlib *r, struct rlib_element *e) {
@@ -395,22 +450,8 @@ void rlib_free_variables(rlib *r, struct rlib_element *e) {
 	for (; e != NULL; save = e, e = e->next, g_free(save)) {
 		struct rlib_report_variable *rv = e->data;
 
-		rlib_pcode_free(r, rv->code);
-		rlib_pcode_free(r, rv->ignore_code);
+		rlib_free_variable(r, rv);
 
-		xmlFree(rv->xml_name.xml);
-		xmlFree(rv->xml_str_type.xml);
-		xmlFree(rv->xml_value.xml);
-		xmlFree(rv->xml_resetonbreak.xml);
-		xmlFree(rv->xml_precalculate.xml);
-		xmlFree(rv->xml_ignore.xml);
-
-		if(rv->precalculated_values != NULL) {
-			g_free(rv->precalculated_values->data);
-			rv->precalculated_values = g_slist_remove_link (rv->precalculated_values, rv->precalculated_values);
-		}
-
-		g_free(rv);
 		e->data = NULL;
 	}
 }
@@ -464,7 +505,7 @@ void rlib_free_report(rlib *r, struct rlib_report *report) {
 	g_free(report->position_bottom);
 	g_free(report->bottom_size);
 
-	rlib_value_free(&report->uniquerow);
+	rlib_value_free(r, &report->uniquerow);
 
 	rlib_free_breaks(r, report->breaks);
 	report->breaks = NULL;
@@ -603,9 +644,9 @@ void rlib_free_results(rlib *r) {
 	int i;
 
 	for (i = 0; i < r->queries_count; i++) {
-		if (r->results[i]->result && INPUT(r, i)->free_result)
-			INPUT(r, i)->free_result(INPUT(r, i), r->results[i]->result);
-		r->results[i]->result = NULL;
+		if (r->queries[i]->result && INPUT(r, i)->free_result)
+			INPUT(r, i)->free_result(INPUT(r, i), r->queries[i]->result);
+		r->queries[i]->result = NULL;
 	}
 }
 
@@ -617,12 +658,11 @@ static void rlib_free_results_and_queries(rlib *r) {
 	int i;
 
 	for (i = 0; i < r->queries_count; i++) {
-		if (r->results[i]->result && INPUT(r, i)->free_result) {
-			INPUT(r, i)->free_result(INPUT(r, i), r->results[i]->result);
-			r->results[i]->result = NULL;
+		if (r->queries[i]->result && INPUT(r, i)->free_result) {
+			INPUT(r, i)->free_result(INPUT(r, i), r->queries[i]->result);
+			r->queries[i]->result = NULL;
 		}
-		g_free(r->results[i]);
-		r->results[i] = NULL;
+		g_hash_table_destroy(r->queries[i]->cached_values);
 		if (QUERY(r, i) && QUERY(r, i)->input && QUERY(r, i)->input->free_query)
 			QUERY(r, i)->input->free_query(QUERY(r, i)->input, QUERY(r, i));
 		if (r->queries[i]->sql_allocated)
@@ -631,30 +671,44 @@ static void rlib_free_results_and_queries(rlib *r) {
 		g_free(r->queries[i]);
 		r->queries[i] = NULL;
 	}
-	g_free(r->results);
-	r->results = NULL;
 	g_free(r->queries);
 	r->queries = NULL;
 	r->queries_count = 0;
 }
 
+static void free_follower(gpointer data, gpointer user_data) {
+	struct rlib_resultset_followers *f = data;
+	rlib *r = user_data;
 
-gint rlib_free_follower(rlib *r) {
-	gint i;
-	for (i = 0; i < r->resultset_followers_count; i++) {
-		rlib_pcode_free(r, r->followers[i].leader_code);
-		rlib_pcode_free(r, r->followers[i].follower_code);
-	}
+	g_free(f->leader_field);
+	g_free(f->follower_field);
+	rlib_pcode_free(r, f->leader_code);
+	rlib_pcode_free(r, f->follower_code);
 
-	return TRUE;
+	g_free(f);
 }
 
-DLL_EXPORT_SYM gint rlib_free(rlib *r) {
+static void rlib_free_follower(rlib *r) {
+	gint64 i;
+
+	for (i = 0; i < r->queries_count; i++) {
+		g_list_foreach(r->queries[i]->followers, free_follower, r);
+		g_list_free(r->queries[i]->followers);
+		r->queries[i]->followers = NULL;
+
+		g_list_foreach(r->queries[i]->followers_n_to_1, free_follower, r);
+		g_list_free(r->queries[i]->followers_n_to_1);
+		r->queries[i]->followers_n_to_1 = NULL;
+	}
+}
+
+DLL_EXPORT_SYM void rlib_free(rlib *r) {
 	int i;
 
 	rlib_charencoder_free(r->output_encoder);
 	g_free(r->output_encoder_name);
 
+	rlib_free_follower(r);
 	rlib_free_results_and_queries(r);
 
 	rlib_free_tree(r);
@@ -677,10 +731,9 @@ DLL_EXPORT_SYM gint rlib_free(rlib *r) {
 	g_hash_table_destroy(r->output_parameters);
 	g_hash_table_destroy(r->input_metadata);
 	g_hash_table_destroy(r->parameters);
-	rlib_free_follower(r);
 	g_free(r->special_locale);
 	g_free(r->current_locale);
+	g_string_free(r->header_buf, TRUE);
 
 	g_free(r);
-	return 0;
 }

@@ -42,7 +42,6 @@ endif
 
 SUBDIRS = \
 	common \
-	c \
 	$(PHP_EXAMPLES) \
 	$(PYTHON_EXAMPLES) \
 	$(JAVA_EXAMPLES) \

@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<!DOCTYPE report >
+<Report fontSize="9" orientation="landscape">
+	<ReportHeader>
+		<Output>
+			<Line fontSize="11" bold="yes">
+				<field value="'Hyperinflation salaries in Hungary, 1945'" width="40" align="left"/>
+			</Line>
+			<Line/>
+			<Line>
+				<literal width="10">Total:</literal>
+				<field value="v.total_salary" format="'$%.2d'" width="100" align="right" />
+			</Line>
+			<Line>
+				<literal width="10"/>
+				<field value="v.total_salary" format="'!$%=*#60n'" width="100" align="right" />
+			</Line>
+			<Line>
+				<literal width="10"/>
+				<field value="v.total_salary" format="'!$%=*#60i'" width="100" align="right" />
+			</Line>
+		</Output>
+	</ReportHeader>
+
+	<Variables>
+		<Variable name="total_salary" value="val(salary)" type="sum" precalculate="yes" />
+	</Variables>
+
+	<Detail>
+		<FieldHeaders>
+			<Output>
+				<Line>
+					<literal width="10" align="left">Date</literal>
+					<literal width="80" align="left">Salary in plain number</literal>
+				</Line>
+				<Line>
+					<literal width="10"/>
+					<literal width="80" align="left">Salary in national currency</literal>
+				</Line>
+				<Line>
+					<literal width="10"/>
+					<literal width="80" align="left">Salary in international currency</literal>
+				</Line>
+			</Output>
+		</FieldHeaders>
+		<FieldDetails>
+			<Output>
+				<Line>
+					<field value="date" width="10" align="left" />
+					<field value="val(salary)" format="'$%.2d'" width="100" align="right" />
+				</Line>
+				<Line>
+					<literal width="10"/>
+					<field value="val(salary)" format="'!$%=*#60n'" width="100" align="right" />
+				</Line>
+				<Line>
+					<literal width="10"/>
+					<field value="val(salary)" format="'!$%=*#60i'" width="100" align="right" />
+				</Line>
+			</Output>
+		</FieldDetails>
+	</Detail>
+	<ReportFooter>
+		<Output>
+			<Line>
+				<literal width="10">Total:</literal>
+				<field value="v.total_salary" format="'$%.2d'" width="100" align="right" />
+			</Line>
+			<Line>
+				<literal width="10"/>
+				<field value="v.total_salary" format="'!$%=*#60n'" width="100" align="right" />
+			</Line>
+			<Line>
+				<literal width="10"/>
+				<field value="v.total_salary" format="'!$%=*#60i'" width="100" align="right" />
+			</Line>
+		</Output>
+	</ReportFooter>
+</Report>

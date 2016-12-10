@@ -61,7 +61,7 @@ staticforward PyTypeObject RLIBType;
 
 #define check_rlibobject_open(v) if ((v)->rlib_ptr == NULL) \
    { PyErr_SetString(RLIBError, "Rlib object has already been closed."); \
-      return NULL; }
+	  return NULL; }
 
 static PyObject *RLIBError;
 static struct environment_filter *rlib_python_new_environment();
@@ -123,46 +123,43 @@ implement_function_call(rlib *rlib_ptr,  struct rlib_pcode *code UNUSED, struct 
 	PyObject 	*retval;
 	func_chain	*fp = user_data;
 	int		i;
-	struct rlib_value rval_rtn;
+	struct rlib_value *rval_rtn;
 
 	arglist = PyTuple_New(fp->param_count);
 	if (arglist == NULL)
 		return 0;
-	for (i=0; i< fp->param_count; i++) {
+	for (i = 0; i < fp->param_count; i++) {
 		PyObject *arg;
-		struct rlib_value *v = rlib_value_stack_pop(vs);
-		if (RLIB_VALUE_IS_STRING(v)) {
-			arg = PyString_FromString(RLIB_VALUE_GET_AS_STRING(v));
-		} else if (RLIB_VALUE_IS_NUMBER(v)) {
-			arg = PyFloat_FromDouble((double)RLIB_VALUE_GET_AS_NUMBER(v) / (double)RLIB_DECIMAL_PRECISION);
+		struct rlib_value *v = rlib_value_stack_pop(rlib_ptr, vs);
+		if (RLIB_VALUE_IS_STRING(rlib_ptr, v)) {
+			arg = PyString_FromString(RLIB_VALUE_GET_AS_STRING(rlib_ptr, v));
+		} else if (RLIB_VALUE_IS_NUMBER(rlib_ptr, v)) {
+			arg = PyFloat_FromDouble(RLIB_VALUE_GET_AS_DOUBLE(rlib_ptr, v));
 		} else {
 			Py_INCREF(Py_None);
 			arg = Py_None;
 		}
-		rlib_value_free(v);
+		rlib_value_free(rlib_ptr, v);
 		if (PyTuple_SetItem(arglist, i, arg) < 0)
 			return 0;
 	}
-	
+
 	/* Time to call the function */
 	retval = PyEval_CallObject(fp->callable, arglist);
 	Py_DECREF(arglist);
-	if (retval == NULL) {
+	if (retval == NULL)
 		return 0;
-	}
-	/* Figure out what to do with result here */
 
+	/* Figure out what to do with result here */
+	rval_rtn = rlib_value_alloc(rlib_ptr);
 	if (PyString_Check(retval))
-		rlib_value_stack_push(rlib_ptr, vs, rlib_value_new_string(&rval_rtn, PyString_AsString(retval)));
-	else if (PyInt_Check(retval)) {
-		gint64 result = LONG_TO_FXP_NUMBER(PyInt_AsLong(retval));
-		rlib_value_stack_push(rlib_ptr, vs, rlib_value_new_number(&rval_rtn, result));
-	} else if (PyFloat_Check(retval)) {
-		gint64 result = PyFloat_AsDouble(retval)*(gdouble)RLIB_DECIMAL_PRECISION;
-                rlib_value_stack_push(rlib_ptr, vs, rlib_value_new_number(&rval_rtn, result));
-        } else {
-                rlib_value_stack_push(rlib_ptr, vs, rlib_value_new_error(&rval_rtn));
-        }
+		rlib_value_stack_push(rlib_ptr, vs, rlib_value_new_string(rlib_ptr, rval_rtn, PyString_AsString(retval)));
+	else if (PyInt_Check(retval))
+		rlib_value_stack_push(rlib_ptr, vs, rlib_value_new_number_from_long(rlib_ptr, rval_rtn, PyInt_AsLong(retval)));
+	else if (PyFloat_Check(retval))
+		rlib_value_stack_push(rlib_ptr, vs, rlib_value_new_number_from_double(rlib_ptr, rval_rtn, PyFloat_AsDouble(retval)));
+	else
+		rlib_value_stack_push(rlib_ptr, vs, rlib_value_new_error(rlib_ptr, rval_rtn));
 	Py_DECREF(retval);
 	return 1;
 }
@@ -178,7 +175,39 @@ implement_signal_call(rlib *rlib_ptr UNUSED,  void *user_data) {
 	return 1;
 }
 
-static gchar * rlib_python_resolve_memory_variable(gchar *name) {
+static GString *rlib_python_dump_memory_variables(void) {
+	GString *dump;
+	PyObject *moduledict = PyImport_GetModuleDict();
+	PyObject *mainmodule;
+	PyObject *dict;
+	PyObject *key, *value;
+	Py_ssize_t pos = 0;
+
+	dump = g_string_new("");
+
+	mainmodule = PyDict_GetItemString(moduledict, "__main__");
+	if (!PyModule_Check(mainmodule)) {
+		PyErr_SetString(RLIBError, "could not find main module");
+		return dump;
+	}
+
+	dict = PyModule_GetDict(mainmodule);
+
+	while (PyDict_Next(dict, &pos, &key, &value)) {
+		const char *k;
+		const char *v;
+		Py_ssize_t k_len, v_len;
+
+		if (PyObject_AsCharBuffer(key, &k, &k_len) != 0 || PyObject_AsCharBuffer(value, &v, &v_len) != 0)
+			continue;
+
+		g_string_append_printf(dump, "%s=%s\n", k, v);
+	}
+
+	return dump;
+}
+
+static gchar *rlib_python_resolve_memory_variable(gchar *name) {
 	PyObject	*moduledict = PyImport_GetModuleDict();
 	PyObject	*mainmodule;
 	PyObject	*dict;
@@ -224,6 +253,7 @@ static void rlib_python_free(rlib *r) {
 static struct environment_filter *rlib_python_new_environment() {
 	struct environment_filter *ef;
 	ef = g_malloc(sizeof(struct environment_filter));
+	ef->rlib_dump_memory_variables = rlib_python_dump_memory_variables;
 	ef->rlib_resolve_memory_variable = rlib_python_resolve_memory_variable;
 	ef->rlib_write_output = rlib_python_write_output;
 	ef->free = rlib_python_free;
@@ -234,6 +264,7 @@ struct rlib_python_array_results {
 	char *array_name;
 	int	cols;
 	int	rows;
+	int atstart;
 	int	isdone;
 	char **data;
 	int	current_row;
@@ -296,7 +327,7 @@ void *rlib_python_array_new_result_from_query(gpointer input_ptr, gpointer query
 
 	Py_XDECREF(INPUT_PRIVATE(input)->localarray);
 	INPUT_PRIVATE(input)->localarray = outerlist;
-        result->rows = PySequence_Fast_GET_SIZE(outerlist);
+		result->rows = PySequence_Fast_GET_SIZE(outerlist);
 	
 	innerlist = PySequence_Fast_GET_ITEM(outerlist, 0);
 	if (!PyList_Check(innerlist) && !PyTuple_Check(innerlist)) {
@@ -361,95 +392,108 @@ void *rlib_python_array_new_result_from_query(gpointer input_ptr, gpointer query
 	return result;
 }
 
-static gint rlib_python_array_input_close(gpointer input_ptr UNUSED) {
-	return TRUE;
+static gint rlib_python_array_num_fields(gpointer input_ptr UNUSED, gpointer result_ptr) {
+	struct rlib_python_array_results *result = result_ptr;
+
+	if (result == NULL)
+		return 0;
+
+	return result->cols;
 }
 
-static gint rlib_python_array_first(gpointer input_ptr UNUSED, gpointer result_ptr) {
-        struct rlib_python_array_results *result = result_ptr;
-        result->current_row = 1;
-        if(result->rows <= 1) {
-                result->isdone = TRUE;
-                return FALSE;
-        }
-        result->isdone = FALSE;
-        return TRUE;
+static void rlib_python_array_input_close(gpointer input_ptr UNUSED) {}
+
+static void rlib_python_array_start(gpointer input_ptr UNUSED, gpointer result_ptr) {
+	struct rlib_python_array_results *result = result_ptr;
+
+	if (result == NULL)
+		return;
+
+	result->atstart = TRUE;
+	result->current_row = 0;
+	result->isdone = FALSE;
 }
 
 static gint rlib_python_array_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
-        struct rlib_python_array_results *result = result_ptr;
+	struct rlib_python_array_results *result = result_ptr;
+
+	if (result == NULL)
+		return FALSE;
+
+	if (result->isdone)
+		return FALSE;
+
 	result->current_row++;
-	result->isdone = FALSE;
-	if(result->current_row < result->rows)
-		return TRUE;
-	result->isdone = TRUE;
-	result->current_row = result->rows - 1;
-	return FALSE;
+	result->atstart = FALSE;
+	result->isdone = (result->current_row > result->rows);
+	return !result->isdone;
 }
 
 static gint rlib_python_array_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
-        struct rlib_python_array_results *result = result_ptr;
-        return result->isdone;
-}
-
-static gint rlib_python_array_previous(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_python_array_results *result = result_ptr;
-	result->current_row--;
-	result->isdone = FALSE;
-	if(result->current_row >= 1)
-		return TRUE;
-	result->current_row = 0;
-	return FALSE;
-}
-static gint rlib_python_array_last(gpointer input_ptr UNUSED, gpointer result_ptr) {
-        struct rlib_python_array_results *result = result_ptr;
-        result->current_row = result->rows-1;
-        return TRUE;
+
+	if (result == NULL)
+		return FALSE;
+
+	return result->isdone;
 }
 
 static gchar * rlib_python_array_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
-        struct rlib_python_array_results *result = result_ptr;
-        int which_field = GPOINTER_TO_INT(field_ptr) - 1;
-        if(result->rows <= 1)
-                return "";
+	struct rlib_python_array_results *result = result_ptr;
+	int which_field = GPOINTER_TO_INT(field_ptr) - 1;
 
-        return result->data[(result->current_row*result->cols)+which_field];
+	if (result == NULL || result->atstart || result->isdone)
+		return "";
+
+	if (result->rows <= 1)
+		return "";
+
+	return result->data[(result->current_row * result->cols) + which_field];
 }
 
 static gpointer rlib_python_array_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) {
-        struct rlib_python_array_results *result = result_ptr;
-        int i;
-        for(i=0;i<result->cols;i++) {
-                if(strcmp(name, result->data[i]) == 0) {
-                        i++;
-                        return GINT_TO_POINTER(i);
-                }
-        }
-        return NULL;
+	struct rlib_python_array_results *result = result_ptr;
+	int i;
+
+	for (i = 0; i < result->cols; i++) {
+		if (strcmp(name, result->data[i]) == 0)
+			return GINT_TO_POINTER(i + 1);
+	}
+
+	return NULL;
 }
 
-static gint rlib_python_array_free_input_filter(gpointer input_ptr) {
+static gchar *rlib_python_array_get_field_name(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
+	struct rlib_python_array_results *result = result_ptr;
+	int field = GPOINTER_TO_INT(field_ptr) - 1;
+
+	if (result == NULL)
+		return NULL;
+
+	return result->data[field];
+}
+
+static void rlib_python_array_free_input_filter(gpointer input_ptr) {
 	struct input_filter *input = input_ptr;
 	if (input->private) {
 		PyMem_Free(input->private);
 		input->private = NULL;
 	}
 	PyMem_Free(input);
-        return 0;
 }
 
 static void rlib_python_array_free_result(gpointer input_ptr, gpointer result_ptr) {
 	struct input_filter *input = input_ptr;
-        struct rlib_python_array_results *result = result_ptr;
+		struct rlib_python_array_results *result = result_ptr;
 	int	i, j;
 	if (result) {
-	    if (result->data)
-		    for (i=0;i<result->rows;i++)
-			    for (j=0; j<result->cols; j++)
-				    free(result->data[(i*result->cols)+j]);
-	    PyMem_Free(result->data);
-	    result->data = NULL;
-	    PyMem_Free(result);
+		if (result->data)
+			for (i=0;i<result->rows;i++)
+				for (j=0; j<result->cols; j++)
+					free(result->data[(i*result->cols)+j]);
+		PyMem_Free(result->data);
+		result->data = NULL;
+		PyMem_Free(result);
 	}
 	Py_XDECREF(INPUT_PRIVATE(input)->localarray);
 	INPUT_PRIVATE(input)->localarray = NULL;
@@ -457,24 +501,24 @@ static void rlib_python_array_free_result(gpointer input_ptr, gpointer result_pt
 
 
 gpointer rlib_python_array_new_input_filter() {
-        struct input_filter *input;
-        input = PyMem_Malloc(sizeof(struct input_filter));
-        input->private = PyMem_Malloc(sizeof(struct _private));
-        memset(input->private, 0, sizeof(struct _private));
-        input->input_close = rlib_python_array_input_close;
-        input->first = rlib_python_array_first;
-        input->next = rlib_python_array_next;
-        input->previous = rlib_python_array_previous;
-        input->last = rlib_python_array_last;
-        input->isdone = rlib_python_array_isdone;
-        input->new_result_from_query = rlib_python_array_new_result_from_query;
-        input->get_field_value_as_string = rlib_python_array_get_field_value_as_string;
+		struct input_filter *input;
+		input = PyMem_Malloc(sizeof(struct input_filter));
+		input->private = PyMem_Malloc(sizeof(struct _private));
+		memset(input->private, 0, sizeof(struct _private));
+		input->input_close = rlib_python_array_input_close;
+		input->num_fields = rlib_python_array_num_fields;
+		input->start = rlib_python_array_start;
+		input->next = rlib_python_array_next;
+		input->isdone = rlib_python_array_isdone;
+		input->new_result_from_query = rlib_python_array_new_result_from_query;
+		input->get_field_name = rlib_python_array_get_field_name;
+		input->get_field_value_as_string = rlib_python_array_get_field_value_as_string;
 
-        input->resolve_field_pointer = rlib_python_array_resolve_field_pointer;
+		input->resolve_field_pointer = rlib_python_array_resolve_field_pointer;
 
-        input->free = rlib_python_array_free_input_filter;
-        input->free_result = rlib_python_array_free_result;
-        return input;
+		input->free = rlib_python_array_free_input_filter;
+		input->free_result = rlib_python_array_free_result;
+		return input;
 }
 
 /*
@@ -586,16 +630,16 @@ method_add_function(PyObject *self, PyObject *_args) {
 	PyObject *callable;
 	if (!PyArg_ParseTuple(_args, "sOi:add_function", &name, &callable, &param_count))
 		return NULL;
-        if (!PyCallable_Check(callable)) {
-            PyErr_SetString(PyExc_TypeError, "the second parameter must be callable");
-            return NULL;
-        }
+	if (!PyCallable_Check(callable)) {
+		PyErr_SetString(PyExc_TypeError, "the second parameter must be callable");
+		return NULL;
+	}
 	check_rlibobject_open(rp);
 	nfp = PyMem_Malloc(sizeof(func_chain));
 	if (nfp == NULL)
 		return PyErr_NoMemory();
 	nfp->callable = callable;
-        Py_INCREF(callable);         /* Add a reference to callback */
+		Py_INCREF(callable);		 /* Add a reference to callback */
 	nfp->param_count = param_count;
 	nfp->next = rp->funcs;
 	rp->funcs = nfp;
@@ -862,16 +906,11 @@ static PyObject *
 method_set_locale(PyObject *self, PyObject *_args) {
 	RLIBObject	*rp = (RLIBObject *)self;
 	char		*locale;
-	long		result;
 
 	if (!PyArg_ParseTuple(_args, "s:set_locale", &locale))
 		return NULL;
 	check_rlibobject_open(rp);
-	result = rlib_set_locale(rp->rlib_ptr, locale);
-	if (!result) {
-		PyErr_SetString(RLIBError, "Locale not changed");
-		return NULL;
-	}
+	rlib_set_locale(rp->rlib_ptr, locale);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -950,23 +989,23 @@ method_signal_connect(PyObject *self, PyObject *_args) {
 	
 	if (!PyArg_ParseTuple(_args, "iO|O:signal_connect", &signal_num, &callable, &callback_arg))
 		return NULL;
-        if (!PyCallable_Check(callable)) {
-            PyErr_SetString(PyExc_TypeError, "the second parameter must be callable");
-            return NULL;
-        }
+	if (!PyCallable_Check(callable)) {
+		PyErr_SetString(PyExc_TypeError, "the second parameter must be callable");
+		return NULL;
+	}
 	check_rlibobject_open(rp);
 	nsp = PyMem_Malloc(sizeof(signal_chain));
 	if (nsp == NULL)
 		return PyErr_NoMemory();
 	nsp->callable = callable;
-        Py_INCREF(callable);         	/* Add a reference to callback */
+		Py_INCREF(callable);		 	/* Add a reference to callback */
 	if (callback_arg == NULL) {
 		callback_arg = PyTuple_New(0);
 		nsp->arg = callback_arg;
 	} else if (PyTuple_Check(callback_arg)) {
 		nsp->arg = callback_arg;
 		Py_INCREF(callback_arg); 	/* Add reference to argument */
-        } else {
+		} else {
 		nsp->arg = PyTuple_New(1);
 		Py_INCREF(callback_arg); 	/* Add reference to argument */
 		PyTuple_SetItem(nsp->arg, 0, callback_arg); /* Then give it to the Tuple */
@@ -992,23 +1031,23 @@ method_signal_connect_string(PyObject *self, PyObject *_args) {
 	
 	if (!PyArg_ParseTuple(_args, "sO|O:signal_connect_string", &signal_name, &callable, &callback_arg))
 		return NULL;
-        if (!PyCallable_Check(callable)) {
-            PyErr_SetString(PyExc_TypeError, "the second parameter must be callable");
-            return NULL;
-        }
+	if (!PyCallable_Check(callable)) {
+		PyErr_SetString(PyExc_TypeError, "the second parameter must be callable");
+		return NULL;
+	}
 	check_rlibobject_open(rp);
 	nsp = PyMem_Malloc(sizeof(signal_chain));
 	if (nsp == NULL)
 		return PyErr_NoMemory();
 	nsp->callable = callable;
-        Py_INCREF(callable);         	/* Add a reference to callback */
+		Py_INCREF(callable);		 	/* Add a reference to callback */
 	if (callback_arg == NULL) {
 		callback_arg = PyTuple_New(0);
 		nsp->arg = callback_arg;
 	} else if (PyTuple_Check(callback_arg)) {
 		nsp->arg = callback_arg;
 		Py_INCREF(callback_arg); 	/* Add reference to argument */
-        } else {
+		} else {
 		nsp->arg = PyTuple_New(1);
 		Py_INCREF(callback_arg); 	/* Add reference to argument */
 		PyTuple_SetItem(nsp->arg, 0, callback_arg); /* The give it to the Tuple */
@@ -1109,7 +1148,7 @@ rlibmysql_report(PyObject *self UNUSED, PyObject *_args)
 	r = rlib_init();
 	if (rlib_add_datasource_mysql(r, "mysql", hostname, username, password, database) == -1) {
 		rlib_free(r);
-        return PyInt_FromLong(-1);
+		return PyInt_FromLong(-1);
 	}
 	rlib_add_query_as(r, "mysql", sqlquery, "example");
 	rlib_add_report(r, xmlfile);
@@ -1131,9 +1170,9 @@ Create an instance of a Rlib report object.\n\
 static PyObject *
 rlibopen(PyObject *self UNUSED, PyObject *args)
 {
-    if (!PyArg_ParseTuple(args, ":open"))
-        return NULL;
-    return newrlibobject();
+	if (!PyArg_ParseTuple(args, ":open"))
+		return NULL;
+	return newrlibobject();
 }
 
 static char rlibpostgres_report__doc__[] = "\
@@ -1159,7 +1198,7 @@ rlibpostgres_report(PyObject *self UNUSED, PyObject *_args)
 	rlib_set_output_format_from_text(r, oformat);
 	if (rlib_execute(r) == -1) {
 		rlib_free(r);
-        return PyInt_FromLong(-1);
+		return PyInt_FromLong(-1);
 	}
 	rlib_spool(r);
 	rlib_free(r);
@@ -1167,23 +1206,23 @@ rlibpostgres_report(PyObject *self UNUSED, PyObject *_args)
 }
 
 static PyMethodDef rlibmodule_methods[] = {
-    { "mysql_report",	(PyCFunction)rlibmysql_report,	 	METH_VARARGS, rlibmysql_report__doc__},
-    { "open",		(PyCFunction)rlibopen,	 		METH_VARARGS, rlibopen__doc__},
-    { "postgres_report",(PyCFunction)rlibpostgres_report,	METH_VARARGS, rlibpostgres_report__doc__},
-    { NULL, NULL, 0, NULL },
+	{ "mysql_report",	(PyCFunction)rlibmysql_report,	 	METH_VARARGS, rlibmysql_report__doc__},
+	{ "open",		(PyCFunction)rlibopen,	 		METH_VARARGS, rlibopen__doc__},
+	{ "postgres_report",(PyCFunction)rlibpostgres_report,	METH_VARARGS, rlibpostgres_report__doc__},
+	{ NULL, NULL, 0, NULL },
 };
 //DL_EXPORT(void)
 PyMODINIT_FUNC 
 initrlib(void) {
-    PyObject *m, *d, *s, *i;
+	PyObject *m, *d, *s, *i;
 
-    m = Py_InitModule3("rlib",
-		       rlibmodule_methods,
-                       rlibmodule__doc__);
-    d = PyModule_GetDict(m);
-    RLIBError = PyErr_NewException("rlib.Error", NULL, NULL);
-    if (RLIBError != NULL) {
-        PyDict_SetItemString(d, "Error", RLIBError);
+	m = Py_InitModule3("rlib",
+			   rlibmodule_methods,
+					   rlibmodule__doc__);
+	d = PyModule_GetDict(m);
+	RLIBError = PyErr_NewException("rlib.Error", NULL, NULL);
+	if (RLIBError != NULL) {
+		PyDict_SetItemString(d, "Error", RLIBError);
 
 	s = PyString_FromString(rlib_version());
 	PyDict_SetItemString(d, "version", s);
@@ -1209,19 +1248,19 @@ initrlib(void) {
 	PyDict_SetItemString(d, "FORMAT_CSV", i);
 	Py_DECREF(i);
 
-	i = PyInt_FromLong(RLIB_CONTENT_TYPE_PDF);
+	i = PyInt_FromLong(RLIB_FORMAT_PDF);
 	PyDict_SetItemString(d, "CONTENT_TYPE_PDF", i);
 	Py_DECREF(i);
 
-	i = PyInt_FromLong(RLIB_CONTENT_TYPE_HTML);
+	i = PyInt_FromLong(RLIB_FORMAT_HTML);
 	PyDict_SetItemString(d, "CONTENT_TYPE_HTML", i);
 	Py_DECREF(i);
 
-	i = PyInt_FromLong(RLIB_CONTENT_TYPE_TXT);
+	i = PyInt_FromLong(RLIB_FORMAT_TXT);
 	PyDict_SetItemString(d, "CONTENT_TYPE_TXT", i);
 	Py_DECREF(i);
 
-	i = PyInt_FromLong(RLIB_CONTENT_TYPE_CSV);
+	i = PyInt_FromLong(RLIB_FORMAT_CSV);
 	PyDict_SetItemString(d, "CONTENT_TYPE_CSV", i);
 	Py_DECREF(i);
 
@@ -1340,11 +1379,11 @@ initrlib(void) {
 	i = PyInt_FromLong(RLIB_GRAPH_TYPE_XY_BSPLINE_WITH_SYMBOLS);
 	PyDict_SetItemString(d, "GRAPH_TYPE_XY_BSPLINE_WITH_SYMBOLS", i);
 	Py_DECREF(i);
-    }
+	}
 	if (PyType_Ready(&RLIBType) < 0) {
-        
+		
 	} else {
-    Py_INCREF(&RLIBType);
-    PyModule_AddObject(m, "Rlib", (PyObject *)&RLIBType);
+	Py_INCREF(&RLIBType);
+	PyModule_AddObject(m, "Rlib", (PyObject *)&RLIBType);
 	}
 }

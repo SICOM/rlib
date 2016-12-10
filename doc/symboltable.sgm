@@ -9,7 +9,7 @@
 		</para>
 	</sect1>
 	<sect1>
-		<title>+</title>
+		<title><literal>+</literal></title>
 		<para>
 			expN1 + expN2 <emphasis>Returns</emphasis> NUMBER containing the result of expN1 plus expN2
 		</para>
@@ -23,7 +23,7 @@
 		</para>
 	</sect1>
 	<sect1>
-		<title>&dash;</title>
+		<title><literal>-</literal></title>
 		<para>
 			expN1 - expN2 <emphasis>Returns</emphasis> NUMBER contain the result of expN1 minus expN2
 		</para>
@@ -39,7 +39,7 @@
 		</para>
 	</sect1>
 	<sect1>
-		<title>*</title>
+		<title><literal>*</literal></title>
 		<para>
 			expN1 * expN2 <emphasis>Returns</emphasis> NUMBER containing the result of expN1 times expN2
 		</para>
@@ -51,19 +51,19 @@
 		</para>
 	</sect1>	
 	<sect1>
-		<title>%</title>
+		<title><literal>%</literal></title>
 		<para>
 			expN1 % expN2 <emphasis>Returns</emphasis> NUMBER containing the result of expN1 mod expN2
 		</para>
 	</sect1>	
 	<sect1>
-		<title>^</title>
+		<title><literal>^</literal></title>
 		<para>
 			expN1 ^ expN2 <emphasis>Returns</emphasis> NUMBER containing the result of expN1 to the expN2
 		</para>
 	</sect1>	
 	<sect1>
-		<title>&lt=</title>
+		<title><literal>&lt=</literal></title>
 		<para>
 			expN1 &lt= expN1 <emphasis>Returns</emphasis> NUMBER 1 if true.. 0 if false
 		</para>
@@ -76,7 +76,7 @@
 		</para>
 	</sect1>	
 	<sect1>
-		<title>&lt</title>
+		<title><literal>&lt</literal></title>
 		<para>
 			expN1 &lt expN2 <emphasis>Returns</emphasis> NUMBER 1 if true.. 0 if false
 		</para>
@@ -89,7 +89,7 @@
 		</para>
 	</sect1>	
 	<sect1>
-		<title>&gt=</title>
+		<title><literal>&gt=</literal></title>
 		<para>
 			expN1 &gt= expN2 <emphasis>Returns</emphasis> NUMBER 1 if true.. 0 if false
 		</para>
@@ -102,7 +102,7 @@
 		</para>
 	</sect1>	
 	<sect1>
-		<title>&gt</title>
+		<title><literal>&gt</literal></title>
 		<para>
 			NUMBER &gt NUMBER <emphasis>Returns</emphasis> NUMBER 1 if true.. 0 if false
 		</para>
@@ -115,7 +115,7 @@
 		</para>
 	</sect1>	
 	<sect1>
-		<title>==</title>
+		<title><literal>==</literal></title>
 		<para>
 			NUMBER == NUMBER <emphasis>Returns</emphasis> NUMBER 1 if true.. 0 if false
 		</para>
@@ -126,9 +126,15 @@
 			expD1 == expD2 <emphasis>Returns</emphasis> NUMBER 1 if true.. 0 if false
 			Both date and time are compared if both have valid components. The dateof and timeof functions can be used to select one or the other.
 		</para>
-	</sect1>	
+		<para>
+			expV1 == expV2 <emphasis>Returns</emphasis> NUMBER 1 if true.. 0 if false
+		</para>
+		<para>
+			Vectors are equal if they have equal number of elements and elements from the two vectors at the same positions are of the same type and have the same value.
+		</para>
+	</sect1>
 	<sect1>
-		<title>!=</title>
+		<title><literal>!=</literal></title>
 		<para>
 			NUMBER != NUMBER <emphasis>Returns</emphasis> NUMBER 1 if true.. 0 if false
 		</para>
@@ -139,9 +145,15 @@
 			expD1 != expD2 <emphasis>Returns</emphasis> NUMBER 1 if true.. 0 if false
 			Both date and time are compared if both have valid components. The dateof and timeof functions can be used to select one or the other.
 		</para>
-	</sect1>	
+		<para>
+			expV1 != expV2 <emphasis>Returns</emphasis> NUMBER 1 if true.. 0 if false
+		</para>
+		<para>
+			Vectors are not equal if they have different number of elements or elements from the two vectors at the same positions are of different types or have different values.
+		</para>
+	</sect1>
 	<sect1>
-		<title>&amp;&amp;</title>
+		<title><literal>&amp;&amp;</literal></title>
 		<para>
 			LOGICAL "AND". iif(m.test1 == 22 && m.test2 == 17, 'passed', 'failed')
 		</para>
@@ -263,8 +275,13 @@
 	<sect1>
 		<title>fxpval(expS, expN)</title>
 		<para>
-			 Converts a string into a number.. assumes no decimal places in the string.. expN says where the decimal place should go
-			 for instance if in your database you store all values in cents.. and not dollars
+			Legacy function that converts a string into a number, using the formula
+			val(expS)*pow(10,expN), equivalent of the E notation in floating points.
+			E.g. 1.5e15. With RLIB 3.0, both expS and expN may contain fractions.
+			Originally both expS and expN were assumed to contains integer values.
+			The main use case was when the database stored all values in cents
+			instead of dollars, i.e. values pre-multiplied by 100 or whatever the
+			change was between monetary units.
 		</para>
 		<para>
 			<emphasis> Returns</emphasis> NUMBER

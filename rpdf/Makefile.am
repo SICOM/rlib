@@ -28,7 +28,7 @@ AM_CFLAGS = $(CFLAG_VISIBILITY) $(RPDF_CFLAGS)
 lib_LTLIBRARIES = librpdf.la
 librpdf_la_SOURCES = rpdf.c rpdf.h
 
-librpdf_la_LIBADD = $(DYNAMIC_LD_LIBS) $(RPDF_LIBS) $(GD_LIBS)
+librpdf_la_LIBADD = $(RPDF_LIBS)
 
 DEF_FILE=librpdf.def
 IMPLIB_FILE=librpdf.a

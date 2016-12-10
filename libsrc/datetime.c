@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2016 SICOM Systems, INC.
  *
  *  Authors: Chet Heilman <cheilman@sicompos.com>
  *
@@ -18,67 +18,57 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#include <config.h>
+
 #include <glib.h>
 #include <time.h>
 #include <string.h>
 
-#include <config.h>
 #include "util.h"
 #include "datetime.h"
 #include "rlib-internal.h"
  
-#define RLIB_DATETIME_SECSPERDAY (60 * 60 * 24)
-
-
-int rlib_datetime_valid_date(struct rlib_datetime *dt) {
-	return &dt->date && g_date_valid(&dt->date);
+gboolean rlib_datetime_valid_date(struct rlib_datetime *dt) {
+	return g_date_valid(&dt->date);
 }
 
-
-int rlib_datetime_valid_time(struct rlib_datetime *dt) {
-	return (dt->ltime > 0)? TRUE : FALSE;
+gboolean rlib_datetime_valid_time(struct rlib_datetime *dt) {
+	return (dt->ltime > 0);
 }
-
 
 void rlib_datetime_clear_time(struct rlib_datetime *t) {
-	t->ltime = 0;
+	t->ltime = 0LL;
 }
-
 
 void rlib_datetime_clear_date(struct rlib_datetime *t) {
 	g_date_clear(&t->date, 1);
 }
-
 
 void rlib_datetime_clear(struct rlib_datetime *t1) {
 	rlib_datetime_clear_time(t1);
 	rlib_datetime_clear_date(t1);
 }
 
-
 void rlib_datetime_makesamedate(struct rlib_datetime *target, struct rlib_datetime *chgto) {
 	target->date = chgto->date;
 }
-
 
 void rlib_datetime_makesametime(struct rlib_datetime *target, struct rlib_datetime *chgto) {
 	target->ltime = chgto->ltime;
 }
 
-
 gint rlib_datetime_compare(struct rlib_datetime *t1, struct rlib_datetime *t2) {
 	gint result = 0;
 	if (rlib_datetime_valid_date(t1) && rlib_datetime_valid_date(t2)) {
 		result = g_date_compare(&t1->date, &t2->date);
-	}	
-	if ((result == 0) && rlib_datetime_valid_time(t1) && rlib_datetime_valid_time(t2)) {
+	}
+	if (result == 0 && rlib_datetime_valid_time(t1) && rlib_datetime_valid_time(t2)) {
 		result = t1->ltime - t2->ltime;
 	}
 	return result;
 }
 
-
-void rlib_datetime_set_date(struct rlib_datetime *dt, int y, int m, int d) {
+void rlib_datetime_set_date(struct rlib_datetime *dt, gint y, gint m, gint d) {
 	GDate *t;
 	if (d && m && y) {
 		t = g_date_new_dmy(d, m, y);
@@ -88,25 +78,14 @@ void rlib_datetime_set_date(struct rlib_datetime *dt, int y, int m, int d) {
 		} else {
 			memset(&dt->date, 0, sizeof(dt->date));
 		}
-	} else {
+	} else
 		memset(&dt->date, 0, sizeof(dt->date));
-	}
+	dt->ltime = 0;
 }
 
-
-void rlib_datetime_set_time(struct rlib_datetime *dt, int h, int m, int s) {
-	dt->ltime = 256 * 256 * 256 + h * 256 * 256 + m * 256 + s;
+void rlib_datetime_set_time(struct rlib_datetime *dt, guchar h, guchar m, guchar s) {
+	dt->ltime = (1 << 24) || ((h * 60) + m) * 60 + s;
 }
-
-
-long rlib_datetime_time_as_long(struct rlib_datetime *dt) {
-	glong h, m, s;
-	h = ((dt->ltime & 0x00FF0000) >> 16);
-	m = ((dt->ltime & 0x0000FF00) >> 8);
-	s = (dt->ltime & 0x000000FF);
-	return (h * 60 *60) + (m * 60) + s;
-}
-
 
 void rlib_datetime_set_time_from_long(struct rlib_datetime *dt, long t) {
 	gint h, m, s;
@@ -118,8 +97,7 @@ void rlib_datetime_set_time_from_long(struct rlib_datetime *dt, long t) {
 	rlib_datetime_set_time(dt, h, m, s);
 }
 
-
-static void rlib_datetime_format_date(struct rlib_datetime *dt, char *buf, int max, const char *fmt) {
+static void rlib_datetime_format_date(struct rlib_datetime *dt, char *buf, gint max, const char *fmt) {
 	if (rlib_datetime_valid_date(dt)) {
 		g_date_strftime(buf, max, fmt, &dt->date);
 	} else {
@@ -128,8 +106,7 @@ static void rlib_datetime_format_date(struct rlib_datetime *dt, char *buf, int m
 	}
 }
 
-
-static void rlib_datetime_format_time(struct rlib_datetime *dt, char *buf, int max, const char *fmt) {
+static void rlib_datetime_format_time(struct rlib_datetime *dt, char *buf, gint max, const char *fmt) {
 	time_t now = time(NULL);
 	struct tm *tmp = localtime(&now);
 	if (rlib_datetime_valid_time(dt)) {
@@ -142,7 +119,6 @@ static void rlib_datetime_format_time(struct rlib_datetime *dt, char *buf, int m
 		r_error(NULL, "Invalid time in format time");
 	}
 }
-
 
 /* separate format string into 2 pcs. one with date, other with time. */
 static gchar datechars[] = "aAbBcCdDeFgGhJmuUVwWxyY";
@@ -202,17 +178,72 @@ static void split_tdformat(gchar **datefmt, gchar **timefmt, gint *order, const 
 }
 
 
-void rlib_datetime_format(rlib *r, gchar **dest, struct rlib_datetime *dt, const gchar *fmt) {
+void rlib_datetime_format(rlib *r, gchar **woot_dest, struct rlib_datetime *dt, const gchar *fmt) {
+	GString *str, *date = NULL, *last_literal = NULL;
+	gint advance;
+	gboolean found_date = FALSE;
+	gint types[2] = { RLIB_FORMATSTR_DATE, RLIB_FORMATSTR_LITERAL };
+	gint type_idx, type;
 	gchar *datefmt, *timefmt;
 	gint order;
 	gchar datebuf[128];
 	gchar timebuf[128];
 	gint havedate = FALSE, havetime = FALSE;
 	gint max = MAXSTRLEN;
-	*dest = g_malloc(MAXSTRLEN);
-	
-	
-	split_tdformat(&datefmt, &timefmt, &order, fmt);
+	gchar *dest = g_malloc(MAXSTRLEN);
+
+	str = g_string_new("");
+	advance = 0;
+	type_idx = 0;
+	while (fmt[advance]) {
+		GString *tmp;
+		gint adv;
+		gboolean error;
+
+		tmp = get_next_format_string(r, fmt + advance, types[type_idx], &type, &adv, &error);
+		if (error) {
+			g_string_free(str, TRUE);
+			*woot_dest = g_string_free(tmp, FALSE);
+			return;
+		}
+
+		if (types[type_idx] == type)
+			type_idx++;
+
+		switch (type) {
+		case RLIB_FORMATSTR_LITERAL:
+			if (!found_date) {
+				g_string_append(str, tmp->str);
+				g_string_free(tmp, TRUE);
+			} else
+				last_literal = tmp;
+			break;
+		case RLIB_FORMATSTR_DATE:
+			found_date = TRUE;
+			date = tmp;
+			break;
+		default:
+			g_strlcpy(dest, "!ERR_DT_NO", max);
+			g_string_free(str, TRUE);
+			g_string_free(date, TRUE);
+			g_string_free(last_literal, TRUE);
+			*woot_dest = dest;
+			return;
+		}
+
+		advance += adv;
+	}
+
+	if (!found_date) {
+		g_strlcpy(dest, "!ERR_DT_NO", max);
+		*woot_dest = dest;
+		g_string_free(str, TRUE);
+		g_string_free(date, TRUE);
+		g_string_free(last_literal, TRUE);
+		return;
+	}
+
+	split_tdformat(&datefmt, &timefmt, &order, date->str);
 	*datebuf = *timebuf = '\0';
 	if (datefmt && rlib_datetime_valid_date(dt)) {
 		rlib_datetime_format_date(dt, datebuf, 127, datefmt);	
@@ -230,20 +261,32 @@ void rlib_datetime_format(rlib *r, gchar **dest, struct rlib_datetime *dt, const
 	}
 	switch (order) {
 	case 1:
-		g_strlcpy(*dest, datebuf, max);
-		g_strlcat(*dest, timebuf, max - r_strlen(datebuf));
+		g_strlcpy(dest, datebuf, max);
+		g_strlcat(dest, timebuf, max - r_strlen(datebuf));
 		break;
 	case 2:
-		g_strlcpy(*dest, timebuf, max);
-		g_strlcat(*dest, datebuf, max - r_strlen(timebuf));
+		g_strlcpy(dest, timebuf, max);
+		g_strlcat(dest, datebuf, max - r_strlen(timebuf));
 		break;
 	default:
-		g_strlcpy(*dest, "!ERR_DT_NO", max);
+		g_strlcpy(dest, "!ERR_DT_NO", max);
 		r_error(r, "Datetime format has no date or no format");
 		break; /* format has no date or time codes ??? */
 	}
-	if (datefmt) g_free(datefmt);
-	if (timefmt) g_free(timefmt);
+	if (datefmt)
+		g_free(datefmt);
+	if (timefmt)
+		g_free(timefmt);
+
+	g_string_append(str, dest);
+	g_free(dest);
+	g_string_free(date, TRUE);
+	if (last_literal) {
+		g_string_append(str, last_literal->str);
+		g_string_free(last_literal, TRUE);
+	}
+
+	*woot_dest = g_string_free(str, FALSE);
 }
 
 
@@ -252,7 +295,7 @@ gint rlib_datetime_daysdiff(struct rlib_datetime *dt, struct rlib_datetime *dt2)
 }
 
 
-void rlib_datetime_addto(struct rlib_datetime *dt, gint64 amt) {
+void rlib_datetime_addto(struct rlib_datetime *dt, gint amt) {
 	long ndays = amt;
 	long nsecs = 0;
 	if (rlib_datetime_valid_time(dt)) {

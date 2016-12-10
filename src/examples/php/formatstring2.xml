@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!DOCTYPE report >
+<Report fontSize="9" orientation="portrait" xmlns:xi="http://www.w3.org/2003/XInclude">
+	<Detail>
+		<FieldDetails>
+			<Output>
+				<Line>
+					<field value="stodtsql(date)" width="100" format="'Legacy format date string: %a %d'" />
+				</Line>
+				<Line>
+					<field value="stodtsql(date)" width="100" format="'New style date format string: !@%a %d'" />
+				</Line>
+				<Line>
+					<field value="val(number)" width="100" format="'Legacy number format string: %a %d'" />
+				</Line>
+				<Line>
+					<field value="val(number)" width="100" format="'New style date format string: !#%a %d'" />
+				</Line>
+			</Output>
+		</FieldDetails>
+	</Detail>
+</Report>

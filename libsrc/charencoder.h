@@ -29,7 +29,6 @@
 
 GIConv rlib_charencoder_new(const gchar *to_codeset, const gchar *from_codeset);
 void rlib_charencoder_free(GIConv converter);
-gint rlib_charencoder_convert(GIConv converter, gchar **inbuf, gsize *inbytes_left, gchar **outbuf, gsize *outbytes_left);
+gint rlib_charencoder_convert(GIConv converter, const gchar **inbuf, gsize *inbytes_left, gchar **outbuf, gsize *outbytes_left);
 
 #endif
-

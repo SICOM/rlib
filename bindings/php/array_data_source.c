@@ -25,6 +25,7 @@
 #include <string.h>
 #include <glib.h>
 #include <php.h>
+#include <Zend/zend.h>
 
 #include "rlib.h"
 #include "rlib_input.h"
@@ -38,101 +39,99 @@ struct rlib_php_array_results {
 	zval *zend_value;
 	int cols;
 	int rows;
+	int atstart;
 	int isdone;
 	char **data;
 	int current_row;
 };
 
 struct _private {
-	int	dummy;
+	char *error;
 };
 
-static gint rlib_php_array_input_close(gpointer input_ptr UNUSED) {
-	return TRUE;
+static void rlib_php_array_input_close(gpointer input_ptr UNUSED) {}
+
+static const gchar* rlib_php_array_get_error(gpointer input_ptr) {
+	struct input_filter *input = input_ptr;
+	return INPUT_PRIVATE(input)->error;
 }
 
-static const gchar* rlib_php_array_get_error(gpointer input_ptr UNUSED) {
-	return "Hard to make a mistake here.. try checking your names/spellings";
-}
-
-static gint rlib_php_array_first(gpointer input_ptr UNUSED, gpointer result_ptr) {
+static void rlib_php_array_start(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_php_array_results *result = result_ptr;
 
-	if(result_ptr == NULL) {
-		return FALSE;	
-	}
+	if (result == NULL)
+		return;
 
-	result->current_row = 1;
+	result->current_row = 0;
+	result->atstart = TRUE;
 	result->isdone = FALSE;
-	if(result->rows <= 1) {
-		result->isdone = TRUE;
-		return FALSE;
-	}	
-	return TRUE;
 }
 
 static gint rlib_php_array_next(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_php_array_results *result = result_ptr;
+
+	if (result == NULL)
+		return FALSE;
+
+	if (result->isdone)
+		return FALSE;
+
 	result->current_row++;
-	result->isdone = FALSE;
-	if(result->current_row < result->rows)
-		return TRUE;
-	result->isdone = TRUE;
-	return FALSE;
+	result->atstart = FALSE;
+	result->isdone = (result->current_row >= result->rows);
+	return !result->isdone;
 }
 
 static gint rlib_php_array_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) {
 	struct rlib_php_array_results *result = result_ptr;
 
-	if(result == NULL)
+	if (result == NULL)
 		return TRUE;
 
 	return result->isdone;
 }
 
-static gint rlib_php_array_previous(gpointer input_ptr UNUSED, gpointer result_ptr) {
+static gchar *rlib_php_array_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_php_array_results *result = result_ptr;
-	result->current_row--;
-	result->isdone = FALSE;
-	if(result->current_row >= 1)
-		return TRUE;
-	else
-		return FALSE;
-	return TRUE;
-}
+	gchar *str;
 
-static gint rlib_php_array_last(gpointer input_ptr UNUSED, gpointer result_ptr) {
-	struct rlib_php_array_results *result = result_ptr;
-	result->current_row = result->rows-1;
-	return TRUE;
-}
+	if (result == NULL || result->atstart || result->isdone) {
+		str = "";
+	} else {
+		int which_field = GPOINTER_TO_INT(field_ptr) - 1;
+		str = result->data[result->current_row * result->cols + which_field];
+	}
 
-static gchar * rlib_php_array_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
-	struct rlib_php_array_results *result = result_ptr;
-	int which_field = GPOINTER_TO_INT(field_ptr) - 1;
-	if(result->rows <= 1 || result->current_row >= result->rows)
-		return "";
-
-	return result->data[(result->current_row*result->cols)+which_field];
+	return str;
 }
 
 static gpointer rlib_php_array_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) {
 	struct rlib_php_array_results *result = result_ptr;
 	int i;
 
-	if(result_ptr == NULL)
+	if (result == NULL)
 		return NULL;
 
-	for(i=0;i<result->cols;i++) {
-		if(strcmp(name, result->data[i]) == 0) {
-			i++;
-			return GINT_TO_POINTER(i);
+	for (i = 0; i < result->cols; i++) {
+		if (strcmp(name, result->data[i]) == 0) {
+			return GINT_TO_POINTER(i + 1);
 		}
 	}
 	return NULL;
 }
 
-static void *php_array_new_result_from_query(gpointer input_ptr UNUSED, gpointer query_ptr) {
+static gchar *rlib_php_array_get_field_name(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
+	struct rlib_php_array_results *result = result_ptr;
+	int field = GPOINTER_TO_INT(field_ptr) - 1;
+
+	if (result == NULL)
+		return NULL;
+
+	return result->data[field];
+}
+
+static void *php_array_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
+	struct input_filter *input = input_ptr;
 	struct rlib_query *query = query_ptr;
 	struct rlib_php_array_results *result = emalloc(sizeof(struct rlib_php_array_results));
 #if PHP_MAJOR_VERSION < 7
@@ -152,6 +151,7 @@ static void *php_array_new_result_from_query(gpointer input_ptr UNUSED, gpointer
 
 #if PHP_MAJOR_VERSION < 7
 	if (zend_hash_find(&EG(symbol_table), query->sql, strlen(query->sql) + 1, &data) == FAILURE) {
+		INPUT_PRIVATE(input)->error = g_strdup_printf("RLIB-PHP: Cannot find variable '%s'", query->sql);
 		efree(result);
 		return NULL;
 	}
@@ -159,21 +159,34 @@ static void *php_array_new_result_from_query(gpointer input_ptr UNUSED, gpointer
 #else
 	result->zend_value = zend_hash_str_find(&EG(symbol_table), query->sql, strlen(query->sql));
 	if (result->zend_value == NULL) {
+		INPUT_PRIVATE(input)->error = g_strdup_printf("RLIB-PHP: Cannot find variable '%s'", query->sql);
 		efree(result);
 		return NULL;
 	}
 
-	if (EXPECTED(Z_TYPE_P(result->zend_value) == IS_INDIRECT))
-		result->zend_value = Z_INDIRECT_P(result->zend_value);
+	while (EXPECTED(Z_TYPE_P(result->zend_value) == IS_INDIRECT) || Z_ISREF_P(result->zend_value)) {
+		if (EXPECTED(Z_TYPE_P(result->zend_value) == IS_INDIRECT))
+			result->zend_value = Z_INDIRECT_P(result->zend_value);
+
+		if (Z_ISREF_P(result->zend_value))
+			result->zend_value = Z_REFVAL_P(result->zend_value);
+	}
 #endif
 
 	if (UNEXPECTED(Z_TYPE_P(result->zend_value) != IS_ARRAY)) {
+		INPUT_PRIVATE(input)->error = g_strdup_printf("RLIB-PHP: '%s' IS NOT AN ARRAY", query->sql);
 		efree(result);
 		return NULL;
 	}
 
 	ht1 = Z_ARRVAL_P(result->zend_value);
 	result->rows = zend_hash_num_elements(ht1);
+	if (result->rows <= 0) {
+		efree(result);
+		INPUT_PRIVATE(input)->error = g_strdup_printf("RLIB-PHP: Invalid number of rows in array '%s'\n", query->sql);
+		return NULL;
+	}
+
 	zend_hash_internal_pointer_reset_ex(ht1, &pos1);
 #if PHP_MAJOR_VERSION < 7
 	zend_hash_get_current_data_ex(ht1, &data, &pos1);
@@ -188,8 +201,11 @@ static void *php_array_new_result_from_query(gpointer input_ptr UNUSED, gpointer
 	total_size = result->rows * result->cols * sizeof(char *);
 	result->data = emalloc(total_size);
 
-	if (result->cols <= 0)
+	if (result->cols <= 0) {
+		INPUT_PRIVATE(input)->error = g_strdup_printf("RLIB-PHP: Invalid number of columns in array '%s'\n", query->sql);
+		efree(result);
 		return NULL;
+	}
 
 	zend_hash_internal_pointer_reset_ex(ht1, &pos1);
 	while (row < result->rows) {
@@ -244,17 +260,32 @@ static void *php_array_new_result_from_query(gpointer input_ptr UNUSED, gpointer
 		row++;
 		zend_hash_move_forward_ex(ht1, &pos1);
 	}
-	
+
+	INPUT_PRIVATE(input)->error = g_strdup("OK");
+
 	return result;
 }
 
-static gint rlib_php_array_free_input_filter(gpointer input_ptr UNUSED) {
-	return 0;
+static gint rlib_php_array_num_fields(gpointer input_ptr UNUSED, gpointer result_ptr) {
+	struct rlib_php_array_results *result = result_ptr;
+
+	if (result == NULL)
+		return 0;
+
+	return result->cols;
+}
+
+static void rlib_php_array_free_input_filter(gpointer input_ptr UNUSED) {
+	struct input_filter *input = input_ptr;
+	g_free(INPUT_PRIVATE(input)->error);
+	efree(input);
 }
 
 static void rlib_php_array_rlib_free_result(gpointer input_ptr UNUSED, gpointer result_ptr UNUSED) {
-}
+	struct rlib_php_array_results *result = result_ptr;
 
+	efree(result->data);
+}
 
 static gpointer rlib_php_array_new_input_filter() {
 	struct input_filter *input;
@@ -264,13 +295,13 @@ static gpointer rlib_php_array_new_input_filter() {
 	input->private = emalloc(sizeof(struct _private));
 	memset(input->private, 0, sizeof(struct _private));
 	input->input_close = rlib_php_array_input_close;
-	input->first = rlib_php_array_first;
+	input->num_fields = rlib_php_array_num_fields;
+	input->start = rlib_php_array_start;
 	input->next = rlib_php_array_next;
-	input->previous = rlib_php_array_previous;
-	input->last = rlib_php_array_last;
 	input->get_error = rlib_php_array_get_error;
 	input->isdone = rlib_php_array_isdone;
 	input->new_result_from_query = php_array_new_result_from_query;
+	input->get_field_name = rlib_php_array_get_field_name;
 	input->get_field_value_as_string = rlib_php_array_get_field_value_as_string;
 
 	input->resolve_field_pointer = rlib_php_array_resolve_field_pointer;

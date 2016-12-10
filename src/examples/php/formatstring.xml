@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!DOCTYPE report >
+<Report fontSize="9" orientation="portrait" xmlns:xi="http://www.w3.org/2003/XInclude">
+	<Detail>
+		<FieldDetails>
+			<Output>
+				<Line>
+					<field value="stodtsql(date)" width="100" format="'Legacy format date string: %d %a'" />
+				</Line>
+				<Line>
+					<field value="stodtsql(date)" width="100" format="'New style date format string: !@%d %a'" />
+				</Line>
+				<Line>
+					<field value="val(number)" width="100" format="'Legacy (valid) number format string - no colon - You have %d apples'" />
+				</Line>
+				<Line>
+					<field value="val(number)" width="100" format="'Legacy (valid) number format string: You have %d apples'" />
+				</Line>
+				<Line>
+					<field value="val(number)" width="100" format="'Legacy (invalid) number format string: %d %a'" />
+				</Line>
+				<Line>
+					<field value="val(number)" width="100" format="'New style (invalid) number format string: !#%d %a'" />
+				</Line>
+			</Output>
+		</FieldDetails>
+	</Detail>
+</Report>
