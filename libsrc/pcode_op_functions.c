@@ -1051,10 +1051,13 @@ gboolean rlib_pcode_operator_val(rlib *r, struct rlib_pcode *code, struct rlib_v
 	struct rlib_value *v1, rval_rtn;
 	rlib_value_init(r, &rval_rtn);
 	v1 = rlib_value_stack_pop(r, vs);
-	if (RLIB_VALUE_IS_STRING(r, v1)) {
+	if (RLIB_VALUE_IS_STRING(r, v1) && v1->string_value && RLIB_VALUE_GET_AS_STRING(r, v1)[0]) {
 		mpfr_t result;
+		char *endptr = NULL;
 		mpfr_init2(result, r->numeric_precision_bits);
-		mpfr_set_str(result, RLIB_VALUE_GET_AS_STRING(r, v1), 10, MPFR_RNDN);
+		mpfr_strtofr(result, RLIB_VALUE_GET_AS_STRING(r, v1), &endptr, 10, MPFR_RNDN);
+		if (endptr && *endptr)
+			mpfr_set_si(result, 0, MPFR_RNDN);
 		rlib_value_free(r, v1);
 		rlib_value_stack_push(r, vs, rlib_value_new_number_from_mpfr(r, &rval_rtn, result));
 		mpfr_clear(result);
