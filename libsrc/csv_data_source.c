@@ -28,16 +28,30 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <glib.h>
 #include <unistd.h>
+
+#include <glib.h>
+#include <csv.h>
 
 #include "rlib-internal.h"
 #include "rlib_input.h"
 
 #define INPUT_PRIVATE(input) (((struct _private *)input->private))
 
+/*
+ * Make sure there is no padding in this struct
+ * as we allocate and array of this.
+ */
+struct rlib_csv_field {
+	gchar *field;
+	union {
+		gboolean alloc;
+		gpointer dummy;
+	};
+};
+
 struct rlib_csv_results {
-	gchar *contents;
+	rlib *r;
 	gboolean atstart;
 	gboolean isdone;
 	gint rows;
@@ -45,6 +59,8 @@ struct rlib_csv_results {
 	GSList *header;
 	GList *detail;
 	GList *navigator;
+	struct rlib_csv_field *current_row;
+	gint current_col;
 };
 
 struct _private {
@@ -96,8 +112,8 @@ static gboolean rlib_csv_isdone(gpointer input_ptr UNUSED, gpointer result_ptr) 
 
 static gchar * rlib_csv_get_field_value_as_string(gpointer input_ptr UNUSED, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_csv_results *results = result_ptr;
-	gint i = 1;
-	GSList *data;
+	gint field_idx = GPOINTER_TO_INT(field_ptr) - 1;
+	struct rlib_csv_field *fields;
 
 	if (results == NULL)
 		return "";
@@ -105,13 +121,11 @@ static gchar * rlib_csv_get_field_value_as_string(gpointer input_ptr UNUSED, gpo
 	if (results->navigator == NULL)
 		return "";
 
-	for (data = results->navigator->data; data != NULL; data = data->next) {
-		if (GPOINTER_TO_INT(field_ptr) == i)
-			return (gchar *)data->data;
-		i++;
-	}
+	if (field_idx < 0 || field_idx > results->cols)
+		return "";
 
-	return "";
+	fields = results->navigator->data;
+	return fields[field_idx].field;
 }
 
 static gpointer rlib_csv_resolve_field_pointer(gpointer input_ptr UNUSED, gpointer result_ptr, gchar *name) { 
@@ -153,51 +167,86 @@ static gint rlib_csv_num_fields(gpointer input_ptr UNUSED, gpointer result_ptr) 
 	return results->cols;
 }
 
-static gboolean parse_line(gchar **ptr, GSList **all_items) {
-	gchar *data = *ptr;
-	gint spot = 0;
-	gchar current = 0, previous = 0;
-	gboolean eof = FALSE;
-	gchar *start = *ptr;
-	GSList *items = NULL;
-	gboolean in_quote = FALSE;
+static void rlib_csv_rlib_free_result(gpointer input_ptr UNUSED, gpointer result_ptr) {
+	struct rlib_csv_results *results = result_ptr;
+	GSList *header;
+	GList *data;
 
-	while (1) {
-		if(current != 0)
-			previous = current;
-		current = data[spot];
-		if(current == '\0') {
-			eof = TRUE;
-			break;
+	for (header = results->header; header; header = header->next)
+		g_free(header->data);
+	g_slist_free(results->header);
+
+	for (data = results->detail; data; data = data->next) {
+		struct rlib_csv_field *fields = data->data;
+		int i;
+
+		for (i = 0; i < results->cols; i++) {
+			if (fields[i].alloc)
+				g_free(fields[i].field);
 		}
-		
-		if(current == '"' && previous != '\\')
-			in_quote = !in_quote;
-		
-		if((current == ',' && !in_quote) || current == '\n') {
-			gint slen;
-			data[spot] = '\0';
-			slen = strlen(start);
-			if(start[0] == '"' && start[slen-1] == '"') {
-				start[slen-1] = '\0';
-				start++;
-			}
 
-			items = g_slist_append(items, start);
-
-			if(current == '\n')
-				break;
-			
-			in_quote = FALSE;
-			start = *ptr + spot + 1;
-		}
-		spot++;
+		g_free(fields);
 	}
-	
-	*ptr += spot+1;
-	*all_items = items;
-	
-	return eof;
+	g_list_free(results->detail);
+
+	g_free(results);
+}
+
+static void csv_parser_field_cb(void *field_ptr, size_t field_sz, void *user_data) {
+	struct rlib_csv_results *results = user_data;
+
+	if (results->rows == 0) {
+		results->header = g_slist_append(results->header, g_strdup((gchar *)field_ptr));
+		results->cols++;
+	} else {
+		if (results->current_col == 0) {
+			results->current_row = g_new0(struct rlib_csv_field, results->cols);
+		}
+
+		/*
+		 * If there are more fields in the record
+		 * than in the header, skip these extra fields.
+		 */
+		if (results->current_col < results->cols) {
+			if (field_sz > 0) {
+				results->current_row[results->current_col].field = g_strdup((gchar *)field_ptr);
+				results->current_row[results->current_col].alloc = TRUE;
+			} else
+				results->current_row[results->current_col].field = "";
+		}
+	}
+
+	results->current_col++;
+}
+
+static void csv_parser_eol_cb(int eolchar UNUSED, void *user_data) {
+	struct rlib_csv_results *results = user_data;
+
+	if (results->rows) {
+		int i;
+
+		/*
+		 * Don't skip empty rows, treat it as
+		 * a field list with all empty fields.
+		 */
+		if (results->current_row == NULL)
+			results->current_row = g_new0(struct rlib_csv_field, results->cols);
+
+		/*
+		 * Make sure there is no NULL pointer
+		 * in the fields structure. Record rows
+		 * may have less fields than the number
+		 * of fields in the header row.
+		 */
+		for (i = 0; i < results->cols; i++)
+			if (results->current_row[i].field == NULL)
+				results->current_row[i].field = "";
+
+		results->detail = g_list_append(results->detail, results->current_row);
+		results->current_row = NULL;
+	}
+	results->rows++;
+	results->current_col = 0;
 }
 
 void *csv_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
@@ -207,11 +256,10 @@ void *csv_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 	struct stat st;
 	gchar *file;
 	gint fd;
-	gint size;
+	size_t parser_retval;
 	gchar *contents;
-	gchar *ptr;
-	GSList *line_items;
-	gint row = 0;
+	struct csv_parser csv;
+	GSList *header;
 
 	INPUT_PRIVATE(input)->error = "";
 
@@ -221,8 +269,6 @@ void *csv_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 		return NULL;
 	}
 
-	size = st.st_size;
-
 	fd = open(file, O_RDONLY, 6);
 	g_free(file);
 	if (fd < 0) {
@@ -230,45 +276,58 @@ void *csv_new_result_from_query(gpointer input_ptr, gpointer query_ptr) {
 		return NULL;
 	}
 
-	contents = g_malloc(st.st_size + 1);
-	contents[size] = 0;
-	if (read(fd, contents, size) != size) {
-		g_free(contents);
+	contents = g_malloc(st.st_size);
+
+	if (read(fd, contents, st.st_size) != st.st_size) {
 		INPUT_PRIVATE(input)->error = "Error Reading File";
+		g_free(contents);
+		close(fd);
 		return NULL;
 	}
 
-	results = g_new0(struct rlib_csv_results, 1);
-	results->isdone = FALSE;
-	results->contents = contents;
-	ptr = contents;
-	while (!parse_line(&ptr, &line_items)) {
-		if (row == 0)
-			results->header = line_items;
-		else
-			results->detail = g_list_append(results->detail, line_items);
-		row++;
-	}
-
-	results->navigator = NULL;
-	results->rows = row;
-	results->cols = g_slist_length(results->header);
-
 	close(fd);
 
-	return results;
-}
+	results = g_new0(struct rlib_csv_results, 1);
+	results->r = input->r;
 
-static void rlib_csv_rlib_free_result(gpointer input_ptr UNUSED, gpointer result_ptr) {
-	struct rlib_csv_results *results = result_ptr;
-	GList *data;
-	g_slist_free(results->header);
-	for(data = results->detail; data != NULL; data = data->next) {
-		g_slist_free(data->data);
+	if (csv_init(&csv, CSV_STRICT | CSV_REPALL_NL | CSV_STRICT_FINI | CSV_APPEND_NULL) != 0) {
+		INPUT_PRIVATE(input)->error = "Error Initializing CSV Parser";
+		rlib_csv_rlib_free_result(input_ptr, results);
+		g_free(contents);
+		return NULL;
 	}
-	g_list_free(results->detail);
-	g_free(results->contents);
-	g_free(results);
+
+	parser_retval = csv_parse(&csv, contents, st.st_size,
+						csv_parser_field_cb,
+						csv_parser_eol_cb,
+						results);
+
+	g_free(contents);
+
+	if (parser_retval != (size_t)st.st_size) {
+		INPUT_PRIVATE(input)->error = "CSV Parser Error";
+		rlib_csv_rlib_free_result(input_ptr, results);
+		csv_free(&csv);
+		return NULL;
+	}
+
+	csv_free(&csv);
+
+	for (header = results->header; header; header = header->next) {
+		if (strcmp((char *)header->data, "") == 0)
+			break;
+	}
+	if (header) {
+		INPUT_PRIVATE(input)->error = "Empty field name in CSV";
+		rlib_csv_rlib_free_result(input_ptr, results);
+		return NULL;
+	}
+
+	results->isdone = FALSE;
+	results->navigator = NULL;
+
+
+	return results;
 }
 
 static void rlib_csv_free_input_filter(gpointer input_ptr){
