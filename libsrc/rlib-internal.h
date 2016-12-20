@@ -866,6 +866,7 @@ struct rlib {
 
 	gboolean profiling;
 	gboolean debug;
+	gboolean allow_relaxed_val_input;
 
 	/* For creating a test case */
 	gboolean output_testcase;

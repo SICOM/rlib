@@ -617,6 +617,7 @@ static int testcase_count = 0;
 DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 	struct timespec ts1, ts2;
 	int tc_num = 0;
+	gchar *tmp;
 
 	if (!r->did_parse) {
 		gint parse = rlib_parse_internal(r, TRUE);
@@ -624,6 +625,10 @@ DLL_EXPORT_SYM gint rlib_execute(rlib *r) {
 		if (parse != 0)
 			return -1;
 	}
+
+	tmp = g_hash_table_lookup(r->parameters, "allow_relaxed_val_input");
+	if (tmp && strcasecmp(tmp, "yes") == 0)
+		r->allow_relaxed_val_input = TRUE;
 
 	if (r->output_testcase) {
 		int l = 0;

@@ -50,13 +50,20 @@ static const gchar *rlib_value_get_type_as_str(rlib *r, struct rlib_value *v) {
 }
 
 static void rlib_pcode_operator_fatal_exception(rlib *r, const gchar *operator, struct rlib_pcode *code, gint64 pcount, struct rlib_value *v1, struct rlib_value *v2, struct rlib_value *v3) {
+	const char *s;
+
 	rlogit(r, "RLIB EXPERIENCED A FATAL MATH ERROR WHILE TRYING TO PERFORM THE FOLLOWING OPERATION: %s\n", operator);
 	rlogit(r, "\t* Error on Line %d: The Expression Was [%s]\n", code->line_number, code->infix_string);
-	rlogit(r, "\t* DATA TYPES ARE [%s]", rlib_value_get_type_as_str(r, v1));
-	if (pcount > 1)
-		rlogit(r, " [%s]", rlib_value_get_type_as_str(r, v2));
-	if (pcount > 2)
-		rlogit(r, " [%s]", rlib_value_get_type_as_str(r, v3));
+	s = rlib_value_get_type_as_str(r, v1);
+	rlogit(r, "\t* DATA TYPES ARE [%s]", (s ? s : "\"\""));
+	if (pcount > 1) {
+		s = rlib_value_get_type_as_str(r, v2);
+		rlogit(r, " [%s]", (s ? s : "\"\""));
+	}
+	if (pcount > 2) {
+		s = rlib_value_get_type_as_str(r, v3);
+		rlogit(r, " [%s]", (s ? s : "\"\""));
+	}
 	rlogit(r, "\n");
 }
 
@@ -1051,13 +1058,42 @@ gboolean rlib_pcode_operator_val(rlib *r, struct rlib_pcode *code, struct rlib_v
 	struct rlib_value *v1, rval_rtn;
 	rlib_value_init(r, &rval_rtn);
 	v1 = rlib_value_stack_pop(r, vs);
-	if (RLIB_VALUE_IS_STRING(r, v1) && v1->string_value && RLIB_VALUE_GET_AS_STRING(r, v1)[0]) {
+	if (RLIB_VALUE_IS_STRING(r, v1)) {
 		mpfr_t result;
 		char *endptr = NULL;
+
 		mpfr_init2(result, r->numeric_precision_bits);
-		mpfr_strtofr(result, RLIB_VALUE_GET_AS_STRING(r, v1), &endptr, 10, MPFR_RNDN);
-		if (endptr && *endptr)
-			mpfr_set_si(result, 0, MPFR_RNDN);
+
+		/*
+		 * In relaxed mode, NULL and empty strings return 0
+		 */
+		if (!v1->string_value || !RLIB_VALUE_GET_AS_STRING(r, v1)[0]) {
+			if (r->allow_relaxed_val_input) {
+				mpfr_set_si(result, 0, MPFR_RNDN);
+				rlib_value_free(r, v1);
+				rlib_value_stack_push(r, vs, rlib_value_new_number_from_mpfr(r, &rval_rtn, result));
+				mpfr_clear(result);
+				return TRUE;
+			} else {
+				rlib_pcode_operator_fatal_exception(r,"val", code, 1, v1, NULL, NULL);
+				rlib_value_free(r, v1);
+				rlib_value_stack_push(r, vs, rlib_value_new_error(r, &rval_rtn));
+				return FALSE;
+			}
+		}
+
+		if (r->allow_relaxed_val_input)
+			mpfr_strtofr(result, RLIB_VALUE_GET_AS_STRING(r, v1), NULL, 10, MPFR_RNDN);
+		else {
+			mpfr_strtofr(result, RLIB_VALUE_GET_AS_STRING(r, v1), &endptr, 10, MPFR_RNDN);
+
+			if (endptr && *endptr) {
+				rlib_pcode_operator_fatal_exception(r,"val", code, 1, v1, NULL, NULL);
+				rlib_value_free(r, v1);
+				rlib_value_stack_push(r, vs, rlib_value_new_error(r, &rval_rtn));
+				return FALSE;
+			}
+		}
 		rlib_value_free(r, v1);
 		rlib_value_stack_push(r, vs, rlib_value_new_number_from_mpfr(r, &rval_rtn, result));
 		mpfr_clear(result);
