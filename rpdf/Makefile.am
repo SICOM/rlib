@@ -23,12 +23,17 @@
 rpdfincludedir=$(includedir)/rlib
 rpdfinclude_HEADERS = rpdf.h
 
-AM_CFLAGS = $(CFLAG_VISIBILITY) $(RPDF_CFLAGS)
+AM_CFLAGS = \
+	$(CFLAG_VISIBILITY) \
+	$(LIBGLIB_CFLAGS) $(LIBGMODULE_CFLAGS) \
+	$(FONTCONFIG_CFLAGS)
 
 lib_LTLIBRARIES = librpdf.la
 librpdf_la_SOURCES = rpdf.c rpdf.h
 
-librpdf_la_LIBADD = $(RPDF_LIBS)
+librpdf_la_LIBADD = \
+	$(LIBGLIB_LIBS) $(LIBGMODULE_LIBS) \
+	$(HPDF_LIBS) $(FONTCONFIG_LIBS)
 
 DEF_FILE=librpdf.def
 IMPLIB_FILE=librpdf.a

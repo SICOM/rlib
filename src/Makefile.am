@@ -20,7 +20,9 @@
 ##
 ## Process this file with automake to produce Makefile.in
 
-AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
+AM_CFLAGS = \
+	-I${top_srcdir}/libsrc \
+	$(LIBGLIB_CFLAGS)
 
 if HAVE_MYSQL
 EXAMPLES = examples
@@ -32,7 +34,7 @@ SUBDIRS = \
 bin_PROGRAMS = rlibc rlib-parse
 
 rlibc_SOURCES = rlibc.c
-rlibc_LDADD = $(top_builddir)/libsrc/libr.la $(RLIB_LIBS)
+rlibc_LDADD = $(top_builddir)/libsrc/libr.la
 
 rlib_parse_SOURCES = rlib-parse.c
 rlib_parse_LDADD = $(top_builddir)/libsrc/libr.la

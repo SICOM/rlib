@@ -22,13 +22,19 @@
 
 if !HAVE_MYSQL_BUILTIN
 
-AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
-mysqlincludedir = $(includedir)/rlib
-
 lib_LTLIBRARIES = libr-mysql.la
 
 libr_mysql_la_SOURCES = mysql.c
-libr_mysql_la_LIBADD = $(LIBGLIB_LIBS) $(MYSQL_LIBS) $(top_builddir)/libsrc/libr.la
+
+libr_mysql_la_CFLAGS = \
+	-I${top_srcdir}/libsrc \
+	$(LIBGLIB_CFLAGS) \
+	$(MYSQL_CFLAGS)
+
+libr_mysql_la_LIBADD = \
+	$(LIBGLIB_LIBS) \
+	$(MYSQL_LIBS) \
+	$(top_builddir)/libsrc/libr.la
 
 DEF_FILE=libr-mysql.def
 

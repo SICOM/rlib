@@ -6,7 +6,6 @@ includedir=@includedir@
 Name: rlib
 Description: Report Generation Library
 Version: @VERSION@
-Requires:libxml-2.0
-Libs: -L${libdir} -lr @RLIB_LIBS@
+Requires: libxml-2.0 glib-2.0
+Libs: -L${libdir} -lr
 Cflags: -I${includedir}/rlib
-

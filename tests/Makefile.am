@@ -20,25 +20,24 @@
 ##
 ## Process this file with automake to produce Makefile.in
 
-AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
+AM_CFLAGS = \
+	-I${top_srcdir}/libsrc \
+	$(LIBGLIB_CFLAGS)
 
 if HAVE_MYSQL
-MYSQL_INPUT=test1 test3
+MYSQL_INPUT = test1 test3
 endif
 
 if HAVE_POSTGRES
-POSTGRES_INPUT=test2
+POSTGRES_INPUT = test2
 endif
 
 noinst_PROGRAMS = \
 	$(MYSQL_INPUT) \
 	$(POSTGRES_INPUT)
 
-test1_SOURCES= test1.c
-test1_LDADD = $(top_builddir)/libsrc/libr.la $(RLIB_LIBS)
+test1_LDADD = $(top_builddir)/libsrc/libr.la
 
-test2_SOURCES= test2.c
-test2_LDADD = $(top_builddir)/libsrc/libr.la $(RLIB_LIBS)
+test2_LDADD = $(top_builddir)/libsrc/libr.la
 
-test3_SOURCES= test3.c
-test3_LDADD = $(top_builddir)/libsrc/libr.la $(RLIB_LIBS)
+test3_LDADD = $(top_builddir)/libsrc/libr.la

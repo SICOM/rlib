@@ -19,23 +19,36 @@
 ## Report bugs to rlib-devel@lists.sourceforge.net
 ##
 ## Process this file with automake to produce Makefile.in
-AM_CFLAGS = -I${top_srcdir}/libsrc $(RLIB_CFLAGS) $(PYTHON_CFLAGS) -fno-strict-aliasing
+
+AM_CFLAGS = \
+	-I${top_srcdir}/libsrc \
+	$(LIBGLIB_CFLAGS) $(LIBGMODULE_CFLAGS) \
+	$(PYTHON_CFLAGS) -fno-strict-aliasing
+
 pkgpyexec_LTLIBRARIES = rlibmodule.la _rlib.la
+
 rlibmodule_la_SOURCES = rlibmodule.c 
+
 rlibmodule_la_LIBADD = $(top_builddir)/libsrc/libr.la $(PYTHON_LIBRARIES) $(RLIB_LIBS)
+
 if WIN32
 NDEF_FILE=rlibmodule.def
 ndef_ldflags=-Wl,--output-def,$(NDEF_FILE)
 endif
+
 rlibmodule_la_LDFLAGS = \
 	-version-info $(RLIB_LT_CURRENT):$(RLIB_LT_REVISION):$(RLIB_LT_AGE) \
 	$(ndef_ldflags) $(EXTRA_LDFLAGS) -module -avoid-version
+
 _rlib_la_SOURCES = python.c 
+
 _rlib_la_LIBADD = $(top_builddir)/libsrc/libr.la $(PYTHON_LIBRARIES) $(RLIB_LIBS)
+
 if WIN32
 DEF_FILE=rlibpython.def
 def_ldflags=-Wl,--output-def,$(DEF_FILE)
 endif
+
 _rlib_la_LDFLAGS = \
 	-version-info $(RLIB_LT_CURRENT):$(RLIB_LT_REVISION):$(RLIB_LT_AGE) \
 	$(def_ldflags) $(EXTRA_LDFLAGS) -module -avoid-version

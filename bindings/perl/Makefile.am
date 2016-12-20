@@ -20,15 +20,29 @@
 ##
 ## Process this file with automake to produce Makefile.in
 
-AM_CFLAGS = -I${top_srcdir}/libsrc $(RLIB_CFLAGS) $(PERL_CFLAGS) -D_GNU_SOURCE -fno-strict-aliasing -Wno-unused-variable -Wno-unused-value
+AM_CFLAGS = \
+	-I${top_srcdir}/libsrc \
+	$(LIBGLIB_CFLAGS) \
+	$(PERL_CFLAGS) -Wno-unused-variable
+
+##-fno-strict-aliasing -Wno-unused-variable -Wno-unused-value
+
 perldir = $(PERL_EXTENSION_DIR)/auto/rlib
+
 perl_LTLIBRARIES = rlib.la
+
 rlib_la_SOURCES = perl.c 
-rlib_la_LIBADD = $(top_builddir)/libsrc/libr.la $(RLIB_LIBS) $(PERL_LIBS)
+
+rlib_la_LIBADD = \
+	$(LIBGLIB_LIBS) \
+	$(PERL_LIBS) \
+	$(top_builddir)/libsrc/libr.la
+
 if WIN32
 DEF_FILE=rlib.def
 def_ldflags=-Wl,--output-def,$(DEF_FILE)
 endif
+
 rlib_la_LDFLAGS = \
 	-version-info $(RLIB_LT_CURRENT):$(RLIB_LT_REVISION):$(RLIB_LT_AGE) \
 	$(def_ldflags) $(EXTRA_LDFLAGS) -module -avoid-version

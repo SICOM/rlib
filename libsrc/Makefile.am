@@ -67,7 +67,23 @@ libr_la_SOURCES = parsexml.c reportgen.c layout.c graphing.c api.c \
 
 CLEANFILES = $(MYSQL_SOURCE) $(POSTGRES_SOURCE) $(ODBC_SOURCE)
 
+libr_la_CFLAGS = \
+	$(CFLAG_VISIBILITY) \
+	-I$(top_srcdir)/rpdf \
+	$(LIBXML_CFLAGS) \
+	$(LIBGLIB_CFLAGS) $(LIBGMODULE_CFLAGS) \
+	$(MYSQL_CFLAGS) \
+	$(POSTGRES_CFLAGS) \
+	$(ODBC_CFLAGS) \
+	$(GD_CFLAGS)
+
 libr_la_LIBADD = \
+	$(LIBXML_LIBS) \
+	$(LIBGLIB_LIBS) $(LIBGMODULE_LIBS) 	\
+	$(ICONVLIBS) \
+	$(GD_LDFLAGS) $(GD_LIBS) $(GD_LINK) \
+	$(MPFR_LIBS) \
+	$(CSV_LIBS) \
 	$(RLIB_LIBS) \
 	$(MYSQL_INPUT_LIBS) \
 	$(POSTGRES_INPUT_LIBS) \
@@ -86,8 +102,6 @@ libr_la_LDFLAGS = \
 
 rlibincludedir = $(includedir)/rlib
 rlibinclude_HEADERS = rlib.h rlib_input.h
-
-libr_la_CFLAGS = $(CFLAG_VISIBILITY) $(RLIB_CFLAGS) -I$(top_srcdir)/rpdf
 
 EXTRA_DIST = rlib.i generate_bindings.sh \
 	charencoder.h datetime.h util.h pcode.h
