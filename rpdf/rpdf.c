@@ -930,7 +930,7 @@ DLL_EXPORT_SYM gboolean rpdf_set_page(struct rpdf *pdf, gint page) {
 }
 
 DLL_EXPORT_SYM gboolean rpdf_set_font(struct rpdf *pdf, const gchar *font, const gchar *encoding, gdouble size) {
-	gint i=0;
+	gint i = 0;
 	gint found = FALSE;
 	struct rpdf_font_object *font_object;
 	struct rpdf_stream_font *stream;
@@ -938,22 +938,24 @@ DLL_EXPORT_SYM gboolean rpdf_set_font(struct rpdf *pdf, const gchar *font, const
 	struct rpdf_stream *real_stream;
 	gchar *both;
 
-
-	while(rpdf_fonts[i].name[0] != 0) {
-		if(strcmp(rpdf_fonts[i].name, font) == 0) {
+	while (rpdf_fonts[i].name[0] != 0) {
+		if (strcmp(rpdf_fonts[i].name, font) == 0) {
 			found = TRUE;
 			break;
 		}
 		i++;
 	}
 
-	if(found == FALSE) 
-		return FALSE;		
-	
+	if (found == FALSE) {
+		rpdf_error("FONT NOT FOUND: font name '%s', using Courier\n", font);
+		font = rpdf_fonts[0].name;
+		i = 0;
+	}
+
 	both = g_strconcat(font, encoding, NULL);
 	font_object = g_hash_table_lookup(pdf->fonts, both);
 
-	if(font_object == NULL) {
+	if (font_object == NULL) {
 		font_object = g_new0(struct rpdf_font_object, 1);
 		font_object->font = &rpdf_fonts[i];
 		sprintf(font_object->name, "rpdf%d", pdf->font_count++);
@@ -974,8 +976,8 @@ DLL_EXPORT_SYM gboolean rpdf_set_font(struct rpdf *pdf, const gchar *font, const
 	real_stream = rpdf_stream_new(RPDF_TYPE_FONT, stream);
 	rpdf_stream_append(pdf, real_stream);
 	pdf->stream_font_destroyer = g_slist_prepend(pdf->stream_font_destroyer, stream);
-	
-	return TRUE;
+
+	return found;
 }
 
 DLL_EXPORT_SYM gboolean rpdf_set_font_size(struct rpdf *pdf, gdouble size) {
@@ -1421,15 +1423,13 @@ DLL_EXPORT_SYM gdouble rpdf_text_width(struct rpdf *pdf, const gchar *text) {
 	gdouble width = 0.0;
 	struct rpdf_page_info *page_info = pdf->page_info[pdf->current_page];
 
-	if(text == NULL)
+	if (text == NULL)
 		return 0.0;
 	
 	slen = strlen(text);
-	for(i=0;i<slen;i++) {
+	for (i = 0; i < slen; i++)
 		width += page_info->font->widths[(gint)text[i]];
-	
-	}
-	return width*page_info->font_size/1000.0;
+	return width * page_info->font_size / 1000.0;
 }
 
 DLL_EXPORT_SYM gint rpdf_arc(struct rpdf *pdf, gdouble x, gdouble y, gdouble radius, gdouble start_angle, gdouble end_angle) {

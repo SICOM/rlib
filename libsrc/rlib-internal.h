@@ -26,6 +26,7 @@
 #ifndef _RLIB_INTERNAL_H
 #define _RLIB_INTERNAL_H
 
+#include <inttypes.h>
 #include <libxml/parser.h>
 #include <time.h>
 #include <glib.h>
@@ -41,11 +42,14 @@
 
 #define USE_RLIB_VAR	0
 
-#define RLIB_WEB_CONTENT_TYPE_HTML "Content-Type: text/html; charset=%s\n"
-#define RLIB_WEB_CONTENT_TYPE_TEXT "Content-Type: text/plain; charset=%s\n"
-#define RLIB_WEB_CONTENT_TYPE_PDF "Content-Type: application/pdf\n"
-#define RLIB_WEB_CONTENT_TYPE_CSV "Content-type: application/octet-stream\nContent-Disposition: attachment; filename=report.csv\n"
-#define RLIB_WEB_CONTENT_TYPE_CSV_FORMATTED "Content-type: application/octet-stream\nContent-Disposition: attachment; filename=%s\n"
+#define RLIB_WEB_CONTENT_TYPE_HTML "Content-Type: text/html; charset=%s"
+#define RLIB_WEB_CONTENT_TYPE_XML "Content-Type: text/xml; charset=%s"
+#define RLIB_WEB_CONTENT_TYPE_TEXT "Content-Type: text/plain; charset=%s"
+#define RLIB_WEB_CONTENT_TYPE_PDF "Content-Type: application/pdf"
+#define RLIB_WEB_CONTENT_TYPE_PDF_LEN "Content-Length: %" PRIdFAST32
+#define RLIB_WEB_CONTENT_TYPE_CSV "Content-type: application/octet-stream"
+#define RLIB_WEB_CONTENT_TYPE_CSV_DFLT "Content-Disposition: attachment; filename=report.csv"
+#define RLIB_WEB_CONTENT_TYPE_CSV_FILE "Content-Disposition: attachment; filename=%s"
 
 #define RLIB_NAVIGATE_FIRST 1
 #define RLIB_NAVIGATE_NEXT 2
@@ -747,6 +751,8 @@ struct rlib_metadata {
 	struct rlib_pcode *formula_code;
 };
 
+#define HEADERS 3
+
 struct rlib {
 	gint current_page_number;
 	gint current_line_number;
@@ -785,6 +791,11 @@ struct rlib {
 	struct rlib_resultset_followers followers[RLIB_MAXIMUM_FOLLOWERS];
 
 	gint format;
+	/* Format dependent HTTP headers */
+	gint header_pos;
+	char *headers[HEADERS];
+	GString *header_buf;
+
 	gint inputs_count;
 	gboolean did_parse;
 	gboolean did_execute;
@@ -805,6 +816,9 @@ struct rlib {
 	gint pcode_alpha_m_index;
 
 	GIConv xml_encoder;
+
+	gboolean profiling;
+	gboolean debug;
 };
 
 #define INPUT(r, i) (r->results[i]->input)

@@ -23,11 +23,14 @@
  * formatted report from the rlib object.
  *
  */
+
+#include <config.h>
+
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
-#include <config.h>
 #include "rlib-internal.h"
 #include "rlib_gd.h"
 
@@ -94,6 +97,7 @@ struct _private {
 	GSList **bottom;
 
 	gint page_number;
+	gint image_counter;
 	struct rlib_gd *rgd;
 	struct _graph graph;
 };
@@ -178,6 +182,9 @@ static gchar *get_html_color(gchar *str, struct rlib_rgb *color) {
 
 static void html_print_text(rlib *r, gfloat left_origin UNUSED, gfloat bottom_origin UNUSED, const gchar *text, gint backwards, struct rlib_line_extra_data *extra_data) {
 	GString *string = g_string_new("");
+	gchar *escaped;
+	gint pos;
+	gboolean only_spaces = TRUE;
 
 	g_string_append_printf(string, "<span data-col=\"%d\" data-width=\"%d\" style=\"font-size: %dpx; ", extra_data->col, extra_data->width, BIGGER_HTML_FONT(extra_data->font_point));
 
@@ -189,11 +196,25 @@ static void html_print_text(rlib *r, gfloat left_origin UNUSED, gfloat bottom_or
 		g_string_append(string, "font-weight: bold;");
 	if(extra_data->is_italics == TRUE)
 		g_string_append(string, "font-style: italic;");
-
 		
 	g_string_append(string,"\">");
-	gchar *escaped = g_markup_escape_text(text, strlen(text));
-	g_string_append(string, escaped);
+	escaped = g_markup_escape_text(text, strlen(text));
+	for (pos = 0; escaped[pos]; pos++) {
+#if 0
+		if (!isspace(escaped[pos])) {
+#else
+		if (escaped[pos] != ' ') {
+#endif
+			only_spaces = FALSE;
+			break;
+		}
+	}
+
+	if (only_spaces) {
+		g_string_append(string, "&nbsp;");
+		g_string_append(string, escaped + 1);
+	} else
+		g_string_append(string, escaped);
 	g_string_append(string, "</span>");
 	g_free(escaped);
 
@@ -515,7 +536,7 @@ static void html_start_graph(rlib *r, struct rlib_part *part UNUSED, struct rlib
 
 	memset(graph, 0, sizeof(struct _graph));
 
-	OUTPUT_PRIVATE(r)->rgd = rlib_gd_new(width, height,  g_hash_table_lookup(r->output_parameters, "html_image_directory"));
+	OUTPUT_PRIVATE(r)->rgd = rlib_gd_new(r, width, height,  g_hash_table_lookup(r->output_parameters, "html_image_directory"), OUTPUT_PRIVATE(r)->image_counter++);
 
 	sprintf(buf, "<img src=\"%s\" width=\"%f\" height=\"%f\" alt=\"graph\"/>", OUTPUT_PRIVATE(r)->rgd->file_name, width, height);
 	print_text(r, buf, FALSE);
