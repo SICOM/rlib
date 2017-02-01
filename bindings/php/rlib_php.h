@@ -29,6 +29,7 @@ typedef size_t z_str_len_t;
 
 struct rlib_inout_pass {
 	rlib *r;
+	int content_type;
 	int format;
 };
 

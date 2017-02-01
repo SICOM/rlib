@@ -165,6 +165,8 @@ ZEND_FUNCTION(rlib_init) {
 	rip = emalloc(sizeof(rlib_inout_pass));
 	memset(rip, 0, sizeof(rlib_inout_pass));
 
+	rip->content_type = RLIB_CONTENT_TYPE_ERROR;
+
 	rip->r = rlib_init_with_environment(rlib_php_new_environment());
 
 #if PHP_MAJOR_VERSION < 7
@@ -790,6 +792,7 @@ ZEND_FUNCTION(rlib_free) {
 ZEND_FUNCTION(rlib_get_content_type) {
 	zval *z_rip = NULL;
 	rlib_inout_pass *rip;
+	static gchar buf[MAXSTRLEN];
 	gchar *content_type;
 	
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &z_rip) == FAILURE)
@@ -805,10 +808,12 @@ ZEND_FUNCTION(rlib_get_content_type) {
 
 	content_type = rlib_get_content_type_as_text(rip->r);
 
+	sprintf(buf, "%s%c", content_type, 10);
+
 #if PHP_MAJOR_VERSION < 7
-	RETURN_STRING(content_type, TRUE);
+	RETURN_STRING(buf, TRUE);
 #else
-	RETURN_STRING(content_type)
+	RETURN_STRING(buf)
 #endif
 }
 
