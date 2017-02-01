@@ -26,7 +26,6 @@
 #ifndef _RLIB_INTERNAL_H
 #define _RLIB_INTERNAL_H
 
-#include <inttypes.h>
 #include <libxml/parser.h>
 #include <time.h>
 #include <glib.h>
@@ -42,11 +41,11 @@
 
 #define USE_RLIB_VAR	0
 
-#define RLIB_WEB_CONTENT_TYPE_HTML "Content-Type: text/html; charset=%s"
-#define RLIB_WEB_CONTENT_TYPE_TEXT "Content-Type: text/plain; charset=%s"
-#define RLIB_WEB_CONTENT_TYPE_PDF "Content-Disposition: attachment; filename=report.pdf; size=%" PRIdFAST32
-#define RLIB_WEB_CONTENT_TYPE_CSV "Content-Disposition: attachment; filename=report.csv"
-#define RLIB_WEB_CONTENT_TYPE_CSV_FORMATTED "Content-Disposition: attachment; filename=%s\n"
+#define RLIB_WEB_CONTENT_TYPE_HTML "Content-Type: text/html; charset=%s\n"
+#define RLIB_WEB_CONTENT_TYPE_TEXT "Content-Type: text/plain; charset=%s\n"
+#define RLIB_WEB_CONTENT_TYPE_PDF "Content-Type: application/pdf\n"
+#define RLIB_WEB_CONTENT_TYPE_CSV "Content-type: application/octet-stream\nContent-Disposition: attachment; filename=report.csv\n"
+#define RLIB_WEB_CONTENT_TYPE_CSV_FORMATTED "Content-type: application/octet-stream\nContent-Disposition: attachment; filename=%s\n"
 
 #define RLIB_NAVIGATE_FIRST 1
 #define RLIB_NAVIGATE_NEXT 2
