@@ -22,7 +22,8 @@
 
 noinst_PROGRAMS = \
 	example_mysql example_pg example_odbc \
-	relpth1 relpth1-gen relpth2 srcpth relprt graph
+	relpth1 relpth1-gen relpth2 srcpth relprt graph \
+	empty-string
 
 AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
 
@@ -43,6 +44,8 @@ srcpth_LDADD = $(top_builddir)/libsrc/libr.la
 relprt_LDADD = $(top_builddir)/libsrc/libr.la
 
 graph_LDADD = $(top_builddir)/libsrc/libr.la
+
+empty_string_LDADD = $(top_builddir)/libsrc/libr.la
 
 noinst_SCRIPTS = products.xml
 

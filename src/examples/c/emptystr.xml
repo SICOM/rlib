@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<!DOCTYPE report >
+<Report fontSize="9" orientation="portrait">
+	<ReportHeader>
+		<Output>
+			<Line/>
+			<Line fontSize="12">
+				<literal>Empty string from memory variable:</literal>
+				<field value="m.param" />
+			</Line>
+			<Line fontsize="4"/>
+			<HorizontalLine size="4" bgcolor="'white'"/>
+			<HorizontalLine size="2" bgcolor="'black'"/>
+			<HorizontalLine size="4" bgcolor="'white'"/>
+		</Output>
+	</ReportHeader>
+
+	<Detail>
+		<FieldHeaders>
+			<Output>
+				<HorizontalLine size="1" bgcolor="'black'"/>
+				<Line bgcolor="'0xe5e5e5'">
+					<literal width="15" col="1">Field</literal>
+				</Line>
+				<HorizontalLine size="1" bgcolor="'black'"/>
+				<HorizontalLine size="4" bgcolor="'white'"/>
+			</Output>
+		</FieldHeaders>
+		<FieldDetails>
+			<Output>
+				<Line bgcolor="iif(r.detailcnt%2,'0xe5e5e5','white')">
+					<field value="data.field" width="15" align="left" col="1"/>
+				</Line>
+				<HorizontalLine size="1" bgcolor="'black'"/>
+				<HorizontalLine size="4" bgcolor="'white'"/>
+			</Output>
+		</FieldDetails>
+	</Detail>
+</Report>
