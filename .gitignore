@@ -63,6 +63,8 @@ src/examples/c/srcpth
 src/examples/c/srcpth.exe
 src/examples/c/graph
 src/examples/c/graph.exe
+src/examples/c/empty-string
+src/examples/c/empty-string.exe
 src/examples/csharp/products.xml
 src/examples/java/*.java
 src/examples/java/*.xml
@@ -91,6 +93,7 @@ inputs/odbc/libr-odbc.def
 inputs/postgres/libr-postgres.def
 
 *.pdf
+*.html
 
 bindings/php/build
 bindings/php/modules
