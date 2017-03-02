@@ -196,7 +196,7 @@ static void html_print_text(rlib *r, gfloat left_origin UNUSED, gfloat bottom_or
 		g_string_append(string, "font-weight: bold;");
 	if(extra_data->is_italics == TRUE)
 		g_string_append(string, "font-style: italic;");
-		
+
 	g_string_append(string,"\">");
 	escaped = g_markup_escape_text(text, strlen(text));
 	for (pos = 0; escaped[pos]; pos++) {
@@ -210,7 +210,7 @@ static void html_print_text(rlib *r, gfloat left_origin UNUSED, gfloat bottom_or
 		}
 	}
 
-	if (only_spaces) {
+	if (only_spaces && pos) {
 		g_string_append(string, "&nbsp;");
 		g_string_append(string, escaped + 1);
 	} else
