@@ -547,13 +547,13 @@ void rlib_resolve_part_fields(rlib *r, struct rlib_part *part) {
 	rlib_resolve_outputs(r, part, NULL, part->report_header);
 }
 
-gchar * rlib_resolve_memory_variable(rlib *r, gchar *name) {
-	if(r_strlen(name) >= 3 && name[0] == 'm' && name[1] == '.') {
+gchar *rlib_resolve_memory_variable(rlib *r, gchar *name) {
+	if (r_strlen(name) >= 3 && name[0] == 'm' && name[1] == '.') {
 		gchar *value;
-		value = g_hash_table_lookup(r->parameters, name+2);
-		if(value != NULL)
-			return g_strdup(value);
-		return ENVIRONMENT(r)->rlib_resolve_memory_variable(name+2);
+		value = g_hash_table_lookup(r->parameters, name + 2);
+		if (value != NULL)
+			return value;
+		return ENVIRONMENT(r)->rlib_resolve_memory_variable(name + 2);
 	}
 	return NULL;
 }
