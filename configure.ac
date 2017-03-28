@@ -20,7 +20,7 @@ dnl Report bugs to rlib-devel@lists.sourceforge.net
 dnl
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([rlib],[2.0.18],[http://bugzilla.sicompos.com])
+AC_INIT([rlib],[2.0.19],[http://bugzilla.sicompos.com])
 AC_CANONICAL_TARGET
 AC_CONFIG_SRCDIR(libsrc/rlib.h)
 AC_CONFIG_MACRO_DIR([m4])
@@ -30,12 +30,12 @@ AM_INIT_AUTOMAKE()
 AC_CONFIG_HEADERS(config.h)
 AM_MAINTAINER_MODE
 
-RLIB_VERSION=2.0.18
+RLIB_VERSION=2.0.19
 AC_SUBST(RLIB_VERSION)
 
 RLIB_LT_CURRENT=4
 RLIB_LT_AGE=3
-RLIB_LT_REVISION=18
+RLIB_LT_REVISION=19
 AC_SUBST(RLIB_LT_CURRENT)
 AC_SUBST(RLIB_LT_REVISION)
 AC_SUBST(RLIB_LT_AGE)
