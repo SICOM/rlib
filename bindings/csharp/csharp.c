@@ -626,18 +626,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_rlib_set_locale(void * jarg1, char * jarg2) {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_rlib_bindtextdomain(void * jarg1, char * jarg2, char * jarg3) {
-  int jresult ;
+SWIGEXPORT char * SWIGSTDCALL CSharp_rlib_bindtextdomain(void * jarg1, char * jarg2, char * jarg3) {
+  char * jresult ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  int result;
+  char *result = 0 ;
   
   arg1 = (rlib *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
-  result = (int)rlib_bindtextdomain(arg1,arg2,arg3);
-  jresult = result; 
+  result = (char *)rlib_bindtextdomain(arg1,arg2,arg3);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
 

@@ -126,8 +126,8 @@ public class rlib {
     return ret;
   }
 
-  public static int rlib_bindtextdomain(SWIGTYPE_p_rlib r, string domainname, string dirname) {
-    int ret = rlibPINVOKE.rlib_bindtextdomain(SWIGTYPE_p_rlib.getCPtr(r), domainname, dirname);
+  public static string rlib_bindtextdomain(SWIGTYPE_p_rlib r, string domainname, string dirname) {
+    string ret = rlibPINVOKE.rlib_bindtextdomain(SWIGTYPE_p_rlib.getCPtr(r), domainname, dirname);
     return ret;
   }
 

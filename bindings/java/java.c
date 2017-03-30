@@ -748,12 +748,12 @@ SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1set_1locale(JNIEnv *jenv, jclass jcls
 }
 
 
-SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1bindtextdomain(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3) {
-  jint jresult = 0 ;
+SWIGEXPORT jstring JNICALL Java_rlibJNI_rlib_1bindtextdomain(JNIEnv *jenv, jclass jcls, jlong jarg1, jstring jarg2, jstring jarg3) {
+  jstring jresult = 0 ;
   rlib *arg1 = (rlib *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  int result;
+  char *result = 0 ;
   
   (void)jenv;
   (void)jcls;
@@ -768,8 +768,8 @@ SWIGEXPORT jint JNICALL Java_rlibJNI_rlib_1bindtextdomain(JNIEnv *jenv, jclass j
     arg3 = (char *)(*jenv)->GetStringUTFChars(jenv, jarg3, 0);
     if (!arg3) return 0;
   }
-  result = (int)rlib_bindtextdomain(arg1,arg2,arg3);
-  jresult = (jint)result; 
+  result = (char *)rlib_bindtextdomain(arg1,arg2,arg3);
+  if (result) jresult = (*jenv)->NewStringUTF(jenv, (const char *)result);
   if (arg2) (*jenv)->ReleaseStringUTFChars(jenv, jarg2, (const char *)arg2);
   if (arg3) (*jenv)->ReleaseStringUTFChars(jenv, jarg3, (const char *)arg3);
   return jresult;

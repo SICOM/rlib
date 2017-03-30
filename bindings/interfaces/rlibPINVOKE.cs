@@ -257,7 +257,7 @@ class rlibPINVOKE {
   public static extern int rlib_set_locale(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_bindtextdomain")]
-  public static extern int rlib_bindtextdomain(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
+  public static extern string rlib_bindtextdomain(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
 
   [global::System.Runtime.InteropServices.DllImport("rlibcsharp", EntryPoint="CSharp_rlib_set_radix_character")]
   public static extern void rlib_set_radix_character(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);

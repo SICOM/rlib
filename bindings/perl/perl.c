@@ -2912,7 +2912,7 @@ XS(_wrap_rlib_bindtextdomain) {
     char *buf3 = 0 ;
     int alloc3 = 0 ;
     int argvi = 0;
-    int result;
+    char *result = 0 ;
     dXSARGS;
     
     if ((items < 3) || (items > 3)) {
@@ -2933,8 +2933,8 @@ XS(_wrap_rlib_bindtextdomain) {
       SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "rlib_bindtextdomain" "', argument " "3"" of type '" "char *""'");
     }
     arg3 = (char *)(buf3);
-    result = (int)rlib_bindtextdomain(arg1,arg2,arg3);
-    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(result)); argvi++ ;
+    result = (char *)rlib_bindtextdomain(arg1,arg2,arg3);
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
     if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);

@@ -101,7 +101,7 @@ public class rlib {
     return rlibJNI.rlib_set_locale(SWIGTYPE_p_rlib.getCPtr(r), locale);
   }
 
-  public static int rlib_bindtextdomain(SWIGTYPE_p_rlib r, String domainname, String dirname) {
+  public static String rlib_bindtextdomain(SWIGTYPE_p_rlib r, String domainname, String dirname) {
     return rlibJNI.rlib_bindtextdomain(SWIGTYPE_p_rlib.getCPtr(r), domainname, dirname);
   }
 

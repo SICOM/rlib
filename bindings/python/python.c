@@ -4318,7 +4318,7 @@ SWIGINTERN PyObject *_wrap_rlib_bindtextdomain(PyObject *SWIGUNUSEDPARM(self), P
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
-  int result;
+  char *result = 0 ;
   
   if (!PyArg_ParseTuple(args,(char *)"OOO:rlib_bindtextdomain",&obj0,&obj1,&obj2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_rlib, 0 |  0 );
@@ -4336,8 +4336,8 @@ SWIGINTERN PyObject *_wrap_rlib_bindtextdomain(PyObject *SWIGUNUSEDPARM(self), P
     SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "rlib_bindtextdomain" "', argument " "3"" of type '" "char *""'");
   }
   arg3 = (char *)(buf3);
-  result = (int)rlib_bindtextdomain(arg1,arg2,arg3);
-  resultobj = SWIG_From_int((int)(result));
+  result = (char *)rlib_bindtextdomain(arg1,arg2,arg3);
+  resultobj = SWIG_FromCharPtr((const char *)result);
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   if (alloc3 == SWIG_NEWOBJ) free((char*)buf3);
   return resultobj;
