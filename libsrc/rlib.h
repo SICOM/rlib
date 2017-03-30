@@ -254,6 +254,8 @@ struct rlib_line_extra_data {
 
 	struct rlib_pcode *field_code;
 	struct rlib_report_field *report_field;
+
+	gint report_index;
 };
 
 struct rlib_delayed_extra_data {
@@ -533,6 +535,7 @@ struct rlib_part {
 	gint landscape;
 	gint suppress_page_header_first_page;
 
+	gint report_index;
 };
 
 struct rlib_graph_x_minor_tick {
@@ -773,6 +776,7 @@ struct rlib_queries {
 struct rlib_rip_reports {
 	gchar *name;
 	gchar type;
+	gchar *dir;
 };
 
 #define MAX_INPUT_FILTERS	10
@@ -862,6 +866,8 @@ struct rlib {
 	gint pcode_alpha_m_index;
 
 	GIConv xml_encoder;
+
+	GSList *search_paths;
 };
 
 #define INPUT(r, i) (r->results[i]->input)
@@ -1067,9 +1073,11 @@ gint rlib_graph_clear_bg_region(rlib *r, gchar *graph_name);
 gint rlib_graph_set_x_minor_tick(rlib *r, gchar *graph_name, gchar *x_value);
 gint rlib_graph_set_x_minor_tick_by_location(rlib *r, gchar *graph_name, gint location);
 gboolean rlib_add_function(rlib *r, gchar *function_name, gboolean (*function)(rlib *, struct rlib_pcode *code, struct rlib_value_stack *, struct rlib_value *this_field_value, gpointer user_data), gpointer user_data);
+gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean report); /* not an exported API, no rlib_ prefix */
+gint rlib_add_search_path(rlib *r, const gchar *path);
 
 /***** PROTOTYPES: parsexml.c *************************************************/
-struct rlib_part * parse_part_file(rlib *r, gchar *filename, gchar type);
+struct rlib_part * parse_part_file(rlib *r, gint report_index);
 struct rlib_report_output * report_output_new(gint type, gpointer data);
 
 /***** PROTOTYPES: pcode.c ****************************************************/
@@ -1147,7 +1155,7 @@ void rlib_xml_new_output_filter(rlib *r);
 void rlib_csv_new_output_filter(rlib *r);
 
 /***** PROTOTYPES: mysql.c ****************************************************/
-gpointer rlib_mysql_new_input_filter(void);
+gpointer rlib_mysql_new_input_filter(rlib *r);
 gpointer rlib_mysql_real_connect(gpointer input_ptr, gchar *group, gchar *host, gchar *user, gchar *password, gchar *database);
 
 /***** PROTOTYPES: datasource.c ***********************************************/
@@ -1162,7 +1170,7 @@ gint rlib_add_datasource_xml(rlib *r, const gchar *input_name);
 gint rlib_add_datasource_csv(rlib *r, const gchar *input_name);
 
 /***** PROTOTYPES: postgres.c **************************************************/
-gpointer rlib_postgres_new_input_filter(void);
+gpointer rlib_postgres_new_input_filter(rlib *r);
 gpointer rlib_postgres_connect(gpointer input_ptr, gchar *conn);
 
 
@@ -1190,11 +1198,11 @@ int adjust_limits(gdouble  dataMin, gdouble dataMax, gint denyMinEqualsAdjMin, g
 	gint* numTms, gdouble* tmi, gdouble* adjMin, gdouble* adjMax, gint *goodIncs, gint numGoodIncs);
 
 /***** PROTOTYPES: xml_data_source.c ******************************************************/
-gpointer rlib_xml_new_input_filter(void);
+gpointer rlib_xml_new_input_filter(rlib *r);
 gpointer rlib_xml_connect(gpointer input_ptr);
 
 /***** PROTOTYPES: csv_data_source.c ******************************************************/
-gpointer rlib_csv_new_input_filter(void);
+gpointer rlib_csv_new_input_filter(rlib *r);
 gpointer rlib_csv_connect(gpointer input_ptr);
 
 /***** PROTOTYPES: util.c ******************************************************/

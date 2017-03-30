@@ -25,6 +25,7 @@
 #include <glib.h>
 
 #include "libpq-fe.h"
+#include "rlib.h"
 #include "rlib_input.h"
 
 #define INPUT_PRIVATE(input) (((struct _private *)input->private))
@@ -193,12 +194,13 @@ static const gchar * rlib_postgres_get_error(gpointer input_ptr) {
 	return PQerrorMessage(INPUT_PRIVATE(input)->conn);
 }
 
-gpointer rlib_postgres_new_input_filter(void) {
+gpointer rlib_postgres_new_input_filter(rlib *r) {
 	struct input_filter *input;
 	
 	input = g_malloc(sizeof(struct input_filter));
 	input->private = g_malloc(sizeof(struct _private));
 	memset(input->private, 0, sizeof(struct _private));
+	input->r = r;
 	input->input_close = rlib_postgres_input_close;
 	input->first = rlib_postgres_first;
 	input->next = rlib_postgres_next;
