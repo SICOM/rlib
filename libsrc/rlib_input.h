@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -39,6 +39,7 @@ struct input_info {
 typedef struct input_filter input_filter;
 struct input_filter {
 	gpointer private;
+	gpointer r;
 	struct input_info info;
 	gint (*input_close)(gpointer);
 	gpointer (*new_result_from_query)(gpointer, gchar *);

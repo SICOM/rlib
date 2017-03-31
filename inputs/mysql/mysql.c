@@ -24,6 +24,7 @@
 #include <mysql.h>
 #include <glib.h>
 
+#include "rlib.h"
 #include "util.h"
 #include "rlib_input.h"
 
@@ -235,12 +236,13 @@ static const gchar* rlib_mysql_get_error(gpointer input_ptr) {
 	return mysql_error(INPUT_PRIVATE(input)->mysql);
 }
 
-gpointer rlib_mysql_new_input_filter(void) {
+gpointer rlib_mysql_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
 	input = g_malloc(sizeof(struct input_filter));
 	input->private = g_malloc(sizeof(struct _private));
 	memset(input->private, 0, sizeof(struct _private));
+	input->r = r;
 	input->input_close = rlib_mysql_input_close;
 	input->first = rlib_mysql_first;
 	input->next = rlib_mysql_next;

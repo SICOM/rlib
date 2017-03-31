@@ -1,30 +1,40 @@
 #!/bin/sh
 
 echo "Removing Old Things"
-rm *.py
-rm *.pm
-rm *.java
-rm *.cs
+rm -f *.py
+rm -f *.pm
+rm -f *.java
+rm -f *.cs
 
 echo "Python"
 swig -python rlib.i
-cp rlib_wrap.c ../bindings/python/python.c
-cp rlib.py ../bindings/interfaces/rlib.py
+rm -f ../bindings/python/python.c ../bindings/interfaces/rlib.py
+mv rlib_wrap.c ../bindings/python/python.c
+mv rlib.py ../bindings/interfaces/rlib.py
 
 echo "Perl"
 swig -perl rlib.i
-cp rlib_wrap.c ../bindings/perl/perl.c
-cp rlib.pm ../bindings/interfaces/rlib.pm
+rm -f ../bindings/perl/perl.c ../bindings/interfaces/rlib.pm
+mv rlib_wrap.c ../bindings/perl/perl.c
+mv rlib.pm ../bindings/interfaces/rlib.pm
 
 echo "Java"
 swig -java rlib.i
-cp rlib_wrap.c ../bindings/java/java.c
-cp *.java ../bindings/interfaces/
-
+rm -f ../bindings/java/java.c ../bindings/interfaces/*.java
+mv rlib_wrap.c ../bindings/java/java.c
+mv *.java ../bindings/interfaces/
 
 echo "C Sharp"
 swig -csharp rlib.i
-cp rlib_wrap.c ../bindings/csharp/csharp.c
+rm -f ../bindings/csharp/csharp.c ../bindings/interfaces/*.cs
+mv rlib_wrap.c ../bindings/csharp/csharp.c
 sed -e '/DllImport/s/\"rlib\"/\"rlibcsharp\"/g' rlibPINVOKE.cs > foo
-cp foo rlibPINVOKE.cs
-cp *.cs ../bindings/interfaces/
+rm -f rlibPINVOKE.cs
+mv foo rlibPINVOKE.cs
+mv *.cs ../bindings/interfaces/
+
+echo "Removing Newly Generated Things"
+rm -f *.py
+rm -f *.pm
+rm -f *.java
+rm -f *.cs

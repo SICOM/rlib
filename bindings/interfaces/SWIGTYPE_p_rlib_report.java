@@ -7,18 +7,18 @@
  * ----------------------------------------------------------------------------- */
 
 
-public class SWIGTYPE_p_rlib {
+public class SWIGTYPE_p_rlib_report {
   private transient long swigCPtr;
 
-  protected SWIGTYPE_p_rlib(long cPtr, @SuppressWarnings("unused") boolean futureUse) {
+  protected SWIGTYPE_p_rlib_report(long cPtr, @SuppressWarnings("unused") boolean futureUse) {
     swigCPtr = cPtr;
   }
 
-  protected SWIGTYPE_p_rlib() {
+  protected SWIGTYPE_p_rlib_report() {
     swigCPtr = 0;
   }
 
-  protected static long getCPtr(SWIGTYPE_p_rlib obj) {
+  protected static long getCPtr(SWIGTYPE_p_rlib_report obj) {
     return (obj == null) ? 0 : obj.swigCPtr;
   }
 }

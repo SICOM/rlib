@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -523,10 +523,12 @@ void rlib_free_tree(rlib *r) {
 			struct rlib_part *part = r->parts[i];
 			rlib_free_part(r, part);
 			g_free(r->reportstorun[i].name);
+			g_free(r->reportstorun[i].dir);
 			g_free(part);
 			r->parts[i] = NULL;
 		}
 	}
+	g_slist_free_full(r->search_paths, g_free);
 }
 
 void rlib_free_results(rlib *r) {

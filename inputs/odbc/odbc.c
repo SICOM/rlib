@@ -432,11 +432,12 @@ static const gchar * rlib_odbc_get_error(gpointer input_ptr) {
 	return "No error information";
 }
 
-gpointer rlib_odbc_new_input_filter(void) {
+gpointer rlib_odbc_new_input_filter(rlib *r) {
 	struct input_filter *input;
 	input = g_malloc(sizeof(struct input_filter));
 	input->private = g_malloc(sizeof(struct _private));
 	memset(input->private, 0, sizeof(struct _private));
+	input->r = r;
 	input->input_close = rlib_odbc_input_close;
 	input->first = rlib_odbc_first;
 	input->next = rlib_odbc_next;

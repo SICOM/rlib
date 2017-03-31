@@ -235,12 +235,13 @@ static void rlib_php_array_rlib_free_result(gpointer input_ptr, gpointer result_
 }
 
 
-static gpointer rlib_php_array_new_input_filter() {
+static gpointer rlib_php_array_new_input_filter(rlib *r) {
 	struct input_filter *input;
 	
 	input = emalloc(sizeof(struct input_filter));
 	input->private = emalloc(sizeof(struct _private));
 	memset(input->private, 0, sizeof(struct _private));
+	input->r = r;
 	input->input_close = rlib_php_array_input_close;
 	input->first = rlib_php_array_first;
 	input->next = rlib_php_array_next;
@@ -259,6 +260,6 @@ static gpointer rlib_php_array_new_input_filter() {
 }
 
 gint rlib_add_datasource_php_array(void *r, gchar *input_name) {
-	rlib_add_datasource(r, input_name, rlib_php_array_new_input_filter());
+	rlib_add_datasource(r, input_name, rlib_php_array_new_input_filter(r));
 	return TRUE;
 }

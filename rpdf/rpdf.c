@@ -325,9 +325,8 @@ static void rpdf_make_page_stream(gpointer data, gpointer user_data) {
 	} else if(stream->type == RPDF_TYPE_STROKE) {
 		result = g_strdup_printf("%sS\n", extra);
 	} else if(stream->type == RPDF_TYPE_ARC) {
-		char buf[1024];
+		GString *buf = g_string_new(NULL);
 		struct rpdf_stream_arc *arc = stream->data;
-		gdouble save_x, save_y;
 		gdouble x = arc->x;
 		gdouble y = arc->y;
 		gdouble start_angle = arc->start_angle;
@@ -349,13 +348,11 @@ static void rpdf_make_page_stream(gpointer data, gpointer user_data) {
 		b0 = y + (radius * sin(t1));
 		c0 = -radius * sin(t1);
 		d0 = radius * cos(t1);
-		save_x = a0;
-		save_y = b0;
 		if(total_angle < DEGREE_2_RAD(360.0)) {  /* Pie Slices */
-			sprintf(buf, "%s%.03f %.03f m\n", extra, x, y);
-			sprintf(buf, "%s%.03f %.03f l\n", buf, a0, b0);
+			g_string_printf(buf, "%s%.03f %.03f m\n", extra, x, y);
+			g_string_append_printf(buf, "%.03f %.03f l\n", a0, b0);
 		} else {
-			sprintf(buf, "%s%.03f %.03f m\n", extra, a0,b0);
+			g_string_printf(buf, "%s%.03f %.03f m\n", extra, a0,b0);
 		
 		}		
 		for (i = 1; i <= nsegs; i++) {
@@ -364,16 +361,16 @@ static void rpdf_make_page_stream(gpointer data, gpointer user_data) {
 			b1 = y + (radius * sin(t1));
 			c1 = -radius * sin(t1);
 			d1 = radius * cos(t1);
-			sprintf(buf, "%s%.02f %.02f %.02f %.02f %.02f %.02f c\n", buf, (a0 + (c0 * dtm)),((b0 + (d0 * dtm))),(a1 - (c1 * dtm)),((b1 - (d1 * dtm))),a1,(b1));
+			g_string_append_printf(buf, "%.02f %.02f %.02f %.02f %.02f %.02f c\n", (a0 + (c0 * dtm)),((b0 + (d0 * dtm))),(a1 - (c1 * dtm)),((b1 - (d1 * dtm))),a1,(b1));
 			a0 = a1;
 			b0 = b1;
 			c0 = c1;
 			d0 = d1;
 		}
 		if(total_angle < DEGREE_2_RAD(360.0)) { /* pizza :) */
-			sprintf(buf, "%s%.03f %.03f l\n", buf, x, y);
+			g_string_append_printf(buf, "%.03f %.03f l\n", x, y);
 		}
-		result = g_strdup_printf("%s", buf);
+		result = g_string_free(buf, FALSE);
 		g_free(arc);
 	} else if(stream->type == RPDF_TYPE_TEXT_CB) {
 		struct rpdf_stream_text_callback *stream_text_callback = stream->data;

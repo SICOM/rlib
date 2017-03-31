@@ -206,10 +206,13 @@ void * csv_new_result_from_query(gpointer input_ptr, gchar *query) {
 	gchar *contents;
 	GSList *line_items;
 	gint row = 0;
+	gchar *file;
 
 	INPUT_PRIVATE(input)->error = "";
 
-	fd = open(query, O_RDONLY, 6);
+	file = get_filename(input->r, query, -1, FALSE);
+	fd = open(file, O_RDONLY, 6);
+	g_free(file);
 	if(fd > 0) {
 		size = lseek(fd, 0L, SEEK_END);
 		lseek(fd, 0L, SEEK_SET);
@@ -259,12 +262,13 @@ static gint rlib_csv_free_input_filter(gpointer input_ptr){
 	return 0;
 }
 
-gpointer rlib_csv_new_input_filter() {
+gpointer rlib_csv_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
 	input = g_malloc(sizeof(struct input_filter));
 	input->private = g_malloc(sizeof(struct _private));
 	memset(input->private, 0, sizeof(struct _private));
+	input->r = r;
 	input->input_close = rlib_csv_input_close;
 	input->first = rlib_csv_first;
 	input->next = rlib_csv_next;
