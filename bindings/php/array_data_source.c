@@ -1,7 +1,8 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
+ *  Updated for PHP 7: Zoltán Böszörményi <zboszormenyi@sicom.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of version 2 of the GNU General Public
@@ -19,18 +20,12 @@
  */
 #include <config.h>
 
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_NAME
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
- 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <glib.h>
 #include <php.h>
- 
+
 #include "rlib.h"
 #include "rlib_input.h"
 
@@ -137,8 +132,10 @@ static gpointer rlib_php_array_resolve_field_pointer(gpointer input_ptr, gpointe
 
 void * php_array_new_result_from_query(gpointer input_ptr, gchar *query) {
 	struct rlib_php_array_results *result = emalloc(sizeof(struct rlib_php_array_results));
+#if PHP_MAJOR_VERSION < 7
 	long size;
 	void *data, *lookup_data;
+#endif
 	char *data_result;
 	char dstr[64];
 	HashTable *ht1, *ht2;
@@ -151,20 +148,41 @@ void * php_array_new_result_from_query(gpointer input_ptr, gchar *query) {
 	memset(result, 0, sizeof(struct rlib_php_array_results));
 	result->array_name = query;
 		
+#if PHP_MAJOR_VERSION < 7
 	if ((size=zend_hash_find(&EG(symbol_table),query,strlen(query)+1, &data))==FAILURE) { 
+		efree(result);
 		return NULL;
 	} else {
 		result->zend_value = *(zval **)data;
 	}
+#else
+	result->zend_value = zend_hash_str_find(&EG(symbol_table), query, strlen(query));
+	if (result->zend_value == NULL) {
+		efree(result);
+		return NULL;
+	}
 
-	ht1 = result->zend_value->value.ht;
-	result->rows = ht1->nNumOfElements;
+	if (EXPECTED(Z_TYPE_P(result->zend_value) == IS_INDIRECT))
+		result->zend_value = Z_INDIRECT_P(result->zend_value);
+#endif
+
+	if (UNEXPECTED(Z_TYPE_P(result->zend_value) != IS_ARRAY)) {
+		efree(result);
+		return NULL;
+	}
+
+	ht1 = Z_ARRVAL_P(result->zend_value);
+	result->rows = zend_hash_num_elements(ht1);
 	zend_hash_internal_pointer_reset_ex(ht1, &pos1);
+#if PHP_MAJOR_VERSION < 7
 	zend_hash_get_current_data_ex(ht1, &data, &pos1);
 	zend_value = *(zval **)data;
+#else
+	zend_value = zend_hash_get_current_data_ex(ht1, &pos1);
+#endif
 	
-	ht2 = zend_value->value.ht;
-	result->cols = ht2->nNumOfElements;
+	ht2 = Z_ARRVAL_P(zend_value);
+	result->cols = zend_hash_num_elements(ht2);
 	
 	total_size = result->rows*result->cols*sizeof(char *);
 	result->data = emalloc(total_size);
@@ -174,14 +192,23 @@ void * php_array_new_result_from_query(gpointer input_ptr, gchar *query) {
 
 	zend_hash_internal_pointer_reset_ex(ht1, &pos1);
 	while(1) {
+#if PHP_MAJOR_VERSION < 7
 		zend_hash_get_current_data_ex(ht1, &data, &pos1);
 		zend_value = *(zval **)data;
-		ht2 = zend_value->value.ht;
+#else
+		zend_value = zend_hash_get_current_data_ex(ht1, &pos1);
+#endif
+		ht2 = Z_ARRVAL_P(zend_value);
 		zend_hash_internal_pointer_reset_ex(ht2, &pos2);
 		col=0;
 		while(1) {
+#if PHP_MAJOR_VERSION < 7
 			int lookup_result = zend_hash_get_current_data_ex(ht2, &lookup_data, &pos2);
 			if(lookup_result < 0) {
+#else
+			lookup_value = zend_hash_get_current_data_ex(ht2, &pos2);
+			if (lookup_value == NULL) {
+#endif
 				result->data[(row*result->cols)+col] = estrdup("RLIB: INVALID ARRAY CELL");
 				col++;
 				if(col >= result->cols) {
@@ -190,7 +217,9 @@ void * php_array_new_result_from_query(gpointer input_ptr, gchar *query) {
 			
 			} else {
 
+#if PHP_MAJOR_VERSION < 7
 				lookup_value = *(zval **)lookup_data;
+#endif
 				zend_hash_move_forward_ex(ht2, &pos2);
 
 				data_result = NULL;

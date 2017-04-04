@@ -1,7 +1,8 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
+ *  Updated for PHP 7: Zoltán Böszörményi <zboszormenyi@sicom.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of version 2 of the GNU General Public
@@ -19,6 +20,12 @@
  */
 
 #define LE_RLIB_NAME "rlib"
+
+#if PHP_MAJOR_VERSION < 7
+typedef int z_str_len_t;
+#else
+typedef size_t z_str_len_t;
+#endif
 
 struct rlib_inout_pass {
 	rlib *r;
