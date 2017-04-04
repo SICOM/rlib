@@ -25,13 +25,14 @@
  * report defined in the rlib object.
  *
  */
+
+#include <config.h>
  
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <libintl.h>
-
-#include "config.h"
 
 #include "config.h"
 #include "rlib.h"

@@ -18,10 +18,12 @@
  * Boston, MA 02111-1307, USA.
  */
  
+#include <config.h>
+
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
-#include "config.h"
 #include "rlib.h"
 #include "pcode.h"
 #include "rlib_input.h"

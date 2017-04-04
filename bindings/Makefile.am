@@ -1,6 +1,6 @@
 ## Makefile.am for RLIB
 
-## Copyright (c) 2003-2006 SICOM Systems Inc (bdoan@sicompos.com)
+## Copyright (c) 2003-2017 SICOM Systems Inc (bdoan@sicompos.com)
 ## RLIB is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation; either version 2, or (at your option)
@@ -20,10 +20,6 @@
 ##
 ## Process this file with automake to produce Makefile.in
 
-if HAVE_PHP
-PHP_BINDINGS=php
-endif
-
 if HAVE_PYTHON
 PYTHON_BINDINGS=python
 endif
@@ -40,9 +36,7 @@ if HAVE_CSHARP
 CSHARP_BINDINGS=csharp
 endif
 
-
 SUBDIRS = \
-	$(PHP_BINDINGS) \
 	$(PYTHON_BINDINGS) \
 	$(JAVA_BINDINGS) \
 	$(PERL_BINDINGS) \

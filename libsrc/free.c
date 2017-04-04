@@ -20,10 +20,12 @@
  * $Id$
  */
 
+#include <config.h>
+
 #include <stdlib.h>
 #include <gmodule.h>
+#include <libxml/parser.h>
 
-#include "config.h"
 #include "rlib.h"
 #include "pcode.h"
 #include "rlib_input.h"

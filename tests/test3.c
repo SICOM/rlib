@@ -18,6 +18,7 @@
  * Boston, MA 02111-1307, USA.
  */
  
+#include <stdio.h>
 #include <rlib.h>
 #include <rlib_input.h>
 

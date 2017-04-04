@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors:  Michael Ibison <ibison@earthtech.org> 
  *
@@ -26,12 +26,12 @@
  *
  */
  
+#include <config.h>
 
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
-#include "config.h"
 #include "rlib.h"
 
 #define GOOD_CONTRAST_THRESHOLD 0.5
@@ -408,81 +408,80 @@ int adjust_limits(gdouble  dataMin, gdouble dataMax, gint denyMinEqualsAdjMin, g
 	int     adjMaxTMs=(denyMinEqualsAdjMin?maxTMs-1:maxTMs);
 
 
-/*
-This is the requested maxTMs UNLESS denyMinEqualsAdjMin is true. In that case
-it is possible that one of the limits will be shifted by an extra tickmark
-interval after the call to adjustPosAndNegLimits. To account for this
-possibility, need to decrement the maximum number of tickmarks available to
-the adjstment algorithm in advance, so that the total is gauranteed to be
-no more than the specified maximum.
-*/
+	/*
+	This is the requested maxTMs UNLESS denyMinEqualsAdjMin is true. In that case
+	it is possible that one of the limits will be shifted by an extra tickmark
+	interval after the call to adjustPosAndNegLimits. To account for this
+	possibility, need to decrement the maximum number of tickmarks available to
+	the adjstment algorithm in advance, so that the total is gauranteed to be
+	no more than the specified maximum.
+	*/
 
-/* test to see parameters make sense */
+	/* test to see parameters make sense */
 	if (dataMin>=dataMax)
 		return(localError("adjustLimits: bad data range"),-1);
 
 	if (minTMs<=0 || maxTMs<=0)
 		return(localError("adjustLimits: negative or zero tickmarks specified"),-1);
 
-if (maxTMs==1 && denyMinEqualsAdjMin)
-        return(localError("adjustLimits: cannot specify 1 tickmark AND require a margin"),-1);
+	if (maxTMs==1 && denyMinEqualsAdjMin)
+		return(localError("adjustLimits: cannot specify 1 tickmark AND require a margin"),-1);
 
-if (sd<1 || sd >4)
-        return(localError("adjustLimits: sd out of range [1,4]"),-1);
-
+	if (sd<1 || sd >4)
+		return(localError("adjustLimits: sd out of range [1,4]"),-1);
 
 	if(denyMinEqualsAdjMin && dataMin < 0 && dataMax < 0)
 		dataMax = 0;
 
 
-/*check to see that the acceptable increments do not have more significant figures than allowed
- for the limits */
-for (i=0;i<numGoodIncs;i++)
-    {
-    if (goodIncs[i]>maxPossibleGoodInc)
-        return (localError("adjustLimits: supplied with a good increment that is too large given the number of significant digits"),-1);
-    if (goodIncs[i]<=0)
-        return (localError("adjustLimits: supplied with a good increment that is <=0"),-1);
-    }
+	/*check to see that the acceptable increments do not have more significant figures than allowed
+	 for the limits */
+	for (i=0;i<numGoodIncs;i++)
+	{
+		if (goodIncs[i]>maxPossibleGoodInc)
+			return (localError("adjustLimits: supplied with a good increment that is too large given the number of significant digits"),-1);
+		if (goodIncs[i]<=0)
+			return (localError("adjustLimits: supplied with a good increment that is <=0"),-1);
+	}
 
-/* see if either limit can be set to zero */
-tryToZeroize(dataMin,dataMax,1.0/(double)maxTMs,&zMin,&zMax);
+	/* see if either limit can be set to zero */
+	tryToZeroize(dataMin,dataMax,1.0/(double)maxTMs,&zMin,&zMax);
 
-/*
-Shift the origin.
-Note that shifting the origin may reduce the number of significant figures.
-For example (1000,1003) will be shifted to (0,3).
-Therefore need to shift the data BEFORE performing the map.
-Hence get (0,30) in this case.
-*/
-if (zMin*zMax>0) /*both of same sign and non-zero */
-    {
-    if (zMax>0)
-        {
-        falseOrigin=1; /* positive false origin */
-        szMax=zMax-zMin; /* remove offset */
-        szMin=0;
-        }
-    else {
-        falseOrigin=-1; /* negative false origin */
-        szMin=zMin-zMax; /* remove offset (zMappedMax<0 here) */
-        szMax=0;
-        }
-    }
-else
-    {
-    /* If here, then either zMin =0, or zMax =0,
-    or they are both non-zero and of same sign.
-    In all these cases do not shift the origin */
-    falseOrigin=0;
-    szMax=zMax;
-    szMin=zMin;
-    }
+	/*
+	Shift the origin.
+	Note that shifting the origin may reduce the number of significant figures.
+	For example (1000,1003) will be shifted to (0,3).
+	Therefore need to shift the data BEFORE performing the map.
+	Hence get (0,30) in this case.
+	*/
+	if (zMin*zMax>0) /*both of same sign and non-zero */
+	{
+		if (zMax>0)
+		{
+			falseOrigin=1; /* positive false origin */
+			szMax=zMax-zMin; /* remove offset */
+			szMin=0;
+		}
+		else {
+			falseOrigin=-1; /* negative false origin */
+			szMin=zMin-zMax; /* remove offset (zMappedMax<0 here) */
+			szMax=0;
+		}
+	}
+	else
+	{
+		/* If here, then either zMin =0, or zMax =0,
+		or they are both non-zero and of same sign.
+		In all these cases do not shift the origin */
+		falseOrigin=0;
+		szMax=zMax;
+		szMin=zMin;
+	}
 
-/* map the data */
-mapData(szMin,szMax,sd,&mszMin,&mszMax,&raise);
+	/* map the data */
+	mapData(szMin,szMax,sd,&mszMin,&mszMax,&raise);
 
-/* adjust limits */
+	/* adjust limits */
 	if(adjustPosAndNegLimits(mszMin,mszMax,minTMs,adjMaxTMs,sd,goodIncs,numGoodIncs,numTms, &mTmi,&amszMin,&amszMax) == -1) {
 		*adjMin = dataMin;
 		*adjMax = dataMax;
@@ -490,52 +489,52 @@ mapData(szMin,szMax,sd,&mszMin,&mszMax,&raise);
 		return -1;
 	}
 
-/* unmap the data */
-aszMin=((double)amszMin)*POWER10(-raise);
-aszMax=((double)amszMax)*POWER10(-raise);
-*tmi=((double)mTmi)*POWER10(-raise);
+	/* unmap the data */
+	aszMin=((double)amszMin)*POWER10(-raise);
+	aszMax=((double)amszMax)*POWER10(-raise);
+	*tmi=((double)mTmi)*POWER10(-raise);
 
-/* unshift the origin */
-if (falseOrigin==1)
-    {
-    azMin=aszMin+zMin;
-    azMax=aszMax+zMin;
-    }
-else if (falseOrigin==-1)
-    {
-    azMin=aszMin+zMax;
-    azMax=aszMax+zMax;
-    }
-else
-    {
-    azMin=aszMin;
-    azMax=aszMax;
-    }
+	/* unshift the origin */
+	if (falseOrigin==1)
+	{
+		azMin=aszMin+zMin;
+		azMax=aszMax+zMin;
+	}
+	else if (falseOrigin==-1)
+	{
+		azMin=aszMin+zMax;
+		azMax=aszMax+zMax;
+	}
+	else
+	{
+		azMin=aszMin;
+		azMax=aszMax;
+	}
 
-/* set outputs whilst performing margin adjustment */
-if (denyMinEqualsAdjMin
-&& falseOrigin==1
-&& azMin-dataMin<*tmi)      /* requested margin is absent */
-    {
-    *adjMin=azMin-*tmi;     /* shift down by extra tickmark interval */
-    if(azMin>= 0.0 && *adjMin < 0.0) /* do not allow min to go below zero if it was originally positive */
-		*adjMin = 0.0;
-    *adjMax=azMax;
-    (*numTms)++;
-    }
-else if (denyMinEqualsAdjMin
-&& falseOrigin==-1
-&& azMax-dataMax<*tmi)     /* requested margin is absent */
-    {
-    *adjMin=azMin;        /* shift down by extra tickmark interval */
-    *adjMax=azMax+*tmi;        /* shift up by extra tickmark interval */
-    (*numTms)++;
-    }
-else
-    {
-    *adjMin=azMin;
-    *adjMax=azMax;
-    }
+	/* set outputs whilst performing margin adjustment */
+	if (denyMinEqualsAdjMin
+		&& falseOrigin==1
+		&& azMin-dataMin<*tmi)      /* requested margin is absent */
+	{
+		*adjMin=azMin-*tmi;     /* shift down by extra tickmark interval */
+		if(azMin>= 0.0 && *adjMin < 0.0) /* do not allow min to go below zero if it was originally positive */
+			*adjMin = 0.0;
+		*adjMax=azMax;
+		(*numTms)++;
+	}
+	else if (denyMinEqualsAdjMin
+				&& falseOrigin==-1
+				&& azMax-dataMax<*tmi)     /* requested margin is absent */
+	{
+		*adjMin=azMin;        /* shift down by extra tickmark interval */
+		*adjMax=azMax+*tmi;        /* shift up by extra tickmark interval */
+		(*numTms)++;
+	}
+	else
+	{
+		*adjMin=azMin;
+		*adjMax=azMax;
+	}
 
-return 0;
+	return 0;
 }

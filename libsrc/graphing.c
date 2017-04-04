@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -26,6 +26,7 @@
  *
  */
  
+#include <libxml/parser.h>
 #include <stdlib.h>
 #include <string.h>
 #include "config.h"

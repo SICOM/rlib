@@ -23,6 +23,8 @@
  * for the RLIB library functions.
  */
 
+#include <config.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -31,8 +33,7 @@
 #include <libintl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
-#include "config.h"
+#include <libxml/parser.h>
 
 #include "rlib.h"
 #include "pcode.h"

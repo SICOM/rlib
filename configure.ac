@@ -313,24 +313,19 @@ AC_SUBST(ODBC_CFLAGS)
 AC_SUBST(ODBC_LIBS)
 
 
-AC_ARG_ENABLE(php,              [  --disable-php         disable php frontend],,enable_php=yes)
-PHP_CFLAGS=""
-PHP_EXTENSION_DIR=""
-if test x$enable_php = xyes; then
-	AC_PATH_PROG(PHP_CONFIG, php-config, no)
-	if test x$PHP_CONFIG = xno; then
-		enable_php=no
-		echo "*** WARNING: PHP NOT FOUND IN PATH.  RLIB WILL NOT BE COMPILED WITH SUPPORT FOR IT"
-	else
-		AC_DEFINE(HAVE_PHP,1,[Build with PHP support])
-		PHP_CFLAGS=`$PHP_CONFIG --includes`
-		PHP_EXTENSION_DIR=`$PHP_CONFIG --extension-dir`
-	fi
-fi
-AC_SUBST(PHP_CFLAGS)
-AC_SUBST(PHP_EXTENSION_DIR)
-AC_SUBST(HAVE_PHP)
+AC_ARG_ENABLE([php],
+	[AS_HELP_STRING([--disable-php],[disable php frontend])],
+	[],[enable_php=yes])
+AS_IF([test x$enable_php = xyes],
+	[AC_PATH_PROG(PHP_CONFIG,php-config,no)
+	 AS_IF([test $PHP_CONFIG = xno],
+		[AC_MSG_ERROR([php-config is not found])])
+	 AC_PROG_SED
+	 phpinidir=`$PHP_CONFIG --configure-options | $SED 's/.*with-config-file-scan-dir=\([[^ ]]*\).*/\1/'`
+	 phpversion=`$PHP_CONFIG --version`
+	])
 AM_CONDITIONAL(HAVE_PHP, test x$enable_php = xyes)
+AC_SUBST(phpinidir)
 
 AC_ARG_ENABLE(gd,              [  --disable-gd         disable gd graphing],,enable_gd=yes)
 GD_CFLAGS=""
@@ -564,7 +559,7 @@ RLIB_LIBS="$LIBXML_LIBS $LIBGLIB_LIBS $LIBGMODULE_LIBS $ICONVLIBS $GD_LDFLAGS $G
 AC_SUBST(RLIB_CFLAGS)
 AC_SUBST(RLIB_LIBS)
 
-RPDF_CFLAGS="-D_GNU_SOURCE $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $NO_CYGWIN"
+RPDF_CFLAGS="-D_GNU_SOURCE -Wall $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $NO_CYGWIN"
 RPDF_LIBS="$LIBGLIB_LIBS $LIBGMODULE_LIBS $ZLIB_LIBS"
 AC_SUBST(RPDF_CFLAGS)
 AC_SUBST(RPDF_LIBS)
@@ -611,7 +606,6 @@ src/examples/java/Makefile
 src/examples/perl/Makefile
 src/examples/csharp/Makefile
 bindings/Makefile
-bindings/php/Makefile
 bindings/python/Makefile
 bindings/perl/Makefile
 bindings/java/Makefile

@@ -6,7 +6,7 @@
 Summary: RLIB is a reporting engine/library.
 Name: rlib
 Version: @VERSION@
-Release: 2
+Release: 1
 License: GPL
 Group: System/Libraries
 Source: %name-%{version}.tar.gz

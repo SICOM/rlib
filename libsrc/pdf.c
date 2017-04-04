@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -16,13 +16,15 @@
  * License along with this program; if not, write to the
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
-*/
+ */
+
+#include <config.h>
+
+#include <stdio.h>
 #include <locale.h>
 #include <string.h>
 #include <math.h>
 
-
-#include "config.h"
 #include "rlib.h"
 #include "rpdf.h"
 

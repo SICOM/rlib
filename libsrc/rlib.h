@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -23,7 +23,6 @@
  * modules in the library.
  *
  */
-#include <libxml/parser.h>
 #include <time.h>
 #include <glib.h>
 
@@ -168,7 +167,7 @@ struct rlib_element {
 #define RLIB_ALIGN_CENTER	2
 
 struct rlib_from_xml {
-	xmlChar *xml;
+	unsigned char *xml; /* identical to xmlChar */
 	gint line;
 };
 
@@ -695,7 +694,7 @@ struct rlib_chart {
 };
 
 struct rlib_report {
-	xmlDocPtr doc;
+	gpointer doc;	/* opaque type for xmlDocPtr */
 	gchar *contents;
 	struct rlib_from_xml xml_font_size;
 	struct rlib_from_xml xml_query;
