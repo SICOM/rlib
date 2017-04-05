@@ -1,4 +1,4 @@
-<? dl ("rlib.so");
+<?php
 	$header_data[0][0] = "name";
 
 	for ($i = 1; $i <= 24; $i++)
