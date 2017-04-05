@@ -48,6 +48,8 @@ struct _private {
 
 gpointer rlib_mysql_real_connect(input_filter *input, gchar *group, gchar *host, gchar *user, gchar *password, gchar *database) {
 	MYSQL *mysql;
+	unsigned int port = 3306;
+	gchar *host_copy = NULL;
 
 	mysql = mysql_init(NULL);
 
@@ -57,20 +59,37 @@ gpointer rlib_mysql_real_connect(input_filter *input, gchar *group, gchar *host,
 	if(group != NULL) {
 		if (mysql_options(mysql,MYSQL_READ_DEFAULT_GROUP,group))
 			return NULL;
+	} else if (host) {
+		char *tmp, *port_s;
+		host_copy = g_strdup(host);
+		tmp = strchr(host_copy, ':');
+		if (tmp) {
+			*tmp = '\0';
+			port_s = tmp + 1;
+			port = atoi(port_s);
+		}
 	}
 
 	if (mysql_real_connect(mysql,
-		group == NULL ? host : mysql->options.host,
+		group == NULL ? host_copy : mysql->options.host,
 		group == NULL ? user : mysql->options.user,
 		group == NULL ? password : mysql->options.password,
 		group == NULL ? database : mysql->options.db,
-		group == NULL ? 0 : mysql->options.port,
+		group == NULL ? port : mysql->options.port,
 		group == NULL ? NULL : mysql->options.unix_socket,
 		0
-	   ) == NULL)
+	   ) == NULL) {
+		g_free(host_copy);
+		r_error(input->r, "ERROR: mysql_real_connect returned: %s\n", mysql_error(mysql));
 		return NULL;
+	}
 
-	mysql_select_db(mysql,database);
+	g_free(host_copy);
+
+	if (mysql_select_db(mysql, database)) {
+		r_error(input->r, "ERROR: mysql_select_db returned: %s\n", mysql_error(mysql));
+		return NULL;
+	}
 
 	INPUT_PRIVATE(input)->mysql = mysql;
 	return mysql;
@@ -86,7 +105,7 @@ static gint rlib_mysql_input_close(input_filter *input) {
 	return 0;
 }
 
-static MYSQL_RES * rlib_mysql_query(MYSQL *mysql, gchar *query) {
+static MYSQL_RES *rlib_mysql_query(rlib *r, MYSQL *mysql, gchar *query) {
 	MYSQL_RES *result = NULL;
 	gint rtn;
 	rtn = mysql_query(mysql, query);
@@ -94,6 +113,8 @@ static MYSQL_RES * rlib_mysql_query(MYSQL *mysql, gchar *query) {
 		result = mysql_store_result(mysql);
 		return result;
 	}
+
+	r_error(r, "ERROR: MySQL error: %s\n", mysql_error(mysql));
 	return NULL;
 }
 
@@ -194,14 +215,14 @@ static gpointer rlib_mysql_resolve_field_pointer(input_filter *input, gpointer r
 }
 
 void * mysql_new_result_from_query(struct input_filter *input, struct rlib_queries *query) {
-	struct rlib_result *rlib_result;
 	struct rlib_mysql_results *results;
 	MYSQL_RES *result;
 	guint count,i;
-	result = rlib_mysql_query(INPUT_PRIVATE(input)->mysql, query->sql);
-	if(result == NULL)
+	result = rlib_mysql_query(input->r, INPUT_PRIVATE(input)->mysql, query->sql);
+	if(result == NULL) {
+		r_error(input->r, "ERROR: rlib_mysql_query returned NULL\n");
 		return NULL;
-	else {
+	} else {
 		results = g_malloc(sizeof(struct rlib_mysql_results));
 		results->result = result;
 	}
@@ -210,7 +231,7 @@ void * mysql_new_result_from_query(struct input_filter *input, struct rlib_queri
 	for(i=0;i<count;i++) {
 		results->fields[i] = i+1;
 	}
-	return rlib_result;
+	return results;
 }
 
 static void rlib_mysql_rlib_free_result(struct input_filter *input, gpointer result_ptr) {
@@ -235,9 +256,8 @@ static const gchar* rlib_mysql_get_error(input_filter *input) {
 gpointer rlib_mysql_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
-	input = g_malloc(sizeof(struct input_filter));
-	input->private = g_malloc(sizeof(struct _private));
-	memset(input->private, 0, sizeof(struct _private));
+	input = g_malloc0(sizeof(struct input_filter));
+	input->private = g_malloc0(sizeof(struct _private));
 	input->r = r;
 	input->input_close = rlib_mysql_input_close;
 	input->first = rlib_mysql_first;
