@@ -867,6 +867,8 @@ struct rlib {
 	GIConv xml_encoder;
 
 	GSList *search_paths;
+
+	gint debug;
 };
 
 #define INPUT(r, i) (r->results[i]->input)

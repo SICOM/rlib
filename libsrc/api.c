@@ -57,6 +57,7 @@ static void metadata_destroyer (gpointer data) {
 
 rlib * rlib_init_with_environment(struct environment_filter *environment) {
 	rlib *r;
+	char *env;
 	
 	init_signals();
 
@@ -66,7 +67,10 @@ rlib * rlib_init_with_environment(struct environment_filter *environment) {
 		rlib_new_c_environment(r);
 	else
 		ENVIRONMENT(r) = environment;
-	
+
+	env = getenv("RLIB_DEBUGGING");
+	r->debug = !(env == NULL || *env == '\0');
+
 	r->output_parameters = g_hash_table_new_full (g_str_hash, g_str_equal, string_destroyer, string_destroyer);
 	r->input_metadata = g_hash_table_new_full (g_str_hash, g_str_equal, string_destroyer, metadata_destroyer);
 	r->parameters = g_hash_table_new_full (g_str_hash, g_str_equal, string_destroyer, string_destroyer);

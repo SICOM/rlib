@@ -674,8 +674,13 @@ gboolean rpdf_finalize(struct rpdf *pdf) {
 	gchar buf[128];
 	struct tm my_tm;
 	time_t now;
+	char *debugging;
 	
-	time(&now);
+	debugging = getenv("RPDF_DEBUGGING");
+	if (debugging == NULL || *debugging == '\0')
+		time(&now);
+	else
+		now = (time_t)0;
 #ifdef HAVE_LOCALTIME_R
 	localtime_r(&now, &my_tm);
 #else

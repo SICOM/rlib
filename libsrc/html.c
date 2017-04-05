@@ -98,6 +98,7 @@ struct _private {
 	GSList **bottom;
 
 	gint page_number;
+	gint image_counter;
 	struct rlib_gd *rgd;
 	struct _graph graph;
 };
@@ -573,7 +574,7 @@ static void html_start_graph(rlib *r, struct rlib_part *part, struct rlib_report
 
 	memset(graph, 0, sizeof(struct _graph));
 
-	OUTPUT_PRIVATE(r)->rgd = rlib_gd_new(width, height,  g_hash_table_lookup(r->output_parameters, "html_image_directory"));
+	OUTPUT_PRIVATE(r)->rgd = rlib_gd_new(r, width, height,  g_hash_table_lookup(r->output_parameters, "html_image_directory"), OUTPUT_PRIVATE(r)->image_counter++);
 
 	sprintf(buf, "<img src=\"%s\" width=\"%f\" height=\"%f\" alt=\"graph\"/>", OUTPUT_PRIVATE(r)->rgd->file_name, width, height);
 	print_text(r, buf, FALSE);

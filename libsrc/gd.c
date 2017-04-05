@@ -44,22 +44,31 @@
 #include "rlib_gd.h"
 
 #ifdef HAVE_GD
-static char *unique_file_name(gchar *buf, gchar *image_directory) {
+static char *unique_file_name(rlib *r, gchar *buf, gchar *image_directory, gint image_counter) {
 #ifdef HAVE_SYS_TIME_H
-	struct timeval tv;
-	gint pid = getpid();
-	static gint counter;
+	if (r->debug) {
+		if (image_directory != NULL)
+			sprintf(buf, "%s/RLIB_IMAGE_FILE_%d.png", image_directory, image_counter);
+		else
+			sprintf(buf, "RLIB_IMAGE_FILE_%d.png", image_counter);
+	} else {
+		struct timeval tv;
+		gint pid = getpid();
 
-	gettimeofday(&tv, NULL);
-	if(image_directory != NULL)
-		sprintf(buf, "%s/RLIB_IMAGE_FILE_%d_%ld_%ld_%d.png", image_directory, pid, tv.tv_sec, tv.tv_usec, counter++);
-	else
-		sprintf(buf, "RLIB_IMAGE_FILE_%d_%ld_%ld_%d.png", pid, tv.tv_sec, tv.tv_usec, counter++);
+		gettimeofday(&tv, NULL);
+		if(image_directory != NULL)
+			sprintf(buf, "%s/RLIB_IMAGE_FILE_%d_%ld_%ld_%d.png", image_directory, pid, tv.tv_sec, tv.tv_usec, image_counter);
+		else
+			sprintf(buf, "RLIB_IMAGE_FILE_%d_%ld_%ld_%d.png", pid, tv.tv_sec, tv.tv_usec, image_counter);
+	}
 #else
 	/* tempnam() accepts NULL as directory name and it's a standard
 	 * part of <stdio.h>. Most importantly, it also exists under MingW.
 	 */
-	sprintf(buf, "%s.png", tempnam(image_directory, "RLIB_IMAGE_FILE_XXXXX"));
+	if (r->debug)
+		sprintf(buf, "%s/RLIB_IMAGE_FILE_%d.png", image_directory, image_counter);
+	else
+		sprintf(buf, "%s.png", tempnam(image_directory, "RLIB_IMAGE_FILE_XXXXX"));
 #endif
 	return buf;
 }
@@ -80,7 +89,7 @@ int get_color_pool(struct rlib_gd *rgd, struct rlib_rgb *rgb) {
 	return -1;
 }
 
-struct rlib_gd * rlib_gd_new(gint width, gint height, gchar *image_directory) {
+struct rlib_gd * rlib_gd_new(rlib *r, gint width, gint height, gchar *image_directory, gint image_counter) {
 	struct rlib_gd *rgd = g_malloc(sizeof(struct rlib_gd));
 	char file_name[MAXSTRLEN];
 	int fd;
@@ -95,7 +104,7 @@ struct rlib_gd * rlib_gd_new(gint width, gint height, gchar *image_directory) {
 	rgd->im =  gdImageCreate(width, height);
 	
 	while(1) {
-		unique_file_name(file_name, image_directory);
+		unique_file_name(r, file_name, image_directory, image_counter);
 		fd = open(file_name, O_RDONLY, 0);
 		if(fd < 0) {
 			fd = open(file_name, O_CREAT, 0666);
@@ -232,7 +241,7 @@ int rlib_gd_free(struct rlib_gd *rgd) {
 
 #else
 
-struct rlib_gd * rlib_gd_new(gint width, gint height, gchar *image_directory) {
+struct rlib_gd * rlib_gd_new(rlib *r, gint width, gint height, gchar *image_directory, gint image_counter) {
 	return NULL;
 }
 
