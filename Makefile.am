@@ -39,7 +39,7 @@ if HAVE_PHP
 
 phpini_DATA = rlib.ini
 
-PHP_DIRS = bindings/php
+PHP_DIRS = $(abs_srcdir)/bindings/php
 
 clean-local:
 	$(foreach var,$(PHP_DIRS),$(MAKE) -C $(var) clean ; ) echo ; echo make clean in PHP modules is done ; echo
