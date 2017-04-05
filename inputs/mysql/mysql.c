@@ -193,12 +193,12 @@ static gpointer rlib_mysql_resolve_field_pointer(input_filter *input, gpointer r
 	return NULL;
 }
 
-void * mysql_new_result_from_query(struct input_filter *input, gchar *query) {
+void * mysql_new_result_from_query(struct input_filter *input, struct rlib_queries *query) {
 	struct rlib_result *rlib_result;
 	struct rlib_mysql_results *results;
 	MYSQL_RES *result;
 	guint count,i;
-	result = rlib_mysql_query(INPUT_PRIVATE(input)->mysql, query);
+	result = rlib_mysql_query(INPUT_PRIVATE(input)->mysql, query->sql);
 	if(result == NULL)
 		return NULL;
 	else {

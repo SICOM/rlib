@@ -92,16 +92,56 @@ rlib * rlib_init() {
 	return rlib_init_with_environment(NULL);
 }
 
-static void rlib_alloc_query_space(rlib *r) {
-	if(r->queries_count == 0) {
+struct rlib_queries *rlib_alloc_query_space(rlib *r) {
+	struct rlib_queries *query = NULL;
+	struct rlib_results *result = NULL;
+
+	if (r->queries_count == 0) {
 		r->queries = g_malloc((r->queries_count + 1) * sizeof(gpointer));
-		r->results = g_malloc((r->queries_count + 1) * sizeof(gpointer));		
+		r->results = g_malloc((r->queries_count + 1) * sizeof(gpointer));
+
+		if (r->queries == NULL || r->results == NULL) {
+			g_free(r->queries);
+			g_free(r->results);
+			r_error(r, "rlib_alloc_query_space: Out of memory!\n");
+			return NULL;
+		}
 	} else {
-		r->queries = g_realloc(r->queries, (r->queries_count + 1) * sizeof(void *));
-		r->results = g_realloc(r->results, (r->queries_count + 1) * sizeof(void *));
+		struct rlib_queries **queries;
+		struct rlib_results **results;
+
+		queries = g_realloc(r->queries, (r->queries_count + 1) * sizeof(void *));
+		if (queries == NULL) {
+			r_error(r, "rlib_alloc_query_space: Out of memory!\n");
+			return NULL;
+		}
+
+		results = g_realloc(r->results, (r->queries_count + 1) * sizeof(void *));
+		if (results == NULL) {
+			r_error(r, "rlib_alloc_query_space: Out of memory!\n");
+			return NULL;
+		}
+
+		r->queries = queries;
+		r->results = results;
 	}
-	r->queries[r->queries_count] = g_malloc0(sizeof(struct rlib_queries));
-	r->results[r->queries_count] = g_malloc0(sizeof(struct rlib_results));
+
+	query = g_malloc0(sizeof(struct rlib_queries));
+	result = g_malloc0(sizeof(struct rlib_results));
+
+	if (query == NULL || result == NULL) {
+		g_free(query);
+		g_free(result);
+		r_error(r, "rlib_alloc_query_space: Out of memory!\n");
+		return NULL;
+	}
+
+	r->queries[r->queries_count] = query;
+	r->results[r->queries_count] = result;
+
+	r->queries_count++;
+
+	return query;
 }
 
 gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name) {
@@ -390,7 +430,7 @@ static gint rlib_execute_queries(rlib *r) {
 
 		r->results[i]->input = r->queries[i]->input;
 		r->results[i]->name =  r->queries[i]->name;
-		r->results[i]->result = INPUT(r,i)->new_result_from_query(INPUT(r,i), r->queries[i]->sql);
+		r->results[i]->result = INPUT(r,i)->new_result_from_query(INPUT(r,i), r->queries[i]);
 		r->results[i]->next_failed = FALSE;
 		r->results[i]->navigation_failed = FALSE;
 		if(r->results[i]->result == NULL) {

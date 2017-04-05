@@ -764,12 +764,6 @@ struct rlib_report {
 
 };
 
-struct rlib_queries {
-	gchar *sql;
-	gchar *name;
-	struct input_filter *input;
-};
-
 #define RLIB_REPORT_TYPE_FILE 1
 #define RLIB_REPORT_TYPE_BUFFER 2
 

@@ -178,7 +178,7 @@ static gpointer rlib_xml_resolve_field_pointer(input_filter *input, gpointer res
 	return NULL;
 }
 
-void * xml_new_result_from_query(struct input_filter *input, gchar *query) {
+void * xml_new_result_from_query(struct input_filter *input, struct rlib_queries *query) {
 	struct rlib_xml_results *results;
 	xmlNodePtr cur;
 	xmlNodePtr data;
@@ -190,7 +190,7 @@ void * xml_new_result_from_query(struct input_filter *input, gchar *query) {
 	xmlDocPtr doc;
 	gchar *file;
 
-	file = get_filename(input->r, query, -1, FALSE);
+	file = get_filename(input->r, query->sql, -1, FALSE);
 	doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
 	g_free(file);
 	xmlXIncludeProcess(doc);

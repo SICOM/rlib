@@ -197,7 +197,7 @@ static gboolean parse_line(gchar **ptr, GSList **all_items) {
 	return eof;
 }
 
-void * csv_new_result_from_query(input_filter *input, gchar *query) {
+void * csv_new_result_from_query(input_filter *input, struct rlib_queries *query) {
 	struct rlib_csv_results *results = NULL;
 	gint fd;
 	gint size;
@@ -208,7 +208,7 @@ void * csv_new_result_from_query(input_filter *input, gchar *query) {
 
 	INPUT_PRIVATE(input)->error = "";
 
-	file = get_filename(input->r, query, -1, FALSE);
+	file = get_filename(input->r, query->sql, -1, FALSE);
 	fd = open(file, O_RDONLY, 6);
 	g_free(file);
 	if(fd > 0) {

@@ -324,7 +324,7 @@ static gpointer rlib_odbc_resolve_field_pointer(input_filter *input, gpointer re
 	return NULL;
 }
 
-gpointer odbc_new_result_from_query(input_filter *input, gchar *query) {
+gpointer odbc_new_result_from_query(input_filter *input, struct rlib_queries *query) {
 	struct rlib_odbc_results *results;
 	SQLHSTMT V_OD_hstmt;
 	guint i;
@@ -335,7 +335,7 @@ gpointer odbc_new_result_from_query(input_filter *input, gchar *query) {
 	SQLLEN ind;
 
 
-	V_OD_hstmt = rlib_odbc_query(input, query);
+	V_OD_hstmt = rlib_odbc_query(input, query->sql);
 	if(V_OD_hstmt == NULL)
 		return NULL;
 	else {

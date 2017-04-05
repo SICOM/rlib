@@ -145,7 +145,7 @@ static gpointer rlib_postgres_resolve_field_pointer(input_filter *input, gpointe
 	return NULL;
 }
 
-gpointer postgres_new_result_from_query(input_filter *input, gchar *query) {
+gpointer postgres_new_result_from_query(input_filter *input, struct rlib_queries *query) {
 	struct rlib_postgres_results *results;
 	PGresult *result;
 	guint count,i;
@@ -153,7 +153,7 @@ gpointer postgres_new_result_from_query(input_filter *input, gchar *query) {
 	if(input == NULL)
 		return NULL;
 	
-	result = rlib_postgres_query(INPUT_PRIVATE(input)->conn, query);
+	result = rlib_postgres_query(INPUT_PRIVATE(input)->conn, query->sql);
 	if(result == NULL)
 		return NULL;
 	else {

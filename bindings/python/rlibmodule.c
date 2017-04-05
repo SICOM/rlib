@@ -267,7 +267,7 @@ rlib_python_array_locate(char *name)
 	return PySequence_Fast(array, "array is of incorrect type");
 }
 
-void * rlib_python_array_new_result_from_query(input_filter *input, gchar *query) {
+void * rlib_python_array_new_result_from_query(input_filter *input, struct rlib_queries *query) {
         struct rlib_python_array_results *result;
 	PyObject	*outerlist;
 	PyObject	*innerlist;
@@ -283,9 +283,9 @@ void * rlib_python_array_new_result_from_query(input_filter *input, gchar *query
 	if (result == NULL)
 		return PyErr_NoMemory();
         memset(result, 0, sizeof(struct rlib_python_array_results));
-        result->array_name = query;
+        result->array_name = query->sql;
 
-	outerlist = rlib_python_array_locate(query);
+	outerlist = rlib_python_array_locate(query->sql);
 	if (outerlist == NULL) {
 		PyMem_Free(result);
 		return NULL;

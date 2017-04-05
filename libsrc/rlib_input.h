@@ -39,15 +39,23 @@ struct input_info {
 };
 
 
+struct rlib;
 struct input_filter;
 typedef struct input_filter input_filter;
 
+struct rlib_queries {
+	gchar *sql;
+	gchar *name;
+	struct input_filter *input;
+	gpointer private;
+};
+
 struct input_filter {
 	gpointer private;
-	gpointer r;
+	struct rlib *r;
 	struct input_info info;
 	gint (*input_close)(input_filter *);
-	gpointer (*new_result_from_query)(input_filter *, gchar *);
+	gpointer (*new_result_from_query)(input_filter *, struct rlib_queries *);
 	gint (*free)(input_filter *);
 	gint (*first)(input_filter *, gpointer);
 	gint (*next)(input_filter *, gpointer);
@@ -60,5 +68,7 @@ struct input_filter {
 	void (*free_result)(input_filter *, gpointer);
 	gint (*set_encoding)(gpointer);
 };
+
+struct rlib_queries *rlib_alloc_query_space(struct rlib *r);
 
 #endif /* _RLIB_INPUT_H_ */
