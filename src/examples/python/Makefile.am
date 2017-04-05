@@ -28,9 +28,9 @@ php_xml = array.xml data.xml fixed_part.xml follower.xml graph.xml
 noinst_SCRIPTS = $(common_xml) $(php_xml)
 
 $(common_xml):
-	$(LN_S) ../common/$@
+	$(LN_S) $(abs_srcdir)/../common/$@
 
 $(php_xml):
-	$(LN_S) ../php/$@
+	$(LN_S) $(abs_srcdir)/../php/$@
 
 CLEANFILES = $(noinst_SCRIPTS)

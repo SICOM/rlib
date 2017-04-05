@@ -30,9 +30,9 @@ java_JAVA = $(javafiles) SWIGTYPE_p_rlib.java rlib.java rlibJNI.java example.jav
 noinst_SCRIPTS = products.xml
 
 products.xml:
-	$(LN_S) ../common/products.xml
+	$(LN_S) $(abs_srcdir)/../common/products.xml
 
 $(javafiles):
-	$(LN_S) ../../../bindings/interfaces/$@
+	$(LN_S) $(abs_srcdir)/../../../bindings/interfaces/$@
 
 CLEANFILES = *.class $(noinst_SCRIPTS) $(javafiles)

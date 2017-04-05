@@ -30,6 +30,6 @@ example_LDADD = $(top_builddir)/libsrc/libr.la  $(RLIB_LIBS)
 noinst_SCRIPTS = products.xml
 
 products.xml:
-	$(LN_S) ../common/products.xml
+	$(LN_S) $(abs_srcdir)/../common/products.xml
 
 CLEANFILES = $(noinst_SCRIPTS)

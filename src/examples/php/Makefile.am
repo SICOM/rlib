@@ -31,6 +31,6 @@ EXTRA_DIST = array2.xml array.xml fixed_part.php flow_part.php pages_across.php 
 noinst_SCRIPTS = products.xml
  
 products.xml:
-	$(LN_S) ../common/$@
+	$(LN_S) $(abs_srcdir)/../common/$@
 
 CLEANFILES = $(noinst_SCRIPTS)
