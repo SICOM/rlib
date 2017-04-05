@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *  Authors: Zoltan Boszormenyi <zboszor@dunaweb.hu>
@@ -67,8 +67,7 @@ struct _private {
 	SQLHDBC V_OD_hdbc;
 };
 
-gpointer rlib_odbc_connect(gpointer input_ptr, gchar *source, gchar *user, gchar *password) {
-	struct input_filter *input = input_ptr;
+gpointer rlib_odbc_connect(input_filter *input, gchar *source, gchar *user, gchar *password) {
 	gint V_OD_erg;
 	SQLINTEGER	V_OD_err;
 	SQLSMALLINT	V_OD_mlen;
@@ -114,16 +113,14 @@ gpointer rlib_odbc_connect(gpointer input_ptr, gchar *source, gchar *user, gchar
 	return  INPUT_PRIVATE(input)->V_OD_Env;
 }
 
-static gint rlib_odbc_input_close(gpointer input_ptr) {
-	struct input_filter *input = input_ptr;
+static gint rlib_odbc_input_close(input_filter *input) {
 	SQLFreeHandle(SQL_HANDLE_ENV, INPUT_PRIVATE(input)->V_OD_Env);
 	SQLDisconnect(INPUT_PRIVATE(input)->V_OD_hdbc);
 	INPUT_PRIVATE(input)->V_OD_Env = NULL;
 	return 0;
 }
 
-static SQLHSTMT * rlib_odbc_query(gpointer input_ptr, gchar *query) {
-	struct input_filter *input = input_ptr;
+static SQLHSTMT * rlib_odbc_query(input_filter *input, gchar *query) {
 	SQLHSTMT V_OD_hstmt;
 	SQLINTEGER	V_OD_err;
 	SQLSMALLINT	V_OD_mlen;
@@ -180,7 +177,7 @@ static gint odbc_read_first(gpointer result_ptr) {
 }
 
 
-static gint rlib_odbc_first(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_odbc_first(input_filter *input, gpointer result_ptr) {
 	struct rlib_odbc_results *result = result_ptr;
 
 	if(result_ptr == NULL)
@@ -213,7 +210,7 @@ static gint odbc_read_next(gpointer result_ptr) {
 	return FALSE;
 }
 
-static gint rlib_odbc_next(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_odbc_next(input_filter *input, gpointer result_ptr) {
 	struct rlib_odbc_results *result = result_ptr;
 
 	if(result->forward_only == TRUE) {
@@ -234,7 +231,7 @@ static gint rlib_odbc_next(gpointer input_ptr, gpointer result_ptr) {
 	}
 }
 
-static gint rlib_odbc_isdone(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_odbc_isdone(input_filter *input, gpointer result_ptr) {
 	struct rlib_odbc_results *result = result_ptr;
 	return result->isdone;
 }
@@ -252,7 +249,7 @@ static gint odbc_read_prior(gpointer result_ptr) {
 	return FALSE;
 }
 
-static gint rlib_odbc_previous(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_odbc_previous(input_filter *input, gpointer result_ptr) {
 	struct rlib_odbc_results *result = result_ptr;
 	if(result->forward_only == TRUE) {
 		result->navigator = g_list_previous(result->navigator);
@@ -285,7 +282,7 @@ static gint odbc_read_last(gpointer result_ptr) {
 	return FALSE;
 }
 
-static gint rlib_odbc_last(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_odbc_last(input_filter *input, gpointer result_ptr) {
 	struct rlib_odbc_results *result = result_ptr;
 
 	if(result->forward_only == TRUE) {
@@ -305,14 +302,14 @@ static gint rlib_odbc_last(gpointer input_ptr, gpointer result_ptr) {
 	}
 }
 
-static gchar * rlib_odbc_get_field_value_as_string(gpointer input_ptr, gpointer result_ptr, gpointer field_ptr) {
+static gchar * rlib_odbc_get_field_value_as_string(input_filter *input, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_odbc_results *results = result_ptr;
 	struct odbc_fields *the_field = field_ptr;
 	gint field = the_field->col;
 	return results->values[field].value;
 }
 
-static gpointer rlib_odbc_resolve_field_pointer(gpointer input_ptr, gpointer result_ptr, gchar *name) {
+static gpointer rlib_odbc_resolve_field_pointer(input_filter *input, gpointer result_ptr, gchar *name) {
 	struct rlib_odbc_results *results = result_ptr;
 	gint i=0;
 
@@ -327,9 +324,8 @@ static gpointer rlib_odbc_resolve_field_pointer(gpointer input_ptr, gpointer res
 	return NULL;
 }
 
-gpointer odbc_new_result_from_query(gpointer input_ptr, gchar *query) {
+gpointer odbc_new_result_from_query(input_filter *input, gchar *query) {
 	struct rlib_odbc_results *results;
-	struct input_filter *input = input_ptr;
 	SQLHSTMT V_OD_hstmt;
 	guint i;
 	SQLSMALLINT ncols;
@@ -339,7 +335,7 @@ gpointer odbc_new_result_from_query(gpointer input_ptr, gchar *query) {
 	SQLLEN ind;
 
 
-	V_OD_hstmt = rlib_odbc_query(input_ptr, query);
+	V_OD_hstmt = rlib_odbc_query(input, query);
 	if(V_OD_hstmt == NULL)
 		return NULL;
 	else {
@@ -394,7 +390,7 @@ gpointer odbc_new_result_from_query(gpointer input_ptr, gchar *query) {
 	return results;
 }
 
-static void rlib_odbc_rlib_free_result(gpointer input_ptr, gpointer result_ptr) {
+static void rlib_odbc_rlib_free_result(input_filter *input, gpointer result_ptr) {
 	struct rlib_odbc_results *results = result_ptr;
 	gint i;
 	
@@ -418,8 +414,7 @@ static void rlib_odbc_rlib_free_result(gpointer input_ptr, gpointer result_ptr) 
 	g_free(results);
 }
 
-static gint rlib_odbc_free_input_filter(gpointer input_ptr) {
-	struct input_filter *input = input_ptr;
+static gint rlib_odbc_free_input_filter(input_filter *input) {
 	SQLDisconnect(INPUT_PRIVATE(input)->V_OD_hdbc);
 	SQLFreeHandle(SQL_HANDLE_DBC,INPUT_PRIVATE(input)->V_OD_hdbc);
 	SQLFreeHandle(SQL_HANDLE_ENV,INPUT_PRIVATE(input)-> V_OD_Env);
@@ -428,7 +423,7 @@ static gint rlib_odbc_free_input_filter(gpointer input_ptr) {
 	return 0;
 }
 
-static const gchar * rlib_odbc_get_error(gpointer input_ptr) {
+static const gchar * rlib_odbc_get_error(input_filter *input) {
 	return "No error information";
 }
 

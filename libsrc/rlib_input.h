@@ -18,6 +18,9 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#ifndef _RLIB_INPUT_H_
+#define _RLIB_INPUT_H_
+
 /* #include <iconv.h> */
 #include <charencoder.h> 
 
@@ -36,24 +39,26 @@ struct input_info {
 };
 
 
+struct input_filter;
 typedef struct input_filter input_filter;
+
 struct input_filter {
 	gpointer private;
 	gpointer r;
 	struct input_info info;
-	gint (*input_close)(gpointer);
-	gpointer (*new_result_from_query)(gpointer, gchar *);
-	gint (*free)(gpointer);
-	gint (*first)(gpointer, gpointer);
-	gint (*next)(gpointer, gpointer);
-	gint (*previous)(gpointer, gpointer);
-	gint (*last)(gpointer, gpointer);
-	gint (*isdone)(gpointer, gpointer);
-	const gchar * (*get_error)(gpointer);
-	gchar * (*get_field_value_as_string)(gpointer, gpointer, gpointer);
-	gpointer (*resolve_field_pointer)(gpointer, gpointer, gchar *);
-	void (*free_result)(gpointer, gpointer);	
+	gint (*input_close)(input_filter *);
+	gpointer (*new_result_from_query)(input_filter *, gchar *);
+	gint (*free)(input_filter *);
+	gint (*first)(input_filter *, gpointer);
+	gint (*next)(input_filter *, gpointer);
+	gint (*previous)(input_filter *, gpointer);
+	gint (*last)(input_filter *, gpointer);
+	gint (*isdone)(input_filter *, gpointer);
+	const gchar * (*get_error)(input_filter *);
+	gchar * (*get_field_value_as_string)(input_filter *, gpointer, gpointer);
+	gpointer (*resolve_field_pointer)(input_filter *, gpointer, gchar *);
+	void (*free_result)(input_filter *, gpointer);
 	gint (*set_encoding)(gpointer);
 };
 
-
+#endif /* _RLIB_INPUT_H_ */

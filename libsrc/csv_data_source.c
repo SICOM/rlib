@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  * 
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -48,21 +48,20 @@ struct _private {
 	gchar *error;
 };
 
-gpointer rlib_csv_connect(gpointer input_ptr) {
+gpointer rlib_csv_connect(input_filter *input) {
 	return NULL;
 }
 
-static gint rlib_csv_input_close(gpointer input_ptr) {
+static gint rlib_csv_input_close(input_filter *input) {
 	return 0;
 }
 
-static const gchar* rlib_csv_get_error(gpointer input_ptr) {
-	struct input_filter *input = input_ptr;
+static const gchar* rlib_csv_get_error(input_filter *input) {
 	return INPUT_PRIVATE(input)->error;
 }
 
 
-static gint rlib_csv_first(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_csv_first(input_filter *input, gpointer result_ptr) {
 	struct rlib_csv_results *result = result_ptr;
 
 	if(result == NULL)
@@ -76,7 +75,7 @@ static gint rlib_csv_first(gpointer input_ptr, gpointer result_ptr) {
 		return TRUE;
 }
 
-static gint rlib_csv_next(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_csv_next(input_filter *input, gpointer result_ptr) {
 	struct rlib_csv_results *result = result_ptr;
 
 	result->navigator = g_list_next(result->navigator);
@@ -89,12 +88,12 @@ static gint rlib_csv_next(gpointer input_ptr, gpointer result_ptr) {
 	}
 }
 
-static gint rlib_csv_isdone(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_csv_isdone(input_filter *input, gpointer result_ptr) {
 	struct rlib_csv_results *result = result_ptr;
 	return result->isdone;
 }
 
-static gint rlib_csv_previous(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_csv_previous(input_filter *input, gpointer result_ptr) {
 	struct rlib_csv_results *result = result_ptr;
 	result->navigator = g_list_previous(result->navigator);
 	if(result->navigator == NULL) {
@@ -106,7 +105,7 @@ static gint rlib_csv_previous(gpointer input_ptr, gpointer result_ptr) {
 	}
 }
 
-static gint rlib_csv_last(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_csv_last(input_filter *input, gpointer result_ptr) {
 	struct rlib_csv_results *result = result_ptr;
 
 	result->navigator = g_list_last(result->navigator);
@@ -118,7 +117,7 @@ static gint rlib_csv_last(gpointer input_ptr, gpointer result_ptr) {
 	}
 }
 
-static gchar * rlib_csv_get_field_value_as_string(gpointer input_ptr, gpointer result_ptr, gpointer field_ptr) {
+static gchar * rlib_csv_get_field_value_as_string(input_filter *input, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_csv_results *results = result_ptr;
 	gint i = 1;
 	GSList *data;
@@ -134,7 +133,7 @@ static gchar * rlib_csv_get_field_value_as_string(gpointer input_ptr, gpointer r
 	return "";
 }
 
-static gpointer rlib_csv_resolve_field_pointer(gpointer input_ptr, gpointer result_ptr, gchar *name) { 
+static gpointer rlib_csv_resolve_field_pointer(input_filter *input, gpointer result_ptr, gchar *name) {
 	struct rlib_csv_results *results = result_ptr;
 	gint i=1;
 	GSList *data;
@@ -198,9 +197,8 @@ static gboolean parse_line(gchar **ptr, GSList **all_items) {
 	return eof;
 }
 
-void * csv_new_result_from_query(gpointer input_ptr, gchar *query) {
+void * csv_new_result_from_query(input_filter *input, gchar *query) {
 	struct rlib_csv_results *results = NULL;
-	struct input_filter *input = input_ptr;
 	gint fd;
 	gint size;
 	gchar *contents;
@@ -243,7 +241,7 @@ void * csv_new_result_from_query(gpointer input_ptr, gchar *query) {
 	return results;
 }
 
-static void rlib_csv_rlib_free_result(gpointer input_ptr, gpointer result_ptr) {
+static void rlib_csv_rlib_free_result(input_filter *input, gpointer result_ptr) {
 	struct rlib_csv_results *results = result_ptr;
 	GList *data;
 	g_slist_free(results->header);
@@ -255,8 +253,7 @@ static void rlib_csv_rlib_free_result(gpointer input_ptr, gpointer result_ptr) {
 	g_free(results);
 }
 
-static gint rlib_csv_free_input_filter(gpointer input_ptr){
-	struct input_filter *input = input_ptr;
+static gint rlib_csv_free_input_filter(input_filter *input){
 	g_free(input->private);
 	g_free(input);
 	return 0;

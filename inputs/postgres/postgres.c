@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -45,8 +45,7 @@ struct _private {
 	PGconn *conn;
 };
 
-gpointer rlib_postgres_connect(gpointer input_ptr, gchar *conninfo) {
-	struct input_filter *input = input_ptr;
+gpointer rlib_postgres_connect(input_filter *input, gchar *conninfo) {
 	PGconn *conn;
 
 	conn = PQconnectdb(conninfo);
@@ -59,8 +58,7 @@ gpointer rlib_postgres_connect(gpointer input_ptr, gchar *conninfo) {
 	return conn;
 }
 
-static gint rlib_postgres_input_close(gpointer input_ptr) {
-	struct input_filter *input = input_ptr;
+static gint rlib_postgres_input_close(input_filter *input) {
 	PQfinish(INPUT_PRIVATE(input)->conn);
 	INPUT_PRIVATE(input)->conn = NULL;
 	return 0;
@@ -77,7 +75,7 @@ static PGresult * rlib_postgres_query(PGconn *conn, gchar *query) {
 	return result;
 }
 
-static gint rlib_postgres_first(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_postgres_first(input_filter *input, gpointer result_ptr) {
 	struct rlib_postgres_results *result = result_ptr;
 	if (result) {
 		result->row = 0;
@@ -86,7 +84,7 @@ static gint rlib_postgres_first(gpointer input_ptr, gpointer result_ptr) {
 	return result != NULL ? TRUE : FALSE;
 }
 
-static gint rlib_postgres_next(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_postgres_next(input_filter *input, gpointer result_ptr) {
 	struct rlib_postgres_results *results = result_ptr;
 	if (results) {
 		if(results->row+1 < results->tot_rows) {
@@ -99,7 +97,7 @@ static gint rlib_postgres_next(gpointer input_ptr, gpointer result_ptr) {
 	return FALSE;
 }
 
-static gint rlib_postgres_isdone(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_postgres_isdone(input_filter *input, gpointer result_ptr) {
 	struct rlib_postgres_results *result = result_ptr;
 	if (result)
 		return result->isdone;
@@ -107,7 +105,7 @@ static gint rlib_postgres_isdone(gpointer input_ptr, gpointer result_ptr) {
 		return TRUE;
 }
 
-static gint rlib_postgres_previous(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_postgres_previous(input_filter *input, gpointer result_ptr) {
 	struct rlib_postgres_results *result = result_ptr;
 	if (result) {
 		if(result->row-1 >= 0) {
@@ -120,21 +118,21 @@ static gint rlib_postgres_previous(gpointer input_ptr, gpointer result_ptr) {
 	return FALSE;
 }
 
-static gint rlib_postgres_last(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_postgres_last(input_filter *input, gpointer result_ptr) {
 	struct rlib_postgres_results *result = result_ptr;
 	if (result)
 		result->row = result->tot_rows-1;
 	return TRUE;
 }
 
-static gchar * rlib_postgres_get_field_value_as_string(gpointer input_ptr, gpointer result_ptr, gpointer field_ptr) {
+static gchar * rlib_postgres_get_field_value_as_string(input_filter *input, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_postgres_results *results = result_ptr;
 	gint field = GPOINTER_TO_INT(field_ptr);
 	field -= 1;
 	return PQgetvalue(results->result, results->row, field);
 }
 
-static gpointer rlib_postgres_resolve_field_pointer(gpointer input_ptr, gpointer result_ptr, gchar *name) {
+static gpointer rlib_postgres_resolve_field_pointer(input_filter *input, gpointer result_ptr, gchar *name) {
 	struct rlib_postgres_results *results = result_ptr;
 	gint i=0;
 
@@ -147,13 +145,12 @@ static gpointer rlib_postgres_resolve_field_pointer(gpointer input_ptr, gpointer
 	return NULL;
 }
 
-gpointer postgres_new_result_from_query(gpointer input_ptr, gchar *query) {
-	struct input_filter *input = input_ptr;
+gpointer postgres_new_result_from_query(input_filter *input, gchar *query) {
 	struct rlib_postgres_results *results;
 	PGresult *result;
 	guint count,i;
 	
-	if(input_ptr == NULL)
+	if(input == NULL)
 		return NULL;
 	
 	result = rlib_postgres_query(INPUT_PRIVATE(input)->conn, query);
@@ -173,7 +170,7 @@ gpointer postgres_new_result_from_query(gpointer input_ptr, gchar *query) {
 	return results;
 }
 
-static void rlib_postgres_rlib_free_result(gpointer input_ptr, gpointer result_ptr) {
+static void rlib_postgres_rlib_free_result(input_filter *input, gpointer result_ptr) {
 	struct rlib_postgres_results *results = result_ptr;
 	if (results) {
 		PQclear(results->result);
@@ -182,15 +179,13 @@ static void rlib_postgres_rlib_free_result(gpointer input_ptr, gpointer result_p
 	}
 }
 
-static gint rlib_postgres_free_input_filter(gpointer input_ptr) {
-	struct input_filter *input = input_ptr;
+static gint rlib_postgres_free_input_filter(input_filter *input) {
 	g_free(input->private);
 	g_free(input);
 	return 0;
 }
 
-static const gchar * rlib_postgres_get_error(gpointer input_ptr) {
-	struct input_filter *input = input_ptr;
+static const gchar * rlib_postgres_get_error(input_filter *input) {
 	return PQerrorMessage(INPUT_PRIVATE(input)->conn);
 }
 

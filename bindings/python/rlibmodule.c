@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: William K. Volkman
  *
@@ -267,8 +267,7 @@ rlib_python_array_locate(char *name)
 	return PySequence_Fast(array, "array is of incorrect type");
 }
 
-void * rlib_python_array_new_result_from_query(gpointer input_ptr, gchar *query) {
-	struct input_filter *input = input_ptr;
+void * rlib_python_array_new_result_from_query(input_filter *input, gchar *query) {
         struct rlib_python_array_results *result;
 	PyObject	*outerlist;
 	PyObject	*innerlist;
@@ -357,10 +356,10 @@ void * rlib_python_array_new_result_from_query(gpointer input_ptr, gchar *query)
 
 
 
-static gint rlib_python_array_input_close(gpointer input_ptr) {
+static gint rlib_python_array_input_close(input_filter *input) {
         return TRUE;
 }
-static gint rlib_python_array_first(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_first(input_filter *input, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
         result->current_row = 1;
         if(result->rows <= 1) {
@@ -371,7 +370,7 @@ static gint rlib_python_array_first(gpointer input_ptr, gpointer result_ptr) {
         return TRUE;
 }
 
-static gint rlib_python_array_next(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_next(input_filter *input, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
 	result->current_row++;
 	result->isdone = FALSE;
@@ -382,12 +381,12 @@ static gint rlib_python_array_next(gpointer input_ptr, gpointer result_ptr) {
 	return FALSE;
 }
 
-static gint rlib_python_array_isdone(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_isdone(input_filter *input, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
         return result->isdone;
 }
 
-static gint rlib_python_array_previous(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_previous(input_filter *input, gpointer result_ptr) {
 	struct rlib_python_array_results *result = result_ptr;
 	result->current_row--;
 	result->isdone = FALSE;
@@ -396,13 +395,13 @@ static gint rlib_python_array_previous(gpointer input_ptr, gpointer result_ptr) 
 	result->current_row = 0;
 	return FALSE;
 }
-static gint rlib_python_array_last(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_last(input_filter *input, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
         result->current_row = result->rows-1;
         return TRUE;
 }
 
-static gchar * rlib_python_array_get_field_value_as_string(gpointer input_ptr, gpointer result_ptr, gpointer field_ptr) {
+static gchar * rlib_python_array_get_field_value_as_string(input_filter *input, gpointer result_ptr, gpointer field_ptr) {
         struct rlib_python_array_results *result = result_ptr;
         int which_field = GPOINTER_TO_INT(field_ptr) - 1;
         if(result->rows <= 1)
@@ -411,7 +410,7 @@ static gchar * rlib_python_array_get_field_value_as_string(gpointer input_ptr, g
         return result->data[(result->current_row*result->cols)+which_field];
 }
 
-static gpointer rlib_python_array_resolve_field_pointer(gpointer input_ptr, gpointer result_ptr, gchar *name) {
+static gpointer rlib_python_array_resolve_field_pointer(input_filter *input, gpointer result_ptr, gchar *name) {
         struct rlib_python_array_results *result = result_ptr;
         int i;
         for(i=0;i<result->cols;i++) {
@@ -423,8 +422,7 @@ static gpointer rlib_python_array_resolve_field_pointer(gpointer input_ptr, gpoi
         return NULL;
 }
 
-static gint rlib_python_array_free_input_filter(gpointer input_ptr) {
-	struct input_filter *input = input_ptr;
+static gint rlib_python_array_free_input_filter(input_filter *input) {
 	if (input->private) {
 		PyMem_Free(input->private);
 		input->private = NULL;
@@ -433,8 +431,7 @@ static gint rlib_python_array_free_input_filter(gpointer input_ptr) {
         return 0;
 }
 
-static void rlib_python_array_free_result(gpointer input_ptr, gpointer result_ptr) {
-	struct input_filter *input = input_ptr;
+static void rlib_python_array_free_result(input_filter *input, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
 	int	i, j;
 	if (result) {

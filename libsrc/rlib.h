@@ -26,6 +26,7 @@
 #include <time.h>
 #include <glib.h>
 
+#include "rlib_input.h"
 #include "charencoder.h"
 #include "datetime.h"
 #include "util.h"
@@ -1157,7 +1158,7 @@ void rlib_csv_new_output_filter(rlib *r);
 
 /***** PROTOTYPES: mysql.c ****************************************************/
 gpointer rlib_mysql_new_input_filter(rlib *r);
-gpointer rlib_mysql_real_connect(gpointer input_ptr, gchar *group, gchar *host, gchar *user, gchar *password, gchar *database);
+gpointer rlib_mysql_real_connect(input_filter *input, gchar *group, gchar *host, gchar *user, gchar *password, gchar *database);
 
 /***** PROTOTYPES: datasource.c ***********************************************/
 gint rlib_add_datasource(rlib *r, const gchar *input_name, struct input_filter *input);
@@ -1172,7 +1173,7 @@ gint rlib_add_datasource_csv(rlib *r, const gchar *input_name);
 
 /***** PROTOTYPES: postgres.c **************************************************/
 gpointer rlib_postgres_new_input_filter(rlib *r);
-gpointer rlib_postgres_connect(gpointer input_ptr, gchar *conn);
+gpointer rlib_postgres_connect(input_filter *input, gchar *conn);
 
 
 /***** PROTOTYPES: layout.c ***************************************************/
@@ -1200,11 +1201,11 @@ int adjust_limits(gdouble  dataMin, gdouble dataMax, gint denyMinEqualsAdjMin, g
 
 /***** PROTOTYPES: xml_data_source.c ******************************************************/
 gpointer rlib_xml_new_input_filter(rlib *r);
-gpointer rlib_xml_connect(gpointer input_ptr);
+gpointer rlib_xml_connect(input_filter *input);
 
 /***** PROTOTYPES: csv_data_source.c ******************************************************/
 gpointer rlib_csv_new_input_filter(rlib *r);
-gpointer rlib_csv_connect(gpointer input_ptr);
+gpointer rlib_csv_connect(input_filter *input);
 
 /***** PROTOTYPES: util.c ******************************************************/
 void rlogit(rlib *r, const gchar *fmt, ...);
