@@ -270,6 +270,15 @@ gint rlib_add_search_path(rlib *r, const gchar *path) {
 }
 
 /*
+ * Decision factor for external file types (e.g. images)
+ * whether to use their filenames as is for e.g. embedding
+ * or as validated full paths.
+ */
+gboolean use_relative_filename(rlib *r) {
+	return (r->format == RLIB_FORMAT_HTML);
+}
+
+/*
  * Try to search for a file and return the first one
  * found at the possible locations.
  *
@@ -277,8 +286,7 @@ gint rlib_add_search_path(rlib *r, const gchar *path) {
  *     index to r->reportstorun[] array, or
  *     -1 to try to find relative to every reports
  */
-gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean report) {
-	gboolean relative_filename = (r->format == RLIB_FORMAT_HTML);
+gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean report, gboolean relative_filename) {
 	int have_report_dir = 0, ri;
 	gchar *file;
 	struct stat st;
@@ -368,7 +376,7 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 					if (stat(file, &st) == 0) {
 						if (relative_filename) {
 							g_free(file);
-							return g_strdup(filename);
+							return g_strdup_printf("%s/%s", search_path, filename);
 						}
 						return file;
 					}
@@ -382,7 +390,7 @@ gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean re
 						if (stat(file, &st) == 0) {
 							if (relative_filename) {
 								g_free(file);
-								return g_strdup(filename);
+								return g_strdup_printf("%s/%s", search_path, filename);
 							}
 							return file;
 						}
@@ -459,7 +467,7 @@ gint rlib_execute(rlib *r) {
 	} 
 
 	if (r->queries_count < 1)
-		r_warning(r,"No queries added to report\n");
+		r_warning(r,"Warning: No queries added to report\n");
 	else
 		rlib_execute_queries(r);
 

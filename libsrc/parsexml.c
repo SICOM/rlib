@@ -806,7 +806,7 @@ struct rlib_part * parse_part_file(rlib *r, int report_index) {
 	if(type == RLIB_REPORT_TYPE_BUFFER)
 		doc = xmlReadMemory(filename, strlen(filename), NULL, NULL, XML_PARSE_XINCLUDE);
 	else {
-		gchar *file = get_filename(r, filename, report_index, TRUE);
+		gchar *file = get_filename(r, filename, report_index, TRUE, FALSE);
 		doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
 		g_free(file);
 	}
@@ -911,7 +911,7 @@ static struct rlib_report * parse_report_file(rlib *r, int report_index, gchar *
 
 	xmlLineNumbersDefault(1);
 
-	file = get_filename(r, filename, report_index, FALSE);
+	file = get_filename(r, filename, report_index, FALSE, FALSE);
 	doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
 	g_free(file);
 	xmlXIncludeProcess(doc);

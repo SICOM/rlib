@@ -451,6 +451,7 @@ static void rlib_python_array_free_result(input_filter *input, gpointer result_p
 gpointer rlib_python_array_new_input_filter() {
         struct input_filter *input;
         input = PyMem_Malloc(sizeof(struct input_filter));
+        memset(input, 0, sizeof(struct input_filter));
         input->private = PyMem_Malloc(sizeof(struct _private));
         memset(input->private, 0, sizeof(struct _private));
         input->input_close = rlib_python_array_input_close;

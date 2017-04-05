@@ -208,7 +208,7 @@ void * csv_new_result_from_query(input_filter *input, struct rlib_queries *query
 
 	INPUT_PRIVATE(input)->error = "";
 
-	file = get_filename(input->r, query->sql, -1, FALSE);
+	file = get_filename(input->r, query->sql, -1, FALSE, FALSE);
 	fd = open(file, O_RDONLY, 6);
 	g_free(file);
 	if(fd > 0) {
@@ -262,7 +262,7 @@ static gint rlib_csv_free_input_filter(input_filter *input){
 gpointer rlib_csv_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
-	input = g_malloc(sizeof(struct input_filter));
+	input = g_malloc0(sizeof(struct input_filter));
 	input->private = g_malloc(sizeof(struct _private));
 	memset(input->private, 0, sizeof(struct _private));
 	input->r = r;

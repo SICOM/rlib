@@ -190,7 +190,7 @@ void * xml_new_result_from_query(struct input_filter *input, struct rlib_queries
 	xmlDocPtr doc;
 	gchar *file;
 
-	file = get_filename(input->r, query->sql, -1, FALSE);
+	file = get_filename(input->r, query->sql, -1, FALSE, FALSE);
 	doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
 	g_free(file);
 	xmlXIncludeProcess(doc);
@@ -281,7 +281,7 @@ static gint rlib_xml_free_input_filter(input_filter *input){
 gpointer rlib_xml_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
-	input = g_malloc(sizeof(struct input_filter));
+	input = g_malloc0(sizeof(struct input_filter));
 	input->private = g_malloc(sizeof(struct _private));
 	memset(input->private, 0, sizeof(struct _private));
 	input->r = r;

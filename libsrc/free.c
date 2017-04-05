@@ -545,6 +545,8 @@ void rlib_free_results_and_queries(rlib *r) {
 	for(i=0;i<r->queries_count;i++) {
 		if (r->results[i]->result)
 			INPUT(r, i)->free_result(INPUT(r, i), r->results[i]->result);
+		if (QUERY(r, i) && QUERY(r, i)->input && QUERY(r, i)->input->free_query)
+			QUERY(r, i)->input->free_query(QUERY(r, i)->input, QUERY(r, i));
 		g_free(r->queries[i]->sql);
 		g_free(r->queries[i]->name);
 	}

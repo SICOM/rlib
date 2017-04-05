@@ -867,6 +867,7 @@ struct rlib {
 };
 
 #define INPUT(r, i) (r->results[i]->input)
+#define QUERY(r, i) (r->queries[i])
 #define ENVIRONMENT(r) (r->environment)
 #define ENVIRONMENT_PRIVATE(r) (((struct _private *)r->evnironment->private))
 
@@ -1036,6 +1037,7 @@ rlib * rlib_init(void);
 rlib * rlib_init_with_environment(struct environment_filter *environment);
 gint rlib_add_query_as(rlib *r, const gchar *input_name, const gchar *sql, const gchar *name);
 gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name);
+gint rlib_add_query_array_as(rlib *r, const gchar *input_source, gpointer array, gint rows, gint cols, const gchar *name);
 gint rlib_add_report(rlib *r, const gchar *name);
 gint rlib_add_report_from_buffer(rlib *r, gchar *buffer);
 gint rlib_execute(rlib *r);
@@ -1069,7 +1071,8 @@ gint rlib_graph_clear_bg_region(rlib *r, gchar *graph_name);
 gint rlib_graph_set_x_minor_tick(rlib *r, gchar *graph_name, gchar *x_value);
 gint rlib_graph_set_x_minor_tick_by_location(rlib *r, gchar *graph_name, gint location);
 gboolean rlib_add_function(rlib *r, gchar *function_name, gboolean (*function)(rlib *, struct rlib_pcode *code, struct rlib_value_stack *, struct rlib_value *this_field_value, gpointer user_data), gpointer user_data);
-gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean report); /* not an exported API, no rlib_ prefix */
+gboolean use_relative_filename(rlib *r);
+gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean report, gboolean relative_filename); /* not an exported API, no rlib_ prefix */
 gint rlib_add_search_path(rlib *r, const gchar *path);
 
 /***** PROTOTYPES: parsexml.c *************************************************/
@@ -1164,6 +1167,7 @@ gint rlib_add_datasource_odbc(rlib *r, const gchar *input_name, const gchar *sou
 	const gchar *user, const gchar *password);
 gint rlib_add_datasource_xml(rlib *r, const gchar *input_name);
 gint rlib_add_datasource_csv(rlib *r, const gchar *input_name);
+gint rlib_add_datasource_array(rlib *r, const gchar *input_name);
 
 /***** PROTOTYPES: postgres.c **************************************************/
 gpointer rlib_postgres_new_input_filter(rlib *r);

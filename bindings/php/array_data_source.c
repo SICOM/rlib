@@ -268,6 +268,7 @@ static gpointer rlib_php_array_new_input_filter(rlib *r) {
 	struct input_filter *input;
 	
 	input = emalloc(sizeof(struct input_filter));
+	memset(input, 0, sizeof(struct input_filter));
 	input->private = emalloc(sizeof(struct _private));
 	memset(input->private, 0, sizeof(struct _private));
 	input->r = r;
