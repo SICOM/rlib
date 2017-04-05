@@ -145,15 +145,18 @@ struct rlib_queries *rlib_alloc_query_space(rlib *r) {
 }
 
 gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name) {
+	struct rlib_queries *query;
 	gint i;
 
-	rlib_alloc_query_space(r);
-	r->queries[r->queries_count]->sql = sql;
-	r->queries[r->queries_count]->name = g_strdup(name);
+	query = rlib_alloc_query_space(r);
+	if (!query)
+		return -1;
+
+	query->sql = sql;
+	query->name = g_strdup(name);
 	for(i=0;i<r->inputs_count;i++) {
 		if(!strcmp(r->inputs[i].name, input_source)) {
-			r->queries[r->queries_count]->input = r->inputs[i].input;
-			r->queries_count++;
+			query->input = r->inputs[i].input;
 			return r->queries_count;
 		}
 	}
