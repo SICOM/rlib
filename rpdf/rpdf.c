@@ -682,9 +682,9 @@ gboolean rpdf_finalize(struct rpdf *pdf) {
 	else
 		now = (time_t)0;
 #ifdef HAVE_LOCALTIME_R
-	localtime_r(&now, &my_tm);
+	gmtime_r(&now, &my_tm);
 #else
-	memcpy(&my_tm, localtime(&now), sizeof(struct tm));
+	memcpy(&my_tm, gmtime(&now), sizeof(struct tm));
 #endif
 
 	rpdf_out_string(pdf, pdf->header);
