@@ -7,6 +7,9 @@ PHP_ARG_ENABLE([rlib-already-built],[whether to expect rlib libs already install
 [  --enable-rlib-already-built
                              Expect rlib libs already installed],[no],[no])
 
+PHP_ARG_WITH([rlib-builddir],[Toplevel build directory of RLIB],
+[  --with-rlib-builddir      Use libraries from this directory],[../..],[no])
+
 if test "$PHP_RLIB" != "no"; then
 	AC_MSG_CHECKING(for pkg-config)
 	if test ! -f "$PKG_CONFIG"; then
@@ -38,7 +41,7 @@ if test "$PHP_RLIB" != "no"; then
 		LIBRLIB_CFLAGS="-I../../libsrc"
 		# We don't want errors telling:
 		# /usr/bin/grep: /usr/lib64/librpdf.la: No such file or directory
-		LIBRLIB_LIBS="-L../../rpdf/.libs -L../../libsrc/.libs -lr"
+		LIBRLIB_LIBS="-L${PHP_RLIB_BUILDDIR}/rpdf/.libs -L${PHP_RLIB_BUILDDIR}/libsrc/.libs -lr"
 	fi
 
 	CFLAGS="-Wall -Werror $LIBRLIB_CFLAGS $CFLAGS $GLIB_CFLAGS"

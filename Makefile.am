@@ -48,7 +48,7 @@ distclean-local:
 	$(foreach var,$(PHP_DIRS),$(MAKE) -C $(var) distclean ; ) echo ; echo make distclean in PHP modules is done ; echo
 
 install-exec-local:
-	$(foreach var,$(PHP_DIRS),(cd $(var) && phpize && ./configure LDFLAGS=-L$(DESTDIR)$(libdir)) && ) echo && echo PHP modules configured successfully && echo
+	$(foreach var,$(PHP_DIRS),(cd $(var) && phpize && ./configure LDFLAGS=-L$(DESTDIR)$(libdir) --with-rlib-builddir=$(abs_builddir)) && ) echo && echo PHP modules configured successfully && echo
 	$(foreach var,$(PHP_DIRS),$(MAKE) -C $(var) && ) echo && echo PHP modules are built successfully && echo
 	$(foreach var,$(PHP_DIRS),$(MAKE) -C $(var) INSTALL_ROOT=$(DESTDIR) install && ) echo && echo PHP modules are installed successfully && echo
 
