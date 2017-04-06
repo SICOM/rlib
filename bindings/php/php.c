@@ -404,7 +404,7 @@ ZEND_FUNCTION(rlib_graph_set_x_minor_tick) {
 	}
 	
 #if PHP_MAJOR_VERSION < 7
-	ZEND_FETCH_RESOURCE(rip, rlib_inout_pass *, &z_rip, id, LE_RLIB_NAME, le_link);	
+	ZEND_FETCH_RESOURCE(rip, rlib_inout_pass *, &z_rip, -1, LE_RLIB_NAME, le_link);
 #else
 	rip = (rlib_inout_pass *)zend_fetch_resource(Z_RES_P(z_rip), LE_RLIB_NAME, le_link);
 	if (rip == NULL)
@@ -731,7 +731,7 @@ ZEND_FUNCTION(rlib_set_output_format_from_text) {
 	}
 	
 #if PHP_MAJOR_VERSION < 7
-	ZEND_FETCH_RESOURCE(rip, rlib_inout_pass *, &z_rip, id, LE_RLIB_NAME, le_link);	
+	ZEND_FETCH_RESOURCE(rip, rlib_inout_pass *, &z_rip, -1, LE_RLIB_NAME, le_link);
 #else
 	rip = (rlib_inout_pass *)zend_fetch_resource(Z_RES_P(z_rip), LE_RLIB_NAME, le_link);
 	if (rip == NULL)
