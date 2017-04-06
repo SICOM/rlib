@@ -115,7 +115,7 @@ zend_function_entry rlib_functions[] =
 	ZEND_FE(rlib_set_output_encoding, NULL)
 	ZEND_FE(rlib_compile_infix, NULL)
 	ZEND_FE(rlib_add_search_path, NULL)
-	{NULL, NULL, NULL}
+	{ .fname = NULL }
 };
 
 /* compiled module information */

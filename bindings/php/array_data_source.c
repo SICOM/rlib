@@ -133,8 +133,9 @@ static gpointer rlib_php_array_resolve_field_pointer(input_filter *input, gpoint
 void * php_array_new_result_from_query(input_filter *input, struct rlib_queries *query) {
 	struct rlib_php_array_results *result = emalloc(sizeof(struct rlib_php_array_results));
 #if PHP_MAJOR_VERSION < 7
-	long size;
 	void *data, *lookup_data;
+#else
+	int unref_count;
 #endif
 	char *data_result;
 	char dstr[64];
@@ -149,12 +150,12 @@ void * php_array_new_result_from_query(input_filter *input, struct rlib_queries 
 	result->array_name = query->sql;
 		
 #if PHP_MAJOR_VERSION < 7
-	if ((size=zend_hash_find(&EG(symbol_table),query->sql,strlen(query->sql)+1, &data))==FAILURE) {
+	if (zend_hash_find(&EG(symbol_table), query->sql, strlen(query->sql) + 1, &data) == FAILURE) {
 		efree(result);
 		return NULL;
-	} else {
-		result->zend_value = *(zval **)data;
 	}
+	result->zend_value = *(zval **)data;
+
 #else
 	result->zend_value = zend_hash_str_find(&EG(symbol_table), query->sql, strlen(query->sql));
 	if (result->zend_value == NULL) {
@@ -162,8 +163,14 @@ void * php_array_new_result_from_query(input_filter *input, struct rlib_queries 
 		return NULL;
 	}
 
-	if (EXPECTED(Z_TYPE_P(result->zend_value) == IS_INDIRECT))
-		result->zend_value = Z_INDIRECT_P(result->zend_value);
+	/* Prevent an infinite loop with unref_count */
+	for (unref_count = 0; unref_count < 3 && Z_TYPE_P(result->zend_value) != IS_ARRAY; unref_count++) {
+		if (EXPECTED(Z_TYPE_P(result->zend_value) == IS_INDIRECT))
+			result->zend_value = Z_INDIRECT_P(result->zend_value);
+		if (EXPECTED(Z_TYPE_P(result->zend_value) == IS_REFERENCE))
+			result->zend_value = Z_REFVAL_P(result->zend_value);
+	}
+
 #endif
 
 	if (UNEXPECTED(Z_TYPE_P(result->zend_value) != IS_ARRAY)) {
@@ -187,11 +194,13 @@ void * php_array_new_result_from_query(input_filter *input, struct rlib_queries 
 	total_size = result->rows*result->cols*sizeof(char *);
 	result->data = emalloc(total_size);
 
-	if(result->cols <= 0)
+	if(result->cols <= 0) {
+		r_error(input->r, "ERROR: php_array_new_result_from_query cols <= 0\n");
 		return NULL;
+	}
 
 	zend_hash_internal_pointer_reset_ex(ht1, &pos1);
-	while(1) {
+	while (row < result->rows) {
 #if PHP_MAJOR_VERSION < 7
 		zend_hash_get_current_data_ex(ht1, &data, &pos1);
 		zend_value = *(zval **)data;
@@ -201,7 +210,7 @@ void * php_array_new_result_from_query(input_filter *input, struct rlib_queries 
 		ht2 = Z_ARRVAL_P(zend_value);
 		zend_hash_internal_pointer_reset_ex(ht2, &pos2);
 		col=0;
-		while(1) {
+		while (col < result->cols) {
 #if PHP_MAJOR_VERSION < 7
 			int lookup_result = zend_hash_get_current_data_ex(ht2, &lookup_data, &pos2);
 			if(lookup_result < 0) {
@@ -211,48 +220,39 @@ void * php_array_new_result_from_query(input_filter *input, struct rlib_queries 
 #endif
 				result->data[(row*result->cols)+col] = estrdup("RLIB: INVALID ARRAY CELL");
 				col++;
-				if(col >= result->cols) {
-					break;
-				}
-			
-			} else {
+				continue;
+			}
 
 #if PHP_MAJOR_VERSION < 7
-				lookup_value = *(zval **)lookup_data;
+			lookup_value = *(zval **)lookup_data;
 #endif
-				zend_hash_move_forward_ex(ht2, &pos2);
 
-				data_result = NULL;
-				memset(dstr,0,64);
-				if( Z_TYPE_P(lookup_value) == IS_STRING )	
-					data_result = Z_STRVAL_P(lookup_value);
-				else if( Z_TYPE_P(lookup_value) == IS_LONG ) {	
-					sprintf(dstr,"%ld",Z_LVAL_P(lookup_value));
-					data_result = estrdup(dstr);
-				} else if( Z_TYPE_P(lookup_value) == IS_DOUBLE ) {	
-					sprintf(dstr,"%f",Z_DVAL_P(lookup_value));
-					data_result = estrdup(dstr);
-				} else if( Z_TYPE_P(lookup_value) == IS_NULL ) {	
-					data_result = estrdup("");
-				} else {
-					sprintf(dstr,"ZEND Z_TYPE %d NOT SUPPORTED",Z_TYPE_P(lookup_value));
-					data_result = estrdup(dstr);
-				}
-
-				result->data[(row*result->cols)+col] = data_result;
-				col++;
-				if(col >= result->cols) {
-					break;
-				}
+			data_result = NULL;
+			memset(dstr,0,64);
+			if (Z_TYPE_P(lookup_value) == IS_STRING)
+				data_result = Z_STRVAL_P(lookup_value);
+			else if (Z_TYPE_P(lookup_value) == IS_LONG) {
+				sprintf(dstr,"%ld",Z_LVAL_P(lookup_value));
+				data_result = estrdup(dstr);
+			} else if (Z_TYPE_P(lookup_value) == IS_DOUBLE) {
+				sprintf(dstr,"%f",Z_DVAL_P(lookup_value));
+				data_result = estrdup(dstr);
+			} else if (Z_TYPE_P(lookup_value) == IS_NULL) {
+				data_result = estrdup("");
+			} else {
+				sprintf(dstr,"ZEND Z_TYPE %d NOT SUPPORTED",Z_TYPE_P(lookup_value));
+				data_result = estrdup(dstr);
 			}
+
+			result->data[(row*result->cols)+col] = data_result;
+
+			col++;
+			zend_hash_move_forward_ex(ht2, &pos2);
 		}
 		row++;
-		if(row >= result->rows) {
-			break;
-		}
 		zend_hash_move_forward_ex(ht1, &pos1);
 	}
-	
+
 	return result;
 }
 
