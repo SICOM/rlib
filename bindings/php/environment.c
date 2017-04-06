@@ -21,6 +21,7 @@
  
 #include <php.h>
 
+#include <stdio.h>
 #include "ralloc.h"
 #include "rlib.h"
 
@@ -28,6 +29,8 @@ static char * rlib_php_resolve_memory_variable(char *name) {
 #if PHP_MAJOR_VERSION < 7
 	void *temp;
 	zval ** data;
+#else
+	int unref_count;
 #endif
 	zval *result;
 	char *data_result, dstr[1024];
@@ -43,6 +46,13 @@ static char * rlib_php_resolve_memory_variable(char *name) {
 	result = zend_hash_str_find(&EG(symbol_table), name, strlen(name));
 	if (result == NULL)
 		return NULL;
+
+	for (unref_count = 0; unref_count < 3 && (Z_TYPE_P(result) == IS_INDIRECT || Z_TYPE_P(result) == IS_REFERENCE); unref_count++) {
+		if (EXPECTED(Z_TYPE_P(result) == IS_INDIRECT))
+			result = Z_INDIRECT_P(result);
+		if (EXPECTED(Z_TYPE_P(result) == IS_REFERENCE))
+			result = Z_REFVAL_P(result);
+	}
 #endif
 
 	memset(dstr, 0, 1024);
