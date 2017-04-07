@@ -94,6 +94,7 @@ make
 %makeinstall \
 	PERL_EXTENSION_DIR=$RPM_BUILD_ROOT%{perlextdir} \
 	PHP_EXTENSION_DIR=$RPM_BUILD_ROOT%{phpextdir} \
+	DESTDIR=$RPM_BUILD_ROOT
 
 %clean
 [ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf $RPM_BUILD_ROOT
