@@ -46,6 +46,10 @@ void encode_text_into_pdf(struct rpdf *pdf, gchar *utf8_text, gchar *encoding) {
 	text = g_convert_with_iconv(utf8_text, strlen(utf8_text), conv, &foo1, &foo1, NULL);
 
 	for (i = 0; i < FONTS; i++) {
+		rpdf_set_font(pdf, "Courier", RPDF_FONT_STYLE_REGULAR, encoding, 12.0);
+		rpdf_text(pdf, 1.0, h, 0.0, fonts[i]);
+		h = h - 0.25;
+
 		for (j = 0; j < STYLES; j++) {
 			rpdf_set_font(pdf, fonts[i], styles[j], encoding, 12.0);
 			rpdf_text(pdf, 1.0, h, 0.0, text);
