@@ -10,7 +10,17 @@ Release: 1
 License: GPL
 Group: System/Libraries
 Source: %name-%{version}.tar.gz
-BuildRequires: mysql-devel, perl, php-devel, postgresql-devel, python-devel, unixODBC-devel
+#Build
+BuildRequires: autoconf, automake, libtool, gettext-devel
+# Build documentation
+BuildRequires: docbook-utils-pdf, texlive-ec
+# Runtime
+BuildRequires: libxml2-devel, glib2-devel, zlib-devel
+BuildRequires: libharu-devel, fontconfig-devel
+# Bindings
+BuildRequires: perl-devel, php-devel, python-devel
+# Input datasources
+BuildRequires: mysql-devel, postgresql-devel, unixODBC-devel
 BuildRoot: /var/tmp/%name-%{version}-root
 
 %description
