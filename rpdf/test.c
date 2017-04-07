@@ -28,6 +28,35 @@
 #include <string.h>
 #include "rpdf.h"
 
+#define FONTS 4
+#define STYLES 4
+
+void encode_text_into_pdf(struct rpdf *pdf, gchar *utf8_text, gchar *encoding) {
+	char *fonts[FONTS] = { "FreeMono", "DejaVu Sans Mono", "Liberation Mono", "Century Schoolbook L" };
+	char *styles[STYLES] = { RPDF_FONT_STYLE_REGULAR, RPDF_FONT_STYLE_ITALIC, RPDF_FONT_STYLE_BOLD, RPDF_FONT_STYLE_BOLDITALIC };
+	int i, j;
+	gdouble h = 9.5;
+	gchar *text;
+	GIConv conv;
+	gsize foo1;
+	conv = g_iconv_open(encoding, "UTF-8");
+
+	rpdf_new_page(pdf, RPDF_PAPER_LETTER, RPDF_PORTRAIT);
+
+	text = g_convert_with_iconv(utf8_text, strlen(utf8_text), conv, &foo1, &foo1, NULL);
+
+	for (i = 0; i < FONTS; i++) {
+		for (j = 0; j < STYLES; j++) {
+			rpdf_set_font(pdf, fonts[i], styles[j], encoding, 12.0);
+			rpdf_text(pdf, 1.0, h, 0.0, text);
+			h = h - 0.25;
+		}
+	}
+
+	g_free(text);
+	g_iconv_close(conv);
+}
+
 int main(void) {
 	gpointer delayed1, delayed2;
 	ssize_t	byteswritten;
@@ -115,31 +144,8 @@ int main(void) {
 	 * Not all fonts contains all characters (correctly or at all)
 	 * as we can see with FreeMono regular, bold or bold italic.
 	 */
-	{
-		#define FONTS 4
-		char *fonts[FONTS] = { "FreeMono", "DejaVu Sans Mono", "Liberation Mono", "Century Schoolbook L" };
-		char *styles[4] = { RPDF_FONT_STYLE_REGULAR, RPDF_FONT_STYLE_ITALIC, RPDF_FONT_STYLE_BOLD, RPDF_FONT_STYLE_BOLDITALIC };
-		int i, j;
-		gdouble h = 9.5;
-		gchar *utf8_text = "árvíztűrő tükörfúrógép ÁRVÍZTŰRŐ TÜKÖRFÚRÓGÉP";
-		gchar *text;
-		GIConv conv;
-		gsize foo1;
-		conv = g_iconv_open("ISO-8859-2", "UTF-8");
-
-		text = g_convert_with_iconv(utf8_text, strlen(utf8_text), conv, &foo1, &foo1, NULL);
-
-		for (i = 0; i < FONTS; i++) {
-			for (j = 0; j < 4; j++) {
-				rpdf_set_font(pdf, fonts[i], styles[j], "ISO8859-2", 12.0);
-				rpdf_text(pdf, 1.0, h, 0.0, text);
-				h = h - 0.25;
-			}
-		}
-
-		g_free(text);
-		g_iconv_close(conv);
-	}
+	encode_text_into_pdf(pdf, "árvíztűrő tükörfúrógép ÁRVÍZTŰRŐ TÜKÖRFÚRÓGÉP", "ISO-8859-2");
+	encode_text_into_pdf(pdf, "good day Добрый День", "ISO-8859-5");
 
 /*	rpdf_image(pdf, 1, 1, 100, 100, RPDF_IMAGE_JPEG, "logo.jpg"); */
 	rpdf_finalize_text_callback(pdf, delayed2, "IT WORKED THE SECOND TIME!");

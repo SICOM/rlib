@@ -97,6 +97,7 @@ DLL_EXPORT_SYM struct rpdf *rpdf_new(void) {
 
 	pdf->pdf = HPDF_New(error_handler, pdf);
 	pdf->fonts = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+	pdf->fontfiles = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 
 #if RLIB_SENDS_UTF8
 	pdf->convs = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, rpdf_destroy_gconv);
@@ -289,6 +290,10 @@ static const gchar *rpdf_embed_font_fc(struct rpdf *pdf, const char *fontfamily,
 		if (FcPatternGetString(font, FC_FILE, 0, &file) != FcResultMatch)
 			continue;
 
+		font_name = g_hash_table_lookup(pdf->fontfiles, file);
+		if (font_name)
+			return font_name;
+
 		suffix = (char *)file;
 		while (*suffix)
 			suffix++;
@@ -297,6 +302,7 @@ static const gchar *rpdf_embed_font_fc(struct rpdf *pdf, const char *fontfamily,
 		if (strcasecmp(suffix, ".ttf") == 0) {
 			pdf->line = __LINE__;
 			font_name = HPDF_LoadTTFontFromFile(pdf->pdf, (char *)file, HPDF_TRUE);
+			g_hash_table_insert(pdf->fontfiles, g_strdup((gchar *)file), (gchar *)font_name);
 			break;
 		}
 		if (strcasecmp(suffix, ".pfb") == 0) {
@@ -310,6 +316,7 @@ static const gchar *rpdf_embed_font_fc(struct rpdf *pdf, const char *fontfamily,
 			pdf->line = __LINE__;
 			font_name = HPDF_LoadType1FontFromFile(pdf->pdf, afm, (char *)file);
 			g_free(afm);
+			g_hash_table_insert(pdf->fontfiles, g_strdup((gchar *)file), (gchar *)font_name);
 			break;
 		}
 	}
@@ -389,21 +396,24 @@ static const char *get_hpdf_encoding(const char *encoding) {
 	return HPDF_ENCODING_WIN_ANSI;
 }
 
+#define HASH_STRING g_strconcat(font, style, encoding, NULL)
+//#define HASH_STRING g_strconcat(font, style, NULL)
+
 DLL_EXPORT_SYM gboolean rpdf_set_font(struct rpdf *pdf, const gchar *font, const gchar *style, const gchar *encoding, gdouble size) {
 	gboolean found = FALSE;
 	gint i = 0;
 	const gchar *font_name = NULL;
 	HPDF_Font hfont;
 	struct rpdf_page_info *page_info = pdf->page_info[pdf->current_page];
-	gchar *three;
+	gchar *hash_string;
 	pdf->func = __func__;
 	pdf->line = __LINE__;
 
 	encoding = get_hpdf_encoding(encoding);
 
 again:
-	three = g_strconcat(font, style, encoding, NULL);
-	hfont = g_hash_table_lookup(pdf->fonts, three);
+	hash_string = HASH_STRING;
+	hfont = g_hash_table_lookup(pdf->fonts, hash_string);
 
 	if (hfont == NULL) {
 		for (i = 0; i < NUM_PDF_BASE_FONTS; i++) {
@@ -422,7 +432,7 @@ again:
 
 		if (font_name == NULL) {
 			//rpdf_error("FONT NOT FOUND: font name '%s' font style '%s', using Courier\n", font, style);
-			g_free(three);
+			g_free(hash_string);
 			font = base_fonts[0];
 			style = RPDF_FONT_STYLE_REGULAR;
 			goto again;
@@ -431,14 +441,14 @@ again:
 
 		pdf->line = __LINE__;
 		hfont = HPDF_GetFont(pdf->pdf, font_name, encoding);
-		g_hash_table_insert(pdf->fonts, three, hfont);
+		g_hash_table_insert(pdf->fonts, hash_string, hfont);
 
 		if (strcmp(font, font_name) != 0) {
-			three = g_strconcat(font_name, style, encoding, NULL);
-			g_hash_table_insert(pdf->fonts, three, hfont);
+			hash_string = HASH_STRING;
+			g_hash_table_insert(pdf->fonts, hash_string, hfont);
 		}
 	} else {
-		g_free(three);
+		g_free(hash_string);
 	}
 
 	page_info->current_font = hfont;
@@ -775,6 +785,7 @@ DLL_EXPORT_SYM void rpdf_free(struct rpdf *pdf) {
 	HPDF_Free(pdf->pdf);
 
 	g_hash_table_destroy(pdf->fonts);
+	g_hash_table_destroy(pdf->fontfiles);
 #if RLIB_SENDS_UTF8
 	g_hash_table_destroy(pdf->convs);
 #endif

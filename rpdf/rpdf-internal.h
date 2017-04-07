@@ -58,6 +58,7 @@ struct rpdf {
 	struct rpdf_page_info **page_info;
 
 	GHashTable *fonts;
+	GHashTable *fontfiles;
 #if RLIB_SENDS_UTF8
 	GHashTable *convs;
 #endif
