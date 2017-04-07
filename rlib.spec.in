@@ -91,10 +91,9 @@ make
 
 %install
 [ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf $RPM_BUILD_ROOT
-%makeinstall \
-	PERL_EXTENSION_DIR=$RPM_BUILD_ROOT%{perlextdir} \
-	PHP_EXTENSION_DIR=$RPM_BUILD_ROOT%{phpextdir} \
-	DESTDIR=$RPM_BUILD_ROOT
+make DESTDIR=$RPM_BUILD_ROOT install
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/php-zts.d
+install rlib.ini $RPM_BUILD_ROOT%{_sysconfdir}/php-zts.d
 
 %clean
 [ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf $RPM_BUILD_ROOT
