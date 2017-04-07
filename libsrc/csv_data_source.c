@@ -38,6 +38,7 @@
 
 struct rlib_csv_results {
 	gchar *contents;
+	gint cols;
 	gint isdone;
 	GSList *header;
 	GList *detail;
@@ -203,7 +204,6 @@ void * csv_new_result_from_query(input_filter *input, struct rlib_queries *query
 	gint size;
 	gchar *contents;
 	GSList *line_items;
-	gint row = 0;
 	gchar *file;
 
 	INPUT_PRIVATE(input)->error = "";
@@ -218,11 +218,19 @@ void * csv_new_result_from_query(input_filter *input, struct rlib_queries *query
 		contents[size] = 0;
 		if(read(fd, contents, size) == size) {
 			gchar *ptr;
+			gint row = 0;
+			gint maxcols = 0;
+
 			results = g_new0(struct rlib_csv_results, 1);
 			results->isdone = FALSE;
 			results->contents = contents;
 			ptr = contents;
 			while(!parse_line(&ptr, &line_items)) {
+				int cols = g_slist_length(line_items);
+
+				if (maxcols < cols)
+					maxcols = cols;
+
 				if(row == 0)
 					results->header = line_items;
 				else
@@ -230,6 +238,7 @@ void * csv_new_result_from_query(input_filter *input, struct rlib_queries *query
 				row++;			
 			}
 			results->navigator = NULL;
+			results->cols = maxcols;
 		} else {
 			INPUT_PRIVATE(input)->error = "Error Reading File";
 			g_free(contents);
@@ -259,6 +268,16 @@ static gint rlib_csv_free_input_filter(input_filter *input){
 	return 0;
 }
 
+static gint rlib_csv_num_fields(input_filter *input, gpointer result_ptr) {
+	struct rlib_csv_results *results = result_ptr;
+
+	if (results == NULL)
+		return 0;
+
+	return results->cols;
+}
+
+
 gpointer rlib_csv_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
@@ -278,6 +297,7 @@ gpointer rlib_csv_new_input_filter(rlib *r) {
 	input->resolve_field_pointer = rlib_csv_resolve_field_pointer;
 	input->free = rlib_csv_free_input_filter;
 	input->free_result = rlib_csv_rlib_free_result;
+	input->num_fields = rlib_csv_num_fields;
 	return input;
 }
  

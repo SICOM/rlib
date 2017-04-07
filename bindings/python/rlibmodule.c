@@ -176,6 +176,38 @@ implement_signal_call(rlib *rlib_ptr,  void *user_data) {
 	return 1;
 }
 
+static GString *rlib_python_dump_memory_variables(void) {
+	GString *dump;
+	PyObject *moduledict = PyImport_GetModuleDict();
+	PyObject *mainmodule;
+	PyObject *dict;
+	PyObject *key, *value;
+	Py_ssize_t pos = 0;
+
+	dump = g_string_new("");
+
+	mainmodule = PyDict_GetItemString(moduledict, "__main__");
+	if (!PyModule_Check(mainmodule)) {
+		PyErr_SetString(RLIBError, "could not find main module");
+		return dump;
+	}
+
+	dict = PyModule_GetDict(mainmodule);
+
+	while (PyDict_Next(dict, &pos, &key, &value)) {
+		const char *k;
+		const char *v;
+		Py_ssize_t k_len, v_len;
+
+		if (PyObject_AsCharBuffer(key, &k, &k_len) != 0 || PyObject_AsCharBuffer(value, &v, &v_len) != 0)
+			continue;
+
+		g_string_append_printf(dump, "%s=%s\n", k, v);
+	}
+
+	return dump;
+}
+
 static gchar * rlib_python_resolve_memory_variable(gchar *name) {
 	PyObject	*moduledict = PyImport_GetModuleDict();
 	PyObject	*mainmodule;
@@ -221,10 +253,11 @@ static void rlib_python_free(rlib *r) {
 
 static struct environment_filter *rlib_python_new_environment() {
 	struct environment_filter *ef;
-        ef = g_malloc(sizeof(struct environment_filter));
-        ef->rlib_resolve_memory_variable = rlib_python_resolve_memory_variable;
-        ef->rlib_write_output = rlib_python_write_output;
-        ef->free = rlib_python_free;
+	ef = g_malloc(sizeof(struct environment_filter));
+	ef->rlib_resolve_memory_variable = rlib_python_resolve_memory_variable;
+	ef->rlib_write_output = rlib_python_write_output;
+	ef->free = rlib_python_free;
+	ef->rlib_dump_memory_variables = rlib_python_dump_memory_variables;
 	return ef;
 }
 
@@ -354,7 +387,14 @@ void * rlib_python_array_new_result_from_query(input_filter *input, struct rlib_
         return result;
 }
 
+static gint rlib_python_array_num_fields(input_filter * input, gpointer result_ptr) {
+	struct rlib_python_array_results *result = result_ptr;
 
+	if (result == NULL)
+		return 0;
+
+	return result->cols;
+}
 
 static gint rlib_python_array_input_close(input_filter *input) {
         return TRUE;
@@ -422,6 +462,16 @@ static gpointer rlib_python_array_resolve_field_pointer(input_filter *input, gpo
         return NULL;
 }
 
+static gchar *rlib_python_array_get_field_name(input_filter *input, gpointer result_ptr, gpointer field_ptr) {
+	struct rlib_python_array_results *result = result_ptr;
+	int field = GPOINTER_TO_INT(field_ptr) - 1;
+
+	if (result == NULL)
+		return NULL;
+
+	return result->data[field];
+}
+
 static gint rlib_python_array_free_input_filter(input_filter *input) {
 	if (input->private) {
 		PyMem_Free(input->private);
@@ -448,12 +498,13 @@ static void rlib_python_array_free_result(input_filter *input, gpointer result_p
 }
 
 
-gpointer rlib_python_array_new_input_filter() {
+gpointer rlib_python_array_new_input_filter(rlib *r) {
         struct input_filter *input;
         input = PyMem_Malloc(sizeof(struct input_filter));
         memset(input, 0, sizeof(struct input_filter));
         input->private = PyMem_Malloc(sizeof(struct _private));
         memset(input->private, 0, sizeof(struct _private));
+        input->r = r;
         input->input_close = rlib_python_array_input_close;
         input->first = rlib_python_array_first;
         input->next = rlib_python_array_next;
@@ -467,6 +518,10 @@ gpointer rlib_python_array_new_input_filter() {
 
         input->free = rlib_python_array_free_input_filter;
         input->free_result = rlib_python_array_free_result;
+
+        input->num_fields = rlib_python_array_num_fields;
+        input->get_field_name = rlib_python_array_get_field_name;
+
         return input;
 }
 
@@ -484,7 +539,7 @@ method_add_datasource_array(PyObject *self, PyObject *_args) {
 	if (!PyArg_ParseTuple(_args, "s:add_datasource_array", &datasource))
 		return NULL;
 	check_rlibobject_open(rp);
-	(void) rlib_add_datasource(rp->rlib_ptr, datasource, rlib_python_array_new_input_filter());
+	(void) rlib_add_datasource(rp->rlib_ptr, datasource, rlib_python_array_new_input_filter(rp->rlib_ptr));
 	Py_INCREF(Py_None);
 	return Py_None;
 }

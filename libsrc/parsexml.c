@@ -891,6 +891,9 @@ struct rlib_part * parse_part_file(rlib *r, int report_index) {
 		return(NULL);
 	}
 
+	if (r->output_testcase)
+		xmlDocDumpFormatMemory(doc, &part->xml_dump, &part->xml_dump_len, 1);
+
 	xmlFreeDoc(doc);
 
 #if DISABLE_UTF8

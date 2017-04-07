@@ -189,6 +189,25 @@ static const gchar * rlib_postgres_get_error(input_filter *input) {
 	return PQerrorMessage(INPUT_PRIVATE(input)->conn);
 }
 
+static gint rlib_postgres_num_fields(input_filter *input, gpointer result_ptr) {
+	struct rlib_postgres_results *result = result_ptr;
+
+	if (result == NULL)
+		return 0;
+
+	return result->tot_fields;
+}
+
+static gchar *rlib_postgres_get_field_name(input_filter *input, gpointer result_ptr, gpointer field_ptr) {
+	struct rlib_postgres_results *result = result_ptr;
+	gint field = GPOINTER_TO_INT(field_ptr) - 1;
+
+	if (result == NULL)
+		return NULL;
+
+	return PQfname(result->result, field);
+}
+
 gpointer rlib_postgres_new_input_filter(rlib *r) {
 	struct input_filter *input;
 	
@@ -210,5 +229,9 @@ gpointer rlib_postgres_new_input_filter(rlib *r) {
 
 	input->free = rlib_postgres_free_input_filter;
 	input->free_result = rlib_postgres_rlib_free_result;
+
+	input->num_fields = rlib_postgres_num_fields;
+	input->get_field_name = rlib_postgres_get_field_name;
+
 	return input;
 }

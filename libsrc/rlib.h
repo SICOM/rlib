@@ -525,6 +525,10 @@ struct rlib_part {
 	gint suppress_page_header_first_page;
 
 	gint report_index;
+
+	/* For creating a test case */
+	unsigned char *xml_dump;
+	int xml_dump_len;
 };
 
 struct rlib_graph_x_minor_tick {
@@ -852,7 +856,15 @@ struct rlib {
 
 	GSList *search_paths;
 
-	gint debug;
+	gboolean debug;
+
+	/* For creating a test case */
+	gboolean output_testcase;
+	gchar *testcase_dir;
+	GString *testcase;
+	GString **testcase_datasources;
+	GString *testcase_code;
+	GString *testcase_code2;
 };
 
 #define INPUT(r, i) (r->results[i]->input)
@@ -865,6 +877,7 @@ struct environment_filter {
 	gchar *(*rlib_resolve_memory_variable)(char *);
 	gint (*rlib_write_output)(char *, int);
 	void (*free)(rlib *);
+	GString *(*rlib_dump_memory_variables)(void);
 };
 
 #define OUTPUT(r) (r->o)

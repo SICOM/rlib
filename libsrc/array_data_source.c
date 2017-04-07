@@ -163,6 +163,15 @@ static void rlib_array_rlib_free_query(input_filter *input, struct rlib_queries 
 	query->private = NULL;
 }
 
+static gint rlib_array_num_fields(input_filter *input, gpointer result_ptr) {
+	struct rlib_array_results *result = result_ptr;
+
+	if (result == NULL)
+		return 0;
+
+	return result->cols;
+}
+
 static gpointer rlib_array_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
@@ -184,6 +193,9 @@ static gpointer rlib_array_new_input_filter(rlib *r) {
 	input->free = rlib_array_free_input_filter;
 	input->free_result = rlib_array_rlib_free_result;
 	input->free_query = rlib_array_rlib_free_query;
+
+	input->num_fields = rlib_array_num_fields;
+
 	return input;
 }
 

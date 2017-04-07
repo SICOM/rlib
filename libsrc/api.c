@@ -25,6 +25,7 @@
 
 #include <config.h>
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -68,8 +69,59 @@ rlib * rlib_init_with_environment(struct environment_filter *environment) {
 	else
 		ENVIRONMENT(r) = environment;
 
-	env = getenv("RLIB_DEBUGGING");
+	env = ENVIRONMENT(r)->rlib_resolve_memory_variable("RLIB_DEBUGGING");
 	r->debug = !(env == NULL || *env == '\0');
+
+	env = ENVIRONMENT(r)->rlib_resolve_memory_variable("RLIB_CREATE_TEST_CASE");
+	r->output_testcase = (env && (strcasecmp(env, "yes") == 0 || strcasecmp(env, "true") == 0 || strcasecmp(env, "on") == 0  || strcmp(env, "1") == 0));
+
+	if (r->output_testcase) {
+		gchar *test;
+		/* This directory must exist beforehand and should be writable by the process */
+		r->testcase_dir = ENVIRONMENT(r)->rlib_resolve_memory_variable("RLIB_TEST_CASE_DIR");
+		if (!r->testcase_dir && strlen(r->testcase_dir) == 0)
+			r->testcase_dir = "/tmp";
+
+		test = g_strdup_printf("%s/testdir", r->testcase_dir);
+		if (mkdir(test, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0 && errno == EACCES) {
+			r_warning(r, "Warning: RLIB_TEST_CASE_DIR ('%s') is not writable\n", r->testcase_dir);
+			r->testcase_dir = NULL;
+			r->output_testcase = FALSE;
+		} else
+			rmdir(test);
+
+		g_free(test);
+	}
+
+	if (r->output_testcase) {
+		/*
+		 * 2x16K should be enough for most cases without
+		 * implicit realloc() calls.
+		 *
+		 * r->testcase_code will be automatically constructed
+		 * from the XML parts and the datasources. Both the XMLs
+		 * and the datasources will be embedded in the code,
+		 * this means using array datasources.
+		 *
+		 * r->testcase_code2 will be used to collect the RLIB API
+		 * calls, except:
+		 *   rlib_set_output_format*()
+		 *   rlib_add_datasource_*()
+		 *   rlib_add_query*()
+		 * The extra API calls must all be added to the test case
+		 * after the XMLs, the datasources and the synthetic
+		 * rlib_add_query_as*() calls are transformed and printed
+		 * into the test case.
+		 */
+		r->testcase_code = g_string_sized_new(16384);
+		g_string_printf(r->testcase_code, "int main(int argc, char **argv) {\n");
+		g_string_append(r->testcase_code, "\trlib *r;\n\n");
+		g_string_append(r->testcase_code, "\tif (argc == 1) {\n\t\tprintf(\"usage: %s [ pdf | xml | txt | csv | html ]\\n\", argv[0]);\n\t\treturn 1;\n\t}\n\n");
+		g_string_append(r->testcase_code, "\tr = rlib_init();\n");
+		g_string_append(r->testcase_code, "\trlib_set_output_format_from_text(r, argv[1]);\n");
+		g_string_append(r->testcase_code, "\trlib_add_datasource_array(r, \"local_array\");\n");
+		r->testcase_code2 = g_string_sized_new(16384);
+	}
 
 	r->output_parameters = g_hash_table_new_full (g_str_hash, g_str_equal, string_destroyer, string_destroyer);
 	r->input_metadata = g_hash_table_new_full (g_str_hash, g_str_equal, string_destroyer, metadata_destroyer);
@@ -253,6 +305,30 @@ gint rlib_add_search_path(rlib *r, const gchar *path) {
 		return -1;
 	if (strlen(path) == 0)
 		return -1;
+
+	if (r->output_testcase) {
+		int pos;
+
+		g_string_append(r->testcase_code2, "\trlib_add_search_path(r, \"");
+		for (pos = 0; path[pos]; pos++) {
+			switch (path[pos]) {
+			case '\n':
+				g_string_append(r->testcase_code2, "\\n");
+				break;
+			case '\t':
+				g_string_append(r->testcase_code2, "\\t");
+				break;
+			case '\\':
+			case '"':
+				g_string_append_c(r->testcase_code2, '\\');
+				/* fall through */
+			default:
+				g_string_append_c(r->testcase_code2, path[pos]);
+				break;
+			}
+		}
+		g_string_append(r->testcase_code2, "\");\n");
+	}
 
 	path_copy = g_strdup(path);
 	if (path_copy == NULL)
@@ -454,8 +530,13 @@ static gint rlib_execute_queries(rlib *r) {
 	return TRUE;
 }
 
+G_LOCK_DEFINE_STATIC(testcase_lock);
+static int testcase_count = 0;
+
 gint rlib_execute(rlib *r) {
 	gint i;
+	int tc_num = 0;
+
 	r->now = time(NULL);
 
 	if(r->format == RLIB_FORMAT_HTML) {
@@ -468,8 +549,10 @@ gint rlib_execute(rlib *r) {
 
 	if (r->queries_count < 1)
 		r_warning(r,"Warning: No queries added to report\n");
-	else
+	else {
 		rlib_execute_queries(r);
+
+	}
 
 	LIBXML_TEST_VERSION
 
@@ -485,6 +568,187 @@ gint rlib_execute(rlib *r) {
 
 	rlib_resolve_metadata(r);
 	rlib_resolve_followers(r);
+
+	if (r->output_testcase) {
+		int l = 0;
+		int i;
+
+		G_LOCK(testcase_lock);
+		tc_num = testcase_count;
+		testcase_count++;
+		G_UNLOCK(testcase_lock);
+
+		/* Worst case, every character must be escaped */
+		for (i = 0; i < r->parts_count; i++)
+			l += r->parts[i]->xml_dump_len * 2;
+
+		r->testcase = g_string_sized_new(l);
+		g_string_printf(r->testcase, "/*\n * Automatic test case created by RLIB %s\n", rlib_version());
+		g_string_append(r->testcase, " * Compile it with:\n");
+		g_string_append_printf(r->testcase, " * gcc -Wall `pkg-config --cflags --libs rlib glib-2.0` -o testcase-%d-%d testcase-%d-%d.c\n */\n\n", getpid(), tc_num, getpid(), tc_num);
+		g_string_append(r->testcase, "#include <stdio.h>\n");
+		g_string_append(r->testcase, "#include <rlib/rlib.h>\n\n");
+
+		for (i = 0; i < r->parts_count; i++) {
+			int pos;
+
+			g_string_append_printf(r->testcase, "static char *xml%d = \"", i);
+
+			for (pos = 0; pos < r->parts[i]->xml_dump_len; pos++) {
+				switch (r->parts[i]->xml_dump[pos]) {
+				case '\n':
+					g_string_append(r->testcase, "\\n\"\n\t\"");
+					break;
+				case '\t':
+					g_string_append(r->testcase, "\\t");
+					break;
+				case '"':
+				case '\\':
+					g_string_append_c(r->testcase, '\\');
+					/* fall through */
+				default:
+					g_string_append_c(r->testcase, r->parts[i]->xml_dump[pos]);
+					break;
+				}
+			}
+
+			g_string_append(r->testcase, "\";\n\n");
+
+			g_string_append_printf(r->testcase_code, "\trlib_add_report_from_buffer(r, xml%d);\n", i);
+
+			xmlFree(r->parts[i]->xml_dump);
+			r->parts[i]->xml_dump = NULL;
+			r->parts[i]->xml_dump_len = 0;
+		}
+
+		{
+			GString *filename;
+			FILE *tc_file;
+			int i;
+
+			filename = g_string_new(NULL);
+			if (r->testcase_dir)
+				g_string_printf(filename, "%s/testcase-%d-%d.c", r->testcase_dir, getpid(), tc_num);
+			else
+				g_string_printf(filename, "testcase-%d-%d.c", getpid(), tc_num);
+
+			tc_file = fopen(filename->str, "w+");
+			if (tc_file) {
+				fprintf(tc_file, "%s", r->testcase->str);
+				g_string_free(r->testcase, TRUE);
+				r->testcase = NULL;
+
+				for (i = 0; i < r->queries_count; i++) {
+					struct input_filter *in = INPUT(r, i);
+					struct rlib_results *rs = r->results[i];
+					char *qname = r->queries[i]->name;
+					int nfields = in->num_fields(in, rs->result);
+					int nrows = 0;
+					int i;
+
+					/* Print datasources... */
+					fprintf(tc_file, "char *%s[][%d] = {\n\t{ ", qname, nfields);
+
+					for (i = 0; i < nfields; i++) {
+						if (i)
+							fprintf(tc_file, ", ");
+						fprintf(tc_file, "\"%s\"", in->get_field_name(in, rs->result, GINT_TO_POINTER(i + 1)));
+					}
+
+					fprintf(tc_file, " }\n");
+
+					in->first(in, rs->result);
+					while (!in->isdone(in, rs->result)) {
+						nrows++;
+						fprintf(tc_file, "\t, { ");
+						for (i = 0; i < nfields; i++) {
+							gchar *value = in->get_field_value_as_string(in, rs->result, GINT_TO_POINTER(i + 1));
+							int pos;
+
+							if (i)
+								fprintf(tc_file, ", ");
+
+							fprintf(tc_file, "\"");
+
+							for (pos = 0; value[pos]; pos++) {
+								switch (value[pos]) {
+								case '\n':
+									fprintf(tc_file, "\\n");
+									break;
+								case '\t':
+									fprintf(tc_file, "\\t");
+									break;
+								case '"':
+								case '\\':
+									fprintf(tc_file, "\\");
+									/* fall through */
+								default:
+									fprintf(tc_file, "%c", value[pos]);
+									break;
+								}
+							}
+
+							fprintf(tc_file, "\"");
+						}
+
+						fprintf(tc_file, " }\n");
+
+						in->next(in, rs->result);
+					}
+
+					/*
+					 * Reset the datasource for the actual
+					 * report execution below.
+					 */
+					in->first(in, rs->result);
+					in->previous(in, rs->result);
+
+					/* ... print contents ... */
+					fprintf(tc_file, "};\n\n");
+					g_string_append_printf(r->testcase_code, "\trlib_add_query_array_as(r, \"local_array\", %s, %d, %d, \"%s\");\n", qname, nrows + 1, nfields, qname);
+				}
+
+				fprintf(tc_file, "%s", r->testcase_code->str);
+				g_string_free(r->testcase_code, TRUE);
+				r->testcase_code = NULL;
+
+				if (r->testcase_code2->len > 0)
+					fprintf(tc_file, "%s", r->testcase_code2->str);
+				g_string_free(r->testcase_code2, TRUE);
+				r->testcase_code2 = NULL;
+
+				fprintf(tc_file, "\trlib_execute(r);\n");
+				fprintf(tc_file, "\trlib_spool(r);\n");
+				fprintf(tc_file, "\trlib_free(r);\n");
+				fprintf(tc_file, "\treturn 0;\n}\n");
+				fclose(tc_file);
+			}
+
+			if (r->testcase_dir)
+				g_string_printf(filename, "%s/testcase-%d-%d.test", r->testcase_dir, getpid(), tc_num);
+			else
+				g_string_printf(filename, "testcase-%d-%d.test", getpid(), tc_num);
+
+			tc_file = fopen(filename->str, "w+");
+			if (tc_file) {
+				GString *vars;
+
+				fprintf(tc_file, "COMMAND=./testcase-%d\n", getpid());
+				fprintf(tc_file, "FORMATS=\"pdf xml txt csv html\"\n");
+				fprintf(tc_file, "EXPECTED_pdf=\n");
+				fprintf(tc_file, "EXPECTED_xml=\n");
+				fprintf(tc_file, "EXPECTED_txt=\n");
+				fprintf(tc_file, "EXPECTED_csv=\n");
+				fprintf(tc_file, "EXPECTED_html=\n");
+
+				vars = ENVIRONMENT(r)->rlib_dump_memory_variables();
+				fprintf(tc_file, "%s", vars->str);
+				g_string_free(vars, TRUE);
+
+				fclose(tc_file);
+			}
+		}
+	}
 
 	rlib_make_report(r);
 	
@@ -546,6 +810,9 @@ gint rlib_add_resultset_follower_n_to_1(rlib *r, gchar *leader, gchar *leader_fi
 	gint ptr_leader = -1, ptr_follower = -1;
 	gint x;
 
+	if (r->output_testcase)
+		g_string_append_printf(r->testcase_code2, "\trlib_add_resultset_follower_n_to_1(r, \"%s\", \"%s\", \"%s\", \"%s\");\n", leader, leader_field, follower, follower_field);
+
 	if(r->resultset_followers_count > (RLIB_MAXIMUM_FOLLOWERS-1)) {
 		return -1;
 	}
@@ -578,6 +845,9 @@ gint rlib_add_resultset_follower_n_to_1(rlib *r, gchar *leader, gchar *leader_fi
 }
 
 gint rlib_add_resultset_follower(rlib *r, gchar *leader, gchar *follower) {
+	if (r->output_testcase)
+		g_string_append_printf(r->testcase_code2, "\trlib_add_resultset_follower(r, \"%s\", \"%s\");\n", leader, follower);
+
 	return rlib_add_resultset_follower_n_to_1(r, leader, NULL, follower, NULL);
 }
 
@@ -652,6 +922,9 @@ gboolean rlib_query_refresh(rlib *r) {
 }
 
 gint rlib_add_parameter(rlib *r, const gchar *name, const gchar *value) {
+	if (r->output_testcase)
+		g_string_append_printf(r->testcase_code2, "\trlib_add_parameter(r, \"%s\", \"%s\");\n", name, value);
+
 	g_hash_table_insert(r->parameters, g_strdup(name), g_strdup(value));
 	return TRUE;
 }
@@ -660,6 +933,8 @@ gint rlib_add_parameter(rlib *r, const gchar *name, const gchar *value) {
 *  Returns TRUE if locale was actually set, otherwise, FALSE
 */
 gint rlib_set_locale(rlib *r, gchar *locale) {
+	if (r->output_testcase)
+		g_string_append_printf(r->testcase_code2, "\trlib_set_locale(r, \"%s\");\n", locale);
 
 #if DISABLE_UTF8
 	r->special_locale = g_strdup(locale);
@@ -670,10 +945,16 @@ gint rlib_set_locale(rlib *r, gchar *locale) {
 }
 
 gchar * rlib_bindtextdomain(rlib *r, gchar *domainname, gchar *dirname) {
+	if (r->output_testcase)
+		g_string_append_printf(r->testcase_code2, "\trlib_bindtextdomain(r, \"%s\", \"%s\");\n", domainname, dirname);
+
 	return bindtextdomain(domainname, dirname);
 }
 
 void rlib_set_radix_character(rlib *r, gchar radix_character) {
+	if (r->output_testcase)
+		g_string_append_printf(r->testcase_code2, "\trlib_set_radix_character(r, '%c');\n", radix_character);
+
 	r->radix_character = radix_character;
 }
 
@@ -720,11 +1001,17 @@ void rlib_trap() {
 }
 
 void rlib_set_output_parameter(rlib *r, gchar *parameter, gchar *value) {
+	if (r->output_testcase)
+		g_string_append_printf(r->testcase_code2, "\trlib_set_output_parameter(r, \"%s\", \"%s\");\n", parameter, value);
+
 	g_hash_table_insert(r->output_parameters, g_strdup(parameter), g_strdup(value));
 }
 
 void rlib_set_output_encoding(rlib *r, const char *encoding) {
 	const char *new_encoding = (encoding ? encoding : "UTF-8");
+
+	if (r->output_testcase)
+		g_string_append_printf(r->testcase_code2, "\trlib_set_output_encoding(r, \"%s\");", encoding);
 
 	if (strcasecmp(new_encoding, "UTF-8") == 0 ||
 			strcasecmp(new_encoding, "UTF8") == 0)
@@ -737,7 +1024,10 @@ void rlib_set_output_encoding(rlib *r, const char *encoding) {
 gint rlib_set_datasource_encoding(rlib *r, gchar *input_name, gchar *encoding) {
 	int i;
 	struct input_filter *tif;
-	
+
+	if (r->output_testcase)
+		g_string_append_printf(r->testcase_code2, "\trlib_set_datasource_encoding(r, \"%s\", \"%s\");\n", input_name, encoding);
+
 	for (i=0;i<r->inputs_count;i++) {
 		tif = r->inputs[i].input;
 		if (strcmp(r->inputs[i].name, input_name) == 0) {
@@ -752,6 +1042,10 @@ gint rlib_set_datasource_encoding(rlib *r, gchar *input_name, gchar *encoding) {
 
 gint rlib_graph_set_x_minor_tick(rlib *r, gchar *graph_name, gchar *x_value) {
 	struct rlib_graph_x_minor_tick *gmt = g_new0(struct rlib_graph_x_minor_tick, 1);
+
+	if (r->output_testcase)
+		g_string_append_printf(r->testcase_code2, "\trlib_graph_set_x_minor_tick(r, \"%s\", \"%s\");\n", graph_name, x_value);
+
 	gmt->graph_name = g_strdup(graph_name);
 	gmt->x_value = g_strdup(x_value);
 	gmt->by_name = TRUE;
@@ -761,6 +1055,10 @@ gint rlib_graph_set_x_minor_tick(rlib *r, gchar *graph_name, gchar *x_value) {
 
 gint rlib_graph_set_x_minor_tick_by_location(rlib *r, gchar *graph_name, gint location) {
 	struct rlib_graph_x_minor_tick *gmt = g_new0(struct rlib_graph_x_minor_tick, 1);
+
+	if (r->output_testcase)
+		g_string_append_printf(r->testcase_code2, "\trlib_graph_set_x_minor_tick_by_location(r, \"%s\", %d);\n", graph_name, location);
+
 	gmt->by_name = FALSE;
 	gmt->location = location;
 	gmt->graph_name = g_strdup(graph_name);
@@ -771,6 +1069,10 @@ gint rlib_graph_set_x_minor_tick_by_location(rlib *r, gchar *graph_name, gint lo
 
 gint rlib_graph_add_bg_region(rlib *r, gchar *graph_name, gchar *region_label, gchar *color, gfloat start, gfloat end) {
 	struct rlib_graph_region *gr = g_new0(struct rlib_graph_region, 1);
+
+	if (r->output_testcase)
+		g_string_append_printf(r->testcase_code2, "\trlib_graph_add_bg_region(r, \"%s\", \"%s\", \"%s\", %lf, %lf);\n", graph_name, region_label, color, start, end);
+
 	gr->graph_name = g_strdup(graph_name);
 	gr->region_label = g_strdup(region_label);
 	rlib_parsecolor(&gr->color, color);

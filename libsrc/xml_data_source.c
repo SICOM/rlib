@@ -44,6 +44,7 @@ struct rlib_xml_results {
 	xmlNodePtr last_row;
 	xmlNodePtr this_row;
 	xmlNodePtr first_field;
+	gint cols;
 	gint isdone;
 };
 
@@ -189,6 +190,7 @@ void * xml_new_result_from_query(struct input_filter *input, struct rlib_queries
 	xmlNodePtr first_field;
 	xmlDocPtr doc;
 	gchar *file;
+	gint cols;
 
 	file = get_filename(input->r, query->sql, -1, FALSE, FALSE);
 	doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
@@ -244,9 +246,13 @@ void * xml_new_result_from_query(struct input_filter *input, struct rlib_queries
 	}
 
 	first_field = NULL;
-	for (cur = fields->xmlChildrenNode; cur && first_field == NULL; cur = cur->next) {
-		if (xmlStrcmp(cur->name, (const xmlChar *) "field") == 0)
-			first_field = cur;
+	cols = 0;
+	for (cur = fields->xmlChildrenNode; cur; cur = cur->next) {
+		if (xmlStrcmp(cur->name, (const xmlChar *) "field") == 0) {
+			if (first_field == NULL)
+				first_field = cur;
+			cols++;
+		}
 	}
 
 	if (first_field == NULL) {
@@ -264,6 +270,7 @@ void * xml_new_result_from_query(struct input_filter *input, struct rlib_queries
 	results->this_row = first_row;
 	results->first_field = first_field;
 	results->isdone = FALSE;
+	results->cols = cols;
 	return results;
 }
 
@@ -276,6 +283,15 @@ static gint rlib_xml_free_input_filter(input_filter *input){
 	g_free(input->private);
 	g_free(input);
 	return 0;
+}
+
+static gint rlib_xml_num_fields(input_filter *input, gpointer result_ptr) {
+	struct rlib_xml_results *results = result_ptr;
+
+	if (results == NULL)
+		return 0;
+
+	return results->cols;
 }
 
 gpointer rlib_xml_new_input_filter(rlib *r) {
@@ -297,6 +313,7 @@ gpointer rlib_xml_new_input_filter(rlib *r) {
 	input->resolve_field_pointer = rlib_xml_resolve_field_pointer;
 	input->free = rlib_xml_free_input_filter;
 	input->free_result = rlib_xml_rlib_free_result;
+	input->num_fields = rlib_xml_num_fields;
 	return input;
 }
  

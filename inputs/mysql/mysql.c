@@ -40,6 +40,7 @@ struct rlib_mysql_results {
 	gint isdone;
 	gint didprevious;
 	gint *fields;
+	gint cols;
 };
 
 struct _private {
@@ -217,7 +218,7 @@ static gpointer rlib_mysql_resolve_field_pointer(input_filter *input, gpointer r
 void * mysql_new_result_from_query(struct input_filter *input, struct rlib_queries *query) {
 	struct rlib_mysql_results *results;
 	MYSQL_RES *result;
-	guint count,i;
+	guint i;
 	result = rlib_mysql_query(input->r, INPUT_PRIVATE(input)->mysql, query->sql);
 	if(result == NULL) {
 		r_error(input->r, "ERROR: rlib_mysql_query returned NULL\n");
@@ -226,10 +227,10 @@ void * mysql_new_result_from_query(struct input_filter *input, struct rlib_queri
 		results = g_malloc(sizeof(struct rlib_mysql_results));
 		results->result = result;
 	}
-	count = mysql_field_count(INPUT_PRIVATE(input)->mysql);
-	results->fields = g_malloc(sizeof(gint) * count);
-	for(i=0;i<count;i++) {
-		results->fields[i] = i+1;
+	results->cols = mysql_field_count(INPUT_PRIVATE(input)->mysql);
+	results->fields = g_malloc(sizeof(gint) * results->cols);
+	for (i = 0; i < results->cols; i++) {
+		results->fields[i] = i + 1;
 	}
 	return results;
 }
@@ -253,6 +254,34 @@ static const gchar* rlib_mysql_get_error(input_filter *input) {
 	return mysql_error(INPUT_PRIVATE(input)->mysql);
 }
 
+static gint rlib_mysql_num_fields(input_filter *input, gpointer result_ptr) {
+	struct rlib_mysql_results *result = result_ptr;
+
+	if (result == NULL)
+		return 0;
+
+	return result->cols;
+}
+
+static gchar *rlib_mysql_get_field_name(input_filter *input, gpointer result_ptr, gpointer field_ptr) {
+	struct rlib_mysql_results *result = result_ptr;
+	gint x, fieldnum = GPOINTER_TO_INT(field_ptr) - 1;
+	MYSQL_FIELD *field;
+
+	if (!result)
+		return NULL;
+
+	mysql_field_seek(result->result, 0);
+
+	x = 0;
+	while ((field = mysql_fetch_field(result->result))) {
+		if (x == fieldnum)
+			return field->name;
+		x++;
+	}
+	return NULL;
+}
+
 gpointer rlib_mysql_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
@@ -273,5 +302,9 @@ gpointer rlib_mysql_new_input_filter(rlib *r) {
 
 	input->free = rlib_mysql_free_input_filter;
 	input->free_result = rlib_mysql_rlib_free_result;
+
+	input->num_fields = rlib_mysql_num_fields;
+	input->get_field_name = rlib_mysql_get_field_name;
+
 	return input;
 }

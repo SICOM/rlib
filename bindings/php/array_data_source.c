@@ -263,6 +263,24 @@ static gint rlib_php_array_free_input_filter(input_filter *input) {
 static void rlib_php_array_rlib_free_result(input_filter *input, gpointer result_ptr) {
 }
 
+static gint rlib_php_array_num_fields(input_filter *input, gpointer result_ptr) {
+	struct rlib_php_array_results *result = result_ptr;
+
+	if (result == NULL)
+		return 0;
+
+	return result->cols;
+}
+
+static gchar *rlib_php_array_get_field_name(input_filter *input, gpointer result_ptr, gpointer field_ptr) {
+	struct rlib_php_array_results *result = result_ptr;
+	int field = GPOINTER_TO_INT(field_ptr) - 1;
+
+	if (result == NULL)
+		return NULL;
+
+	return result->data[field];
+}
 
 static gpointer rlib_php_array_new_input_filter(rlib *r) {
 	struct input_filter *input;
@@ -286,6 +304,10 @@ static gpointer rlib_php_array_new_input_filter(rlib *r) {
 
 	input->free = rlib_php_array_free_input_filter;
 	input->free_result = rlib_php_array_rlib_free_result;
+
+	input->num_fields = rlib_php_array_num_fields;
+	input->get_field_name = rlib_php_array_get_field_name;
+
 	return input;
 }
 

@@ -39,11 +39,6 @@
 
 #define INPUT_PRIVATE(input) (((struct _private *)input->private))
 
-struct odbc_fields {
-	gint col;
-	gchar name[512];
-};
-
 struct odbc_field_values {
 	gint len;
 	gchar *value;
@@ -58,7 +53,7 @@ struct rlib_odbc_results {
 	gboolean forward_only;
 	GList *data;
 	GList *navigator;
-	struct odbc_fields *fields;
+	gchar **fields;
 	struct odbc_field_values *values;
 };
 
@@ -304,22 +299,24 @@ static gint rlib_odbc_last(input_filter *input, gpointer result_ptr) {
 
 static gchar * rlib_odbc_get_field_value_as_string(input_filter *input, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_odbc_results *results = result_ptr;
-	struct odbc_fields *the_field = field_ptr;
-	gint field = the_field->col;
-	return results->values[field].value;
+	gint col = GPOINTER_TO_INT(field_ptr) - 1;
+
+	if (results == NULL || results->isdone || col >= results->tot_fields)
+		return "";
+
+	return results->values[col].value;
 }
 
 static gpointer rlib_odbc_resolve_field_pointer(input_filter *input, gpointer result_ptr, gchar *name) {
 	struct rlib_odbc_results *results = result_ptr;
-	gint i=0;
+	gint i;
 
-	if(result_ptr == NULL)
+	if (result_ptr == NULL)
 		return NULL;
 
 	for (i = 0; i < results->tot_fields; i++) {
-		if(!strcmp(results->fields[i].name, name)) {
-			return &results->fields[i];
-		}
+		if (!strcmp(results->fields[i], name))
+			return GINT_TO_POINTER(i + 1);
 	}
 	return NULL;
 }
@@ -352,7 +349,7 @@ gpointer odbc_new_result_from_query(input_filter *input, struct rlib_queries *qu
 
 	SQLNumResultCols (V_OD_hstmt, &ncols);
 
-	results->fields = g_malloc(sizeof(struct odbc_fields) * ncols);
+	results->fields = g_malloc(sizeof(gchar *) * ncols);
 	results->values = g_malloc(sizeof(struct odbc_field_values) * ncols);
 
 	results->total_size = 0;
@@ -360,8 +357,7 @@ gpointer odbc_new_result_from_query(input_filter *input, struct rlib_queries *qu
 		SQLCHAR name[ 256 ];
 		SQLSMALLINT name_length;
 		V_OD_erg = SQLDescribeCol( V_OD_hstmt, i+1,	name, sizeof( name ), &name_length, NULL, &col_size, NULL, NULL );
-		results->fields[i].col = i;
-		strcpy(results->fields[i].name, (char *)name);
+		results->fields[i] = g_strdup((char *)name);
 		results->values[i].len = col_size;
 		results->values[i].value = g_malloc(col_size+1);
 		results->total_size += col_size+1;
@@ -407,6 +403,7 @@ static void rlib_odbc_rlib_free_result(input_filter *input, gpointer result_ptr)
 	
 	SQLFreeHandle(SQL_HANDLE_STMT,results->V_OD_hstmt);
 	for(i=0;i<results->tot_fields;i++) {
+		g_free(results->fields[i]);
 		g_free(results->values[i].value);
 	}
 	g_free(results->fields);
@@ -425,6 +422,25 @@ static gint rlib_odbc_free_input_filter(input_filter *input) {
 
 static const gchar * rlib_odbc_get_error(input_filter *input) {
 	return "No error information";
+}
+
+static gint rlib_odbc_num_fields(input_filter *input, gpointer result_ptr) {
+	struct rlib_odbc_results *result = result_ptr;
+
+	if (result == NULL)
+		return 0;
+
+	return result->tot_fields;
+}
+
+static gchar *rlib_odbc_get_field_name(input_filter *input, gpointer result_ptr, gpointer field_ptr) {
+	struct rlib_odbc_results *results = result_ptr;
+	gint field = GPOINTER_TO_INT(field_ptr) - 1;
+
+	if (result_ptr == NULL)
+		return NULL;
+
+	return results->fields[field];
 }
 
 gpointer rlib_odbc_new_input_filter(rlib *r) {
@@ -447,5 +463,9 @@ gpointer rlib_odbc_new_input_filter(rlib *r) {
 
 	input->free = rlib_odbc_free_input_filter;
 	input->free_result = rlib_odbc_rlib_free_result;
+
+	input->num_fields = rlib_odbc_num_fields;
+	input->get_field_name = rlib_odbc_get_field_name;
+
 	return input;
 }

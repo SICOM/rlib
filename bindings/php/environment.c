@@ -25,6 +25,59 @@
 #include "ralloc.h"
 #include "rlib.h"
 
+static GString *rlib_php_dump_memory_variables(void) {
+	GString *dump;
+#if PHP_MAJOR_VERSION < 7
+	void *temp;
+	zval **data;
+#endif
+	zval *result;
+
+	dump = g_string_new("");
+
+	for (zend_hash_internal_pointer_reset(&EG(symbol_table));
+#if PHP_MAJOR_VERSION < 7
+			zend_hash_get_current_data(&EG(symbol_table), (void **)&temp) == SUCCESS;
+#else
+			(result = zend_hash_get_current_data(&EG(symbol_table))) != NULL;
+#endif
+			zend_hash_move_forward(&EG(symbol_table))) {
+#if PHP_MAJOR_VERSION >= 7
+		zend_string *str1;
+		int unref_count;
+#endif
+		char *str;
+
+#if PHP_MAJOR_VERSION < 7
+		data = temp;
+		result = *data;
+		zend_hash_get_current_key(&EG(symbol_table), &str, NULL, 0);
+#else
+		zend_hash_get_current_key(&EG(symbol_table), &str1, NULL);
+		str = str1->val;
+
+		/* Prevent an infinite loop with unref_count */
+		for (unref_count = 0; unref_count < 3 && Z_TYPE_P(result) != IS_ARRAY; unref_count++) {
+			if (EXPECTED(Z_TYPE_P(result) == IS_INDIRECT))
+				result = Z_INDIRECT_P(result);
+			if (EXPECTED(Z_TYPE_P(result) == IS_REFERENCE))
+				result = Z_REFVAL_P(result);
+		}
+#endif
+
+		if (Z_TYPE_P(result) == IS_STRING)
+			g_string_append_printf(dump, "%s=%s\n", str, Z_STRVAL_P(result));
+		else if (Z_TYPE_P(result) == IS_LONG)
+			g_string_append_printf(dump, "%s=%ld\n", str, Z_LVAL_P(result));
+		else if (Z_TYPE_P(result) == IS_DOUBLE)
+			g_string_append_printf(dump, "%s=%lf\n", str, Z_DVAL_P(result));
+		else if (Z_TYPE_P(result) == IS_NULL)
+			g_string_append_printf(dump, "%s=\n", str);
+	}
+
+	return dump;
+}
+
 static char * rlib_php_resolve_memory_variable(char *name) {
 #if PHP_MAJOR_VERSION < 7
 	void *temp;
@@ -105,5 +158,6 @@ struct environment_filter * rlib_php_new_environment() {
 	ef->rlib_resolve_memory_variable = rlib_php_resolve_memory_variable;
 	ef->rlib_write_output = rlib_php_write_output;
 	ef->free = rlib_php_free;
+	ef->rlib_dump_memory_variables = rlib_php_dump_memory_variables;
 	return ef;
 }
