@@ -103,17 +103,6 @@
 #define RLIB_FILE_BREAK 		950
 #define RLIB_FILE_BREAK_FIELD	975
 
-#define RLIB_PAPER_LETTER     1
-#define RLIB_PAPER_LEGAL      2
-#define RLIB_PAPER_A4         3
-#define RLIB_PAPER_B5         4
-#define RLIB_PAPER_C5         5
-#define RLIB_PAPER_DL         6
-#define RLIB_PAPER_EXECUTIVE  7
-#define RLIB_PAPER_COMM10     8
-#define RLIB_PAPER_MONARCH    9
-#define RLIB_PAPER_FILM35MM   10
-
 #define RLIB_PDF_DPI 72.0f
 
 #define RLIB_LAYOUT_FIXED 1

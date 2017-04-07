@@ -34,7 +34,7 @@
 #include <ctype.h>
 #include <libintl.h>
 
-#include "config.h"
+#include <rpdf.h>
 #include "rlib.h"
 #include "pcode.h"
 #include "rlib_input.h"
@@ -67,16 +67,16 @@ static const gchar *aligns[] = {
 };
 
 static struct rlib_paper paper[] = {
-	{RLIB_PAPER_LETTER,612, 792, "LETTER"},
-	{RLIB_PAPER_LEGAL, 612, 1008, "LEGAL"},
-	{RLIB_PAPER_A4, 595, 842, "A4"},
-	{RLIB_PAPER_B5, 499, 708, "B5"},
-	{RLIB_PAPER_C5, 459, 649, "C5"},
-	{RLIB_PAPER_DL, 312, 624, "DL"},
-	{RLIB_PAPER_EXECUTIVE, 522, 756, "EXECUTIVE"},
-	{RLIB_PAPER_COMM10, 297, 684, "COMM10"},
-	{RLIB_PAPER_MONARCH, 279, 540, "MONARCH"},
-	{RLIB_PAPER_FILM35MM, 528, 792, "FILM35MM"},
+	{RPDF_PAPER_LETTER,612, 792, "LETTER"},
+	{RPDF_PAPER_LEGAL, 612, 1008, "LEGAL"},
+	{RPDF_PAPER_A4, 595, 842, "A4"},
+	{RPDF_PAPER_B5, 499, 708, "B5"},
+	//{RPDF_PAPER_C5, 459, 649, "C5"},
+	//{RPDF_PAPER_DL, 312, 624, "DL"},
+	{RPDF_PAPER_EXECUTIVE, 522, 756, "EXECUTIVE"},
+	{RPDF_PAPER_COMM10, 297, 684, "COMM10"},
+	//{RPDF_PAPER_MONARCH, 279, 540, "MONARCH"},
+	//{RPDF_PAPER_FILM35MM, 528, 792, "FILM35MM"},
 	{0, 0, 0, ""},
 };
 
@@ -85,7 +85,9 @@ struct rlib_paper * rlib_layout_get_paper(rlib *r, gint paper_type) {
 	for(i=0;paper[i].type != 0;i++)
 		if(paper[i].type == paper_type)
 			return &paper[i];
-	return NULL;
+
+	/* Default paper size LETTER to prevent crashes. */
+	return &paper[0];
 }
 
 struct rlib_paper * rlib_layout_get_paper_by_name(rlib *r, gchar *paper_name) {

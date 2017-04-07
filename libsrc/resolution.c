@@ -24,6 +24,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <rpdf.h>
 #include "rlib.h"
 #include "pcode.h"
 #include "rlib_input.h"
@@ -511,7 +512,7 @@ void rlib_resolve_part_fields(rlib *r, struct rlib_part *part) {
 	part->left_margin_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_left_margin.xml, part->xml_left_margin.line, TRUE);
 	part->bottom_margin = RLIB_DEFAULT_BOTTOM_MARGIN;
 	part->bottom_margin_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_bottom_margin.xml, part->xml_bottom_margin.line, TRUE);
-	part->paper = rlib_layout_get_paper(r, RLIB_PAPER_LETTER);
+	part->paper = rlib_layout_get_paper(r, RPDF_PAPER_LETTER);
 	part->paper_type_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_paper_type.xml, part->xml_paper_type.line, TRUE);
 	part->pages_across = 1;
 	part->pages_across_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_pages_across.xml, part->xml_pages_across.line, TRUE);

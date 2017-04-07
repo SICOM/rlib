@@ -93,9 +93,16 @@ struct _graph {
 	gfloat last_left_x_label;
 };
 
+struct _pdf_delayed_data {
+	gpointer rpdf_anchor;
+	struct rlib_delayed_extra_data *delayed_data;
+};
+
 struct _private {
 	struct rlib_rgb current_color;
 	struct rpdf *pdf;
+	const gchar *font;
+	GList *delayed_list;
 	gchar text_on[MAX_PDF_PAGES];
 	gchar *buffer;
 	gint length;
@@ -105,6 +112,37 @@ struct _private {
 	gboolean is_italics;
 	struct _graph graph;
 };
+
+static const gchar *pdf_style_name(struct _private *priv) {
+	if (priv->is_bold) {
+		if (priv->is_italics)
+			return RPDF_FONT_STYLE_BOLDITALIC;
+		else
+			return RPDF_FONT_STYLE_BOLD;
+	} else {
+		if (priv->is_italics)
+			return RPDF_FONT_STYLE_ITALIC;
+		else
+			return RPDF_FONT_STYLE_REGULAR;
+	}
+}
+
+static const gchar *pdf_font_name(struct _private *priv) {
+	int which_font = 0;
+
+	if (priv->font)
+		return priv->font;
+
+	if (priv->is_bold)
+		which_font += BOLD;
+	if (priv->is_italics)
+		which_font += ITALICS;
+	return font_names[which_font];
+}
+
+static inline const gchar *pdf_encoding_name(rlib *r) {
+	return (r->output_encoder_name ? r->output_encoder_name : "WinAnsiEncoding");
+}
 
 static void pdf_graph_get_x_label_width(rlib *r, gfloat *width) {
 	struct _graph *graph = &OUTPUT_PRIVATE(r)->graph;
@@ -151,25 +189,39 @@ static void pdf_print_text(rlib *r, gfloat left_origin, gfloat bottom_origin, co
 	rpdf_text(pdf, left_origin, bottom_origin, orientation, text);
 }
 
-static void pdf_rpdf_callback(gchar *data, gint len, void *user_data) {
-	struct rlib_delayed_extra_data *delayed_data = user_data;
+static void pdf_finalize_delayed_data(struct rpdf *pdf, struct _pdf_delayed_data *dd) { //TODO. WAS: ...(gchar *data, gint len, gpointer user_data) {
+	struct rlib_delayed_extra_data *delayed_data = dd->delayed_data;
 	struct rlib_line_extra_data *extra_data = &delayed_data->extra_data;
 	rlib *r = delayed_data->r;
 	gchar *buf = NULL, *buf2 = NULL;
-	
-	rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL);	
+
+	rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL);
 	rlib_format_string(r, &buf, extra_data->report_field, &extra_data->rval_code);
 	rlib_align_text(r, &buf2, buf, extra_data->report_field->align, extra_data->report_field->width);
-	memcpy(data, buf2, len);
+
+	if (extra_data->width < extra_data->report_field->width)
+		buf2[extra_data->width] = 0;
+
+	rpdf_finalize_text_callback(pdf, dd->rpdf_anchor, buf2);
+
 	g_free(buf);
 	g_free(buf2);
-	data[len-1] = 0;
-	g_free(user_data);
+
+	g_free(delayed_data);
+	g_free(dd);
 }
 
 static void pdf_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *delayed_data, int backwards, int rval_type) {
 	struct rpdf *pdf = OUTPUT_PRIVATE(r)->pdf;
-	rpdf_text_callback(pdf, delayed_data->left_origin, delayed_data->bottom_orgin, 0, delayed_data->extra_data.width, pdf_rpdf_callback, delayed_data);
+	struct _pdf_delayed_data *dd = g_new(struct _pdf_delayed_data, 1);
+
+	if (delayed_data->extra_data.width != delayed_data->extra_data.report_field->width)
+		r_warning(r, "pdf_print_text_delayed: extra_data.width != extra_data.report_field->width\n");
+
+	dd->rpdf_anchor = rpdf_text_callback(pdf, delayed_data->left_origin, delayed_data->bottom_orgin, 0, delayed_data->extra_data.width);
+	dd->delayed_data = delayed_data;
+
+	OUTPUT_PRIVATE(r)->delayed_list = g_list_prepend(OUTPUT_PRIVATE(r)->delayed_list, dd);
 }
 
 static void pdf_print_text_API(rlib *r, gfloat left_origin, gfloat bottom_origin, const gchar *text, gint backwards, struct rlib_line_extra_data *extra_data) {
@@ -233,26 +285,7 @@ gfloat nheight) {
 }
 
 static void pdf_set_font_point_actual(rlib *r, gint point) {
-	const char *fontname;
-	int which_font = 0;
-	gchar *pdfdir1, *pdfdir2, *pdffontname;
-	
-	pdfdir1 = g_hash_table_lookup(r->output_parameters, "pdf_fontdir1");
-	pdfdir2 = g_hash_table_lookup(r->output_parameters, "pdf_fontdir2");
-	pdffontname = g_hash_table_lookup(r->output_parameters, "pdf_fontname");
-
-	if(pdfdir2 == NULL)
-		pdfdir2 = pdfdir1;
-	
-	if(OUTPUT_PRIVATE(r)->is_bold)
-		which_font += BOLD;
-
-	if(OUTPUT_PRIVATE(r)->is_italics)
-		which_font += ITALICS;
-
-	fontname = pdffontname ? pdffontname : font_names[which_font];
-	
-	rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, fontname, "WinAnsiEncoding", point);
+	rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, pdf_font_name(OUTPUT_PRIVATE(r)), pdf_style_name(OUTPUT_PRIVATE(r)), pdf_encoding_name(r), point);
 }
 
 static void pdf_set_font_point(rlib *r, gint point) {
@@ -314,19 +347,28 @@ static void pdf_start_rlib_report(rlib *r) {
 	pdf = rpdf_new();
 	rpdf_set_title(pdf, "RLIB Report");
 	compress = g_hash_table_lookup(r->output_parameters, "compress");
-	if(compress != NULL) {
+	if(compress != NULL && (strcasecmp(compress, "yes") == 0 || strcasecmp(compress, "true") == 0 || strcasecmp(compress, "on") == 0  || strcmp(compress, "1"))) {
 		rpdf_set_compression(pdf, TRUE);
 	}
 
-	
 	OUTPUT_PRIVATE(r)->pdf = pdf;
+	OUTPUT_PRIVATE(r)->font = g_hash_table_lookup(r->output_parameters, "pdf_fontname");
 }
 
 static void pdf_end_rlib_report(rlib *r) {}
 
 static void pdf_finalize_private(rlib *r) {
-	int length;
-	rpdf_finalize(OUTPUT_PRIVATE(r)->pdf);
+	struct rpdf *pdf = OUTPUT_PRIVATE(r)->pdf;
+	GList *list = g_list_last(OUTPUT_PRIVATE(r)->delayed_list);
+	guint length;
+
+	while (list) {
+		pdf_finalize_delayed_data(pdf, (struct _pdf_delayed_data *)list->data);
+		list = list->prev;
+	}
+
+	g_list_free(OUTPUT_PRIVATE(r)->delayed_list);
+
 	OUTPUT_PRIVATE(r)->buffer = rpdf_get_buffer(OUTPUT_PRIVATE(r)->pdf, &length);
 	OUTPUT_PRIVATE(r)->length = length;
 }
@@ -487,10 +529,10 @@ static void pdf_graph_set_title(rlib *r, gchar *title) {
 	gfloat title_width = pdf_get_string_width(r, title);
 	graph->title_height = RLIB_GET_LINE(r->current_font_point);
 	if(graph->bold_titles)
-		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[1], "WinAnsiEncoding", r->current_font_point);
+		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, pdf_font_name(OUTPUT_PRIVATE(r)), RPDF_FONT_STYLE_BOLD, pdf_encoding_name(r), r->current_font_point);
 	pdf_print_text(r, graph->left + ((graph->width-title_width)/2.0), graph->top-graph->title_height, title, 0);
 	if(graph->bold_titles)
-		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[0], "WinAnsiEncoding", r->current_font_point);
+		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, pdf_font_name(OUTPUT_PRIVATE(r)), RPDF_FONT_STYLE_REGULAR, pdf_encoding_name(r), r->current_font_point);
 }
 
 static void pdf_graph_set_name(rlib *r, gchar *name) {
@@ -542,7 +584,7 @@ static void pdf_graph_x_axis_title(rlib *r, gchar *title) {
 	
 
 	if(graph->bold_titles)
-		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[1], "WinAnsiEncoding", r->current_font_point);
+		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, pdf_font_name(OUTPUT_PRIVATE(r)), RPDF_FONT_STYLE_BOLD, pdf_encoding_name(r), r->current_font_point);
 
 	if(graph->legend_orientation == RLIB_GRAPH_LEGEND_ORIENTATION_BOTTOM)
 		graph->height_offset += graph->legend_height;	
@@ -556,8 +598,7 @@ static void pdf_graph_x_axis_title(rlib *r, gchar *title) {
 	}
 
 	if(graph->bold_titles)
-		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[0], "WinAnsiEncoding", r->current_font_point);
-
+		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, pdf_font_name(OUTPUT_PRIVATE(r)), RPDF_FONT_STYLE_REGULAR, pdf_encoding_name(r), r->current_font_point);
 }
 
 static void pdf_graph_y_axis_title(rlib *r, gchar side, gchar *title) {
@@ -565,7 +606,7 @@ static void pdf_graph_y_axis_title(rlib *r, gchar side, gchar *title) {
 	gfloat title_width;
 	
 	if(graph->bold_titles)
-		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[1], "WinAnsiEncoding", r->current_font_point);
+		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, pdf_font_name(OUTPUT_PRIVATE(r)), RPDF_FONT_STYLE_BOLD, pdf_encoding_name(r), r->current_font_point);
 
 	title_width = pdf_get_string_width(r, title);
 	if(title[0] == 0) {
@@ -581,8 +622,7 @@ static void pdf_graph_y_axis_title(rlib *r, gchar side, gchar *title) {
 	}
 
 	if(graph->bold_titles)
-		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, font_names[0], "WinAnsiEncoding", r->current_font_point);
-
+		rpdf_set_font(OUTPUT_PRIVATE(r)->pdf, pdf_font_name(OUTPUT_PRIVATE(r)), RPDF_FONT_STYLE_BOLD, pdf_encoding_name(r), r->current_font_point);
 }
 
 static void pdf_draw_regions(gpointer data, gpointer user_data) {
@@ -1017,7 +1057,10 @@ static void pdf_graph_plot_pie(rlib *r, gfloat start, gfloat end, gboolean offse
 	OUTPUT(r)->set_bg_color(r, color->r, color->g, color->b);
 	rpdf_arc(OUTPUT_PRIVATE(r)->pdf, x, y, radius, start_angle, end_angle);
 	rpdf_fill(OUTPUT_PRIVATE(r)->pdf);
+#if 0
+	/* With libharu, rpdf_fill() also contains an implicit Stroke PDF command */
 	rpdf_stroke(OUTPUT_PRIVATE(r)->pdf); 
+#endif
 	OUTPUT(r)->set_bg_color(r, 0, 0, 0);
 }
 

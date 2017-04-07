@@ -57,19 +57,19 @@ AC_CHECK_HEADERS(langinfo.h sys/time.h)
 
 AC_CHECK_FUNCS([localtime_r strfmon])
 
+gl_VISIBILITY
+AS_IF([test x$gl_cv_cc_visibility = xyes],
+	[AC_DEFINE(DLL_EXPORT_SYM,[__attribute__((visibility("default")))],[Explicitly export global symbols])],
+	[AC_DEFINE(DLL_EXPORT_SYM,[],[Explicitly export global symbols])]
+)
+
 dnl Checks for libraries.
 AC_CHECK_LIB(c, exit)
 AC_CHECK_LIB(m, exp)
-AC_CHECK_HEADER([zlib.h],
-	[AC_CHECK_LIB(z, zlibVersion,
-		enable_compressed_pdf=yes,
-		enable_compressed_pdf=no)],
-	[enable_compressed_pdf=no])
-if test x$enable_compressed_pdf = xyes; then
-	AC_DEFINE([RPDF_COMPRESS_STREAM], [], [RPDF can compress streams])
-	ZLIB_LIBS="-lz"
-fi
-AC_SUBST(ZLIB_LIBS)
+
+AC_CHECK_HEADERS(hpdf.h,,[AC_MSG_ERROR([libharu headers not found!])])
+AC_CHECK_LIB(hpdf, HPDF_New,[HPDF_LIBS=-lhpdf],[AC_MSG_ERROR([libharu library not found!])])
+AC_SUBST(HPDF_LIBS)
 
 PKG_CHECK_MODULES(LIBXML, libxml-2.0 >= 2.6.0)
 AC_SUBST(LIBXML_LIBS)
@@ -82,6 +82,10 @@ AC_SUBST(LIBGLIB_CFLAGS)
 PKG_CHECK_MODULES(LIBGMODULE, gmodule-2.0 >= 0.0.1)
 AC_SUBST(LIBGMODULE_LIBS)
 AC_SUBST(LIBGMODULE_CFLAGS)
+
+PKG_CHECK_MODULES(FONTCONFIG, fontconfig)
+AC_SUBST(FONTCONFIG_LIBS)
+AC_SUBST(FONTCONFIG_CFLAGS)
 
 case "$target" in
   *-*-cygwin*|*-*-mingw*)
@@ -560,7 +564,7 @@ AC_SUBST(RLIB_CFLAGS)
 AC_SUBST(RLIB_LIBS)
 
 RPDF_CFLAGS="-D_GNU_SOURCE -Wall $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $NO_CYGWIN"
-RPDF_LIBS="$LIBGLIB_LIBS $LIBGMODULE_LIBS $ZLIB_LIBS"
+RPDF_LIBS="$LIBGLIB_LIBS $LIBGMODULE_LIBS $HPDF_LIBS $FONTCONFIG_LIBS"
 AC_SUBST(RPDF_CFLAGS)
 AC_SUBST(RPDF_LIBS)
 
@@ -641,7 +645,7 @@ rlib-$VERSION:
     ODBC:                    ${enable_odbc}
 
    COMPRESSION:
-    PDF:                     ${enable_compressed_pdf}
+    PDF:                     Always
 
    GRAPHING:
     PDF:                     Always
