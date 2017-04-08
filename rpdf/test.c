@@ -69,6 +69,9 @@ int main(void) {
 	char *buf;
 
 	struct rpdf *pdf = rpdf_new();
+
+	//rpdf_set_compression(pdf, TRUE);
+
 	rpdf_new_page(pdf, RPDF_PAPER_LEGAL, RPDF_LANDSCAPE);
 /*	rpdf_set_font(pdf, "Times-Italic", RPDF_FONT_STYLE_REGULAR, "MacRomanEncoding", 30.0); */
 /*	rpdf_text(pdf, 1.0, 10.0, 0.0, "FARK - BOB KRATZ LOVES BACON ))"); */
