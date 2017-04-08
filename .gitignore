@@ -131,6 +131,7 @@ rpdf/librpdf.la
 rpdf/rpdf.lo
 rpdf/test
 rpdf/test.o
+rpdf/*.pdf
 src/.deps/
 src/Makefile
 src/Makefile.in
