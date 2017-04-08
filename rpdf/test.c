@@ -150,6 +150,7 @@ int main(void) {
 	 */
 	encode_text_into_pdf(pdf, "árvíztűrő tükörfúrógép ÁRVÍZTŰRŐ TÜKÖRFÚRÓGÉP", "ISO-8859-2");
 	encode_text_into_pdf(pdf, "good day Добрый День", "ISO-8859-5");
+	encode_text_into_pdf(pdf, "good day İyi akşamlar", "ISO-8859-9");
 
 /*	rpdf_image(pdf, 1, 1, 100, 100, RPDF_IMAGE_JPEG, "logo.jpg"); */
 	rpdf_finalize_text_callback(pdf, delayed2, "IT WORKED THE SECOND TIME!");
