@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2016 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *

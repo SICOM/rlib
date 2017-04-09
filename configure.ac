@@ -1,6 +1,6 @@
 dnl Configure template for RLIB
 
-dnl Copyright (c) 2003-2006 SICOM Systems Inc (bdoan@sicompos.com)
+dnl Copyright (c) 2003-2017 SICOM Systems Inc (bdoan@sicompos.com)
 dnl RLIB is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
 dnl the Free Software Foundation; either version 2, or (at your option)
@@ -30,7 +30,7 @@ AM_INIT_AUTOMAKE()
 AC_CONFIG_HEADERS(config.h)
 AM_MAINTAINER_MODE
 
-RLIB_VERSION=2.0.20
+RLIB_VERSION=2.0.21
 AC_SUBST(RLIB_VERSION)
 
 RLIB_LT_CURRENT=4

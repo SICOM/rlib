@@ -22,6 +22,8 @@
  * Built in CSV Input Data Source
  */
 
+#include <config.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -277,6 +279,20 @@ static gint rlib_csv_num_fields(input_filter *input, gpointer result_ptr) {
 	return results->cols;
 }
 
+static gchar *rlib_csv_get_field_name(input_filter *input, gpointer result_ptr, gpointer field_ptr) {
+	struct rlib_csv_results *results = result_ptr;
+	gint i, field = GPOINTER_TO_INT(field_ptr);
+	GSList *data;
+
+	if (results == NULL || results->header == NULL)
+		return NULL;
+
+	for (i = 1, data = results->header; data != NULL; data = data->next, i++)
+		if (i == field)
+			return data->data;
+
+	return NULL;
+}
 
 gpointer rlib_csv_new_input_filter(rlib *r) {
 	struct input_filter *input;
@@ -298,6 +314,6 @@ gpointer rlib_csv_new_input_filter(rlib *r) {
 	input->free = rlib_csv_free_input_filter;
 	input->free_result = rlib_csv_rlib_free_result;
 	input->num_fields = rlib_csv_num_fields;
+	input->get_field_name = rlib_csv_get_field_name;
 	return input;
 }
- 

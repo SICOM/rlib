@@ -67,7 +67,6 @@ struct input_filter {
 	gpointer (*resolve_field_pointer)(input_filter *, gpointer, gchar *);
 	void (*free_result)(input_filter *, gpointer);
 	void (*free_query)(input_filter *, struct rlib_queries *);
-	gint (*set_encoding)(gpointer);
 	gint (*num_fields)(input_filter *, gpointer);
 	gchar *(*get_field_name)(input_filter *, gpointer, gpointer);
 };

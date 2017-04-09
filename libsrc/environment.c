@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -31,7 +31,7 @@ static GString *rlib_c_dump_memory_variables() {
 	dump = g_string_new("");
 
 	for (pos = 0; environ[pos]; pos++)
-	g_string_append_printf(dump, "%s\n", environ[pos]);
+		g_string_append_printf(dump, "%s\n", environ[pos]);
 
 	return dump;
 }
