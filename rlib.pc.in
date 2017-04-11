@@ -7,6 +7,6 @@ Name: rlib
 Description: Report Generation Library
 Version: @VERSION@
 Requires:libxml-2.0
-Libs: -L${libdir} -lr @RLIB_LIBS@
+Libs: -L${libdir} -lr
 Cflags: -I${includedir}/rlib
 
