@@ -733,7 +733,7 @@ gint rlib_execute(rlib *r) {
 			if (tc_file) {
 				GString *vars;
 
-				fprintf(tc_file, "COMMAND=./testcase-%d\n", getpid());
+				fprintf(tc_file, "COMMAND=./testcase-%d-%d\n", getpid(), tc_num);
 				fprintf(tc_file, "FORMATS=\"pdf xml txt csv html\"\n");
 				fprintf(tc_file, "EXPECTED_pdf=\n");
 				fprintf(tc_file, "EXPECTED_xml=\n");
