@@ -693,21 +693,23 @@ gint rlib_execute(rlib *r) {
 
 							fprintf(tc_file, "\"");
 
-							for (pos = 0; value[pos]; pos++) {
-								switch (value[pos]) {
-								case '\n':
-									fprintf(tc_file, "\\n");
-									break;
-								case '\t':
-									fprintf(tc_file, "\\t");
-									break;
-								case '"':
-								case '\\':
-									fprintf(tc_file, "\\");
-									/* fall through */
-								default:
-									fprintf(tc_file, "%c", value[pos]);
-									break;
+							if (value) {
+								for (pos = 0; value[pos]; pos++) {
+									switch (value[pos]) {
+									case '\n':
+										fprintf(tc_file, "\\n");
+										break;
+									case '\t':
+										fprintf(tc_file, "\\t");
+										break;
+									case '"':
+									case '\\':
+										fprintf(tc_file, "\\");
+										/* fall through */
+									default:
+										fprintf(tc_file, "%c", value[pos]);
+										break;
+									}
 								}
 							}
 
