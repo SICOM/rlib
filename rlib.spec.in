@@ -94,7 +94,7 @@ To find out about all it can do visit: http://rlib.sicompos.com
 %prep
 %setup
 
-%configure --enable-utf8 --disable-crash --with-pythonver=%{pythonver}
+%configure --enable-utf8 --with-pythonver=%{pythonver}
 
 %build
 make

@@ -578,18 +578,6 @@ if test x$enable_memdebug = xyes; then
 	AC_DEFINE(DEBUG_RLIB_MEMORY,1,[Debug RLIB memory usage])
 fi
 
-AC_ARG_ENABLE(crash,              [  --disable-crash       disable crash detection],enable_memdebug="$enableval",enable_crash=yes)
-if test x$enable_crash = xyes; then
-    AC_CHECK_HEADERS(sys/resource.h,
-	[AC_DEFINE(HAVE_SYS_RESOURCE_H, 1, [We have standard sys/resource.h])
-	 have_sys_res_h=yes], have_sys_res_h=no)
-    if test x$have_sys_res_h = xyes; then
-	AC_DEFINE(ENABLE_CRASH,1,[ENABLE CRASH DETECTION])
-    else
-	AC_MSG_WARN(Crash detection disabled because of missing sys/resource.h.)
-    fi
-fi
-
 AC_ARG_ENABLE(utf8,              [  --enable-utf8       enable utf8],enable_utf8=no,enable_utf8=yes)
 if test x$enable_utf8 = xyes; then
 	AC_DEFINE(DISABLE_UTF8,1,[DISABLE UTF8])
@@ -634,7 +622,6 @@ rlib-$VERSION:
    compiler:                 ${CC}
    Memory debugging:         ${enable_memdebug}
    Warning Fun:              ${enable_warningfun}
-   Crash detection:          ${enable_crash}
    UTF8 disabled:            ${enable_utf8}
    WIN32 build:              ${enable_win32}
    Documentation:            ${enable_doc}

@@ -36,7 +36,6 @@ struct rlib_rgb {
 gchar *strlwrexceptquoted (gchar *s);
 gchar *rmwhitespacesexceptquoted(gchar *s);
 /* coming soon: void r_fatal(const gchar *fmt, ...); */
-gint rutil_enableSignalHandler(gint trueorfalse);
 gint64 tentothe(gint n);
 gchar hextochar(gchar c);
 const gchar *colornames(const gchar *str);
@@ -46,7 +45,6 @@ void bumpday(gint *year, gint *month, gint *day);
 void bumpdaybackwords(gint *year, gint *month, gint *day);
 gchar *strproper (gchar *s);
 gint daysinmonth(gint year, gint month);
-void init_signals(void);
 void make_more_space_if_necessary(gchar **str, gint *size, gint *total_size, gint len);
 gchar *str2hex(const gchar *str);
 gint64 rlib_safe_atoll(char *str);

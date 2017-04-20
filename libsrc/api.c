@@ -60,8 +60,6 @@ rlib * rlib_init_with_environment(struct environment_filter *environment) {
 	rlib *r;
 	char *env;
 	
-	init_signals();
-
 	r = g_new0(rlib, 1);
 
 	if(environment == NULL)
