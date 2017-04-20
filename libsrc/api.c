@@ -923,6 +923,10 @@ gboolean rlib_signal_connect(rlib *r, gint signal_number, gboolean (*signal_func
 		g_string_append_printf(r->testcase_code2,
 								"#warning \"Using rlib_signal_connect() needs re-implementing "
 								"the original signal handling function in the test case\"\n");
+		/*
+		 * TODO: there should be a number->symbol name mapping for
+		 * signal_number and the test case should use the symbol name.
+		 */
 		g_string_append_printf(r->testcase_code2, "\t/* rlib_signal_connect(r, %d, signal_function(...), user_data); */\n", signal_number);
 	}
 
