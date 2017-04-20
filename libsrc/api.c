@@ -919,10 +919,13 @@ gint rlib_get_output_length(rlib *r) {
 }
 
 gboolean rlib_signal_connect(rlib *r, gint signal_number, gboolean (*signal_function)(rlib *, gpointer), gpointer data) {	
-	/*
-	 * TODO: emit this into the test case.
-	 * It would need manual adjustments to the test case afterward.
-	 */
+	if (r->output_testcase) {
+		g_string_append_printf(r->testcase_code2,
+								"#warning \"Using rlib_signal_connect() needs re-implementing "
+								"the original signal handling function in the test case\"\n");
+		g_string_append_printf(r->testcase_code2, "\t/* rlib_signal_connect(r, %d, signal_function(...), user_data); */\n", signal_number);
+	}
+
 	r->signal_functions[signal_number].signal_function = signal_function;
 	r->signal_functions[signal_number].data = data;
 	return TRUE;
@@ -931,10 +934,13 @@ gboolean rlib_signal_connect(rlib *r, gint signal_number, gboolean (*signal_func
 gboolean rlib_add_function(rlib *r, gchar *function_name, gboolean (*function)(rlib *, struct rlib_pcode *code, struct rlib_value_stack *, struct rlib_value *this_field_value, gpointer user_data), gpointer user_data) {	
 	struct rlib_pcode_operator *rpo = g_new0(struct rlib_pcode_operator, 1);
 
-	/*
-	 * TODO: emit this into the test case.
-	 * It would need manual adjustments to the test case afterward.
-	 */
+	if (r->output_testcase) {
+		g_string_append_printf(r->testcase_code2,
+								"#warning \"Using rlib_add_function() needs re-implementing "
+								"the original function in the test case\"\n");
+		g_string_append_printf(r->testcase_code2, "\t/* rlib_add_function(r, \"%s\", function(...), user_data); */\n", function_name);
+	}
+
 	rpo->tag = g_strconcat(function_name, "(", NULL);	
 	rpo->taglen = strlen(rpo->tag);
 	rpo->precedence = 0;
