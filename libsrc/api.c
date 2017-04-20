@@ -200,6 +200,12 @@ gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, c
 	struct rlib_queries *query;
 	gint i;
 
+	/*
+	 * The automatic test case generator converts everything
+	 * to a C array datasource, calling this function is not
+	 * emitted into the test case as is.
+	 */
+
 	query = rlib_alloc_query_space(r);
 	if (!query)
 		return -1;
@@ -218,12 +224,23 @@ gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, c
 }
 
 gint rlib_add_query_as(rlib *r, const gchar *input_source, const gchar *sql, const gchar *name) {
+	/*
+	 * The automatic test case generator converts everything
+	 * to a C array datasource, calling this function is not
+	 * emitted into the test case as is.
+	 */
 	return rlib_add_query_pointer_as(r, input_source, g_strdup(sql), name);
 }
 
 gint rlib_add_report(rlib *r, const gchar *name) {
 	gchar *tmp;
 	int i, found_dir_sep = 0, last_dir_sep;
+
+	/*
+	 * The automatic test case generator converts every
+	 * report XML to an in-memory string, calling this
+	 * function is not emitted into the test case as is.
+	 */
 
 	if(r->parts_count > (RLIB_MAXIMUM_REPORTS-1)) {
 		return - 1;
@@ -262,6 +279,12 @@ gint rlib_add_report_from_buffer(rlib *r, gchar *buffer) {
 #ifdef _WIN32
 	char *tmp;
 #endif
+
+	/*
+	 * The automatic test case generator converts every
+	 * report XML to an in-memory string, calling this
+	 * function is not emitted into the test case as is.
+	 */
 
 	if(r->parts_count > (RLIB_MAXIMUM_REPORTS-1)) {
 		return - 1;
@@ -794,6 +817,9 @@ gchar * rlib_get_content_type_as_text(rlib *r) {
 }
 
 gint rlib_spool(rlib *r) {
+	/*
+	 * The automatic test case generator emits this call automatically.
+	 */
 	if(r->did_execute == TRUE) {
 		OUTPUT(r)->spool_private(r);
 		return 0;
@@ -802,6 +828,9 @@ gint rlib_spool(rlib *r) {
 }
 
 gint rlib_set_output_format(rlib *r, int format) {
+	/*
+	 * The test case adds code for setting the format, don't do it specifically here.
+	 */
 	r->format = format;
 	return 0;
 }
@@ -810,7 +839,12 @@ gint rlib_add_resultset_follower_n_to_1(rlib *r, gchar *leader, gchar *leader_fi
 	gint ptr_leader = -1, ptr_follower = -1;
 	gint x;
 
-	if (r->output_testcase)
+	/*
+	 * rlib_add_resultset_follower() also adds code to
+	 * the generated test case, so protect this function
+	 * to emit a second call with "<nil>" strings.
+	 */
+	if (r->output_testcase && leader_field && follower_field)
 		g_string_append_printf(r->testcase_code2, "\trlib_add_resultset_follower_n_to_1(r, \"%s\", \"%s\", \"%s\", \"%s\");\n", leader, leader_field, follower, follower_field);
 
 	if(r->resultset_followers_count > (RLIB_MAXIMUM_FOLLOWERS-1)) {
@@ -852,6 +886,9 @@ gint rlib_add_resultset_follower(rlib *r, gchar *leader, gchar *follower) {
 }
 
 gint rlib_set_output_format_from_text(rlib *r, gchar *name) {
+	/*
+	 * The generated test case adds code for setting the format.
+	 */
 	r->format = rlib_format_get_number(name);
 
 	if(r->format == -1)
@@ -860,6 +897,10 @@ gint rlib_set_output_format_from_text(rlib *r, gchar *name) {
 }
 
 gchar *rlib_get_output(rlib *r) {
+	/*
+	 * The generated test case uses rlib_spool(),
+	 * this function is not emitted into the test case.
+	 */
 	if(r->did_execute) 
 		return OUTPUT(r)->get_output(r);
 	else
@@ -867,6 +908,10 @@ gchar *rlib_get_output(rlib *r) {
 }
 
 gint rlib_get_output_length(rlib *r) {
+	/*
+	 * The generated test case uses rlib_spool(),
+	 * this function is not emitted into the test case.
+	 */
 	if(r->did_execute) 
 		return OUTPUT(r)->get_output_length(r);
 	else
@@ -874,6 +919,10 @@ gint rlib_get_output_length(rlib *r) {
 }
 
 gboolean rlib_signal_connect(rlib *r, gint signal_number, gboolean (*signal_function)(rlib *, gpointer), gpointer data) {	
+	/*
+	 * TODO: emit this into the test case.
+	 * It would need manual adjustments to the test case afterward.
+	 */
 	r->signal_functions[signal_number].signal_function = signal_function;
 	r->signal_functions[signal_number].data = data;
 	return TRUE;
@@ -881,6 +930,11 @@ gboolean rlib_signal_connect(rlib *r, gint signal_number, gboolean (*signal_func
 
 gboolean rlib_add_function(rlib *r, gchar *function_name, gboolean (*function)(rlib *, struct rlib_pcode *code, struct rlib_value_stack *, struct rlib_value *this_field_value, gpointer user_data), gpointer user_data) {	
 	struct rlib_pcode_operator *rpo = g_new0(struct rlib_pcode_operator, 1);
+
+	/*
+	 * TODO: emit this into the test case.
+	 * It would need manual adjustments to the test case afterward.
+	 */
 	rpo->tag = g_strconcat(function_name, "(", NULL);	
 	rpo->taglen = strlen(rpo->tag);
 	rpo->precedence = 0;
@@ -895,6 +949,11 @@ gboolean rlib_add_function(rlib *r, gchar *function_name, gboolean (*function)(r
 
 gboolean rlib_signal_connect_string(rlib *r, gchar *signal_name, gboolean (*signal_function)(rlib *, gpointer), gpointer data) {
 	gint signal = -1;
+
+	/*
+	 * TODO: emit this into the test case.
+	 * It would need manual adjustments to the test case afterward.
+	 */
 	if(!strcasecmp(signal_name, "row_change"))
 		signal = RLIB_SIGNAL_ROW_CHANGE;
 	else if(!strcasecmp(signal_name, "report_done"))
