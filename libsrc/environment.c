@@ -18,10 +18,12 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#include <config.h>
+
+#include <string.h>
 #include <unistd.h>
 #include <glib.h>
 
-#include "config.h"
 #include "rlib.h"
 
 static GString *rlib_c_dump_memory_variables() {
@@ -30,8 +32,17 @@ static GString *rlib_c_dump_memory_variables() {
 
 	dump = g_string_new("");
 
-	for (pos = 0; environ[pos]; pos++)
-		g_string_append_printf(dump, "%s\n", environ[pos]);
+	for (pos = 0; environ[pos]; pos++) {
+		gchar *env = g_strdup(environ[pos]);
+		char *eq = strchr(env, '=');
+
+		if (eq) {
+			*eq = 0x00;
+			g_string_append_printf(dump, "%s=\"%s\"\n", env, eq + 1);
+		}
+
+		g_free(env);
+	}
 
 	return dump;
 }

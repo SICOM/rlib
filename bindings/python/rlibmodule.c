@@ -202,7 +202,7 @@ static GString *rlib_python_dump_memory_variables(void) {
 		if (PyObject_AsCharBuffer(key, &k, &k_len) != 0 || PyObject_AsCharBuffer(value, &v, &v_len) != 0)
 			continue;
 
-		g_string_append_printf(dump, "%s=%s\n", k, v);
+		g_string_append_printf(dump, "%s=\"%s\"\n", k, v);
 	}
 
 	return dump;
