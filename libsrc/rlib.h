@@ -1188,6 +1188,7 @@ void rlib_layout_report_footer(rlib *r, struct rlib_part *part, struct rlib_repo
 gfloat rlib_layout_get_next_line(rlib *r, struct rlib_part *part, gfloat position, struct rlib_report_lines *rl);
 gfloat rlib_layout_get_next_line_by_font_point(rlib *r, struct rlib_part *part, gfloat position, gfloat point);
 gint rlib_layout_end_page(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean normal);
+gchar *rlib_encode_text(rlib *r, const gchar *text, gchar **result);
 
 /***** PROTOTYPES: graphing.c **************************************************/
 gfloat rlib_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left_margin_offset, gfloat *top_margin_offset);

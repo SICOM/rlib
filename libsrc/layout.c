@@ -116,13 +116,15 @@ gfloat rlib_layout_estimate_string_width_from_extra_data(rlib *r, struct rlib_li
 	return rtn_width;
 }
 
-static gchar *rlib_encode_text(rlib *r, gchar *text, gchar **result) {
+gchar *rlib_encode_text(rlib *r, const gchar *text, gchar **result) {
 	if (text == NULL) {
 		*result = g_strdup("");
 	} else {
-		gsize len = strlen(text);
+		gchar *text1 = (gchar *)text;
+
+		gsize len = strlen(text1);
 		gsize result_len;
-		rlib_charencoder_convert(r->output_encoder, &text, &len, result, &result_len);
+		rlib_charencoder_convert(r->output_encoder, &text1, &len, result, &result_len);
 		if (*result == NULL) {
 			r_error(r, "encode returned NULL result input was[%s], len=%d", text, r_strlen(text));
 			*result = g_strdup("!ERR_ENC2");
@@ -186,7 +188,6 @@ static gchar *rlib_layout_get_true_text_from_extra_data(rlib *r, struct rlib_lin
 	gboolean *need_free) {
 	gchar *text = NULL;
 	gchar *align_text = NULL;
-	gchar *encoded_text = NULL;
 
 	if(extra_data->is_memo == FALSE && memo_line > 1) {
 		memset(spaced_out, ' ', extra_data->width);
@@ -195,9 +196,8 @@ static gchar *rlib_layout_get_true_text_from_extra_data(rlib *r, struct rlib_lin
 		return spaced_out;
 	} else {
 		if(extra_data->memo_line_count == 0) {
-		 	rlib_encode_text(r, extra_data->formatted_string, &encoded_text);
-			*need_free = TRUE;
-			return encoded_text;
+			*need_free = FALSE;
+			return extra_data->formatted_string;
 		} else {
 			if(memo_line > extra_data->memo_line_count) {
 				memset(spaced_out, ' ', extra_data->width);
@@ -220,10 +220,8 @@ static gchar *rlib_layout_get_true_text_from_extra_data(rlib *r, struct rlib_lin
 
 	extra_data->align = extra_data->report_field->align;
 	rlib_align_text(r, &align_text, text, extra_data->report_field->align, extra_data->report_field->width);
- 	rlib_encode_text(r, align_text, &encoded_text);
-	g_free(align_text);
 	*need_free = TRUE;
-	return encoded_text;
+	return align_text;
 }
 
 static gfloat rlib_layout_output_extras_start(rlib *r, struct rlib_part *part, gint backwards, gfloat left_origin, gfloat bottom_orgin, 
@@ -388,7 +386,6 @@ struct rlib_line_extra_data *extra_data) {
 static gfloat rlib_layout_text_string(rlib *r, gint backwards, gfloat left_origin, gfloat bottom_orgin, struct rlib_line_extra_data *extra_data, 
 gchar *text, gint memo_line) {
 	gfloat rtn_width;
-	gchar *encoded_text = NULL;
 
 	OUTPUT(r)->set_font_point(r, extra_data->font_point);
 	if(extra_data->found_color)
@@ -397,8 +394,7 @@ gchar *text, gint memo_line) {
 		OUTPUT(r)->start_bold(r);
 	if(extra_data->is_italics)
 		OUTPUT(r)->start_italics(r);
-	OUTPUT(r)->print_text(r, left_origin, bottom_orgin+(extra_data->font_point/300.0), rlib_encode_text(r, text, &encoded_text), backwards, extra_data);
-	g_free(encoded_text);
+	OUTPUT(r)->print_text(r, left_origin, bottom_orgin+(extra_data->font_point/300.0), text, backwards, extra_data);
 	rtn_width = extra_data->output_width;
 	if(extra_data->found_color)
 		OUTPUT(r)->set_fg_color(r, 0, 0, 0);

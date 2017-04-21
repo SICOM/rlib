@@ -185,8 +185,11 @@ static gfloat pdf_get_string_width(rlib *r, const gchar *text) {
 
 static void pdf_print_text(rlib *r, gfloat left_origin, gfloat bottom_origin, const gchar *text, gfloat orientation) {
 	struct rpdf *pdf = OUTPUT_PRIVATE(r)->pdf;
+	gchar *encoded_text = NULL;
 
-	rpdf_text(pdf, left_origin, bottom_origin, orientation, text);
+	rlib_encode_text(r, text, &encoded_text);
+	rpdf_text(pdf, left_origin, bottom_origin, orientation, encoded_text);
+	g_free(encoded_text);
 }
 
 static void pdf_finalize_delayed_data(struct rpdf *pdf, struct _pdf_delayed_data *dd) { //TODO. WAS: ...(gchar *data, gint len, gpointer user_data) {
@@ -194,6 +197,7 @@ static void pdf_finalize_delayed_data(struct rpdf *pdf, struct _pdf_delayed_data
 	struct rlib_line_extra_data *extra_data = &delayed_data->extra_data;
 	rlib *r = delayed_data->r;
 	gchar *buf = NULL, *buf2 = NULL;
+	gchar *encoded_text = NULL;
 
 	rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL);
 	rlib_format_string(r, &buf, extra_data->report_field, &extra_data->rval_code);
@@ -202,7 +206,9 @@ static void pdf_finalize_delayed_data(struct rpdf *pdf, struct _pdf_delayed_data
 	if (extra_data->width < extra_data->report_field->width)
 		buf2[extra_data->width] = 0;
 
-	rpdf_finalize_text_callback(pdf, dd->rpdf_anchor, buf2);
+	rlib_encode_text(r, buf2, &encoded_text);
+	rpdf_finalize_text_callback(pdf, dd->rpdf_anchor, encoded_text);
+	g_free(encoded_text);
 
 	g_free(buf);
 	g_free(buf2);

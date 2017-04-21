@@ -43,19 +43,25 @@ struct _private {
 };
 
 static void print_text(rlib *r, const gchar *text, gint backwards, gint col, gint rval_type) {
+	gchar *encoded_text = NULL;
+
+	rlib_encode_text(r, text, &encoded_text);
+
 	if(col < MAX_COL) {
 		OUTPUT_PRIVATE(r)->rval_type[col] = rval_type;
 		if(OUTPUT_PRIVATE(r)->col[col][0] == 0)
-			strcpy(OUTPUT_PRIVATE(r)->col[col], text);
+			strcpy(OUTPUT_PRIVATE(r)->col[col], encoded_text);
 		else {
 			gchar *tmp;
-			tmp = g_strdup_printf("%s %s", OUTPUT_PRIVATE(r)->col[col], text);
+			tmp = g_strdup_printf("%s %s", OUTPUT_PRIVATE(r)->col[col], encoded_text);
 			if(strlen(tmp) > MAXSTRLEN)
 				tmp[MAXSTRLEN] = 0;
 			strncpy(OUTPUT_PRIVATE(r)->col[col], tmp, MAXSTRLEN);
 			g_free(tmp);
 		}
 	}
+
+	g_free(encoded_text);
 }
 
 static gfloat csv_get_string_width(rlib *r, const gchar *text) {
