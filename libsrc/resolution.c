@@ -105,6 +105,9 @@ gint rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gint *r
 	gint found = FALSE;
 	gchar *right_side = NULL, *result_name = NULL;
 
+	if (r->results == NULL)
+		return FALSE;
+
 	resultset = r->current_result;
 	right_side = memchr(name, '.', r_strlen(name));
 	if(right_side != NULL) {
