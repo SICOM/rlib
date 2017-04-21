@@ -1080,7 +1080,7 @@ void rlib_set_output_encoding(rlib *r, const char *encoding) {
 	const char *new_encoding = (encoding ? encoding : "UTF-8");
 
 	if (r->output_testcase)
-		g_string_append_printf(r->testcase_code2, "\trlib_set_output_encoding(r, \"%s\");", encoding);
+		g_string_append_printf(r->testcase_code2, "\trlib_set_output_encoding(r, \"%s\");\n", encoding);
 
 	if (strcasecmp(new_encoding, "UTF-8") == 0 ||
 			strcasecmp(new_encoding, "UTF8") == 0)
