@@ -996,7 +996,7 @@ gint rlib_set_locale(rlib *r, gchar *locale) {
 	if (r->output_testcase)
 		g_string_append_printf(r->testcase_code2, "\trlib_set_locale(r, \"%s\");\n", locale);
 
-	r->special_locale = g_strdup(make_utf8_locale(locale));
+	r->special_locale = make_utf8_locale(locale);
 	return TRUE;
 }
 

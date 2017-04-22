@@ -411,7 +411,6 @@ void make_more_space_if_necessary(gchar **str, gint *size, gint *total_size, gin
  * en_GB, utf8 and euro. Then it recombines the parts using a "utf8" encoding.
  */
 gchar *make_utf8_locale(const gchar *encoding) {
-	static char result[256];
 	gchar *locale, *codeset = NULL, *extra = NULL;
 	gchar buf[256];
 	gchar *t;
@@ -420,7 +419,7 @@ gchar *make_utf8_locale(const gchar *encoding) {
 	if ((encoding == NULL) || (r_strlen(encoding) < 2)) {
 		// shows in apache error_log
 		//r_warning(NULL, "encoding is NULL or invalid [%s]... using en_US\n", encoding);
-		return (char *)"en_US.utf8";
+		return g_strdup("en_US.utf8");
 	}
 	g_strlcpy(buf, encoding, sizeof(buf));
 	locale = buf;
@@ -439,11 +438,10 @@ gchar *make_utf8_locale(const gchar *encoding) {
 	}
 	codeset = (gchar *)"utf8";
 	if (extra) {
-		g_snprintf(result, sizeof(buf), "%s.%s@%s", locale, codeset, extra);
+		return g_strdup_printf("%s.%s@%s", locale, codeset, extra);
 	} else {
-		g_snprintf(result, sizeof(buf), "%s.%s", locale, codeset);
+		return g_strdup_printf("%s.%s", locale, codeset);
 	}
-	return result;
 }
 
 void make_all_locales_utf8(void) {
@@ -452,10 +450,12 @@ void make_all_locales_utf8(void) {
 	while ((i = *lc) != -1) {
 		char *t = setlocale(i, NULL);
 		if (t) {
-			if (!setlocale(i, make_utf8_locale(t))) {
+			gchar *l = make_utf8_locale(t);
+			if (!setlocale(i, l)) {
 				// shows in apache error log
 				//r_error(NULL, "Setting locale to [%s] FAILED\n", t);
 			}
+			g_free(l);
 		}
 		++lc;
 	}
