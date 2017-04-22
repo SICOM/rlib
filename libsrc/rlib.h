@@ -852,6 +852,8 @@ struct rlib {
 	gint pcode_alpha_index;
 	gint pcode_alpha_m_index;
 
+	gchar *textdomain;
+
 	GSList *search_paths;
 
 	gboolean debug;

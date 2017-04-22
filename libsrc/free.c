@@ -590,6 +590,7 @@ gint rlib_free(rlib *r) {
 	rlib_free_follower(r);
 	g_free(r->special_locale);
 	g_free(r->current_locale);
+	g_free(r->textdomain);
 	for(i=0;i<r->queries_count;i++) {
 		g_free(r->queries[i]);
 		g_free(r->results[i]);

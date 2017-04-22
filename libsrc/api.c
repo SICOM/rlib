@@ -130,6 +130,7 @@ rlib * rlib_init_with_environment(struct environment_filter *environment) {
 	make_all_locales_utf8();
 	r->did_execute = FALSE;
 	r->current_locale = g_strdup(setlocale(LC_ALL, NULL));
+	r->textdomain = NULL;
 	rlib_pcode_find_index(r);
 	return r;
 }
@@ -1000,10 +1001,18 @@ gint rlib_set_locale(rlib *r, gchar *locale) {
 }
 
 gchar * rlib_bindtextdomain(rlib *r, gchar *domainname, gchar *dirname) {
+	gchar *ret;
+
+	if (domainname == NULL)
+		return NULL;
+
 	if (r->output_testcase)
 		g_string_append_printf(r->testcase_code2, "\trlib_bindtextdomain(r, \"%s\", \"%s\");\n", domainname, dirname);
 
-	return bindtextdomain(domainname, dirname);
+	ret = bindtextdomain(domainname, dirname);
+	bind_textdomain_codeset(domainname, "UTF-8");
+	r->textdomain = g_strdup(domainname);
+	return ret;
 }
 
 void rlib_set_radix_character(rlib *r, gchar radix_character) {
