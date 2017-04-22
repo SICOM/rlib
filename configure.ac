@@ -496,26 +496,6 @@ AC_SUBST(PERL_CFLAGS)
 AC_SUBST(PERL_EXTENSION_DIR)
 AC_SUBST(PERL_LIBS)
 
-
-AC_MSG_CHECKING(whether iconv takes ISO8859-1 or ISO-8859-1)
-AC_RUN_IFELSE(
-        [AC_LANG_PROGRAM([[#include <iconv.h>]], [[	
-                iconv_open("ISO-8859-1","UTF-8");
-                if (errno)
-                        return -1;
-
-                return 0;
-        ]])],
-        AC_MSG_RESULT(ISO-8859-1)
-        AC_DEFINE(ICONV_ISO,["ISO-8859-1"], [ICONV Check]),
-        AC_MSG_RESULT(ISO8859-1)
-        AC_DEFINE(ICONV_ISO,["ISO8859-1"], [ICONV Check]),
-        dnl Cross-compiling: Assume a sensible MinGW behaviour.
-        dnl On Fedora 16's mingw32 suite, mingw32-win-iconv accepts both.
-        AC_MSG_RESULT(ISO-8859-1)
-        AC_DEFINE(ICONV_ISO,["ISO-8859-1"], [ICONV Check])
-)
-
 RLIB_WERROR=""
 AC_ARG_ENABLE(warningfun,              [  --enable-warningfun       enable more gcc warning flags],enable_warningfun="$enableval",enable_warningfun=no)
 if test x$enable_warningfun = xyes; then
@@ -578,11 +558,6 @@ if test x$enable_memdebug = xyes; then
 	AC_DEFINE(DEBUG_RLIB_MEMORY,1,[Debug RLIB memory usage])
 fi
 
-AC_ARG_ENABLE(utf8,              [  --enable-utf8       enable utf8],enable_utf8=no,enable_utf8=yes)
-if test x$enable_utf8 = xyes; then
-	AC_DEFINE(DISABLE_UTF8,1,[DISABLE UTF8])
-fi
-
 AC_CONFIG_FILES([
 Makefile
 rlib.pc
@@ -622,7 +597,6 @@ rlib-$VERSION:
    compiler:                 ${CC}
    Memory debugging:         ${enable_memdebug}
    Warning Fun:              ${enable_warningfun}
-   UTF8 disabled:            ${enable_utf8}
    WIN32 build:              ${enable_win32}
    Documentation:            ${enable_doc}
 

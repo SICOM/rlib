@@ -1,5 +1,4 @@
 %define phpextdir %(echo "`php-config --extension-dir`")
-%define pythonver %(echo "`python -c 'import sys; print sys.version[:3]'`")
 %define pythonextdir %(echo "`python -c 'from distutils import sysconfig; print sysconfig.get_python_lib(1,0)'`")
 %define perlextdir %(echo "`perl -e 'use Config; print $Config{archlib};'`")
 
@@ -94,7 +93,7 @@ To find out about all it can do visit: http://rlib.sicompos.com
 %prep
 %setup
 
-%configure --enable-utf8 --with-pythonver=%{pythonver}
+%configure
 
 %build
 make

@@ -61,10 +61,8 @@ gint rlib_resolve_rlib_variable(rlib *r, gchar *name) {
 
 gchar * rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 	struct input_filter *rs = INPUT(r, rf->resultset);
-#if !DISABLE_UTF8
 	gsize slen, elen;
 	gchar *ptr = NULL;
-#endif	
 	gchar *str;
 
 
@@ -75,9 +73,6 @@ gchar * rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 		str = rs->get_field_value_as_string(rs, r->results[rf->resultset]->result, rf->field);
 	else
 		str = "";
-#if DISABLE_UTF8
-	return g_strdup(str);
-#else
 	if(str == NULL)
 		return g_strdup("");
 	else {
@@ -86,7 +81,6 @@ gchar * rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 		rlib_charencoder_convert(rs->info.encoder, &str, &slen, &ptr, &elen);
 		return ptr;
 	}
-#endif
 }
 
 gint rlib_lookup_result(rlib *r, gchar *name) {

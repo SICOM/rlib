@@ -39,26 +39,15 @@
 #include "rlib_langinfo.h"
 
 GIConv rlib_charencoder_new(const gchar *to_codeset, const gchar *from_codeset) {
-#ifdef DISABLE_UTF8
-	return (GIConv)-1;
-#else
 	return g_iconv_open(to_codeset, from_codeset);
-#endif	
 }
 
 void rlib_charencoder_free(GIConv converter) {
-#ifndef DISABLE_UTF8
 	if(converter > 0)
 		g_iconv_close(converter);
-#endif
 }
 
 gint rlib_charencoder_convert(GIConv converter, gchar **inbuf, gsize *inbytes_left, gchar **outbuf, gsize *outbytes_left) {
-#ifdef DISABLE_UTF8
-	/* The strlen is passed in here so we bump it by 1 */
-	*outbuf = g_strdup(*inbuf);
-	return 0;
-#else
 	if((converter == (GIConv) -1) || (converter == (GIConv) 0)) {
 		*outbuf = g_strdup(*inbuf);
 		return 1;
@@ -66,5 +55,4 @@ gint rlib_charencoder_convert(GIConv converter, gchar **inbuf, gsize *inbytes_le
 		*outbuf = g_convert_with_iconv(*inbuf, strlen(*inbuf), converter, inbytes_left, outbytes_left, NULL);
 		return *outbuf ? 0 : -1;
 	}
-#endif
 }

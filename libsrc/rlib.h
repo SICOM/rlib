@@ -852,8 +852,6 @@ struct rlib {
 	gint pcode_alpha_index;
 	gint pcode_alpha_m_index;
 
-	GIConv xml_encoder;
-
 	GSList *search_paths;
 
 	gboolean debug;
