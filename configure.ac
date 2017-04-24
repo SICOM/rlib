@@ -496,14 +496,6 @@ AC_SUBST(PERL_CFLAGS)
 AC_SUBST(PERL_EXTENSION_DIR)
 AC_SUBST(PERL_LIBS)
 
-RLIB_WERROR=""
-AC_ARG_ENABLE(warningfun,              [  --enable-warningfun       enable more gcc warning flags],enable_warningfun="$enableval",enable_warningfun=no)
-if test x$enable_warningfun = xyes; then
-	RLIB_WERROR="-Werror "
-fi
-AC_SUBST(RLIB_WARNINGS)
-AC_SUBST(RLIB_WERROR)
-
 dnl Windows build is decided automatically by AC_CANONICAL_TARGET above
 if test x$enable_win32 = xyes; then
 	ac_save_CFLAGS="$CFLAGS"
@@ -537,13 +529,15 @@ dnl -D_GNU_SOURCE is needed.
 dnl For llabs(), -D_ISOC99_SOURCE is enough,
 dnl but e.g. strcasecmp is a GNU extension.
 
-RLIB_CFLAGS="-D_GNU_SOURCE -Wall -Wchar-subscripts $LIBXML_CFLAGS $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $MYSQL_CFLAGS $POSTGRES_CFLAGS $ODBC_CFLAGS $GD_CFLAGS $NO_CYGWIN"
+CFLAGS="-D_GNU_SOURCE -Wall -Wchar-subscripts -Werror $CFLAGS"
+
+RLIB_CFLAGS="$LIBXML_CFLAGS $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $MYSQL_CFLAGS $POSTGRES_CFLAGS $ODBC_CFLAGS $GD_CFLAGS $NO_CYGWIN"
 RLIB_LIBS="$LIBXML_LIBS $LIBGLIB_LIBS $LIBGMODULE_LIBS $ICONVLIBS $GD_LDFLAGS $GD_LIBS $GD_LINK "
 
 AC_SUBST(RLIB_CFLAGS)
 AC_SUBST(RLIB_LIBS)
 
-RPDF_CFLAGS="-D_GNU_SOURCE -Wall $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $NO_CYGWIN"
+RPDF_CFLAGS="$LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $NO_CYGWIN"
 RPDF_LIBS="$LIBGLIB_LIBS $LIBGMODULE_LIBS $HPDF_LIBS $FONTCONFIG_LIBS"
 AC_SUBST(RPDF_CFLAGS)
 AC_SUBST(RPDF_LIBS)
@@ -596,7 +590,6 @@ rlib-$VERSION:
    prefix:                   ${prefix}
    compiler:                 ${CC}
    Memory debugging:         ${enable_memdebug}
-   Warning Fun:              ${enable_warningfun}
    WIN32 build:              ${enable_win32}
    Documentation:            ${enable_doc}
 

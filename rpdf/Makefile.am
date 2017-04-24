@@ -23,7 +23,7 @@
 rpdfincludedir=$(includedir)/rlib
 rpdfinclude_HEADERS = rpdf.h
 
-AM_CFLAGS = $(CFLAG_VISIBILITY) $(RPDF_CFLAGS) $(RLIB_WERROR)
+AM_CFLAGS = $(CFLAG_VISIBILITY) $(RPDF_CFLAGS)
 
 lib_LTLIBRARIES = librpdf.la
 librpdf_la_SOURCES = rpdf.c rpdf.h

@@ -22,7 +22,6 @@
 #include <php.h>
 
 #include <stdio.h>
-#include "ralloc.h"
 #include "rlib.h"
 
 static GString *rlib_php_dump_memory_variables(void) {
