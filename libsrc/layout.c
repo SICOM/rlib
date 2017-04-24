@@ -126,7 +126,7 @@ gchar *rlib_encode_text(rlib *r, const gchar *text, gchar **result) {
 		gsize result_len;
 		rlib_charencoder_convert(r->output_encoder, &text1, &len, result, &result_len);
 		if (*result == NULL) {
-			r_error(r, "encode returned NULL result input was[%s], len=%d", text, r_strlen(text));
+			r_error(r, "encode returned NULL result input was[%s], len=%d\n", text, r_strlen(text));
 			*result = g_strdup("!ERR_ENC2");
 		}
 	}
