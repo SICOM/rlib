@@ -320,7 +320,7 @@ gint rlib_add_report_from_buffer(rlib *r, gchar *buffer) {
 void rlib_escape_c_string(GString *s, const char *str, int len) {
 	int pos;
 
-	for (pos = 0; (len < 0 && str[pos]) || (len >= 0 || pos < len); pos++) {
+	for (pos = 0; (len < 0 && str[pos]) || (len >= 0 && pos < len); pos++) {
 		switch (str[pos]) {
 		case '\r':
 			g_string_append(s, "\\r");
