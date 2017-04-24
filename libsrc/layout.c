@@ -524,11 +524,17 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 			if(extra_data[i].is_memo == FALSE) {
 				rlib_format_string(r, &buf, rf, &extra_data[i].rval_code);
 				if(r->textdomain && extra_data[i].translate && buf != NULL) {
-					gchar *tmp_str = dgettext(r->textdomain, buf);
+					gchar *tmp_str;
+
+					if (r->special_locale)
+						setlocale(LC_ALL, r->special_locale);
+					tmp_str = dgettext(r->textdomain, buf);
 					if(tmp_str != buf) {
 						g_free(buf);
 						buf = g_strdup(tmp_str);				
 					}
+					if(r->special_locale)
+						setlocale(LC_ALL, r->current_locale);
 				}
 				extra_data[i].align = rf->align;
 				rlib_align_text(r, &tmp_align_buf, buf, rf->align, rf->width);
@@ -538,11 +544,17 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 			} else {
 				rlib_format_string(r, &buf, rf, &extra_data[i].rval_code);
 				if(r->textdomain && extra_data[i].translate && buf != NULL) {
-					gchar *tmp_str = dgettext(r->textdomain, buf);
+					gchar *tmp_str;
+
+					if (r->special_locale)
+						setlocale(LC_ALL, r->special_locale);
+					tmp_str = dgettext(r->textdomain, buf);
 					if(tmp_str != buf) {
 						g_free(buf);
 						buf = g_strdup(tmp_str);				
 					}
+					if (r->special_locale)
+						setlocale(LC_ALL, r->current_locale);
 				}
 
 				extra_data[i].formatted_string = buf;
@@ -615,8 +627,15 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 					extra_data[i].translate = t;
 			}
 			txt_pointer = rt->value;
-			if(r->textdomain && extra_data[i].translate)
+			if(r->textdomain && extra_data[i].translate) {
+				if (r->special_locale)
+					setlocale(LC_ALL, r->special_locale);
+
 				txt_pointer = dgettext(r->textdomain, rt->value);
+
+				if (r->special_locale)
+					setlocale(LC_ALL, r->current_locale);
+			}
 
 			extra_data[i].align = rt->align;
 			rlib_align_text(r, &extra_data[i].formatted_string, txt_pointer, rt->align, rt->width);
