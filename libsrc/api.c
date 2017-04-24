@@ -313,6 +313,35 @@ gint rlib_add_report_from_buffer(rlib *r, gchar *buffer) {
 	return r->parts_count;
 }
 
+/*
+ * If len < 0, str must be zero-terminated.
+ * Otherwise the string is considered "len" number of bytes long.
+ */
+void rlib_escape_c_string(GString *s, const char *str, int len) {
+	int pos;
+
+	for (pos = 0; (len < 0 && str[pos]) || (len >= 0 || pos < len); pos++) {
+		switch (str[pos]) {
+		case '\r':
+			g_string_append(s, "\\r");
+			break;
+		case '\n':
+			g_string_append(s, "\\n");
+			break;
+		case '\t':
+			g_string_append(s, "\\t");
+			break;
+		case '\\':
+		case '"':
+			g_string_append_c(s, '\\');
+			/* fall through */
+		default:
+			g_string_append_c(s, str[pos]);
+			break;
+		}
+	}
+}
+
 gint rlib_add_search_path(rlib *r, const gchar *path) {
 	gchar *path_copy;
 #ifdef _WIN32
@@ -326,26 +355,8 @@ gint rlib_add_search_path(rlib *r, const gchar *path) {
 		return -1;
 
 	if (r->output_testcase) {
-		int pos;
-
 		g_string_append(r->testcase_code2, "\trlib_add_search_path(r, \"");
-		for (pos = 0; path[pos]; pos++) {
-			switch (path[pos]) {
-			case '\n':
-				g_string_append(r->testcase_code2, "\\n");
-				break;
-			case '\t':
-				g_string_append(r->testcase_code2, "\\t");
-				break;
-			case '\\':
-			case '"':
-				g_string_append_c(r->testcase_code2, '\\');
-				/* fall through */
-			default:
-				g_string_append_c(r->testcase_code2, path[pos]);
-				break;
-			}
-		}
+		rlib_escape_c_string(r->testcase_code2, path, -1);
 		g_string_append(r->testcase_code2, "\");\n");
 	}
 
@@ -609,28 +620,8 @@ gint rlib_execute(rlib *r) {
 		g_string_append(r->testcase, "#include <rlib/rlib.h>\n\n");
 
 		for (i = 0; i < r->parts_count; i++) {
-			int pos;
-
 			g_string_append_printf(r->testcase, "static char *xml%d = \"", i);
-
-			for (pos = 0; pos < r->parts[i]->xml_dump_len; pos++) {
-				switch (r->parts[i]->xml_dump[pos]) {
-				case '\n':
-					g_string_append(r->testcase, "\\n\"\n\t\"");
-					break;
-				case '\t':
-					g_string_append(r->testcase, "\\t");
-					break;
-				case '"':
-				case '\\':
-					g_string_append_c(r->testcase, '\\');
-					/* fall through */
-				default:
-					g_string_append_c(r->testcase, r->parts[i]->xml_dump[pos]);
-					break;
-				}
-			}
-
+			rlib_escape_c_string(r->testcase, (char *)r->parts[i]->xml_dump, r->parts[i]->xml_dump_len);
 			g_string_append(r->testcase, "\";\n\n");
 
 			g_string_append_printf(r->testcase_code, "\trlib_add_report_from_buffer(r, xml%d);\n", i);
@@ -682,7 +673,6 @@ gint rlib_execute(rlib *r) {
 						fprintf(tc_file, "\t, { ");
 						for (i = 0; i < nfields; i++) {
 							gchar *value = in->get_field_value_as_string(in, rs->result, GINT_TO_POINTER(i + 1));
-							int pos;
 
 							if (i)
 								fprintf(tc_file, ", ");
@@ -690,23 +680,10 @@ gint rlib_execute(rlib *r) {
 							fprintf(tc_file, "\"");
 
 							if (value) {
-								for (pos = 0; value[pos]; pos++) {
-									switch (value[pos]) {
-									case '\n':
-										fprintf(tc_file, "\\n");
-										break;
-									case '\t':
-										fprintf(tc_file, "\\t");
-										break;
-									case '"':
-									case '\\':
-										fprintf(tc_file, "\\");
-										/* fall through */
-									default:
-										fprintf(tc_file, "%c", value[pos]);
-										break;
-									}
-								}
+								GString *s = g_string_new("");
+								rlib_escape_c_string(s, value, -1);
+								fprintf(tc_file, "%s", s->str);
+								g_string_free(s, TRUE);
 							}
 
 							fprintf(tc_file, "\"");
@@ -761,6 +738,7 @@ gint rlib_execute(rlib *r) {
 				fprintf(tc_file, "EXPECTED_txt=\n");
 				fprintf(tc_file, "EXPECTED_csv=\n");
 				fprintf(tc_file, "EXPECTED_html=\n");
+				fprintf(tc_file, "set -a\n");
 
 				vars = ENVIRONMENT(r)->rlib_dump_memory_variables();
 				fprintf(tc_file, "%s", vars->str);

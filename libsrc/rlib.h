@@ -1076,6 +1076,7 @@ gboolean rlib_add_function(rlib *r, gchar *function_name, gboolean (*function)(r
 gboolean use_relative_filename(rlib *r);
 gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean report, gboolean relative_filename); /* not an exported API, no rlib_ prefix */
 gint rlib_add_search_path(rlib *r, const gchar *path);
+void rlib_escape_c_string(GString *s, const char *str, int len);
 
 /***** PROTOTYPES: parsexml.c *************************************************/
 struct rlib_part * parse_part_file(rlib *r, gint report_index);

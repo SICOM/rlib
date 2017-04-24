@@ -202,7 +202,9 @@ static GString *rlib_python_dump_memory_variables(void) {
 		if (PyObject_AsCharBuffer(key, &k, &k_len) != 0 || PyObject_AsCharBuffer(value, &v, &v_len) != 0)
 			continue;
 
-		g_string_append_printf(dump, "%s=\"%s\"\n", k, v);
+		g_string_append_printf(dump, "%s=\"", k);
+		rlib_escape_c_string(dump, v, v_len);
+		g_string_append(dump, "\"\n");
 	}
 
 	return dump;
@@ -630,7 +632,6 @@ method_add_function(PyObject *self, PyObject *_args) {
 	char		*name;
 	int		param_count;
 	func_chain	*nfp;
-	long		result;
 	
 	PyObject *callable;
 	if (!PyArg_ParseTuple(_args, "sOi:add_function", &name, &callable, &param_count))
@@ -648,7 +649,7 @@ method_add_function(PyObject *self, PyObject *_args) {
 	nfp->param_count = param_count;
 	nfp->next = rp->funcs;
 	rp->funcs = nfp;
-	result = rlib_add_function(rp->rlib_ptr, name, implement_function_call, nfp);
+	rlib_add_function(rp->rlib_ptr, name, implement_function_call, nfp);
 	Py_INCREF(Py_None);
 	return Py_None;
 }

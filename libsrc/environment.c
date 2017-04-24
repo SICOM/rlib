@@ -38,7 +38,9 @@ static GString *rlib_c_dump_memory_variables() {
 
 		if (eq) {
 			*eq = 0x00;
-			g_string_append_printf(dump, "%s=\"%s\"\n", env, eq + 1);
+			g_string_append_printf(dump, "%s=\"", env);
+			rlib_escape_c_string(dump, eq + 1, -1);
+			g_string_append(dump, "\"\n");
 		}
 
 		g_free(env);
