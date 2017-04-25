@@ -76,9 +76,12 @@ gchar * rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 	if(str == NULL)
 		return g_strdup("");
 	else {
+		gboolean error __attribute__((unused));
+
 		slen = strlen(str);
 		elen = MAXSTRLEN;
-		rlib_charencoder_convert(rs->info.encoder, &str, &slen, &ptr, &elen);
+		/* Here we are converting to UTF-8, so we don't care about the error */
+		rlib_charencoder_convert(rs->info.encoder, &str, &slen, &ptr, &elen, &error);
 		return ptr;
 	}
 }

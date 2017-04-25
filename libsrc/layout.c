@@ -123,11 +123,20 @@ gchar *rlib_encode_text(rlib *r, const gchar *text, gchar **result) {
 		gchar *text1 = (gchar *)text;
 
 		gsize len = strlen(text1);
-		gsize result_len;
-		rlib_charencoder_convert(r->output_encoder, &text1, &len, result, &result_len);
+		gsize result_len = 3 * len;
+		gchar *result_tmp;
+		gboolean error;
+
+		result_tmp = g_malloc(result_len);
+		*result = result_tmp;
+
+		rlib_charencoder_convert(r->output_encoder, &text1, &len, &result_tmp, &result_len, &error);
+
 		if (*result == NULL) {
 			r_error(r, "encode returned NULL result input was[%s], len=%d\n", text, r_strlen(text));
 			*result = g_strdup("!ERR_ENC2");
+		} else if (error) {
+			r_error(r, "encode encountered non-convertible character in the input [%s]\n", text);
 		}
 	}
 	return *result;

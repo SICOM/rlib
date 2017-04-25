@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Chet Heilman <cheilman@sicompos.com>
  *           Bob Doan <bdoan@sicompos.com>
@@ -47,12 +47,32 @@ void rlib_charencoder_free(GIConv converter) {
 		g_iconv_close(converter);
 }
 
-gint rlib_charencoder_convert(GIConv converter, gchar **inbuf, gsize *inbytes_left, gchar **outbuf, gsize *outbytes_left) {
+gsize rlib_charencoder_convert(GIConv converter, gchar **inbuf, gsize *inbytes_left, gchar **outbuf, gsize *outbytes_left, gboolean *error) {
+	*error = FALSE;
+
 	if((converter == (GIConv) -1) || (converter == (GIConv) 0)) {
 		*outbuf = g_strdup(*inbuf);
 		return 1;
 	} else {
-		*outbuf = g_convert_with_iconv(*inbuf, strlen(*inbuf), converter, inbytes_left, outbytes_left, NULL);
-		return *outbuf ? 0 : -1;
+		gsize ret = 0;
+		gchar *outbuf_old = *outbuf;
+		gsize outbuf_len_old = *outbytes_left;
+		while (*inbytes_left > 0) {
+			ret = g_iconv(converter, inbuf, inbytes_left, outbuf, outbytes_left);
+			if (ret == -1) {
+				gchar *old_inbuf = *inbuf;
+
+				*inbuf = g_utf8_next_char(old_inbuf);
+				*inbytes_left -= (*inbuf - old_inbuf);
+
+				**outbuf = ' ';
+				*outbuf += 1;
+				*outbytes_left -= 1;
+
+				*error = TRUE;
+			}
+		}
+		outbuf_old[outbuf_len_old - *outbytes_left] = '\0';
+		return ret;
 	}
 }
