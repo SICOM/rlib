@@ -453,7 +453,6 @@ static struct encoding_mapping encoding_mapping[] = {
 	{ "CP936", "GBK-EUC-H" },
 	/* Traditional Chinese */
 	{ "CP950", "ETen-B5-H" },
-#if 0
 	/* Japanese */
 	{ "EUC-JP", "EUC-H" },
 	{ "CP932", "90ms-RKSJ-H" },
@@ -467,7 +466,6 @@ static struct encoding_mapping encoding_mapping[] = {
 #if 0
 	/* Korean, proportional font */
 	{ "CP949", "KSCms-UHC-H" },
-#endif
 #endif
 	{ NULL, NULL }
 };
