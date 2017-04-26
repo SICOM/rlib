@@ -100,6 +100,9 @@ DLL_EXPORT_SYM struct rpdf *rpdf_new(void) {
 
 	pdf->pdf = HPDF_New(error_handler, pdf);
 
+	HPDF_SetInfoAttr(pdf->pdf, HPDF_INFO_CREATOR, "RPDF By SICOM Systems");
+	HPDF_SetInfoAttr(pdf->pdf, HPDF_INFO_PRODUCER, "RPDF 2.0");
+
 	HPDF_UseUTFEncodings(pdf->pdf);
 	HPDF_UseCNSEncodings(pdf->pdf);
 	HPDF_UseCNTEncodings(pdf->pdf);
