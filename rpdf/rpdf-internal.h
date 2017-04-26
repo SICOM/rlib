@@ -48,6 +48,7 @@ struct rpdf_delayed_text {
 
 struct rpdf {
 	HPDF_Doc pdf;
+	HPDF_STATUS status;
 
 	/* For debugging */
 	const char *func;

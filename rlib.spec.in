@@ -15,7 +15,8 @@ BuildRequires: autoconf, automake, libtool, gettext-devel
 BuildRequires: docbook-utils-pdf, texlive-ec
 # Runtime
 BuildRequires: libxml2-devel, glib2-devel, zlib-devel
-BuildRequires: libharu-devel, fontconfig-devel
+BuildRequires: libharu-devel >= 2.3.0, fontconfig-devel
+Requires: libharu >= 2.3.0
 # Bindings
 BuildRequires: perl-devel, php-devel, python-devel
 # Input datasources

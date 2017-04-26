@@ -80,6 +80,9 @@ static void error_handler(HPDF_STATUS error_no, HPDF_STATUS detail_no, void *use
 	struct rpdf *pdf = user_data;
 
 	rpdf_error("%s:%d: HPDF(libharu) ERROR: error_no=%04X, detail_no=%d\n", pdf->func, pdf->line, (unsigned int) error_no, (int) detail_no);
+
+	pdf->status = error_no;
+	HPDF_ResetError(pdf->pdf);
 }
 
 #if RLIB_SENDS_UTF8
@@ -96,6 +99,13 @@ DLL_EXPORT_SYM struct rpdf *rpdf_new(void) {
 #endif
 
 	pdf->pdf = HPDF_New(error_handler, pdf);
+
+	HPDF_UseUTFEncodings(pdf->pdf);
+	HPDF_UseCNSEncodings(pdf->pdf);
+	HPDF_UseCNTEncodings(pdf->pdf);
+	HPDF_UseJPEncodings(pdf->pdf);
+	HPDF_UseKREncodings(pdf->pdf);
+
 	pdf->fonts = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 	pdf->fontfiles = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 
@@ -247,19 +257,20 @@ DLL_EXPORT_SYM void rpdf_get_current_page_size(struct rpdf *pdf, gdouble *x, gdo
 	*y = HPDF_Page_GetHeight(page_info->page);
 }
 
-static const gchar *rpdf_embed_font_fc(struct rpdf *pdf, const char *fontfamily, const char *fontstyle) {
+static const gchar *rpdf_embed_font_fc(struct rpdf *pdf, const char *fontfamily, const char *fontstyle, gboolean utf8, gboolean *error) {
+	gboolean check_style = TRUE;
 	FcConfig *config;
 	FcPattern *pat, *font;
 	FcObjectSet *os;
 	FcFontSet *fs;
 	FcValue val_family;
-	FcValue val_style;
-	FcChar8 *file;
-	gint i;
+	gint i, round;
 	gchar *suffix;
 	const gchar *font_name = NULL;
 	pdf->func = __func__;
 	pdf->line = __LINE__;
+
+	*error = FALSE;
 
 	if (fontfamily == NULL)
 		return NULL;
@@ -267,14 +278,11 @@ static const gchar *rpdf_embed_font_fc(struct rpdf *pdf, const char *fontfamily,
 		fontstyle = RPDF_FONT_STYLE_REGULAR;
 
 	config = FcInitLoadConfigAndFonts();
-	os = FcObjectSetBuild (FC_FAMILY, FC_STYLE, FC_LANG, FC_FILE, (char *) 0);
+	os = FcObjectSetBuild (FC_FAMILY, FC_STYLE, FC_LANG, FC_FILE, FC_INDEX, (char *) 0);
 	pat = FcPatternCreate();
 	val_family.type = FcTypeString;
 	val_family.u.s = (FcChar8 *)fontfamily;
 	FcPatternAdd(pat, FC_FAMILY, val_family, FcTrue);
-	val_style.type = FcTypeString;
-	val_style.u.s = (FcChar8 *)fontstyle;
-	FcPatternAdd(pat, FC_STYLE, val_style, FcTrue);
 	fs = FcFontList(config, pat, os);
 	if (fs->nfont == 0) {
 		FcFontSetDestroy(fs);
@@ -284,41 +292,97 @@ static const gchar *rpdf_embed_font_fc(struct rpdf *pdf, const char *fontfamily,
 		return NULL;
 	}
 
-	for (i = 0; i < fs->nfont; i++) {
-		font = fs->fonts[i];
+	for (round = 0; !font_name && round < 2; round++) {
+		FcChar8 *file = NULL;
 
-		if (FcPatternGetString(font, FC_FILE, 0, &file) != FcResultMatch)
-			continue;
+		for (i = 0; i < fs->nfont; i++) {
+			font = fs->fonts[i];
+			file = NULL;
 
-		font_name = g_hash_table_lookup(pdf->fontfiles, file);
+			if (FcPatternGetString(font, FC_FILE, 0, &file) != FcResultMatch)
+				continue;
+
+			if (check_style) {
+				FcChar8 *style;
+				if (FcPatternGetString(font, FC_STYLE, 0, &style) != FcResultMatch)
+					continue;
+				if (strcasecmp(fontstyle, (char *)style) != 0)
+					continue;
+			}
+
+			suffix = (char *)file;
+			while (*suffix)
+				suffix++;
+			while (*suffix != '.' && (suffix > (char *)file))
+				suffix--;
+
+			//rpdf_error("FONT EMBEDDING: font family '%s' font style '%s' -> %s\n", fontfamily, fontstyle, file);
+
+			/* Only TTF / TTC fonts can be used with UTF-8 */
+			if (strcasecmp(suffix, ".pfb") == 0) {
+				if (utf8) {
+					*error = TRUE;
+					return NULL;
+				}
+			}
+
+			font_name = g_hash_table_lookup(pdf->fontfiles, file);
+			if (font_name) {
+				//rpdf_error("FONT EMBEDDING: font found '%s'\n", font_name);
+				return font_name;
+			}
+
+			if (strcasecmp(suffix, ".ttf") == 0) {
+				pdf->line = __LINE__;
+				font_name = HPDF_LoadTTFontFromFile(pdf->pdf, (char *)file, HPDF_TRUE);
+
+				if (font_name == NULL) {
+					*error = TRUE;
+					return FALSE;
+				}
+
+				break;
+			}
+			if (strcasecmp(suffix, ".ttc") == 0) {
+				int font_index;
+
+				if (FcPatternGetInteger(font, FC_INDEX, 0, &font_index) != FcResultMatch)
+					continue;
+
+				pdf->line = __LINE__;
+				font_name = HPDF_LoadTTFontFromFile2(pdf->pdf, (char *)file, font_index, HPDF_TRUE);
+				if (font_name == NULL) {
+					*error = TRUE;
+					return FALSE;
+				}
+
+				break;
+			}
+			if (strcasecmp(suffix, ".pfb") == 0) {
+				gchar *afm = g_strdup((char *)file);
+				gint pos = (suffix - (char *)file);
+
+				afm[pos + 1] = 'a';
+				afm[pos + 2] = 'f';
+				afm[pos + 3] = 'm';
+
+				pdf->line = __LINE__;
+				font_name = HPDF_LoadType1FontFromFile(pdf->pdf, afm, (char *)file);
+				g_free(afm);
+
+				if (font_name == NULL) {
+					*error = TRUE;
+					return FALSE;
+				}
+
+				break;
+			}
+		}
+
 		if (font_name)
-			return font_name;
-
-		suffix = (char *)file;
-		while (*suffix)
-			suffix++;
-		while (*suffix != '.' && (suffix > (char *)file))
-			suffix--;
-		if (strcasecmp(suffix, ".ttf") == 0) {
-			pdf->line = __LINE__;
-			font_name = HPDF_LoadTTFontFromFile(pdf->pdf, (char *)file, HPDF_TRUE);
 			g_hash_table_insert(pdf->fontfiles, g_strdup((gchar *)file), (gchar *)font_name);
-			break;
-		}
-		if (strcasecmp(suffix, ".pfb") == 0) {
-			gchar *afm = g_strdup((char *)file);
-			gint pos = (suffix - (char *)file);
 
-			afm[pos + 1] = 'a';
-			afm[pos + 2] = 'f';
-			afm[pos + 3] = 'm';
-
-			pdf->line = __LINE__;
-			font_name = HPDF_LoadType1FontFromFile(pdf->pdf, afm, (char *)file);
-			g_free(afm);
-			g_hash_table_insert(pdf->fontfiles, g_strdup((gchar *)file), (gchar *)font_name);
-			break;
-		}
+		check_style = FALSE;
 	}
 
 	FcFontSetDestroy(fs);
@@ -382,6 +446,29 @@ static struct encoding_mapping encoding_mapping[] = {
 	{ HPDF_ENCODING_CP1257, HPDF_ENCODING_CP1257 },
 	{ HPDF_ENCODING_CP1258, HPDF_ENCODING_CP1258 },
 	{ HPDF_ENCODING_KOI8_R, HPDF_ENCODING_KOI8_R },
+	/* Generic all-encompassing encoding, use with TTF fonts only */
+	{ "UTF-8", "UTF-8" },
+	/* Simplified Chinese */
+	{ "EUC-CN", "GB-EUC-H" },
+	{ "CP936", "GBK-EUC-H" },
+	/* Traditional Chinese */
+	{ "CP950", "ETen-B5-H" },
+#if 0
+	/* Japanese */
+	{ "EUC-JP", "EUC-H" },
+	{ "CP932", "90ms-RKSJ-H" },
+#if 0
+	/* Japanese, proportional font */
+	{ "CP932", "90msp-RKSJ-H" },
+#endif
+	/* Korean */
+	{ "EUC-KR", "KSC-EUC-H" },
+	{ "CP949", "KSCms-UHC-HW-H" },
+#if 0
+	/* Korean, proportional font */
+	{ "CP949", "KSCms-UHC-H" },
+#endif
+#endif
 	{ NULL, NULL }
 };
 
@@ -409,47 +496,67 @@ DLL_EXPORT_SYM gboolean rpdf_set_font(struct rpdf *pdf, const gchar *font, const
 	pdf->func = __func__;
 	pdf->line = __LINE__;
 
+	//rpdf_error("FONT(0): font name '%s' font style '%s' encoding '%s' -> %s\n", font, style, encoding, font_name);
 	encoding = get_hpdf_encoding(encoding);
 
 again:
+	//rpdf_error("FONT(1): font name '%s' font style '%s' encoding '%s' -> %s\n", font, style, encoding, font_name);
 	hash_string = HASH_STRING;
 	hfont = g_hash_table_lookup(pdf->fonts, hash_string);
+	found = (hfont != NULL);
 
-	if (hfont == NULL) {
-		for (i = 0; i < NUM_PDF_BASE_FONTS; i++) {
-			//fprintf(stderr, "%s:%d font '%s' base_font[%d] '%s'\n", __func__, __LINE__, font, i, base_fonts[i]);
-			if (strcasecmp(base_fonts[i], font) == 0) {
-				font_name = base_fonts[i];
-				found = TRUE;
-				break;
+	if (!found) {
+		if (font_name == NULL) {
+			gboolean font_error = FALSE;
+
+			font_name = rpdf_embed_font_fc(pdf, font, style, (strcmp(encoding, "UTF-8") == 0), &font_error);
+			if (font_error) {
+				//rpdf_error("%s:%d: rpdf_embed_font_fc returned with FONT ERROR\n", __func__, __LINE__);
+				return FALSE;
+			}
+
+			found = (font_name != NULL);
+			pdf->func = __func__;
+
+			if (font_name == NULL) {
+				for (i = 0; i < NUM_PDF_BASE_FONTS; i++) {
+					//fprintf(stderr, "%s:%d font '%s' base_font[%d] '%s'\n", __func__, __LINE__, font, i, base_fonts[i]);
+					if (strcasecmp(base_fonts[i], font) == 0) {
+						font_name = base_fonts[i];
+						found = TRUE;
+						break;
+					}
+				}
 			}
 		}
 
-		//fprintf(stderr, "%s:%d found %d\n", __func__, __LINE__, found);
-
-		if (font_name == NULL)
-			font_name = rpdf_embed_font_fc(pdf, font, style);
+		//rpdf_error("%s:%d: '%s' %s %s found %d\n", __func__, __LINE__, font_name, style, encoding, found);
 
 		if (font_name == NULL) {
-			//rpdf_error("FONT NOT FOUND: font name '%s' font style '%s', using Courier\n", font, style);
 			g_free(hash_string);
 			font = base_fonts[0];
 			style = RPDF_FONT_STYLE_REGULAR;
+			//rpdf_error("FONT NOT FOUND: font name '%s' font style '%s', using Courier\n", font, style);
 			goto again;
-		} else
-			found = TRUE;
+		}
 
+		found = TRUE;
+
+		//rpdf_error("FONT: font name '%s' font style '%s' encoding '%s' -> %s\n", font, style, encoding, font_name);
 		pdf->line = __LINE__;
 		hfont = HPDF_GetFont(pdf->pdf, font_name, encoding);
+		if (hfont == NULL) {
+			//rpdf_error("%s:%d HPDF_GetFont failed for %s %s %s\n", __func__, __LINE__, font_name, style, encoding);
+			return FALSE;
+		}
 		g_hash_table_insert(pdf->fonts, hash_string, hfont);
 
 		if (strcmp(font, font_name) != 0) {
 			hash_string = HASH_STRING;
 			g_hash_table_insert(pdf->fonts, hash_string, hfont);
 		}
-	} else {
+	} else
 		g_free(hash_string);
-	}
 
 	page_info->current_font = hfont;
 
@@ -458,6 +565,7 @@ again:
 
 	page_info->font_size = size;
 
+	//rpdf_error("%s:%d last line %s %s %s: found %d\n", __func__, __LINE__, font_name, style, encoding, found);
 	return found;
 }
 

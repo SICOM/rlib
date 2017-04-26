@@ -69,6 +69,7 @@ AC_CHECK_LIB(m, exp)
 
 AC_CHECK_HEADERS(hpdf.h,,[AC_MSG_ERROR([libharu headers not found!])])
 AC_CHECK_LIB(hpdf, HPDF_New,[HPDF_LIBS=-lhpdf],[AC_MSG_ERROR([libharu library not found!])])
+AC_CHECK_LIB(hpdf, HPDF_UseUTFEncodings, [], [AC_MSG_ERROR([libharu must support HPDF_UseUTFEncodings])])
 AC_SUBST(HPDF_LIBS)
 
 PKG_CHECK_MODULES(LIBXML, libxml-2.0 >= 2.6.0)
