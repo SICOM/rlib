@@ -126,6 +126,9 @@ rlib * rlib_init_with_environment(struct environment_filter *environment) {
 	r->parameters = g_hash_table_new_full (g_str_hash, g_str_equal, string_destroyer, string_destroyer);
 
 	r->radix_character = '.';
+
+	r->output_encoder = rlib_charencoder_new("ISO-8859-1", "UTF-8");
+	r->output_encoder_name = g_strdup("ISO-8859-1");
 	
 	make_all_locales_utf8();
 	r->did_execute = FALSE;
@@ -1020,11 +1023,14 @@ void rlib_set_output_encoding(rlib *r, const char *encoding) {
 	if (r->output_testcase)
 		g_string_append_printf(r->testcase_code2, "\trlib_set_output_encoding(r, \"%s\");\n", encoding);
 
+	if (r->output_encoder != (GIConv) -1)
+		rlib_charencoder_free(r->output_encoder);
 	if (strcasecmp(new_encoding, "UTF-8") == 0 ||
 			strcasecmp(new_encoding, "UTF8") == 0)
 		r->output_encoder = (GIConv) -1;
 	else
 		r->output_encoder = rlib_charencoder_new(new_encoding, "UTF-8");
+	g_free(r->output_encoder_name);
 	r->output_encoder_name  = g_strdup(new_encoding);
 }
 
