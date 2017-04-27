@@ -100,6 +100,9 @@ DLL_EXPORT_SYM struct rpdf *rpdf_new(void) {
 
 	pdf->pdf = HPDF_New(error_handler, pdf);
 
+	/* Conservative compression, text is not compressed */
+	HPDF_SetCompressionMode(pdf->pdf, HPDF_COMP_IMAGE | HPDF_COMP_METADATA);
+
 	HPDF_SetInfoAttr(pdf->pdf, HPDF_INFO_CREATOR, "RPDF By SICOM Systems");
 	HPDF_SetInfoAttr(pdf->pdf, HPDF_INFO_PRODUCER, "RPDF 2.0");
 
@@ -128,7 +131,7 @@ DLL_EXPORT_SYM struct rpdf *rpdf_new(void) {
 DLL_EXPORT_SYM void rpdf_set_compression(struct rpdf *pdf, gboolean use_compression) {
 	pdf->func = __func__;
 	pdf->line = __LINE__;
-	HPDF_SetCompressionMode(pdf->pdf, (use_compression ? HPDF_COMP_ALL : 0));
+	HPDF_SetCompressionMode(pdf->pdf, (use_compression ? HPDF_COMP_ALL : (HPDF_COMP_IMAGE | HPDF_COMP_METADATA)));
 	pdf->use_compression = use_compression;
 }
 
