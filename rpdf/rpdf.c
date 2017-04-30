@@ -338,7 +338,7 @@ static const gchar *rpdf_embed_font_fc(struct rpdf *pdf, const char *fontfamily,
 				return font_name;
 			}
 
-			if (strcasecmp(suffix, ".ttf") == 0) {
+			if (strcasecmp(suffix, ".ttf") == 0 || strcasecmp(suffix, ".otf") == 0) {
 				pdf->line = __LINE__;
 				font_name = HPDF_LoadTTFontFromFile(pdf->pdf, (char *)file, HPDF_TRUE);
 

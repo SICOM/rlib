@@ -30,7 +30,6 @@
 
 #define FONTS 4
 #define STYLES 4
-#define CHINESE_FONTS 1
 #define JAPANESE_FONTS 1
 
 void encode_text_into_pdf(struct rpdf *pdf, gchar *utf8_text, gchar *encoding) {
@@ -76,10 +75,9 @@ void encode_text_into_pdf(struct rpdf *pdf, gchar *utf8_text, gchar *encoding) {
 	g_free(text);
 }
 
-void encode_simplified_chinese_text_into_pdf(struct rpdf *pdf, gchar *utf8_text, gchar *encoding) {
-	char *fonts[CHINESE_FONTS] = { "AR PL UKai CN" };
+void encode_simplified_chinese_text_into_pdf(struct rpdf *pdf, gchar *utf8_text, gchar *font, gchar *encoding) {
 	char *styles[STYLES] = { RPDF_FONT_STYLE_REGULAR, RPDF_FONT_STYLE_ITALIC, RPDF_FONT_STYLE_BOLD, RPDF_FONT_STYLE_BOLDITALIC };
-	int i, j;
+	int i;
 	gdouble h = 9.5;
 	gchar *text;
 	GIConv conv;
@@ -100,25 +98,24 @@ void encode_simplified_chinese_text_into_pdf(struct rpdf *pdf, gchar *utf8_text,
 	} else
 		text = g_strdup(utf8_text);
 
-	for (i = 0; i < CHINESE_FONTS; i++) {
-		rpdf_set_font(pdf, "Courier", RPDF_FONT_STYLE_REGULAR, "StandardEncoding", 12.0);
-		rpdf_text(pdf, 1.0, h, 0.0, fonts[i]);
-		h = h - 0.25;
+	rpdf_set_font(pdf, "Courier", RPDF_FONT_STYLE_REGULAR, "StandardEncoding", 12.0);
+	rpdf_text(pdf, 1.0, h, 0.0, font);
+	h = h - 0.25;
 
-		for (j = 0; j < STYLES; j++) {
-			rpdf_set_font(pdf, fonts[i], styles[j], encoding, 12.0);
+	for (i = 0; i < STYLES; i++) {
+		if (rpdf_set_font(pdf, font, styles[i], encoding, 12.0)) {
 			rpdf_text(pdf, 1.0, h, 0.0, text);
 			h = h - 0.25;
-		}
+		} else
+			fprintf(stderr, "%s %s failed in %s\n", font, styles[i], encoding);
 	}
 
 	g_free(text);
 }
 
-void encode_traditional_chinese_text_into_pdf(struct rpdf *pdf, gchar *utf8_text, gchar *encoding) {
-	char *fonts[CHINESE_FONTS] = { "AR PL UMing CN" };
+void encode_traditional_chinese_text_into_pdf(struct rpdf *pdf, gchar *utf8_text, gchar *font, gchar *encoding) {
 	char *styles[STYLES] = { RPDF_FONT_STYLE_REGULAR, RPDF_FONT_STYLE_ITALIC, RPDF_FONT_STYLE_BOLD, RPDF_FONT_STYLE_BOLDITALIC };
-	int i, j;
+	int i;
 	gdouble h = 9.5;
 	gchar *text;
 	GIConv conv;
@@ -139,16 +136,16 @@ void encode_traditional_chinese_text_into_pdf(struct rpdf *pdf, gchar *utf8_text
 	} else
 		text = g_strdup(utf8_text);
 
-	for (i = 0; i < CHINESE_FONTS; i++) {
-		rpdf_set_font(pdf, "Courier", RPDF_FONT_STYLE_REGULAR, "StandardEncoding", 12.0);
-		rpdf_text(pdf, 1.0, h, 0.0, fonts[i]);
-		h = h - 0.25;
+	rpdf_set_font(pdf, "Courier", RPDF_FONT_STYLE_REGULAR, "StandardEncoding", 12.0);
+	rpdf_text(pdf, 1.0, h, 0.0, font);
+	h = h - 0.25;
 
-		for (j = 0; j < STYLES; j++) {
-			rpdf_set_font(pdf, fonts[i], styles[j], encoding, 12.0);
+	for (i = 0; i < STYLES; i++) {
+		if (rpdf_set_font(pdf, font, styles[i], encoding, 12.0)) {
 			rpdf_text(pdf, 1.0, h, 0.0, text);
 			h = h - 0.25;
-		}
+		} else
+			fprintf(stderr, "%s %s failed in %s\n", font, styles[i], encoding);
 	}
 
 	g_free(text);
@@ -287,8 +284,24 @@ int main(void) {
 	encode_text_into_pdf(pdf, "árvíztűrő tükörfúrógép ÁRVÍZTŰRŐ TÜKÖRFÚRÓGÉP", "UTF-8");
 	encode_text_into_pdf(pdf, "good day Добрый День", "ISO-8859-5");
 	encode_text_into_pdf(pdf, "good day İyi akşamlar", "ISO-8859-9");
-	encode_simplified_chinese_text_into_pdf(pdf, "I like simplified spicy food. 我喜欢辛辣的食物。", "EUC-CN");
-	encode_traditional_chinese_text_into_pdf(pdf, "I like traditional spicy food. 我喜歡辛辣的食物。", "CP950");
+	encode_simplified_chinese_text_into_pdf(pdf, "I like simplified spicy food. 我喜欢辛辣的食物。", "AR PL UKai CN", "EUC-CN");
+	encode_simplified_chinese_text_into_pdf(pdf, "I like simplified spicy food. 我喜欢辛辣的食物。", "AR PL UKai CN", "CP936");
+
+	encode_simplified_chinese_text_into_pdf(pdf, "I like simplified spicy food. 我喜欢辛辣的食物。", "Source Han Sans CN", "EUC-CN");
+	encode_simplified_chinese_text_into_pdf(pdf, "I like simplified spicy food. 我喜欢辛辣的食物。", "Source Han Sans CN", "CP936");
+	// This makes libharu 2.3.0 crash
+	encode_simplified_chinese_text_into_pdf(pdf, "I like simplified spicy food. 我喜欢辛辣的食物。", "Source Han Sans CN", "UTF-8");
+
+	encode_simplified_chinese_text_into_pdf(pdf, "I like simplified spicy food. 我喜欢辛辣的食物。", "Noto Sans Mono CJK SC", "EUC-CN");
+	encode_simplified_chinese_text_into_pdf(pdf, "I like simplified spicy food. 我喜欢辛辣的食物。", "Noto Sans Mono CJK SC", "CP936");
+	// This makes libharu 2.3.0 crash
+	encode_simplified_chinese_text_into_pdf(pdf, "I like simplified spicy food. 我喜欢辛辣的食物。", "Noto Sans Mono CJK SC", "UTF-8");
+
+	encode_traditional_chinese_text_into_pdf(pdf, "I like traditional spicy food. 我喜歡辛辣的食物。", "AR PL UMing CN", "CP950");
+	encode_traditional_chinese_text_into_pdf(pdf, "I like traditional spicy food. 我喜歡辛辣的食物。", "Noto Sans Mono CJK TC", "CP950");
+	// This makes libharu 2.3.0 crash
+	encode_traditional_chinese_text_into_pdf(pdf, "I like traditional spicy food. 我喜歡辛辣的食物。", "Noto Sans Mono CJK TC", "UTF-8");
+
 	encode_japanese_text_into_pdf(pdf, "The Samurai is fearless. 侍は恐れない。", "UTF-8");
 
 /*	rpdf_image(pdf, 1, 1, 100, 100, RPDF_IMAGE_JPEG, "logo.jpg"); */
