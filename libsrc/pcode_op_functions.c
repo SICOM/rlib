@@ -32,6 +32,7 @@
 #include "rlib.h"
 #include "datetime.h"
 #include "pcode.h"
+#include "formatstring.h"
 
 const gchar * rlib_value_get_type_as_str(struct rlib_value *v) {
 	if(v == NULL)

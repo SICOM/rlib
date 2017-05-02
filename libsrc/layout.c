@@ -37,6 +37,7 @@
 #include <rpdf.h>
 #include "rlib.h"
 #include "pcode.h"
+#include "formatstring.h"
 #include "rlib_input.h"
 #include "rlib_langinfo.h"
 
