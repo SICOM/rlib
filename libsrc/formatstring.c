@@ -683,7 +683,7 @@ GString *get_next_format_string(rlib *r, const gchar *fmt, gint expected_type, g
 								else if (legacy)
 									g_string_append(str, ".0");
 								if (expected_type == RLIB_FORMATSTR_NUMBER)
-									g_string_append_printf(str, "R%c", c);
+									g_string_append_printf(str, "%c", c); /* "R%c" is needed for MPFR */
 								else
 									g_string_append_c(str, c);
 								*advance = adv + adv2 + adv3 + 4;
@@ -790,7 +790,7 @@ GString *get_next_format_string(rlib *r, const gchar *fmt, gint expected_type, g
 						g_string_append_printf(str, ".%d", prec);
 					else if (legacy)
 						g_string_append(str, ".0");
-					g_string_append_printf(str, "R%c", c);
+					g_string_append_printf(str, "%c", c); /* "R%c" is needed for MPFR */
 					*advance = adv + adv2 + adv3 + 3;
 					*out_type = type;
 					return str;
@@ -891,7 +891,7 @@ GString *get_next_format_string(rlib *r, const gchar *fmt, gint expected_type, g
 							else if (legacy)
 								g_string_append(str, ".0");
 							if (expected_type == RLIB_FORMATSTR_NUMBER)
-								g_string_append_printf(str, "R%c", c);
+								g_string_append_printf(str, "%c", c); /* "R%c" is needed for MPFR */
 							else
 								g_string_append_c(str, c);
 							*advance = adv + adv2 + adv3 + 2;
