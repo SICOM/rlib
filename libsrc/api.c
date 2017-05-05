@@ -167,13 +167,14 @@ struct rlib_queries *rlib_alloc_query_space(rlib *r) {
 			return NULL;
 		}
 
+		r->queries = queries;
+
 		results = g_realloc(r->results, (r->queries_count + 1) * sizeof(void *));
 		if (results == NULL) {
 			r_error(r, "rlib_alloc_query_space: Out of memory!\n");
 			return NULL;
 		}
 
-		r->queries = queries;
 		r->results = results;
 	}
 
