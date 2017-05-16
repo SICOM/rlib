@@ -53,26 +53,26 @@ gsize rlib_charencoder_convert(GIConv converter, gchar **inbuf, gsize *inbytes_l
 	if((converter == (GIConv) -1) || (converter == (GIConv) 0)) {
 		*outbuf = g_strdup(*inbuf);
 		return 1;
-	} else {
-		gsize ret = 0;
-		gchar *outbuf_old = *outbuf;
-		gsize outbuf_len_old = *outbytes_left;
-		while (*inbytes_left > 0) {
-			ret = g_iconv(converter, inbuf, inbytes_left, outbuf, outbytes_left);
-			if (ret == -1) {
-				gchar *old_inbuf = *inbuf;
-				gchar *tmp_inbuf = " ";
-				gsize tmp_inbytes = 1;
-
-				*inbuf = g_utf8_next_char(old_inbuf);
-				*inbytes_left -= (*inbuf - old_inbuf);
-
-				g_iconv(converter, &tmp_inbuf, &tmp_inbytes, outbuf, outbytes_left);
-
-				*error = TRUE;
-			}
-		}
-		outbuf_old[outbuf_len_old - *outbytes_left] = '\0';
-		return ret;
 	}
+
+	gsize ret = 0;
+	gchar *outbuf_old = *outbuf;
+	gsize outbuf_len_old = *outbytes_left;
+	while (*inbytes_left > 0) {
+		ret = g_iconv(converter, inbuf, inbytes_left, outbuf, outbytes_left);
+		if (ret == -1) {
+			gchar *old_inbuf = *inbuf;
+			gchar *tmp_inbuf = " ";
+			gsize tmp_inbytes = 1;
+
+			*inbuf = g_utf8_next_char(old_inbuf);
+			*inbytes_left -= (*inbuf - old_inbuf);
+
+			g_iconv(converter, &tmp_inbuf, &tmp_inbytes, outbuf, outbytes_left);
+
+			*error = TRUE;
+		}
+	}
+	outbuf_old[outbuf_len_old - *outbytes_left] = '\0';
+	return ret;
 }
