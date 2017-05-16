@@ -118,7 +118,7 @@ gfloat rlib_layout_estimate_string_width_from_extra_data(rlib *r, struct rlib_li
 }
 
 gchar *rlib_encode_text(rlib *r, const gchar *text, gchar **result) {
-	if (text == NULL) {
+	if (text == NULL || *text == '\0') {
 		*result = g_strdup("");
 	} else {
 		gchar *text1 = (gchar *)text;
@@ -128,7 +128,7 @@ gchar *rlib_encode_text(rlib *r, const gchar *text, gchar **result) {
 		gchar *result_tmp;
 		gboolean error;
 
-		result_tmp = g_malloc(result_len);
+		result_tmp = g_malloc(result_len + 1);
 		*result = result_tmp;
 
 		rlib_charencoder_convert(r->output_encoder, &text1, &len, &result_tmp, &result_len, &error);
