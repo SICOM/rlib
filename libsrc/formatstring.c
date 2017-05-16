@@ -1112,8 +1112,12 @@ gboolean rlib_format_string(rlib *r, gchar **dest, struct rlib_report_field *rf,
 					types[0] = RLIB_FORMATSTR_NUMBER;
 				else if (RLIB_VALUE_IS_DATE(rval))
 					types[0] = RLIB_FORMATSTR_DATE;
-				else if (RLIB_VALUE_IS_STRING(rval))
+				else if (RLIB_VALUE_IS_STRING(rval) || RLIB_VALUE_IS_ERROR(rval))
 					types[0] = RLIB_FORMATSTR_STRING;
+				else {
+					r_error(r, "Line: %d - Autodetecting type for formatting failed - type is [%d]\n", rf->value_line_number, rval->type);
+					types[0] = RLIB_FORMATSTR_STRING;
+				}
 
 				str = g_string_new("");
 				advance = 0;
