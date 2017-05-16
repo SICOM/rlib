@@ -589,9 +589,10 @@ static gchar *skip_next_closing_paren(gchar *str) {
 }
 
 
-struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *infix, gint line_number, gboolean look_at_metadata) {
-	gchar *moving_ptr = infix;
-	gchar *op_pointer = infix;
+struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part *part, struct rlib_report *report, gchar *infix0, gint line_number, gboolean look_at_metadata) {
+	gchar *infix;
+	gchar *moving_ptr;
+	gchar *op_pointer;
 	gchar operand[255];
 	gint found_op_last = FALSE;
 	gint last_op_was_function = FALSE;
@@ -603,8 +604,12 @@ struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part *part, struct 
 	struct rlib_operator_stack os;
 	struct rlib_pcode_instruction rpi;
 
-	if(infix == NULL || infix[0] == '\0' || !strcmp(infix, ""))
+	if(infix0 == NULL || infix0[0] == '\0' || !strcmp(infix0, ""))
 		return NULL;
+
+	infix = g_strdup(infix0);
+	moving_ptr = infix;
+	op_pointer = infix;
 
 	pcodes = g_malloc(sizeof(struct rlib_pcode));
 
@@ -618,10 +623,21 @@ struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part *part, struct 
 	while(*moving_ptr) {
 		if(*moving_ptr == '\'') {
 			if(instr) {
-				instr = 0;
-				moving_ptr++;
-				if(!*moving_ptr)
-					break;
+				if (*(moving_ptr + 1) == '\'') {
+					char *tmp_ptr = moving_ptr + 1;
+
+					while (*tmp_ptr) {
+						*(tmp_ptr - 1) = *tmp_ptr;
+						tmp_ptr++;
+					}
+					*(tmp_ptr - 1) = *tmp_ptr;
+					moving_ptr++;
+				} else {
+					instr = 0;
+					moving_ptr++;
+					if(!*moving_ptr)
+						break;
+				}
 			}	else
 				instr = 1;
 		}
@@ -668,8 +684,26 @@ struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part *part, struct 
 					moving_ptr +=  op->taglen;
 					save_ptr = moving_ptr;
 					while(*moving_ptr) {
-						if(*moving_ptr == '\'')
-							in_a_string = !in_a_string;
+						if(*moving_ptr == '\'') {
+							if(in_a_string) {
+								if (*(moving_ptr + 1) == '\'') {
+									char *tmp_ptr = moving_ptr + 1;
+
+									while (*tmp_ptr) {
+										*(tmp_ptr - 1) = *tmp_ptr;
+										tmp_ptr++;
+									}
+									*(tmp_ptr - 1) = *tmp_ptr;
+									moving_ptr++;
+								} else {
+									in_a_string = 0;
+									moving_ptr++;
+									if(!*moving_ptr)
+										break;
+								}
+							}	else
+								in_a_string = 1;
+						}
 
 						if(in_a_string == FALSE) {
 							if(*moving_ptr == '(')
@@ -754,6 +788,7 @@ struct rlib_pcode * rlib_infix_to_pcode(rlib *r, struct rlib_part *part, struct 
 		r_error(r, "Line: %d Compiler Error.  Parenthesis Mismatch [%s]\n", line_number, infix);
 	}
 
+	g_free(infix);
 	return pcodes;
 }
 
