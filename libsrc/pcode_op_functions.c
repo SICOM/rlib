@@ -963,7 +963,7 @@ gint rlib_pcode_operator_val(rlib *r, struct rlib_pcode *code, struct rlib_value
 
 /* TODO: REVISIT THIS */
 gint rlib_pcode_operator_str(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gpointer user_data) {
-	gchar fmtstring[20];
+	gchar fmtstring[64];
 	gchar *dest;
 	gint64 n1, n2;
 	struct rlib_value *v1, *v2, *v3, rval_rtn;
