@@ -40,6 +40,8 @@
 #include "rlib_input.h"
 #include "rlib_langinfo.h"
 
+#include "gettext.h"
+
 #define STATE_NONE		0
 #define STATE_BGCOLOR	1
 
@@ -516,12 +518,33 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 			}
 			
 			extra_data[i].translate = FALSE;
-			if(rf->translate_code) {
+			if (rf->translate_code) {
 				gboolean t;
-				if(rlib_execute_as_boolean(r, rf->translate_code, &t)) 
+
+				if (rlib_execute_as_boolean(r, rf->translate_code, &t))
 					extra_data[i].translate = t;
+
+				if (rf->translatectx_code) {
+					gchar *ctx = g_malloc(128);
+
+					if (ctx && rlib_execute_as_string(r, rf->translatectx_code, ctx, 128))
+						extra_data[i].translatectx = ctx;
+					else {
+						g_free(ctx);
+						extra_data[i].translatectx = NULL;
+					}
+				}
+
+				if (rf->translateplural_code) {
+					gint plural;
+
+					if (rlib_execute_as_int(r, rf->translateplural_code, &plural))
+						extra_data[i].translateplural = plural;
+					else
+						extra_data[i].translateplural = -1;
+				}
 			}
-			
+
 			if (rf->memo_code) {
 				gint t;
 				if (rlib_execute_as_boolean(r, rf->memo_code, &t)) { 
@@ -533,13 +556,23 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 			if(extra_data[i].is_memo == FALSE) {
 				rlib_format_string(r, &buf, rf, &extra_data[i].rval_code);
 				if(r->textdomain && r->special_locale && extra_data[i].translate && buf != NULL) {
-					gchar *tmp_str;
+					const gchar *tmp_str;
 
 					setlocale(LC_ALL, r->special_locale);
-					tmp_str = dgettext(r->textdomain, buf);
+					if (extra_data[i].translateplural < 0) {
+						if (extra_data[i].translatectx)
+							tmp_str = dpgettext_expr(r->textdomain, extra_data[i].translatectx, buf);
+						else
+							tmp_str = dgettext(r->textdomain, buf);
+					} else {
+						if (extra_data[i].translatectx)
+							tmp_str = dnpgettext_expr(r->textdomain, extra_data[i].translatectx, buf, buf, extra_data[i].translateplural);
+						else
+							tmp_str = dngettext(r->textdomain, buf, buf, extra_data[i].translateplural);
+					}
 					if(tmp_str != buf) {
 						g_free(buf);
-						buf = g_strdup(tmp_str);				
+						buf = g_strdup(tmp_str);
 					}
 					setlocale(LC_ALL, r->current_locale);
 				}
@@ -551,10 +584,20 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 			} else {
 				rlib_format_string(r, &buf, rf, &extra_data[i].rval_code);
 				if(r->textdomain && r->special_locale && extra_data[i].translate && buf != NULL) {
-					gchar *tmp_str;
+					const gchar *tmp_str;
 
 					setlocale(LC_ALL, r->special_locale);
-					tmp_str = dgettext(r->textdomain, buf);
+					if (extra_data[i].translateplural < 0) {
+						if (extra_data[i].translatectx)
+							tmp_str = dpgettext_expr(r->textdomain, extra_data[i].translatectx, buf);
+						else
+							tmp_str = dgettext(r->textdomain, buf);
+					} else {
+						if (extra_data[i].translatectx)
+							tmp_str = dnpgettext_expr(r->textdomain, extra_data[i].translatectx, buf, buf, extra_data[i].translateplural);
+						else
+							tmp_str = dngettext(r->textdomain, buf, buf, extra_data[i].translateplural);
+					}
 					if(tmp_str != buf) {
 						g_free(buf);
 						buf = g_strdup(tmp_str);				
@@ -577,7 +620,7 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 					*delayed = TRUE;
 			}
 		} else if(e->type == RLIB_ELEMENT_LITERAL) {
-			gchar *txt_pointer;
+			const gchar *txt_pointer;
 			rt = e->data;
 			if(rt->color_code != NULL)	
 				rlib_execute_pcode(r, &extra_data[i].rval_color, rt->color_code, NULL);
@@ -630,11 +673,41 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 				gboolean t;
 				if(rlib_execute_as_boolean(r, rt->translate_code, &t)) 
 					extra_data[i].translate = t;
+
+				if (rt->translatectx_code) {
+					gchar *ctx = g_malloc(128);
+
+					if (ctx && rlib_execute_as_string(r, rt->translatectx_code, ctx, 128))
+						extra_data[i].translatectx = ctx;
+					else {
+						g_free(ctx);
+						extra_data[i].translatectx = NULL;
+					}
+				}
+
+				if (rt->translateplural_code) {
+					gint plural;
+
+					if (rlib_execute_as_int(r, rt->translateplural_code, &plural))
+						extra_data[i].translateplural = plural;
+					else
+						extra_data[i].translateplural = -1;
+				}
 			}
 			txt_pointer = rt->value;
 			if(r->textdomain && r->special_locale && extra_data[i].translate) {
 				setlocale(LC_ALL, r->special_locale);
-				txt_pointer = dgettext(r->textdomain, rt->value);
+				if (extra_data[i].translateplural < 0) {
+					if (extra_data[i].translatectx)
+						txt_pointer = dpgettext_expr(r->textdomain, extra_data[i].translatectx, rt->value);
+					else
+						txt_pointer = dgettext(r->textdomain, rt->value);
+				} else {
+					if (extra_data[i].translatectx)
+						txt_pointer = dnpgettext_expr(r->textdomain, extra_data[i].translatectx, rt->value, rt->value, extra_data[i].translateplural);
+					else
+						txt_pointer = dngettext(r->textdomain, rt->value, rt->value, extra_data[i].translateplural);
+				}
 				setlocale(LC_ALL, r->current_locale);
 			}
 

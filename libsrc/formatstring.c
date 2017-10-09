@@ -378,7 +378,7 @@ gint rlib_format_string(rlib *r, gchar **dest, struct rlib_report_field *rf, str
 	return TRUE;
 }
 
-gchar *rlib_align_text(rlib *r, gchar **my_rtn, gchar *src, gint align, gint width) {
+gchar *rlib_align_text(rlib *r, gchar **my_rtn, const gchar *src, gint align, gint width) {
 	gint len = 0, size = 0, lastidx = 0;
 	gchar *rtn;
 

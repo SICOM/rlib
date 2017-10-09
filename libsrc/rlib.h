@@ -172,6 +172,8 @@ struct rlib_report_literal {
 	struct rlib_from_xml xml_col;
 	struct rlib_from_xml xml_link;
 	struct rlib_from_xml xml_translate;
+	struct rlib_from_xml xml_translatectx;
+	struct rlib_from_xml xml_translateplural;
 
 	gint width;
 	gint align;
@@ -185,6 +187,8 @@ struct rlib_report_literal {
 	struct rlib_pcode *align_code;
 	struct rlib_pcode *link_code;
 	struct rlib_pcode *translate_code;
+	struct rlib_pcode *translatectx_code;
+	struct rlib_pcode *translateplural_code;
 };
 
 struct rlib_resultset_field {
@@ -226,6 +230,8 @@ struct rlib_line_extra_data {
 	gint found_bgcolor;
 	gchar *link;
 	gboolean translate;
+	gchar *translatectx;
+	gint translateplural;
 	gint found_link;
 	gint align;
 	struct rlib_rgb color;
@@ -267,6 +273,8 @@ struct rlib_report_field {
 	struct rlib_from_xml xml_format;
 	struct rlib_from_xml xml_link;
 	struct rlib_from_xml xml_translate;
+	struct rlib_from_xml xml_translatectx;
+	struct rlib_from_xml xml_translateplural;
 	struct rlib_from_xml xml_col;
 	struct rlib_from_xml xml_delayed;
 	struct rlib_from_xml xml_memo;
@@ -280,6 +288,8 @@ struct rlib_report_field {
 	struct rlib_pcode *format_code;
 	struct rlib_pcode *link_code;
 	struct rlib_pcode *translate_code;
+	struct rlib_pcode *translatectx_code;
+	struct rlib_pcode *translateplural_code;
 	struct rlib_pcode *color_code;
 	struct rlib_pcode *bgcolor_code;
 	struct rlib_pcode *col_code;
@@ -1027,7 +1037,7 @@ gint rlib_number_sprintf(rlib *r, gchar **dest, gchar *fmtstr, const struct rlib
 gint rlib_format_string(rlib *r, gchar **buf,  struct rlib_report_field *rf, struct rlib_value *rval);
 gint rlib_format_money(rlib *r, gchar **dest, const gchar *moneyformat, gint64 x);
 gint rlib_format_number(rlib *r, gchar **dest, const gchar *moneyformat, gint64 x);
-gchar *rlib_align_text(rlib *r, char **rtn, gchar *src, gint align, gint width);
+gchar *rlib_align_text(rlib *r, char **rtn, const gchar *src, gint align, gint width);
 GSList * rlib_format_split_string(rlib *r, gchar *data, gint width, gint max_lines, gchar new_line, gchar space, gint *line_count);
 
 /***** PROTOTYPES: fxp.c ******************************************************/

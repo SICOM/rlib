@@ -107,6 +107,8 @@ static struct rlib_element * parse_line_array(rlib *r, xmlDocPtr doc, xmlNsPtr n
 			get_both(&f->xml_format, cur, "format");
 			get_both(&f->xml_link, cur, "link");
 			get_both(&f->xml_translate, cur, "translate");
+			get_both(&f->xml_translatectx, cur, "translatectx");
+			get_both(&f->xml_translateplural, cur, "translateplural");
 			get_both(&f->xml_col, cur, "col");
 			get_both(&f->xml_delayed, cur, "delayed");
 			get_both(&f->xml_memo, cur, "memo");
@@ -134,6 +136,8 @@ static struct rlib_element * parse_line_array(rlib *r, xmlDocPtr doc, xmlNsPtr n
 			get_both(&t->xml_italics, cur, "italics");
 			get_both(&t->xml_link, cur, "link");
 			get_both(&t->xml_translate, cur, "translate");
+			get_both(&t->xml_translatectx, cur, "translatectx");
+			get_both(&t->xml_translateplural, cur, "translateplural");
 			get_both(&t->xml_col, cur, "col");
 
 			current->data = t;
