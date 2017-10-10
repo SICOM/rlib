@@ -93,6 +93,8 @@ static void rlib_text_free_pcode(rlib *r, struct rlib_report_literal *rt) {
 	xmlFree(rt->xml_italics.xml);
 	xmlFree(rt->xml_link.xml);
 	xmlFree(rt->xml_translate.xml);
+	xmlFree(rt->xml_translatectx.xml);
+	xmlFree(rt->xml_translateplural.xml);
 	xmlFree(rt->xml_col.xml);
 	g_free(rt);
 }
@@ -123,6 +125,8 @@ static void rlib_field_free_pcode(rlib *r, struct rlib_report_field *rf) {
 	xmlFree(rf->xml_format.xml);
 	xmlFree(rf->xml_link.xml);
 	xmlFree(rf->xml_translate.xml);
+	xmlFree(rf->xml_translatectx.xml);
+	xmlFree(rf->xml_translateplural.xml);
 	xmlFree(rf->xml_col.xml);
 	xmlFree(rf->xml_delayed.xml);
 	xmlFree(rf->xml_memo.xml);

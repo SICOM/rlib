@@ -62,9 +62,7 @@ gint rlib_resolve_rlib_variable(rlib *r, gchar *name) {
 gchar * rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 	struct input_filter *rs = INPUT(r, rf->resultset);
 	gsize slen, elen;
-	gchar *ptr = NULL;
 	gchar *str;
-
 
 	if(r->results[rf->resultset]->navigation_failed == TRUE)
 		return NULL;
@@ -76,10 +74,12 @@ gchar * rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 	if(str == NULL)
 		return g_strdup("");
 	else {
+		gchar *ptr;
 		gboolean error __attribute__((unused));
 
 		slen = strlen(str);
-		elen = MAXSTRLEN;
+		elen = slen * 3;
+		ptr = g_malloc(elen + 1);
 		/* Here we are converting to UTF-8, so we don't care about the error */
 		rlib_charencoder_convert(rs->info.encoder, &str, &slen, &ptr, &elen, &error);
 		return ptr;
@@ -146,6 +146,8 @@ static void rlib_field_resolve_pcode(rlib *r, struct rlib_part *part, struct rli
 	rf->format_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_format.xml, rf->xml_format.line, TRUE);
 	rf->link_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_link.xml, rf->xml_link.line, TRUE);
 	rf->translate_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_translate.xml, rf->xml_translate.line, TRUE);
+	rf->translatectx_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_translatectx.xml, rf->xml_translatectx.line, TRUE);
+	rf->translateplural_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_translateplural.xml, rf->xml_translateplural.line, TRUE);
 	rf->color_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_color.xml, rf->xml_color.line, TRUE);
 	rf->bgcolor_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_bgcolor.xml, rf->xml_bgcolor.line, TRUE);
 	rf->col_code = rlib_infix_to_pcode(r, part, report, (gchar *)rf->xml_col.xml, rf->xml_col.line, TRUE);
@@ -168,6 +170,8 @@ static void rlib_literal_resolve_pcode(rlib *r, struct rlib_part *part, struct r
 	rt->bgcolor_code = rlib_infix_to_pcode(r, part, report, (gchar *)rt->xml_bgcolor.xml, rt->xml_bgcolor.line, TRUE);
 	rt->link_code = rlib_infix_to_pcode(r, part, report, (gchar *)rt->xml_link.xml, rt->xml_link.line, TRUE);
 	rt->translate_code = rlib_infix_to_pcode(r, part, report, (gchar *)rt->xml_translate.xml, rt->xml_translate.line, TRUE);
+	rt->translatectx_code = rlib_infix_to_pcode(r, part, report, (gchar *)rt->xml_translatectx.xml, rt->xml_translatectx.line, TRUE);
+	rt->translateplural_code = rlib_infix_to_pcode(r, part, report, (gchar *)rt->xml_translateplural.xml, rt->xml_translateplural.line, TRUE);
 	rt->col_code = rlib_infix_to_pcode(r, part, report, (gchar *)rt->xml_col.xml, rt->xml_col.line, TRUE);
 	rt->width_code = rlib_infix_to_pcode(r, part, report, (gchar *)rt->xml_width.xml, rt->xml_width.line, TRUE);
 	rt->bold_code = rlib_infix_to_pcode(r, part, report, (gchar *)rt->xml_bold.xml, rt->xml_bold.line, TRUE);
