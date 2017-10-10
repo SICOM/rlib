@@ -40,6 +40,7 @@
 #include "rlib_input.h"
 #include "rlib_langinfo.h"
 
+#define ENABLE_NLS 1
 #include "gettext.h"
 
 #define STATE_NONE		0
