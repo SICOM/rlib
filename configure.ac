@@ -338,17 +338,20 @@ GD_LIBS=""
 GD_LINK=""
 GD_LDFLAGS=""
 if test x$enable_gd = xyes; then
-	AC_PATH_PROG(GD_CONFIG, gdlib-config, no)
-	if test "x$GD_CONFIG" = "xno" ; then
-		enable_gd=no
-		echo "*** WARNING: GD NOT FOUND IN PATH.  RLIB WILL NOT BE COMPILED WITH SUPPORT FOR IT"
-	else
-		AC_DEFINE(HAVE_GD,1,[Build with GD support])
-		GD_CFLAGS=`"$GD_CONFIG" --includes`
-		GD_LIBS=`"$GD_CONFIG" --ldflags`
-		GD_LINK="-lgd"
-		GD_LDFLAGS=`"$GD_CONFIG" --libs`
-	fi
+	PKG_CHECK_MODULES(GD, gdlib,[
+			AC_DEFINE(HAVE_GD,1,[Build with GD support])
+		],[
+		AC_PATH_PROG(GD_CONFIG, gdlib-config, no)
+		if test "x$GD_CONFIG" = "xno" ; then
+			enable_gd=no
+			echo "*** WARNING: GD NOT FOUND IN PATH.  RLIB WILL NOT BE COMPILED WITH SUPPORT FOR IT"
+		else
+			AC_DEFINE(HAVE_GD,1,[Build with GD support])
+			GD_CFLAGS=`"$GD_CONFIG" --includes`
+			GD_LIBS=`"$GD_CONFIG" --ldflags`
+			GD_LINK="-lgd"
+			GD_LDFLAGS=`"$GD_CONFIG" --libs`
+		fi])
 fi
 AC_SUBST(GD_CFLAGS)
 AC_SUBST(GD_LIBS)
