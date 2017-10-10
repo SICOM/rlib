@@ -62,9 +62,7 @@ gint rlib_resolve_rlib_variable(rlib *r, gchar *name) {
 gchar * rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 	struct input_filter *rs = INPUT(r, rf->resultset);
 	gsize slen, elen;
-	gchar *ptr = NULL;
 	gchar *str;
-
 
 	if(r->results[rf->resultset]->navigation_failed == TRUE)
 		return NULL;
@@ -76,10 +74,12 @@ gchar * rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 	if(str == NULL)
 		return g_strdup("");
 	else {
+		gchar *ptr;
 		gboolean error __attribute__((unused));
 
 		slen = strlen(str);
-		elen = MAXSTRLEN;
+		elen = slen * 3;
+		ptr = g_malloc(elen + 1);
 		/* Here we are converting to UTF-8, so we don't care about the error */
 		rlib_charencoder_convert(rs->info.encoder, &str, &slen, &ptr, &elen, &error);
 		return ptr;

@@ -47,11 +47,18 @@ void rlib_charencoder_free(GIConv converter) {
 		g_iconv_close(converter);
 }
 
+/*
+ * This function expects that the output buffer is
+ * pre-allocated and the buffer is at least
+ * one byte larger than *outbytes_left.
+ */
 gsize rlib_charencoder_convert(GIConv converter, gchar **inbuf, gsize *inbytes_left, gchar **outbuf, gsize *outbytes_left, gboolean *error) {
 	*error = FALSE;
 
 	if((converter == (GIConv) -1) || (converter == (GIConv) 0)) {
-		*outbuf = g_strdup(*inbuf);
+		gsize copy_data = (*outbytes_left < *inbytes_left ? *outbytes_left : *inbytes_left);
+		memcpy(*outbuf, *inbuf, copy_data);
+		(*outbuf)[copy_data] = '\0';
 		return 1;
 	} else {
 		gsize ret = 0;
