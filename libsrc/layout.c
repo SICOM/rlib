@@ -33,6 +33,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <libintl.h>
+#include <locale.h>
 
 #include <rpdf.h>
 #include "rlib.h"
