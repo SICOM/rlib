@@ -69,7 +69,7 @@ static GString *rlib_php_dump_memory_variables(void) {
 			rlib_escape_c_string(dump, Z_STRVAL_P(result), -1);
 			g_string_append(dump, "\"\n");
 		} else if (Z_TYPE_P(result) == IS_LONG)
-			g_string_append_printf(dump, "%s=\"%ld\"\n", str, Z_LVAL_P(result));
+			g_string_append_printf(dump, "%s=\"%ld\"\n", str, (long)Z_LVAL_P(result));
 		else if (Z_TYPE_P(result) == IS_DOUBLE)
 			g_string_append_printf(dump, "%s=\"%lf\"\n", str, Z_DVAL_P(result));
 		else if (Z_TYPE_P(result) == IS_NULL)
