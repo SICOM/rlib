@@ -48,17 +48,17 @@ struct _private {
 };
 
 gpointer rlib_mysql_real_connect(input_filter *input, gchar *group, gchar *host, gchar *user, gchar *password, gchar *database) {
-	MYSQL *mysql;
+	MYSQL *mysql0, *mysql;
 	unsigned int port = 3306;
 	gchar *host_copy = NULL;
 
-	mysql = mysql_init(NULL);
+	mysql0 = mysql_init(NULL);
 
-	if(mysql == NULL)
+	if (mysql0 == NULL)
 		return NULL;
 
-	if(group != NULL) {
-		if (mysql_options(mysql,MYSQL_READ_DEFAULT_GROUP,group))
+	if (group != NULL) {
+		if (mysql_options(mysql0, MYSQL_READ_DEFAULT_GROUP, group))
 			return NULL;
 	} else if (host) {
 		char *tmp, *port_s;
@@ -71,15 +71,15 @@ gpointer rlib_mysql_real_connect(input_filter *input, gchar *group, gchar *host,
 		}
 	}
 
-	if (mysql_real_connect(mysql,
-		group == NULL ? host_copy : mysql->options.host,
-		group == NULL ? user : mysql->options.user,
-		group == NULL ? password : mysql->options.password,
-		group == NULL ? database : mysql->options.db,
-		group == NULL ? port : mysql->options.port,
-		group == NULL ? NULL : mysql->options.unix_socket,
-		0
-	   ) == NULL) {
+	mysql = mysql_real_connect(mysql0,
+		group == NULL ? host_copy : mysql0->options.host,
+		group == NULL ? user : mysql0->options.user,
+		group == NULL ? password : mysql0->options.password,
+		group == NULL ? database : mysql0->options.db,
+		group == NULL ? port : mysql0->options.port,
+		group == NULL ? NULL : mysql0->options.unix_socket,
+		0);
+	if (mysql == NULL) {
 		g_free(host_copy);
 		r_error(input->r, "ERROR: mysql_real_connect returned: %s\n", mysql_error(mysql));
 		return NULL;
