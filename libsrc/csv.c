@@ -93,7 +93,8 @@ static char csv_get_delimiter(rlib *r) {
 }
 
 static void really_print_text(rlib *r, const gchar *passed_text, gint rval_type, gint field_count) {
-	gchar buf[MAXSTRLEN], text[MAXSTRLEN];
+	GString *buf = g_string_new(NULL);
+	gchar text[MAXSTRLEN];
 	gchar *str_ptr;
 	gchar csv_delimeter;
 	gint text_size = strlen(passed_text);
@@ -128,39 +129,40 @@ static void really_print_text(rlib *r, const gchar *passed_text, gint rval_type,
 			text_size += 2;
 
 			if (field_count == 0) {
-				sprintf(buf, "\"%s\"", text);
+				g_string_printf(buf, "\"%s\"", text);
 			} else {
 				/* Handle null delimeter */
 				if (csv_delimeter) {
-					sprintf(buf, "%c\"%s\"", csv_delimeter, text);
+					g_string_printf(buf, "%c\"%s\"", csv_delimeter, text);
 					text_size += 1;
 				} else {
-					sprintf(buf, "\"%s\"", text);					
+					g_string_printf(buf, "\"%s\"", text);
 				}
 			}
 		} else {
 			text_size = spot -1;
 			if (field_count == 0) {
-				sprintf(buf, "%s", text);
+				g_string_printf(buf, "%s", text);
 			} else {
 				/* Handle null delimeter */
 				if (csv_delimeter) {
-					sprintf(buf, "%c%s", csv_delimeter, text);
+					g_string_printf(buf, "%c%s", csv_delimeter, text);
 					text_size += 1;
 				} else {
-					strcat(buf, text);
+					g_string_printf(buf, "%s", text);
 				}
 			}
 		}
 	} else {
-		strcpy(buf, passed_text);
+		g_string_printf(buf, "%s", passed_text);
 	}
 
 	make_more_space_if_necessary(&OUTPUT_PRIVATE(r)->top, &OUTPUT_PRIVATE(r)->top_size, 
 		&OUTPUT_PRIVATE(r)->top_total_size, text_size);
 	str_ptr = OUTPUT_PRIVATE(r)->top;	
 	size = &OUTPUT_PRIVATE(r)->top_size;
-	memcpy(str_ptr + (*size), buf, text_size+1);
+	memcpy(str_ptr + (*size), buf->str, text_size + 1);
+	g_string_free(buf, TRUE);
 	*size = (*size) + text_size;
 }
 

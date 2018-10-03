@@ -24,38 +24,36 @@
 
 int main(int argc, char **argv) {
 	char *hostname, *username, *password, *database;
-	char query[MAXSTRLEN*20];
+	char *query;
 	rlib *r;
 
-	if(argc != 5) {
+	if (argc != 5) {
 		fprintf(stderr, "%s requires 4 arguments hostname username password database\n", argv[0]);
 		fprintf(stderr, "You provided %d\n", argc-1);
 		return -1;
 	}
-	
+
 	hostname = argv[1];
 	username = argv[2];
 	password = argv[3];
 	database = argv[4];
 
-	sprintf(query, " ");
-	sprintf(query, "%s SELECT store_hierarchy.g0_name, store_hierarchy.g1_name, store_hierarchy.g2_name, store_hierarchy.g3_name, store_hierarchy.g4_name,", query);
-	sprintf(query, "%s stores.name, topline.date, topline.rn as stores_rn, ", query);
-	sprintf(query, "%s sum(topline.foodsales_amount) as foodsales_amount, sum(topline.nonfood_amount) as nonfood_amount,  ", query);
-	sprintf(query, "%s sum(topline.totaltax_amount) as totaltax_amount, sum(topline.giftsales_amount) as giftsales_amount, ", query);
-	sprintf(query, "%s sum(topline.giftcert_amount) as giftcert_amount, ", query);
-	sprintf(query, "%s sum(topline.totaldeposits_amount) as totaldeposits_amount, ", query);
-	sprintf(query, "%s sum(topline.paidin_amount) as paidin_amount, ", query);
-	sprintf(query, "%s sum(topline.paidout_amount) as paidout_amount ", query);
-	sprintf(query, "%s FROM store_hierarchy, stores, topline ", query);
-	sprintf(query, "%s WHERE topline.date between \"2003-01-01\" AND \"2003-01-07\"", query);
-	sprintf(query, "%s AND topline.store = stores.rn ", query);
-	sprintf(query, "%s AND store_hierarchy.store = stores.rn ", query);
-	sprintf(query, "%s AND store_hierarchy.g0 = 1", query);
-	sprintf(query, "%s AND store_hierarchy.store in (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)", query);
-	sprintf(query, "%s GROUP BY topline.store", query);
-	sprintf(query, "%s ORDER BY g0,g1,g2,g3,g4, stores.name", query);
-
+	query = "SELECT store_hierarchy.g0_name, store_hierarchy.g1_name, store_hierarchy.g2_name, store_hierarchy.g3_name, store_hierarchy.g4_name,"
+			"stores.name, topline.date, topline.rn as stores_rn, "
+			"sum(topline.foodsales_amount) as foodsales_amount, sum(topline.nonfood_amount) as nonfood_amount,  "
+			"sum(topline.totaltax_amount) as totaltax_amount, sum(topline.giftsales_amount) as giftsales_amount, "
+			"sum(topline.giftcert_amount) as giftcert_amount, "
+			"sum(topline.totaldeposits_amount) as totaldeposits_amount, "
+			"sum(topline.paidin_amount) as paidin_amount, "
+			"sum(topline.paidout_amount) as paidout_amount "
+			"FROM store_hierarchy, stores, topline "
+			"WHERE topline.date between \"2003-01-01\" AND \"2003-01-07\""
+			"AND topline.store = stores.rn "
+			"AND store_hierarchy.store = stores.rn "
+			"AND store_hierarchy.g0 = 1"
+			"AND store_hierarchy.store in (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)"
+			"GROUP BY topline.store"
+			"ORDER BY g0,g1,g2,g3,g4, stores.name";
 
 	r = rlib_init();
 	rlib_add_datasource_mysql(r, "local_mysql", hostname, username, password, database);

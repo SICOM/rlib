@@ -142,7 +142,7 @@ gint determine_graph_type(gchar *type, gchar *subtype) {
 */
 static void rlib_graph_label_y_axis(rlib *r, gint side, gboolean for_real, gint y_ticks, gdouble y_min, gdouble y_max, gdouble y_origin, gint decimal_hint) {
 	gint i,j,max=0;
-	gchar format[20];
+	gchar format[64];
 	gint max_slen = 0;
 	if(decimal_hint < 0) {
 		for(j=0;j<6;j++) {

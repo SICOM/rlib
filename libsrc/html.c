@@ -255,29 +255,33 @@ static void html_end_boxurl(rlib *r, gint backwards) {
 
 static void html_hr(rlib *r, gint backwards, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall,
 struct rlib_rgb *color, gfloat indent, gfloat length) {
-	gchar buf[MAXSTRLEN];
-	gchar nbsp[MAXSTRLEN];
 	gchar color_str[40];
-	gchar td[MAXSTRLEN];
+	gchar *buf = NULL, *td = NULL;
 	int i;
+
 	get_html_color(color_str, color);
 
+	if (how_tall <= 0)
+		return;
 
-	if( how_tall > 0 ) {
-		nbsp[0] = 0;
-		td[0] = 0;
-		if(indent > 0) {
-			for(i=0;i<(int)indent;i++)
-				strcpy(nbsp + (i*6), "&nbsp;");
-			sprintf(td, "<td style=\"height:%dpx; line-height:%dpx;\">%s</td>", (int)how_tall, (int)how_tall, nbsp);
-		}
+	if (indent > 0) {
+		int nbsp_nr = (int)indent;
+		gchar *nbsp = malloc(nbsp_nr * 6 + 8);
 
-		print_text(r, "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:100%;\"><tr>", backwards);
-		sprintf(buf,"%s<td style=\"height:%dpx; background-color:%s; width:100%%\"></td>",  td, (int)how_tall,color_str);
-		print_text(r, buf, backwards);
-		print_text(r, "</tr></table>\n", backwards);
-
+		for (i = 0; i < nbsp_nr; i++)
+			strcpy(nbsp + (i * 6), "&nbsp;");
+		if (asprintf(&td, "<td style=\"height:%dpx; line-height:%dpx;\">%s</td>", (int)how_tall, (int)how_tall, nbsp) < 0)
+			td = NULL;
+		free(nbsp);
 	}
+
+	print_text(r, "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:100%;\"><tr>", backwards);
+	if (asprintf(&buf,"%s<td style=\"height:%dpx; background-color:%s; width:100%%\"></td>", (td ? td : ""), (int)how_tall,color_str) < 0)
+		buf = NULL;
+	free(td);
+	print_text(r, (buf ? buf : ""), backwards);
+	free(buf);
+	print_text(r, "</tr></table>\n", backwards);
 }
 
 static void html_background_image(rlib *r, gfloat left_origin, gfloat bottom_origin, gchar *nname, gchar *type, gfloat nwidth,
