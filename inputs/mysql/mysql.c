@@ -68,6 +68,8 @@ gpointer rlib_mysql_real_connect(input_filter *input, gchar *group, gchar *host,
 			*tmp = '\0';
 			port_s = tmp + 1;
 			port = atoi(port_s);
+			if (!port)
+				port = 3306;
 		}
 	}
 
