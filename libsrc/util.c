@@ -462,7 +462,10 @@ void make_all_locales_utf8(void) {
 }
 
 /* For debug purposes so I can see a hex dump of certain utf8 strings. */
-inline guint itox(guint i) { return (i < 10)?'0'+i:'A'+i-10; }
+static guint itox(guint i) {
+	return (i < 10) ? '0' + i : 'A' + i - 10;
+}
+
 gchar *str2hex(const gchar *str) {
 	guint ch;
 	gchar *result = g_malloc(2 * strlen(str) + 1);
