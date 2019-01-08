@@ -114,7 +114,7 @@ static char * rlib_php_resolve_memory_variable(char *name) {
 	if (Z_TYPE_P(result) == IS_STRING)
 		data_result = Z_STRVAL_P(result);
 	else if (Z_TYPE_P(result) == IS_LONG) {
-		sprintf(dstr, "%ld", Z_LVAL_P(result));
+		sprintf(dstr, "%ld", (long)Z_LVAL_P(result));
 		data_result = estrdup(dstr);
 	} else if (Z_TYPE_P(result) == IS_DOUBLE) {
 		sprintf(dstr, "%f", Z_DVAL_P(result));

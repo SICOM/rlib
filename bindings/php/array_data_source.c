@@ -232,10 +232,10 @@ void * php_array_new_result_from_query(input_filter *input, struct rlib_queries 
 			if (Z_TYPE_P(lookup_value) == IS_STRING)
 				data_result = Z_STRVAL_P(lookup_value);
 			else if (Z_TYPE_P(lookup_value) == IS_LONG) {
-				sprintf(dstr,"%ld",Z_LVAL_P(lookup_value));
+				sprintf(dstr, "%ld", (long)Z_LVAL_P(lookup_value));
 				data_result = estrdup(dstr);
 			} else if (Z_TYPE_P(lookup_value) == IS_DOUBLE) {
-				sprintf(dstr,"%f",Z_DVAL_P(lookup_value));
+				sprintf(dstr, "%f", Z_DVAL_P(lookup_value));
 				data_result = estrdup(dstr);
 			} else if (Z_TYPE_P(lookup_value) == IS_NULL) {
 				data_result = estrdup("");
