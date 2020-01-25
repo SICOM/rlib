@@ -119,9 +119,11 @@ gint rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gint *r
 			found = TRUE;
 			resultset = t;
 		} else {
-			if(!isdigit((int)*result_name))
+			if(!isdigit((int)*result_name)) {
+				g_free(result_name);
 				return FALSE;
-		}		
+			}
+		}
 	}
 	*rtn_field = INPUT(r, resultset)->resolve_field_pointer(INPUT(r, resultset), r->results[resultset]->result, name);
 	
