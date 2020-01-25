@@ -26,6 +26,7 @@
  *
  */
  
+#include <assert.h>
 #include <libxml/parser.h>
 #include <stdlib.h>
 #include <string.h>
@@ -529,6 +530,7 @@ gfloat rlib_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, g
 				}
 			}
 		}
+		assert(i > 0);
 	}
 	
 	last_row_values = g_malloc(i * sizeof(gfloat));
