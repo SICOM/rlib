@@ -86,13 +86,14 @@ static struct rlib_element * parse_line_array(rlib *r, xmlDocPtr doc, xmlNsPtr n
 	while (cur != NULL) {
 		current = NULL;
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "field"))) {
-			struct rlib_report_field *f = g_new0(struct rlib_report_field, 1);
-			current = (void *)g_new0(struct rlib_element, 1);
+			struct rlib_report_field *f;
 			sp = xmlGetProp(cur, (const xmlChar *) "value");
 			if(sp == NULL) {
 				r_error(r, "Line: %d - <field> is missing 'value' attribute. \n", xmlGetLineNo (cur),cur->name);
 				return NULL;
 			}
+			f = g_new0(struct rlib_report_field, 1);
+			current = (void *)g_new0(struct rlib_element, 1);
 			f->value = g_malloc0(strlen((char *)sp) + sizeof(gchar));
 			safestrncpy(f->value, (gchar *)sp, strlen((char *)sp)+1);
 			xmlFree(sp);
@@ -803,6 +804,7 @@ struct rlib_part * parse_part_file(rlib *r, int report_index) {
 	part = (struct rlib_part *) g_new0(struct rlib_part, 1);
 	if(part == NULL) {
 		r_error(r, "Out of Memory :(\n");
+		g_free(report);
 		xmlFreeDoc(doc);
 		return(NULL);
 	}
