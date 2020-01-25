@@ -31,6 +31,7 @@ static GString *rlib_php_dump_memory_variables(void) {
 	zval **data;
 #endif
 	zval *result;
+	TSRMLS_FETCH();
 
 	dump = g_string_new("");
 
