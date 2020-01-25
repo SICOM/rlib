@@ -465,11 +465,12 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 		if (e->type == RLIB_ELEMENT_FIELD) {
 			gchar *buf = NULL;
 			rf = e->data;
-			if (rf == NULL) 
+			if (rf == NULL) {
 				r_error(r, "report_field is NULL ... will crash");
-			else if 
-				(rf->code == NULL) r_error(r, "There is no code for field");
-			
+				abort();
+			} else if (rf->code == NULL)
+				r_error(r, "There is no code for field");
+
 			rlib_execute_pcode(r, &extra_data[i].rval_code, rf->code, NULL);	
 			if(rf->link_code != NULL) {	
 				rlib_execute_pcode(r, &extra_data[i].rval_link, rf->link_code, &extra_data[i].rval_code);
