@@ -762,6 +762,7 @@ gint rlib_execute(rlib *r) {
 
 gchar * rlib_get_content_type_as_text(rlib *r) {
 	static char buf[256];
+	const char *charset = r->output_encoder_name != NULL ? r->output_encoder_name: "UTF-8";
 	gchar *filename = g_hash_table_lookup(r->output_parameters, "csv_file_name");
 	
 	if(r->did_execute == TRUE) {
@@ -770,15 +771,17 @@ gchar * rlib_get_content_type_as_text(rlib *r) {
 			return buf;
 		}
 		if(r->format == RLIB_CONTENT_TYPE_CSV) {
-			
-			if(filename == NULL)
+			gchar *csv_as_text = g_hash_table_lookup(r->output_parameters, "csv_as_text");
+			if (csv_as_text && (!strcasecmp(csv_as_text, "yes") || !strcasecmp(csv_as_text, "true"))) {
+				g_snprintf(buf, sizeof(buf), RLIB_WEB_CONTENT_TYPE_TEXT, charset);
+				return buf;
+			} else if (filename == NULL)
 				return (gchar *)RLIB_WEB_CONTENT_TYPE_CSV;
 			else {
 				sprintf(buf, RLIB_WEB_CONTENT_TYPE_CSV_FORMATTED, filename);
 				return buf;
 			}
 		} else {
-			const char *charset = r->output_encoder_name != NULL ? r->output_encoder_name: "UTF-8";
 			if(r->format == RLIB_CONTENT_TYPE_HTML) {
 				g_snprintf(buf, sizeof(buf), RLIB_WEB_CONTENT_TYPE_HTML, charset);
 				return buf;
