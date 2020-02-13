@@ -170,7 +170,11 @@ ZEND_FUNCTION(rlib_init) {
 	rip->r = rlib_init_with_environment(rlib_php_new_environment());
 	
 #if PHP_MAJOR_VERSION < 7
+#if PHP_VERSION_ID >= 50400
+	resource_id = zend_register_resource(return_value, rip, le_link TSRMLS_CC);
+#else
 	resource_id = zend_register_resource(return_value, rip, le_link);
+#endif
 	RETURN_RESOURCE(resource_id);
 #else
 	res = zend_register_resource(rip, le_link);
