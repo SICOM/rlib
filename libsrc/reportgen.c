@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2020 SICOM Systems, INC.
+ *  Copyright (C) 2003-2014 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -710,9 +710,9 @@ gint rlib_make_report(rlib *r) {
 	for(i=0;i<r->parts_count;i++) {
 		struct rlib_part *part = r->parts[i];
 		rlib_fetch_first_rows(r);
-		rlib_resolve_part_fields(r, part);
 		if(part->has_only_one_report) 
 			rlib_evaulate_single_report_variables(r, part);
+		rlib_resolve_part_fields(r, part);
 		
 		for(iterations=0;iterations<part->iterations;iterations++) {
 			rlib_fetch_first_rows(r);
