@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2017 SICOM Systems, INC.
+ *  Copyright (C) 2003-2020 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -308,19 +308,24 @@ static void pdf_start_new_page(rlib *r, struct rlib_part *part) {
 	gint i=0;
 	gint pages_across = part->pages_across;
 	gchar paper_type[40];
+	struct rlib_paper *paper = part->paper;
+
 	r->current_page_number++;
-	
-	sprintf(paper_type, "0 0 %ld %ld", part->paper->width, part->paper->height);
+
+	if (!paper)
+		paper = rlib_layout_get_paper(r, RPDF_PAPER_LETTER);
+	sprintf(paper_type, "0 0 %ld %ld", paper->width, paper->height);
+
 	for(i=0;i<pages_across;i++) {
 		if(part->orientation == RLIB_ORIENTATION_LANDSCAPE) {
-			part->position_bottom[i] = (part->paper->width/RLIB_PDF_DPI)-part->bottom_margin;
-			rpdf_new_page(OUTPUT_PRIVATE(r)->pdf, part->paper->type, RPDF_LANDSCAPE); 
-			rpdf_translate(OUTPUT_PRIVATE(r)->pdf, 0.0, (part->paper->height/RLIB_PDF_DPI));	
-		   rpdf_rotate(OUTPUT_PRIVATE(r)->pdf, -90.0);
+			part->position_bottom[i] = (paper->width/RLIB_PDF_DPI) - part->bottom_margin;
+			rpdf_new_page(OUTPUT_PRIVATE(r)->pdf, paper->type, RPDF_LANDSCAPE);
+			rpdf_translate(OUTPUT_PRIVATE(r)->pdf, 0.0, (paper->height/RLIB_PDF_DPI));
+			rpdf_rotate(OUTPUT_PRIVATE(r)->pdf, -90.0);
 			part->landscape = 1;
 		} else {
-			part->position_bottom[i] = (part->paper->height/RLIB_PDF_DPI)-part->bottom_margin;
-			rpdf_new_page(OUTPUT_PRIVATE(r)->pdf, part->paper->type, RPDF_PORTRAIT); 
+			part->position_bottom[i] = (paper->height/RLIB_PDF_DPI) - part->bottom_margin;
+			rpdf_new_page(OUTPUT_PRIVATE(r)->pdf, paper->type, RPDF_PORTRAIT);
 			part->landscape = 0;
 		}
 	}
