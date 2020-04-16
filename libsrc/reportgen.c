@@ -184,12 +184,11 @@ gint will_outputs_fit(rlib *r, struct rlib_part *part, struct rlib_report *repor
 
 void rlib_set_report_from_part(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat top_margin_offset) {
 	gint i;
-	for(i=0;i<report->pages_across;i++) {
-		report->position_top[i] = report->top_margin + part->position_top[0] + top_margin_offset;
-		report->bottom_size[i] = part->bottom_size[0];
-		report->position_bottom[i] = part->position_bottom[0];
+	for (i = 0; i < report->pages_across; i++) {
+		report->position_top[i] = report->top_margin + (part->position_top ? part->position_top[0] : 0) + top_margin_offset;
+		report->bottom_size[i] = (part->bottom_size ? part->bottom_size[0] : 0);
+		report->position_bottom[i] = (part->position_bottom ? part->position_bottom[0] : 0);
 	}
-
 }
 
 gint rlib_end_page_if_line_wont_fit(rlib *r, struct rlib_part *part, struct rlib_report *report, struct rlib_element *e) {
