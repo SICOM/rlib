@@ -1,7 +1,8 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
+ *  Updated for PHP 7: Zoltán Böszörményi <zboszormenyi@sicom.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of version 2 of the GNU General Public
@@ -19,18 +20,12 @@
  */
 #include <config.h>
 
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_NAME
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
- 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <glib.h>
 #include <php.h>
- 
+
 #include "rlib.h"
 #include "rlib_input.h"
 
@@ -50,15 +45,15 @@ struct _private {
 	int	dummy;
 };
 
-static gint rlib_php_array_input_close(gpointer input_ptr) {
+static gint rlib_php_array_input_close(input_filter *input) {
 	return TRUE;
 }
 
-static const gchar* rlib_php_array_get_error(gpointer input_ptr) {
+static const gchar* rlib_php_array_get_error(input_filter *input) {
 	return "Hard to make a mistake here.. try checking your names/spellings";
 }
 
-static gint rlib_php_array_first(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_php_array_first(input_filter *input, gpointer result_ptr) {
 	struct rlib_php_array_results *result = result_ptr;
 
 	if(result_ptr == NULL) {
@@ -74,7 +69,7 @@ static gint rlib_php_array_first(gpointer input_ptr, gpointer result_ptr) {
 	return TRUE;
 }
 
-static gint rlib_php_array_next(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_php_array_next(input_filter *input, gpointer result_ptr) {
 	struct rlib_php_array_results *result = result_ptr;
 	result->current_row++;
 	result->isdone = FALSE;
@@ -84,7 +79,7 @@ static gint rlib_php_array_next(gpointer input_ptr, gpointer result_ptr) {
 	return FALSE;
 }
 
-static gint rlib_php_array_isdone(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_php_array_isdone(input_filter *input, gpointer result_ptr) {
 	struct rlib_php_array_results *result = result_ptr;
 
 	if(result == NULL)
@@ -93,7 +88,7 @@ static gint rlib_php_array_isdone(gpointer input_ptr, gpointer result_ptr) {
 	return result->isdone;
 }
 
-static gint rlib_php_array_previous(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_php_array_previous(input_filter *input, gpointer result_ptr) {
 	struct rlib_php_array_results *result = result_ptr;
 	result->current_row--;
 	result->isdone = FALSE;
@@ -104,13 +99,13 @@ static gint rlib_php_array_previous(gpointer input_ptr, gpointer result_ptr) {
 	return TRUE;
 }
 
-static gint rlib_php_array_last(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_php_array_last(input_filter *input, gpointer result_ptr) {
 	struct rlib_php_array_results *result = result_ptr;
 	result->current_row = result->rows-1;
 	return TRUE;
 }
 
-static gchar * rlib_php_array_get_field_value_as_string(gpointer input_ptr, gpointer result_ptr, gpointer field_ptr) {
+static gchar * rlib_php_array_get_field_value_as_string(input_filter *input, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_php_array_results *result = result_ptr;
 	int which_field = GPOINTER_TO_INT(field_ptr) - 1;
 	if(result->rows <= 1 || result->current_row >= result->rows)
@@ -119,7 +114,7 @@ static gchar * rlib_php_array_get_field_value_as_string(gpointer input_ptr, gpoi
 	return result->data[(result->current_row*result->cols)+which_field];
 }
 
-static gpointer rlib_php_array_resolve_field_pointer(gpointer input_ptr, gpointer result_ptr, gchar *name) {
+static gpointer rlib_php_array_resolve_field_pointer(input_filter *input, gpointer result_ptr, gchar *name) {
 	struct rlib_php_array_results *result = result_ptr;
 	int i;
 
@@ -135,10 +130,13 @@ static gpointer rlib_php_array_resolve_field_pointer(gpointer input_ptr, gpointe
 	return NULL;
 }
 
-void * php_array_new_result_from_query(gpointer input_ptr, gchar *query) {
+void * php_array_new_result_from_query(input_filter *input, struct rlib_queries *query) {
 	struct rlib_php_array_results *result = emalloc(sizeof(struct rlib_php_array_results));
-	long size;
+#if PHP_MAJOR_VERSION < 7
 	void *data, *lookup_data;
+#else
+	int unref_count;
+#endif
 	char *data_result;
 	char dstr[64];
 	HashTable *ht1, *ht2;
@@ -149,96 +147,146 @@ void * php_array_new_result_from_query(gpointer input_ptr, gchar *query) {
 	TSRMLS_FETCH();
 	
 	memset(result, 0, sizeof(struct rlib_php_array_results));
-	result->array_name = query;
+	result->array_name = query->sql;
 		
-	if ((size=zend_hash_find(&EG(symbol_table),query,strlen(query)+1, &data))==FAILURE) { 
+#if PHP_MAJOR_VERSION < 7
+	if (zend_hash_find(&EG(symbol_table), query->sql, strlen(query->sql) + 1, &data) == FAILURE) {
+		efree(result);
 		return NULL;
-	} else {
-		result->zend_value = *(zval **)data;
+	}
+	result->zend_value = *(zval **)data;
+
+#else
+	result->zend_value = zend_hash_str_find(&EG(symbol_table), query->sql, strlen(query->sql));
+	if (result->zend_value == NULL) {
+		efree(result);
+		return NULL;
 	}
 
-	ht1 = result->zend_value->value.ht;
-	result->rows = ht1->nNumOfElements;
+	/* Prevent an infinite loop with unref_count */
+	for (unref_count = 0; unref_count < 3 && Z_TYPE_P(result->zend_value) != IS_ARRAY; unref_count++) {
+		if (EXPECTED(Z_TYPE_P(result->zend_value) == IS_INDIRECT))
+			result->zend_value = Z_INDIRECT_P(result->zend_value);
+		if (EXPECTED(Z_TYPE_P(result->zend_value) == IS_REFERENCE))
+			result->zend_value = Z_REFVAL_P(result->zend_value);
+	}
+
+#endif
+
+	if (UNEXPECTED(Z_TYPE_P(result->zend_value) != IS_ARRAY)) {
+		efree(result);
+		return NULL;
+	}
+
+	ht1 = Z_ARRVAL_P(result->zend_value);
+	result->rows = zend_hash_num_elements(ht1);
 	zend_hash_internal_pointer_reset_ex(ht1, &pos1);
+#if PHP_MAJOR_VERSION < 7
 	zend_hash_get_current_data_ex(ht1, &data, &pos1);
 	zend_value = *(zval **)data;
+#else
+	zend_value = zend_hash_get_current_data_ex(ht1, &pos1);
+#endif
 	
-	ht2 = zend_value->value.ht;
-	result->cols = ht2->nNumOfElements;
+	ht2 = Z_ARRVAL_P(zend_value);
+	result->cols = zend_hash_num_elements(ht2);
 	
 	total_size = result->rows*result->cols*sizeof(char *);
 	result->data = emalloc(total_size);
 
-	if(result->cols <= 0)
+	if(result->cols <= 0) {
+		r_error(input->r, "ERROR: php_array_new_result_from_query cols <= 0\n");
 		return NULL;
+	}
 
 	zend_hash_internal_pointer_reset_ex(ht1, &pos1);
-	while(1) {
+	while (row < result->rows) {
+#if PHP_MAJOR_VERSION < 7
 		zend_hash_get_current_data_ex(ht1, &data, &pos1);
 		zend_value = *(zval **)data;
-		ht2 = zend_value->value.ht;
+#else
+		zend_value = zend_hash_get_current_data_ex(ht1, &pos1);
+#endif
+		ht2 = Z_ARRVAL_P(zend_value);
 		zend_hash_internal_pointer_reset_ex(ht2, &pos2);
 		col=0;
-		while(1) {
+		while (col < result->cols) {
+#if PHP_MAJOR_VERSION < 7
 			int lookup_result = zend_hash_get_current_data_ex(ht2, &lookup_data, &pos2);
 			if(lookup_result < 0) {
+#else
+			lookup_value = zend_hash_get_current_data_ex(ht2, &pos2);
+			if (lookup_value == NULL) {
+#endif
 				result->data[(row*result->cols)+col] = estrdup("RLIB: INVALID ARRAY CELL");
 				col++;
-				if(col >= result->cols) {
-					break;
-				}
-			
-			} else {
-
-				lookup_value = *(zval **)lookup_data;
-				zend_hash_move_forward_ex(ht2, &pos2);
-
-				data_result = NULL;
-				memset(dstr,0,64);
-				if( Z_TYPE_P(lookup_value) == IS_STRING )	
-					data_result = Z_STRVAL_P(lookup_value);
-				else if( Z_TYPE_P(lookup_value) == IS_LONG ) {	
-					sprintf(dstr,"%ld",Z_LVAL_P(lookup_value));
-					data_result = estrdup(dstr);
-				} else if( Z_TYPE_P(lookup_value) == IS_DOUBLE ) {	
-					sprintf(dstr,"%f",Z_DVAL_P(lookup_value));
-					data_result = estrdup(dstr);
-				} else if( Z_TYPE_P(lookup_value) == IS_NULL ) {	
-					data_result = estrdup("");
-				} else {
-					sprintf(dstr,"ZEND Z_TYPE %d NOT SUPPORTED",Z_TYPE_P(lookup_value));
-					data_result = estrdup(dstr);
-				}
-
-				result->data[(row*result->cols)+col] = data_result;
-				col++;
-				if(col >= result->cols) {
-					break;
-				}
+				continue;
 			}
+
+#if PHP_MAJOR_VERSION < 7
+			lookup_value = *(zval **)lookup_data;
+#endif
+
+			data_result = NULL;
+			memset(dstr,0,64);
+			if (Z_TYPE_P(lookup_value) == IS_STRING)
+				data_result = Z_STRVAL_P(lookup_value);
+			else if (Z_TYPE_P(lookup_value) == IS_LONG) {
+				sprintf(dstr, "%ld", (long)Z_LVAL_P(lookup_value));
+				data_result = estrdup(dstr);
+			} else if (Z_TYPE_P(lookup_value) == IS_DOUBLE) {
+				sprintf(dstr, "%f", Z_DVAL_P(lookup_value));
+				data_result = estrdup(dstr);
+			} else if (Z_TYPE_P(lookup_value) == IS_NULL) {
+				data_result = estrdup("");
+			} else {
+				sprintf(dstr,"ZEND Z_TYPE %d NOT SUPPORTED",Z_TYPE_P(lookup_value));
+				data_result = estrdup(dstr);
+			}
+
+			result->data[(row*result->cols)+col] = data_result;
+
+			col++;
+			zend_hash_move_forward_ex(ht2, &pos2);
 		}
 		row++;
-		if(row >= result->rows) {
-			break;
-		}
 		zend_hash_move_forward_ex(ht1, &pos1);
 	}
-	
+
 	return result;
 }
 
-static gint rlib_php_array_free_input_filter(gpointer input_ptr) {
+static gint rlib_php_array_free_input_filter(input_filter *input) {
 	return 0;
 }
 
-static void rlib_php_array_rlib_free_result(gpointer input_ptr, gpointer result_ptr) {
+static void rlib_php_array_rlib_free_result(input_filter *input, gpointer result_ptr) {
 }
 
+static gint rlib_php_array_num_fields(input_filter *input, gpointer result_ptr) {
+	struct rlib_php_array_results *result = result_ptr;
+
+	if (result == NULL)
+		return 0;
+
+	return result->cols;
+}
+
+static gchar *rlib_php_array_get_field_name(input_filter *input, gpointer result_ptr, gpointer field_ptr) {
+	struct rlib_php_array_results *result = result_ptr;
+	int field = GPOINTER_TO_INT(field_ptr) - 1;
+
+	if (result == NULL)
+		return NULL;
+
+	return result->data[field];
+}
 
 static gpointer rlib_php_array_new_input_filter(rlib *r) {
 	struct input_filter *input;
 	
 	input = emalloc(sizeof(struct input_filter));
+	memset(input, 0, sizeof(struct input_filter));
 	input->private = emalloc(sizeof(struct _private));
 	memset(input->private, 0, sizeof(struct _private));
 	input->r = r;
@@ -256,6 +304,10 @@ static gpointer rlib_php_array_new_input_filter(rlib *r) {
 
 	input->free = rlib_php_array_free_input_filter;
 	input->free_result = rlib_php_array_rlib_free_result;
+
+	input->num_fields = rlib_php_array_num_fields;
+	input->get_field_name = rlib_php_array_get_field_name;
+
 	return input;
 }
 

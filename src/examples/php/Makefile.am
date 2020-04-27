@@ -1,6 +1,6 @@
 ## bin/Makefile.am for RLIB
 
-## Copyright (c) 2003-2006 SICOM Systems Inc (bdoan@sicompos.com)
+## Copyright (c) 2003-2017 SICOM Systems Inc (bdoan@sicompos.com)
 ## rlib is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation; either version 2, or (at your option)
@@ -31,6 +31,6 @@ EXTRA_DIST = array2.xml array.xml fixed_part.php flow_part.php pages_across.php 
 noinst_SCRIPTS = products.xml
  
 products.xml:
-	$(LN_S) ../common/$@
+	$(LN_S) $(abs_srcdir)/../common/$@
 
 CLEANFILES = $(noinst_SCRIPTS)

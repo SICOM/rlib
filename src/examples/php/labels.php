@@ -1,4 +1,4 @@
-<? dl ("rlib.so");
+<?php
 	$data[0][0] = "name";
 	$data[0][1] = "address1";
 	$data[0][2] = "address2";

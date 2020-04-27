@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2020 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -54,13 +54,16 @@ struct bar {
 };
 
 static void string_copy(gchar *dest, gchar *src) {
+	gchar *srccopy = g_strdup(src);
 	gint len = strlen(src);
-	if (len > MAXSTRLEN - 1)
+	if (len > MAXSTRLEN - 1) {
 		len = MAXSTRLEN - 1;
-	if (len > 0) {
-		strncpy(dest, src, len);
-		dest[len] = '\0';
+		srccopy[len] = 0;
 	}
+	if (len > 0) {
+		strcpy(dest, srccopy);
+	}
+	g_free(srccopy);
 }
 
 static void free_chart(GSList *row_list[]) {

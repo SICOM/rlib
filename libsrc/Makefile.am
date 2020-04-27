@@ -1,6 +1,6 @@
 ## libsrc/Makefile.am for RLIB
 
-## Copyright (c) 2003-2006 SICOM Systems Inc (bdoan@sicompos.com)
+## Copyright (c) 2003-2017 SICOM Systems Inc (bdoan@sicompos.com)
 ## rlib is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation; either version 2, or (at your option)
@@ -28,9 +28,10 @@ lib_LTLIBRARIES = libr.la
 libr_la_SOURCES = parsexml.c reportgen.c layout.c graphing.c api.c \
 	resolution.c util.c util.h pcode.c pcode_op_functions.c variables.c \
 	formatstring.c fxp.c gantt.c gd.c breaks.c pdf.c html.c txt.c xml.c datasource.c \
-	csv.c ralloc.c environment.c free.c navigation.c axis.c \
-	xml_data_source.c csv_data_source.c rlib_langinfo.c rlib_input.h \
-	pcode.h ralloc.h rlib.h charencoder.c charencoder.h rlib_gd.h \
+	csv.c environment.c free.c navigation.c axis.c \
+	array_data_source.c xml_data_source.c csv_data_source.c \
+	rlib_langinfo.c rlib_input.h \
+	pcode.h rlib.h charencoder.c charencoder.h rlib_gd.h \
 	rlib_langinfo.h barcode.c datetime.c datetime.h value.c value.h $(GD_FILES)
 
 libr_la_LIBADD = $(RLIB_LIBS) $(top_builddir)/rpdf/librpdf.la
@@ -48,6 +49,6 @@ rlibincludedir=$(includedir)/rlib
 rlibinclude_HEADERS = rlib.h rlib_input.h charencoder.h datetime.h\
 	util.h value.h pcode.h
 
-AM_CFLAGS = $(RLIB_CFLAGS) $(RLIB_WERROR) -I$(top_srcdir)/rpdf
+AM_CFLAGS = $(RLIB_CFLAGS) -I$(top_srcdir)/rpdf
 
 EXTRA_DIST = rlib.i generate_bindings.sh

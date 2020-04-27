@@ -25,15 +25,17 @@
  * report defined in the rlib object.
  *
  */
+
+#include <config.h>
  
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <libintl.h>
+#include <locale.h>
 
-#include "config.h"
-
-#include "config.h"
+#include <rpdf.h>
 #include "rlib.h"
 #include "pcode.h"
 #include "rlib_input.h"
@@ -66,16 +68,16 @@ static const gchar *aligns[] = {
 };
 
 static struct rlib_paper paper[] = {
-	{RLIB_PAPER_LETTER,612, 792, "LETTER"},
-	{RLIB_PAPER_LEGAL, 612, 1008, "LEGAL"},
-	{RLIB_PAPER_A4, 595, 842, "A4"},
-	{RLIB_PAPER_B5, 499, 708, "B5"},
-	{RLIB_PAPER_C5, 459, 649, "C5"},
-	{RLIB_PAPER_DL, 312, 624, "DL"},
-	{RLIB_PAPER_EXECUTIVE, 522, 756, "EXECUTIVE"},
-	{RLIB_PAPER_COMM10, 297, 684, "COMM10"},
-	{RLIB_PAPER_MONARCH, 279, 540, "MONARCH"},
-	{RLIB_PAPER_FILM35MM, 528, 792, "FILM35MM"},
+	{RPDF_PAPER_LETTER,612, 792, "LETTER"},
+	{RPDF_PAPER_LEGAL, 612, 1008, "LEGAL"},
+	{RPDF_PAPER_A4, 595, 842, "A4"},
+	{RPDF_PAPER_B5, 499, 708, "B5"},
+	//{RPDF_PAPER_C5, 459, 649, "C5"},
+	//{RPDF_PAPER_DL, 312, 624, "DL"},
+	{RPDF_PAPER_EXECUTIVE, 522, 756, "EXECUTIVE"},
+	{RPDF_PAPER_COMM10, 297, 684, "COMM10"},
+	//{RPDF_PAPER_MONARCH, 279, 540, "MONARCH"},
+	//{RPDF_PAPER_FILM35MM, 528, 792, "FILM35MM"},
 	{0, 0, 0, ""},
 };
 
@@ -84,7 +86,9 @@ struct rlib_paper * rlib_layout_get_paper(rlib *r, gint paper_type) {
 	for(i=0;paper[i].type != 0;i++)
 		if(paper[i].type == paper_type)
 			return &paper[i];
-	return NULL;
+
+	/* Default paper size LETTER to prevent crashes. */
+	return &paper[0];
 }
 
 struct rlib_paper * rlib_layout_get_paper_by_name(rlib *r, gchar *paper_name) {
@@ -113,16 +117,27 @@ gfloat rlib_layout_estimate_string_width_from_extra_data(rlib *r, struct rlib_li
 	return rtn_width;
 }
 
-static gchar *rlib_encode_text(rlib *r, gchar *text, gchar **result) {
-	if (text == NULL) {
+gchar *rlib_encode_text(rlib *r, const gchar *text, gchar **result) {
+	if (text == NULL || *text == '\0') {
 		*result = g_strdup("");
 	} else {
-		gsize len = strlen(text);
-		gsize result_len;
-		rlib_charencoder_convert(r->output_encoder, &text, &len, result, &result_len);
+		gchar *text1 = (gchar *)text;
+
+		gsize len = strlen(text1);
+		gsize result_len = 3 * len;
+		gchar *result_tmp;
+		gboolean error;
+
+		result_tmp = g_malloc(result_len + 1);
+		*result = result_tmp;
+
+		rlib_charencoder_convert(r->output_encoder, &text1, &len, &result_tmp, &result_len, &error);
+
 		if (*result == NULL) {
-			r_error(r, "encode returned NULL result input was[%s], len=%d", text, r_strlen(text));
+			r_error(r, "encode returned NULL result input was[%s], len=%d\n", text, r_strlen(text));
 			*result = g_strdup("!ERR_ENC2");
+		} else if (error) {
+			r_error(r, "encode encountered non-convertible character in the input [%s]\n", text);
 		}
 	}
 	return *result;
@@ -183,7 +198,6 @@ static gchar *rlib_layout_get_true_text_from_extra_data(rlib *r, struct rlib_lin
 	gboolean *need_free) {
 	gchar *text = NULL;
 	gchar *align_text = NULL;
-	gchar *encoded_text = NULL;
 
 	if(extra_data->is_memo == FALSE && memo_line > 1) {
 		memset(spaced_out, ' ', extra_data->width);
@@ -192,9 +206,8 @@ static gchar *rlib_layout_get_true_text_from_extra_data(rlib *r, struct rlib_lin
 		return spaced_out;
 	} else {
 		if(extra_data->memo_line_count == 0) {
-		 	rlib_encode_text(r, extra_data->formatted_string, &encoded_text);
-			*need_free = TRUE;
-			return encoded_text;
+			*need_free = FALSE;
+			return extra_data->formatted_string;
 		} else {
 			if(memo_line > extra_data->memo_line_count) {
 				memset(spaced_out, ' ', extra_data->width);
@@ -217,10 +230,8 @@ static gchar *rlib_layout_get_true_text_from_extra_data(rlib *r, struct rlib_lin
 
 	extra_data->align = extra_data->report_field->align;
 	rlib_align_text(r, &align_text, text, extra_data->report_field->align, extra_data->report_field->width);
- 	rlib_encode_text(r, align_text, &encoded_text);
-	g_free(align_text);
 	*need_free = TRUE;
-	return encoded_text;
+	return align_text;
 }
 
 static gfloat rlib_layout_output_extras_start(rlib *r, struct rlib_part *part, gint backwards, gfloat left_origin, gfloat bottom_orgin, 
@@ -285,7 +296,7 @@ gint flag, gint memo_line) {
 		gfloat width = RLIB_FXP_TO_NORMAL_LONG_LONG(RLIB_VALUE_GET_AS_NUMBER(&extra_data->rval_image_width));
 		gchar *name = RLIB_VALUE_GET_AS_STRING(&extra_data->rval_image_name);
 		gchar *type = RLIB_VALUE_GET_AS_STRING(&extra_data->rval_image_type);
-		filename = get_filename(r, name, extra_data->report_index, FALSE);
+		filename = get_filename(r, name, extra_data->report_index, FALSE, use_relative_filename(r));
 		OUTPUT(r)->line_image(r, left_origin, bottom_orgin, filename, type, width, height);
 		g_free(filename);
 		rtn_width = extra_data->output_width;
@@ -295,7 +306,7 @@ gint flag, gint memo_line) {
 		gfloat width = RLIB_FXP_TO_NORMAL_LONG_LONG(RLIB_VALUE_GET_AS_NUMBER(&extra_data->rval_image_width));
 		gchar *name = RLIB_VALUE_GET_AS_STRING(&extra_data->rval_image_name);
 		gchar *type = RLIB_VALUE_GET_AS_STRING(&extra_data->rval_image_type);
-		filename = get_filename(r, name, extra_data->report_index, FALSE);
+		filename = get_filename(r, name, extra_data->report_index, FALSE, use_relative_filename(r));
 		OUTPUT(r)->line_image(r, left_origin, bottom_orgin, filename, type, width, height);
 		g_free(filename);
 		rtn_width = extra_data->output_width;
@@ -385,7 +396,6 @@ struct rlib_line_extra_data *extra_data) {
 static gfloat rlib_layout_text_string(rlib *r, gint backwards, gfloat left_origin, gfloat bottom_orgin, struct rlib_line_extra_data *extra_data, 
 gchar *text, gint memo_line) {
 	gfloat rtn_width;
-	gchar *encoded_text = NULL;
 
 	OUTPUT(r)->set_font_point(r, extra_data->font_point);
 	if(extra_data->found_color)
@@ -394,8 +404,7 @@ gchar *text, gint memo_line) {
 		OUTPUT(r)->start_bold(r);
 	if(extra_data->is_italics)
 		OUTPUT(r)->start_italics(r);
-	OUTPUT(r)->print_text(r, left_origin, bottom_orgin+(extra_data->font_point/300.0), rlib_encode_text(r, text, &encoded_text), backwards, extra_data);
-	g_free(encoded_text);
+	OUTPUT(r)->print_text(r, left_origin, bottom_orgin+(extra_data->font_point/300.0), text, backwards, extra_data);
 	rtn_width = extra_data->output_width;
 	if(extra_data->found_color)
 		OUTPUT(r)->set_fg_color(r, 0, 0, 0);
@@ -456,11 +465,12 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 		if (e->type == RLIB_ELEMENT_FIELD) {
 			gchar *buf = NULL;
 			rf = e->data;
-			if (rf == NULL) 
+			if (rf == NULL) {
 				r_error(r, "report_field is NULL ... will crash");
-			else if 
-				(rf->code == NULL) r_error(r, "There is no code for field");
-			
+				abort();
+			} else if (rf->code == NULL)
+				r_error(r, "There is no code for field");
+
 			rlib_execute_pcode(r, &extra_data[i].rval_code, rf->code, NULL);	
 			if(rf->link_code != NULL) {	
 				rlib_execute_pcode(r, &extra_data[i].rval_link, rf->link_code, &extra_data[i].rval_code);
@@ -524,12 +534,16 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 			
 			if(extra_data[i].is_memo == FALSE) {
 				rlib_format_string(r, &buf, rf, &extra_data[i].rval_code);
-				if(extra_data[i].translate && buf != NULL) {
-					gchar *tmp_str = gettext(buf);
+				if(r->textdomain && r->special_locale && extra_data[i].translate && buf != NULL) {
+					gchar *tmp_str;
+
+					setlocale(LC_ALL, r->special_locale);
+					tmp_str = dgettext(r->textdomain, buf);
 					if(tmp_str != buf) {
 						g_free(buf);
 						buf = g_strdup(tmp_str);				
 					}
+					setlocale(LC_ALL, r->current_locale);
 				}
 				extra_data[i].align = rf->align;
 				rlib_align_text(r, &tmp_align_buf, buf, rf->align, rf->width);
@@ -538,12 +552,16 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 
 			} else {
 				rlib_format_string(r, &buf, rf, &extra_data[i].rval_code);
-				if(extra_data[i].translate && buf != NULL) {
-					gchar *tmp_str = gettext(buf);
+				if(r->textdomain && r->special_locale && extra_data[i].translate && buf != NULL) {
+					gchar *tmp_str;
+
+					setlocale(LC_ALL, r->special_locale);
+					tmp_str = dgettext(r->textdomain, buf);
 					if(tmp_str != buf) {
 						g_free(buf);
 						buf = g_strdup(tmp_str);				
 					}
+					setlocale(LC_ALL, r->current_locale);
 				}
 
 				extra_data[i].formatted_string = buf;
@@ -616,8 +634,11 @@ static gint rlib_layout_execute_pcodes_for_line(rlib *r, struct rlib_part *part,
 					extra_data[i].translate = t;
 			}
 			txt_pointer = rt->value;
-			if(extra_data[i].translate)
-				txt_pointer = gettext(rt->value);
+			if(r->textdomain && r->special_locale && extra_data[i].translate) {
+				setlocale(LC_ALL, r->special_locale);
+				txt_pointer = dgettext(r->textdomain, rt->value);
+				setlocale(LC_ALL, r->current_locale);
+			}
 
 			extra_data[i].align = rt->align;
 			rlib_align_text(r, &extra_data[i].formatted_string, txt_pointer, rt->align, rt->width);
@@ -1081,7 +1102,7 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 								gfloat width1 = RLIB_FXP_TO_NORMAL_LONG_LONG(RLIB_VALUE_GET_AS_NUMBER(&extra_data[count].rval_image_width));
 								gchar *name = RLIB_VALUE_GET_AS_STRING(&extra_data[count].rval_image_name);
 								gchar *type = RLIB_VALUE_GET_AS_STRING(&extra_data[count].rval_image_type);
-								filename = get_filename(r, name, part->report_index, FALSE);
+								filename = get_filename(r, name, part->report_index, FALSE, use_relative_filename(r));
 								OUTPUT(r)->line_image(r, margin, rlib_layout_get_next_line(r, part, *rlib_position, rl), filename, type, width1, height1);
 								g_free(filename);
 								width = RLIB_GET_LINE(width1);
@@ -1091,7 +1112,7 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 								gfloat width1 = RLIB_FXP_TO_NORMAL_LONG_LONG(RLIB_VALUE_GET_AS_NUMBER(&extra_data[count].rval_image_width));
 								gchar *name = RLIB_VALUE_GET_AS_STRING(&extra_data[count].rval_image_name);
 								gchar *type = RLIB_VALUE_GET_AS_STRING(&extra_data[count].rval_image_type);
-								filename = get_filename(r, name, part->report_index, FALSE);
+								filename = get_filename(r, name, part->report_index, FALSE, use_relative_filename(r));
 								OUTPUT(r)->line_image(r, margin, rlib_layout_get_next_line(r, part, *rlib_position, rl), filename, type, width1, height1);
 								g_free(filename);
 								width = RLIB_GET_LINE(width1);
@@ -1190,7 +1211,7 @@ static gint rlib_layout_report_output_array(rlib *r, struct rlib_part *part, str
 				gchar *type = RLIB_VALUE_GET_AS_STRING(rval_type);
 				gchar *filename;
 				output_count++;
-				filename = get_filename(r, name, part->report_index, FALSE);
+				filename = get_filename(r, name, part->report_index, FALSE, use_relative_filename(r));
 				OUTPUT(r)->background_image(r, my_left_margin, rlib_layout_get_next_line_by_font_point(r, part, *rlib_position, height1), filename,
 					type, width1, height1);
 				g_free(filename);

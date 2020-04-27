@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2020 SICOM Systems, INC.
  *
  *  Authors:	Bob Doan <bdoan@sicompos.com>
  *
@@ -27,6 +27,7 @@
 #include <config.h>
 
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -98,6 +99,7 @@ struct _private {
 	GSList **bottom;
 
 	gint page_number;
+	gint image_counter;
 	struct rlib_gd *rgd;
 	struct _graph graph;
 };
@@ -142,16 +144,19 @@ static void html_graph_get_width_offset(rlib *r, gint *width_offset) {
 static void print_text(rlib *r, const gchar *text, gint backwards) {
 	gint current_page = OUTPUT_PRIVATE(r)->page_number;
 	struct _packet *packet = NULL;
+	gchar *encoded_text = NULL;
+
+	rlib_encode_text(r, text, &encoded_text);
 
 	if(backwards) {
 		if(OUTPUT_PRIVATE(r)->bottom[current_page] != NULL)
 			packet = OUTPUT_PRIVATE(r)->bottom[current_page]->data;
 		if(packet != NULL && packet->type == TEXT) {
-			g_string_append(packet->data, text);
+			g_string_append(packet->data, encoded_text);
 		} else {
 			packet = g_new0(struct _packet, 1);
 			packet->type = TEXT;
-			packet->data = g_string_new(text);
+			packet->data = g_string_new(encoded_text);
 			OUTPUT_PRIVATE(r)->bottom[current_page] = g_slist_prepend(OUTPUT_PRIVATE(r)->bottom[current_page], packet);
 		}
 	} else {
@@ -159,14 +164,16 @@ static void print_text(rlib *r, const gchar *text, gint backwards) {
 			packet = OUTPUT_PRIVATE(r)->top[current_page]->data;
 		}
 		if(packet != NULL && packet->type == TEXT) {
-			g_string_append(packet->data, text);
+			g_string_append(packet->data, encoded_text);
 		} else {
 			packet = g_new0(struct _packet, 1);
 			packet->type = TEXT;
-			packet->data = g_string_new(text);
+			packet->data = g_string_new(encoded_text);
 			OUTPUT_PRIVATE(r)->top[current_page] = g_slist_prepend(OUTPUT_PRIVATE(r)->top[current_page], packet);
 		}
 	}
+
+	g_free(encoded_text);
 }
 
 static gfloat html_get_string_width(rlib *r, const gchar *text) {
@@ -249,29 +256,33 @@ static void html_end_boxurl(rlib *r, gint backwards) {
 
 static void html_hr(rlib *r, gint backwards, gfloat left_origin, gfloat bottom_origin, gfloat how_long, gfloat how_tall,
 struct rlib_rgb *color, gfloat indent, gfloat length) {
-	gchar buf[MAXSTRLEN];
-	gchar nbsp[MAXSTRLEN];
 	gchar color_str[40];
-	gchar td[MAXSTRLEN];
+	gchar *buf = NULL, *td = NULL;
 	int i;
+
 	get_html_color(color_str, color);
 
+	if (how_tall <= 0)
+		return;
 
-	if( how_tall > 0 ) {
-		nbsp[0] = 0;
-		td[0] = 0;
-		if(indent > 0) {
-			for(i=0;i<(int)indent;i++)
-				strcpy(nbsp + (i*6), "&nbsp;");
-			sprintf(td, "<td style=\"height:%dpx; line-height:%dpx;\">%s</td>", (int)how_tall, (int)how_tall, nbsp);
-		}
+	if (indent > 0) {
+		int nbsp_nr = (int)indent;
+		gchar *nbsp = malloc(nbsp_nr * 6 + 8);
 
-		print_text(r, "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:100%;\"><tr>", backwards);
-		sprintf(buf,"%s<td style=\"height:%dpx; background-color:%s; width:100%%\"></td>",  td, (int)how_tall,color_str);
-		print_text(r, buf, backwards);
-		print_text(r, "</tr></table>\n", backwards);
-
+		for (i = 0; i < nbsp_nr; i++)
+			strcpy(nbsp + (i * 6), "&nbsp;");
+		if (asprintf(&td, "<td style=\"height:%dpx; line-height:%dpx;\">%s</td>", (int)how_tall, (int)how_tall, nbsp) < 0)
+			td = NULL;
+		free(nbsp);
 	}
+
+	print_text(r, "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:100%;\"><tr>", backwards);
+	if (asprintf(&buf,"%s<td style=\"height:%dpx; background-color:%s; width:100%%\"></td>", (td ? td : ""), (int)how_tall,color_str) < 0)
+		buf = NULL;
+	free(td);
+	print_text(r, (buf ? buf : ""), backwards);
+	free(buf);
+	print_text(r, "</tr></table>\n", backwards);
 }
 
 static void html_background_image(rlib *r, gfloat left_origin, gfloat bottom_origin, gchar *nname, gchar *type, gfloat nwidth,
@@ -308,13 +319,16 @@ static gchar *html_callback(struct rlib_delayed_extra_data *delayed_data) {
 	struct rlib_line_extra_data *extra_data = &delayed_data->extra_data;
 	rlib *r = delayed_data->r;
 	gchar *buf = NULL, *buf2 = NULL;
+	gchar *encoded_text = NULL;
 
 	rlib_execute_pcode(r, &extra_data->rval_code, extra_data->field_code, NULL);
 	rlib_format_string(r, &buf, extra_data->report_field, &extra_data->rval_code);
 	rlib_align_text(r, &buf2, buf, extra_data->report_field->align, extra_data->report_field->width);
+	rlib_encode_text(r, buf2, &encoded_text);
+	g_free(buf2);
 	g_free(buf);
 	g_free(delayed_data);
-	return buf2;
+	return encoded_text;
 }
 
 static void html_print_text_delayed(rlib *r, struct rlib_delayed_extra_data *delayed_data, int backwards, int rval_type) {
@@ -573,7 +587,7 @@ static void html_start_graph(rlib *r, struct rlib_part *part, struct rlib_report
 
 	memset(graph, 0, sizeof(struct _graph));
 
-	OUTPUT_PRIVATE(r)->rgd = rlib_gd_new(width, height,  g_hash_table_lookup(r->output_parameters, "html_image_directory"));
+	OUTPUT_PRIVATE(r)->rgd = rlib_gd_new(r, width, height,  g_hash_table_lookup(r->output_parameters, "html_image_directory"), OUTPUT_PRIVATE(r)->image_counter++);
 
 	sprintf(buf, "<img src=\"%s\" width=\"%f\" height=\"%f\" alt=\"graph\"/>", OUTPUT_PRIVATE(r)->rgd->file_name, width, height);
 	print_text(r, buf, FALSE);

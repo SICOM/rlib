@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Chet Heilman <cheilman@sicompos.com>
  *
@@ -29,7 +29,6 @@
 
 GIConv rlib_charencoder_new(const gchar *to_codeset, const gchar *from_codeset);
 void rlib_charencoder_free(GIConv converter);
-gint rlib_charencoder_convert(GIConv converter, gchar **inbuf, gsize *inbytes_left, gchar **outbuf, gsize *outbytes_left);
+gsize rlib_charencoder_convert(GIConv converter, gchar **inbuf, gsize *inbytes_left, gchar **outbuf, gsize *outbytes_left, gboolean *error);
 
 #endif
-

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -21,13 +21,15 @@
  *
  */
 
+#include <config.h>
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <time.h>
 #include <ctype.h>
 #include <inttypes.h>
-#include "config.h"
 
 #include "rlib.h"
 #include "pcode.h"

@@ -1,16 +1,26 @@
 %define phpextdir %(echo "`php-config --extension-dir`")
-%define pythonver %(echo "`python -c 'import sys; print sys.version[:3]'`")
 %define pythonextdir %(echo "`python -c 'from distutils import sysconfig; print sysconfig.get_python_lib(1,0)'`")
 %define perlextdir %(echo "`perl -e 'use Config; print $Config{archlib};'`")
 
 Summary: RLIB is a reporting engine/library.
 Name: rlib
 Version: @VERSION@
-Release: 2
+Release: 1%{?dist}
 License: GPL
 Group: System/Libraries
 Source: %name-%{version}.tar.gz
-BuildRequires: mysql-devel, perl, php-devel, postgresql-devel, python-devel, unixODBC-devel
+#Build
+BuildRequires: autoconf, automake, libtool, gettext-devel
+# Build documentation
+BuildRequires: docbook-utils-pdf, texlive-ec
+# Runtime
+BuildRequires: libxml2-devel, glib2-devel, zlib-devel
+BuildRequires: libharu-devel >= 2.3.0, fontconfig-devel
+Requires: libharu >= 2.3.0
+# Bindings
+BuildRequires: perl-devel, php-devel, python-devel
+# Input datasources
+BuildRequires: mysql-devel, postgresql-devel, unixODBC-devel
 BuildRoot: /var/tmp/%name-%{version}-root
 
 %description
@@ -84,16 +94,16 @@ To find out about all it can do visit: http://rlib.sicompos.com
 %prep
 %setup
 
-%configure --enable-utf8 --with-pythonver=%{pythonver}
+%configure
 
 %build
 make
 
 %install
 [ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf $RPM_BUILD_ROOT
-%makeinstall \
-	PERL_EXTENSION_DIR=$RPM_BUILD_ROOT%{perlextdir} \
-	PHP_EXTENSION_DIR=$RPM_BUILD_ROOT%{phpextdir} \
+make DESTDIR=$RPM_BUILD_ROOT install
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/php-zts.d
+install rlib.ini $RPM_BUILD_ROOT%{_sysconfdir}/php-zts.d
 
 %clean
 [ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf $RPM_BUILD_ROOT

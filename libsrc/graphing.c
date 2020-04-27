@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -26,6 +26,8 @@
  *
  */
  
+#include <assert.h>
+#include <libxml/parser.h>
 #include <stdlib.h>
 #include <string.h>
 #include "config.h"
@@ -141,7 +143,7 @@ gint determine_graph_type(gchar *type, gchar *subtype) {
 */
 static void rlib_graph_label_y_axis(rlib *r, gint side, gboolean for_real, gint y_ticks, gdouble y_min, gdouble y_max, gdouble y_origin, gint decimal_hint) {
 	gint i,j,max=0;
-	gchar format[20];
+	gchar format[64];
 	gint max_slen = 0;
 	if(decimal_hint < 0) {
 		for(j=0;j<6;j++) {
@@ -528,6 +530,7 @@ gfloat rlib_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, g
 				}
 			}
 		}
+		assert(i > 0);
 	}
 	
 	last_row_values = g_malloc(i * sizeof(gfloat));

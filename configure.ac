@@ -1,6 +1,6 @@
 dnl Configure template for RLIB
 
-dnl Copyright (c) 2003-2006 SICOM Systems Inc (bdoan@sicompos.com)
+dnl Copyright (c) 2003-2017 SICOM Systems Inc (bdoan@sicompos.com)
 dnl RLIB is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
 dnl the Free Software Foundation; either version 2, or (at your option)
@@ -20,7 +20,7 @@ dnl Report bugs to rlib-devel@lists.sourceforge.net
 dnl
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([rlib],[2.0.20],[http://bugzilla.sicompos.com])
+AC_INIT([rlib],[2.0.21],[http://bugzilla.sicompos.com])
 AC_CANONICAL_TARGET
 AC_CONFIG_SRCDIR(libsrc/rlib.h)
 AC_CONFIG_MACRO_DIR([m4])
@@ -30,12 +30,12 @@ AM_INIT_AUTOMAKE()
 AC_CONFIG_HEADERS(config.h)
 AM_MAINTAINER_MODE
 
-RLIB_VERSION=2.0.20
+RLIB_VERSION=2.0.21
 AC_SUBST(RLIB_VERSION)
 
 RLIB_LT_CURRENT=4
 RLIB_LT_AGE=3
-RLIB_LT_REVISION=20
+RLIB_LT_REVISION=21
 AC_SUBST(RLIB_LT_CURRENT)
 AC_SUBST(RLIB_LT_REVISION)
 AC_SUBST(RLIB_LT_AGE)
@@ -57,19 +57,20 @@ AC_CHECK_HEADERS(langinfo.h sys/time.h)
 
 AC_CHECK_FUNCS([localtime_r strfmon])
 
+gl_VISIBILITY
+AS_IF([test x$gl_cv_cc_visibility = xyes],
+	[AC_DEFINE(DLL_EXPORT_SYM,[__attribute__((visibility("default")))],[Explicitly export global symbols])],
+	[AC_DEFINE(DLL_EXPORT_SYM,[],[Explicitly export global symbols])]
+)
+
 dnl Checks for libraries.
 AC_CHECK_LIB(c, exit)
 AC_CHECK_LIB(m, exp)
-AC_CHECK_HEADER([zlib.h],
-	[AC_CHECK_LIB(z, zlibVersion,
-		enable_compressed_pdf=yes,
-		enable_compressed_pdf=no)],
-	[enable_compressed_pdf=no])
-if test x$enable_compressed_pdf = xyes; then
-	AC_DEFINE([RPDF_COMPRESS_STREAM], [], [RPDF can compress streams])
-	ZLIB_LIBS="-lz"
-fi
-AC_SUBST(ZLIB_LIBS)
+
+AC_CHECK_HEADERS(hpdf.h,,[AC_MSG_ERROR([libharu headers not found!])])
+AC_CHECK_LIB(hpdf, HPDF_New,[HPDF_LIBS=-lhpdf],[AC_MSG_ERROR([libharu library not found!])])
+AC_CHECK_LIB(hpdf, HPDF_UseUTFEncodings, [], [AC_MSG_ERROR([libharu must support HPDF_UseUTFEncodings])])
+AC_SUBST(HPDF_LIBS)
 
 PKG_CHECK_MODULES(LIBXML, libxml-2.0 >= 2.6.0)
 AC_SUBST(LIBXML_LIBS)
@@ -82,6 +83,10 @@ AC_SUBST(LIBGLIB_CFLAGS)
 PKG_CHECK_MODULES(LIBGMODULE, gmodule-2.0 >= 0.0.1)
 AC_SUBST(LIBGMODULE_LIBS)
 AC_SUBST(LIBGMODULE_CFLAGS)
+
+PKG_CHECK_MODULES(FONTCONFIG, fontconfig)
+AC_SUBST(FONTCONFIG_LIBS)
+AC_SUBST(FONTCONFIG_CFLAGS)
 
 case "$target" in
   *-*-cygwin*|*-*-mingw*)
@@ -313,24 +318,19 @@ AC_SUBST(ODBC_CFLAGS)
 AC_SUBST(ODBC_LIBS)
 
 
-AC_ARG_ENABLE(php,              [  --disable-php         disable php frontend],,enable_php=yes)
-PHP_CFLAGS=""
-PHP_EXTENSION_DIR=""
-if test x$enable_php = xyes; then
-	AC_PATH_PROG(PHP_CONFIG, php-config, no)
-	if test x$PHP_CONFIG = xno; then
-		enable_php=no
-		echo "*** WARNING: PHP NOT FOUND IN PATH.  RLIB WILL NOT BE COMPILED WITH SUPPORT FOR IT"
-	else
-		AC_DEFINE(HAVE_PHP,1,[Build with PHP support])
-		PHP_CFLAGS=`$PHP_CONFIG --includes`
-		PHP_EXTENSION_DIR=`$PHP_CONFIG --extension-dir`
-	fi
-fi
-AC_SUBST(PHP_CFLAGS)
-AC_SUBST(PHP_EXTENSION_DIR)
-AC_SUBST(HAVE_PHP)
+AC_ARG_ENABLE([php],
+	[AS_HELP_STRING([--disable-php],[disable php frontend])],
+	[],[enable_php=yes])
+AS_IF([test x$enable_php = xyes],
+	[AC_PATH_PROG(PHP_CONFIG,php-config,no)
+	 AS_IF([test $PHP_CONFIG = xno],
+		[AC_MSG_ERROR([php-config is not found])])
+	 AC_PROG_SED
+	 phpinidir=`$PHP_CONFIG --configure-options | $SED 's/.*with-config-file-scan-dir=\([[^ ]]*\).*/\1/'`
+	 phpversion=`$PHP_CONFIG --version`
+	])
 AM_CONDITIONAL(HAVE_PHP, test x$enable_php = xyes)
+AC_SUBST(phpinidir)
 
 AC_ARG_ENABLE(gd,              [  --disable-gd         disable gd graphing],,enable_gd=yes)
 GD_CFLAGS=""
@@ -497,34 +497,6 @@ AC_SUBST(PERL_CFLAGS)
 AC_SUBST(PERL_EXTENSION_DIR)
 AC_SUBST(PERL_LIBS)
 
-
-AC_MSG_CHECKING(whether iconv takes ISO8859-1 or ISO-8859-1)
-AC_RUN_IFELSE(
-        [AC_LANG_PROGRAM([[#include <iconv.h>]], [[	
-                iconv_open("ISO-8859-1","UTF-8");
-                if (errno)
-                        return -1;
-
-                return 0;
-        ]])],
-        AC_MSG_RESULT(ISO-8859-1)
-        AC_DEFINE(ICONV_ISO,["ISO-8859-1"], [ICONV Check]),
-        AC_MSG_RESULT(ISO8859-1)
-        AC_DEFINE(ICONV_ISO,["ISO8859-1"], [ICONV Check]),
-        dnl Cross-compiling: Assume a sensible MinGW behaviour.
-        dnl On Fedora 16's mingw32 suite, mingw32-win-iconv accepts both.
-        AC_MSG_RESULT(ISO-8859-1)
-        AC_DEFINE(ICONV_ISO,["ISO-8859-1"], [ICONV Check])
-)
-
-RLIB_WERROR=""
-AC_ARG_ENABLE(warningfun,              [  --enable-warningfun       enable more gcc warning flags],enable_warningfun="$enableval",enable_warningfun=no)
-if test x$enable_warningfun = xyes; then
-	RLIB_WERROR="-Werror "
-fi
-AC_SUBST(RLIB_WARNINGS)
-AC_SUBST(RLIB_WERROR)
-
 dnl Windows build is decided automatically by AC_CANONICAL_TARGET above
 if test x$enable_win32 = xyes; then
 	ac_save_CFLAGS="$CFLAGS"
@@ -558,14 +530,16 @@ dnl -D_GNU_SOURCE is needed.
 dnl For llabs(), -D_ISOC99_SOURCE is enough,
 dnl but e.g. strcasecmp is a GNU extension.
 
-RLIB_CFLAGS="-D_GNU_SOURCE -Wall -Wchar-subscripts $LIBXML_CFLAGS $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $MYSQL_CFLAGS $POSTGRES_CFLAGS $ODBC_CFLAGS $GD_CFLAGS $NO_CYGWIN"
+CFLAGS="-D_GNU_SOURCE -Wall -Wchar-subscripts -Werror $CFLAGS"
+
+RLIB_CFLAGS="$LIBXML_CFLAGS $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $MYSQL_CFLAGS $POSTGRES_CFLAGS $ODBC_CFLAGS $GD_CFLAGS $NO_CYGWIN"
 RLIB_LIBS="$LIBXML_LIBS $LIBGLIB_LIBS $LIBGMODULE_LIBS $ICONVLIBS $GD_LDFLAGS $GD_LIBS $GD_LINK "
 
 AC_SUBST(RLIB_CFLAGS)
 AC_SUBST(RLIB_LIBS)
 
-RPDF_CFLAGS="-D_GNU_SOURCE $LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $NO_CYGWIN"
-RPDF_LIBS="$LIBGLIB_LIBS $LIBGMODULE_LIBS $ZLIB_LIBS"
+RPDF_CFLAGS="$LIBGLIB_CFLAGS $LIBGMODULE_CFLAGS $NO_CYGWIN"
+RPDF_LIBS="$LIBGLIB_LIBS $LIBGMODULE_LIBS $HPDF_LIBS $FONTCONFIG_LIBS"
 AC_SUBST(RPDF_CFLAGS)
 AC_SUBST(RPDF_LIBS)
 
@@ -577,23 +551,6 @@ AC_C_CONST
 AC_ARG_ENABLE(memdebug,              [  --enable-memdebug       enable memory debugging],enable_memdebug="$enableval",enable_memdebug=no)
 if test x$enable_memdebug = xyes; then
 	AC_DEFINE(DEBUG_RLIB_MEMORY,1,[Debug RLIB memory usage])
-fi
-
-AC_ARG_ENABLE(crash,              [  --disable-crash       disable crash detection],enable_memdebug="$enableval",enable_crash=yes)
-if test x$enable_crash = xyes; then
-    AC_CHECK_HEADERS(sys/resource.h,
-	[AC_DEFINE(HAVE_SYS_RESOURCE_H, 1, [We have standard sys/resource.h])
-	 have_sys_res_h=yes], have_sys_res_h=no)
-    if test x$have_sys_res_h = xyes; then
-	AC_DEFINE(ENABLE_CRASH,1,[ENABLE CRASH DETECTION])
-    else
-	AC_MSG_WARN(Crash detection disabled because of missing sys/resource.h.)
-    fi
-fi
-
-AC_ARG_ENABLE(utf8,              [  --enable-utf8       enable utf8],enable_utf8=no,enable_utf8=yes)
-if test x$enable_utf8 = xyes; then
-	AC_DEFINE(DISABLE_UTF8,1,[DISABLE UTF8])
 fi
 
 AC_CONFIG_FILES([
@@ -611,7 +568,6 @@ src/examples/java/Makefile
 src/examples/perl/Makefile
 src/examples/csharp/Makefile
 bindings/Makefile
-bindings/php/Makefile
 bindings/python/Makefile
 bindings/perl/Makefile
 bindings/java/Makefile
@@ -635,9 +591,6 @@ rlib-$VERSION:
    prefix:                   ${prefix}
    compiler:                 ${CC}
    Memory debugging:         ${enable_memdebug}
-   Warning Fun:              ${enable_warningfun}
-   Crash detection:          ${enable_crash}
-   UTF8 disabled:            ${enable_utf8}
    WIN32 build:              ${enable_win32}
    Documentation:            ${enable_doc}
 
@@ -647,7 +600,7 @@ rlib-$VERSION:
     ODBC:                    ${enable_odbc}
 
    COMPRESSION:
-    PDF:                     ${enable_compressed_pdf}
+    PDF:                     Always
 
    GRAPHING:
     PDF:                     Always

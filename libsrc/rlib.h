@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -23,10 +23,10 @@
  * modules in the library.
  *
  */
-#include <libxml/parser.h>
 #include <time.h>
 #include <glib.h>
 
+#include "rlib_input.h"
 #include "charencoder.h"
 #include "datetime.h"
 #include "util.h"
@@ -103,17 +103,6 @@
 #define RLIB_FILE_BREAK 		950
 #define RLIB_FILE_BREAK_FIELD	975
 
-#define RLIB_PAPER_LETTER     1
-#define RLIB_PAPER_LEGAL      2
-#define RLIB_PAPER_A4         3
-#define RLIB_PAPER_B5         4
-#define RLIB_PAPER_C5         5
-#define RLIB_PAPER_DL         6
-#define RLIB_PAPER_EXECUTIVE  7
-#define RLIB_PAPER_COMM10     8
-#define RLIB_PAPER_MONARCH    9
-#define RLIB_PAPER_FILM35MM   10
-
 #define RLIB_PDF_DPI 72.0f
 
 #define RLIB_LAYOUT_FIXED 1
@@ -168,7 +157,7 @@ struct rlib_element {
 #define RLIB_ALIGN_CENTER	2
 
 struct rlib_from_xml {
-	xmlChar *xml;
+	unsigned char *xml; /* identical to xmlChar */
 	gint line;
 };
 
@@ -536,6 +525,10 @@ struct rlib_part {
 	gint suppress_page_header_first_page;
 
 	gint report_index;
+
+	/* For creating a test case */
+	unsigned char *xml_dump;
+	int xml_dump_len;
 };
 
 struct rlib_graph_x_minor_tick {
@@ -695,7 +688,7 @@ struct rlib_chart {
 };
 
 struct rlib_report {
-	xmlDocPtr doc;
+	gpointer doc;	/* opaque type for xmlDocPtr */
 	gchar *contents;
 	struct rlib_from_xml xml_font_size;
 	struct rlib_from_xml xml_query;
@@ -762,12 +755,6 @@ struct rlib_report {
 	struct rlib_pcode *suppress_code;
 	struct rlib_pcode *uniquerow_code;
 
-};
-
-struct rlib_queries {
-	gchar *sql;
-	gchar *name;
-	struct input_filter *input;
 };
 
 #define RLIB_REPORT_TYPE_FILE 1
@@ -865,12 +852,23 @@ struct rlib {
 	gint pcode_alpha_index;
 	gint pcode_alpha_m_index;
 
-	GIConv xml_encoder;
+	gchar *textdomain;
 
 	GSList *search_paths;
+
+	gboolean debug;
+
+	/* For creating a test case */
+	gboolean output_testcase;
+	gchar *testcase_dir;
+	GString *testcase;
+	GString **testcase_datasources;
+	GString *testcase_code;
+	GString *testcase_code2;
 };
 
 #define INPUT(r, i) (r->results[i]->input)
+#define QUERY(r, i) (r->queries[i])
 #define ENVIRONMENT(r) (r->environment)
 #define ENVIRONMENT_PRIVATE(r) (((struct _private *)r->evnironment->private))
 
@@ -879,6 +877,7 @@ struct environment_filter {
 	gchar *(*rlib_resolve_memory_variable)(char *);
 	gint (*rlib_write_output)(char *, int);
 	void (*free)(rlib *);
+	GString *(*rlib_dump_memory_variables)(void);
 };
 
 #define OUTPUT(r) (r->o)
@@ -1040,6 +1039,7 @@ rlib * rlib_init(void);
 rlib * rlib_init_with_environment(struct environment_filter *environment);
 gint rlib_add_query_as(rlib *r, const gchar *input_name, const gchar *sql, const gchar *name);
 gint rlib_add_query_pointer_as(rlib *r, const gchar *input_source, gchar *sql, const gchar *name);
+gint rlib_add_query_array_as(rlib *r, const gchar *input_source, gpointer array, gint rows, gint cols, const gchar *name);
 gint rlib_add_report(rlib *r, const gchar *name);
 gint rlib_add_report_from_buffer(rlib *r, gchar *buffer);
 gint rlib_execute(rlib *r);
@@ -1061,8 +1061,6 @@ gint rlib_add_parameter(rlib *r, const gchar *name, const gchar *value);
 gint rlib_set_locale(rlib *r, gchar *locale);
 gchar * rlib_bindtextdomain(rlib *r, gchar *domainname, gchar *dirname);
 void rlib_set_radix_character(rlib *r, gchar radix_character);
-void rlib_init_profiler(void);
-void rlib_dump_profile(gint profilenum, const gchar *filename);
 void rlib_trap(void); /* For internals debugging only */
 const gchar *rlib_version(void); /* returns the version string. */
 gint rlib_set_datasource_encoding(rlib *r, gchar *input_name, gchar *encoding);
@@ -1073,8 +1071,10 @@ gint rlib_graph_clear_bg_region(rlib *r, gchar *graph_name);
 gint rlib_graph_set_x_minor_tick(rlib *r, gchar *graph_name, gchar *x_value);
 gint rlib_graph_set_x_minor_tick_by_location(rlib *r, gchar *graph_name, gint location);
 gboolean rlib_add_function(rlib *r, gchar *function_name, gboolean (*function)(rlib *, struct rlib_pcode *code, struct rlib_value_stack *, struct rlib_value *this_field_value, gpointer user_data), gpointer user_data);
-gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean report); /* not an exported API, no rlib_ prefix */
+gboolean use_relative_filename(rlib *r);
+gchar *get_filename(rlib *r, const char *filename, int report_index, gboolean report, gboolean relative_filename); /* not an exported API, no rlib_ prefix */
 gint rlib_add_search_path(rlib *r, const gchar *path);
+void rlib_escape_c_string(GString *s, const char *str, int len);
 
 /***** PROTOTYPES: parsexml.c *************************************************/
 struct rlib_part * parse_part_file(rlib *r, gint report_index);
@@ -1156,7 +1156,7 @@ void rlib_csv_new_output_filter(rlib *r);
 
 /***** PROTOTYPES: mysql.c ****************************************************/
 gpointer rlib_mysql_new_input_filter(rlib *r);
-gpointer rlib_mysql_real_connect(gpointer input_ptr, gchar *group, gchar *host, gchar *user, gchar *password, gchar *database);
+gpointer rlib_mysql_real_connect(input_filter *input, gchar *group, gchar *host, gchar *user, gchar *password, gchar *database);
 
 /***** PROTOTYPES: datasource.c ***********************************************/
 gint rlib_add_datasource(rlib *r, const gchar *input_name, struct input_filter *input);
@@ -1168,10 +1168,11 @@ gint rlib_add_datasource_odbc(rlib *r, const gchar *input_name, const gchar *sou
 	const gchar *user, const gchar *password);
 gint rlib_add_datasource_xml(rlib *r, const gchar *input_name);
 gint rlib_add_datasource_csv(rlib *r, const gchar *input_name);
+gint rlib_add_datasource_array(rlib *r, const gchar *input_name);
 
 /***** PROTOTYPES: postgres.c **************************************************/
 gpointer rlib_postgres_new_input_filter(rlib *r);
-gpointer rlib_postgres_connect(gpointer input_ptr, gchar *conn);
+gpointer rlib_postgres_connect(input_filter *input, gchar *conn);
 
 
 /***** PROTOTYPES: layout.c ***************************************************/
@@ -1186,6 +1187,7 @@ void rlib_layout_report_footer(rlib *r, struct rlib_part *part, struct rlib_repo
 gfloat rlib_layout_get_next_line(rlib *r, struct rlib_part *part, gfloat position, struct rlib_report_lines *rl);
 gfloat rlib_layout_get_next_line_by_font_point(rlib *r, struct rlib_part *part, gfloat position, gfloat point);
 gint rlib_layout_end_page(rlib *r, struct rlib_part *part, struct rlib_report *report, gboolean normal);
+gchar *rlib_encode_text(rlib *r, const gchar *text, gchar **result);
 
 /***** PROTOTYPES: graphing.c **************************************************/
 gfloat rlib_graph(rlib *r, struct rlib_part *part, struct rlib_report *report, gfloat left_margin_offset, gfloat *top_margin_offset);
@@ -1199,11 +1201,11 @@ int adjust_limits(gdouble  dataMin, gdouble dataMax, gint denyMinEqualsAdjMin, g
 
 /***** PROTOTYPES: xml_data_source.c ******************************************************/
 gpointer rlib_xml_new_input_filter(rlib *r);
-gpointer rlib_xml_connect(gpointer input_ptr);
+gpointer rlib_xml_connect(input_filter *input);
 
 /***** PROTOTYPES: csv_data_source.c ******************************************************/
 gpointer rlib_csv_new_input_filter(rlib *r);
-gpointer rlib_csv_connect(gpointer input_ptr);
+gpointer rlib_csv_connect(input_filter *input);
 
 /***** PROTOTYPES: util.c ******************************************************/
 void rlogit(rlib *r, const gchar *fmt, ...);

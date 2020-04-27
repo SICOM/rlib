@@ -2,7 +2,6 @@
  *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
- *  Updated for PHP 7: Zoltán Böszörményi <zboszormenyi@sicom.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of version 2 of the GNU General Public
@@ -18,21 +17,54 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#ifndef _RPDF_INTERNAL_H_
+#define _RPDF_INTERNAL_H_
 
-#define LE_RLIB_NAME "rlib"
+#include <rpdf.h>
 
-#if PHP_MAJOR_VERSION < 7
-typedef int z_str_len_t;
-#else
-typedef size_t z_str_len_t;
-#endif
+/*
+ * Set this to 1 if RLIB sends UTF-8 strings
+ * instead of using the pre-set encoding.
+ */
+#define RLIB_SENDS_UTF8 0
 
-struct rlib_inout_pass {
-	rlib *r;
-	int content_type;
-	int format;
+struct rpdf_page_info {
+	HPDF_Page page;
+	HPDF_Font current_font;
+	gdouble font_size;
+	gdouble r, g, b;
 };
 
-typedef struct rlib_inout_pass rlib_inout_pass;
-struct environment_filter * rlib_php_new_environment();
-gint rlib_add_datasource_php_array(void *r, gchar *input_name);
+struct rpdf_delayed_text {
+	gint page_number;
+	HPDF_Font font;
+	gdouble fontsize;
+	gdouble x;
+	gdouble y;
+	gdouble angle;
+	gdouble r, g, b;
+	gint len;
+};
+
+struct rpdf {
+	HPDF_Doc pdf;
+	HPDF_STATUS status;
+
+	/* For debugging */
+	const char *func;
+	int line;
+
+	gint current_page;
+	gint page_count;
+	struct rpdf_page_info **page_info;
+
+	GHashTable *fonts;
+	GHashTable *fontfiles;
+#if RLIB_SENDS_UTF8
+	GHashTable *convs;
+#endif
+
+	gint use_compression;
+};
+
+#endif /* _RPDF_INTERNAL_H_ */

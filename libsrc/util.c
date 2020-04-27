@@ -83,48 +83,6 @@ int locale_codes[] = {
 	-1
 };
 
-#ifdef HAVE_SYS_RESOURCE_H
-#ifdef ENABLE_CRASH
-static void myFaultHandler (gint signum, siginfo_t *si, gpointer aptr) {
-	struct rlimit rlim;
-	rlogit(NULL, "** NUTS.. WE CRASHED\n");
-	getrlimit (RLIMIT_CORE, &rlim); /* POSSIBLY NOT NECESSARY */
-	rlim.rlim_cur = 1024000000; /* NECESSARY */
-	setrlimit (RLIMIT_CORE, &rlim); /* NECESSARY */
-	signal (SIGQUIT, SIG_DFL); /* KEEP THIS!!!!! */
-	kill (getpid(), SIGQUIT); /* IMPORTANT */
-	exit (5); /* THEORETICALLY IN THEORY THIS WILL NEVER GET CALLED... but lets play it safe */
-}
-#endif
-#endif
-
-static gint useMyHandler = TRUE;
-
-void init_signals(void) {
-#ifdef HAVE_SYS_RESOURCE_H
-#ifdef ENABLE_CRASH
-	struct sigaction sa;
-	if (useMyHandler) {
-		memset(&sa, 0, sizeof(struct sigaction));
-		sa.sa_handler = (void(*)(int))myFaultHandler;
-		sigaction (SIGILL, &sa, NULL);
-		sigaction (SIGBUS, &sa, NULL);
-		sigaction (SIGSEGV, &sa, NULL);
-		sigaction (SIGABRT, &sa, NULL);
-		sigaction (SIGIOT, &sa, NULL);
-		sigaction (SIGTRAP, &sa, NULL);
-		signal (SIGQUIT, SIG_DFL);
-	}
-#endif
-#endif
-}
-
-gint rutil_enableSignalHandler(gint trueorfalse) {
-	gint whatitwas = useMyHandler;
-	useMyHandler = trueorfalse;
-	return whatitwas;
-}
-
 gchar *strlwrexceptquoted (char *s) {
 	gchar c;
 	gchar *ptr = s;
@@ -390,23 +348,6 @@ struct rlib_datetime * stod(struct rlib_datetime *dt, gchar *str) {
 }
 
 gchar *strproper (gchar *s) {
-#if DISABLE_UTF8
-	gchar c;
-	gchar *ptr;
-
-	if (!s)
-		return NULL;
-
-	ptr = g_strdup(s);
-	if (!ptr)
-		return NULL;
-	s = ptr;
-	*s = toupper(*s);
-	s++;
-	while ((c = tolower(*s)) != '\0')
-		*s++ = c;
-	return ptr;
-#else
 	gchar *ptr, *s1, *ptr1;
 	gint len, first;
 	gunichar c;
@@ -449,7 +390,6 @@ gchar *strproper (gchar *s) {
 	*ptr1 = '\0';
 
 	return s1;
-#endif
 }
 
 
@@ -471,7 +411,6 @@ void make_more_space_if_necessary(gchar **str, gint *size, gint *total_size, gin
  * en_GB, utf8 and euro. Then it recombines the parts using a "utf8" encoding.
  */
 gchar *make_utf8_locale(const gchar *encoding) {
-	static char result[256];
 	gchar *locale, *codeset = NULL, *extra = NULL;
 	gchar buf[256];
 	gchar *t;
@@ -480,7 +419,7 @@ gchar *make_utf8_locale(const gchar *encoding) {
 	if ((encoding == NULL) || (r_strlen(encoding) < 2)) {
 		// shows in apache error_log
 		//r_warning(NULL, "encoding is NULL or invalid [%s]... using en_US\n", encoding);
-		return (char *)"en_US.utf8";
+		return g_strdup("en_US.utf8");
 	}
 	g_strlcpy(buf, encoding, sizeof(buf));
 	locale = buf;
@@ -499,11 +438,10 @@ gchar *make_utf8_locale(const gchar *encoding) {
 	}
 	codeset = (gchar *)"utf8";
 	if (extra) {
-		g_snprintf(result, sizeof(buf), "%s.%s@%s", locale, codeset, extra);
+		return g_strdup_printf("%s.%s@%s", locale, codeset, extra);
 	} else {
-		g_snprintf(result, sizeof(buf), "%s.%s", locale, codeset);
+		return g_strdup_printf("%s.%s", locale, codeset);
 	}
-	return result;
 }
 
 void make_all_locales_utf8(void) {
@@ -512,17 +450,22 @@ void make_all_locales_utf8(void) {
 	while ((i = *lc) != -1) {
 		char *t = setlocale(i, NULL);
 		if (t) {
-			if (!setlocale(i, make_utf8_locale(t))) {
+			gchar *l = make_utf8_locale(t);
+			if (!setlocale(i, l)) {
 				// shows in apache error log
 				//r_error(NULL, "Setting locale to [%s] FAILED\n", t);
 			}
+			g_free(l);
 		}
 		++lc;
 	}
 }
 
 /* For debug purposes so I can see a hex dump of certain utf8 strings. */
-inline guint itox(guint i) { return (i < 10)?'0'+i:'A'+i-10; }
+static guint itox(guint i) {
+	return (i < 10) ? '0' + i : 'A' + i - 10;
+}
+
 gchar *str2hex(const gchar *str) {
 	guint ch;
 	gchar *result = g_malloc(2 * strlen(str) + 1);

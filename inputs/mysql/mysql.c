@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -40,45 +40,67 @@ struct rlib_mysql_results {
 	gint isdone;
 	gint didprevious;
 	gint *fields;
+	gint cols;
 };
 
 struct _private {
 	MYSQL *mysql;
 };
 
-gpointer rlib_mysql_real_connect(gpointer input_ptr, gchar *group, gchar *host, gchar *user, gchar *password, gchar *database) {
-	struct input_filter *input = input_ptr;
-	MYSQL *mysql;
+gpointer rlib_mysql_real_connect(input_filter *input, gchar *group, gchar *host, gchar *user, gchar *password, gchar *database) {
+	MYSQL *mysql0, *mysql;
+	unsigned int port = 3306;
+	gchar *host_copy = NULL;
 
-	mysql = mysql_init(NULL);
+	mysql0 = mysql_init(NULL);
 
-	if(mysql == NULL)
+	if (mysql0 == NULL)
 		return NULL;
 
-	if(group != NULL) {
-		if (mysql_options(mysql,MYSQL_READ_DEFAULT_GROUP,group))
+	mysql_optionsv(mysql0, MYSQL_READ_DEFAULT_FILE, (void *)"/etc/my.cnf");
+
+	if (group != NULL) {
+		if (mysql_options(mysql0, MYSQL_READ_DEFAULT_GROUP, group))
 			return NULL;
+	} else if (host) {
+		char *tmp, *port_s;
+		host_copy = g_strdup(host);
+		tmp = strchr(host_copy, ':');
+		if (tmp) {
+			*tmp = '\0';
+			port_s = tmp + 1;
+			port = atoi(port_s);
+			if (!port)
+				port = 3306;
+		}
 	}
 
-	if (mysql_real_connect(mysql,
-		group == NULL ? host : mysql->options.host,
-		group == NULL ? user : mysql->options.user,
-		group == NULL ? password : mysql->options.password,
-		group == NULL ? database : mysql->options.db,
-		group == NULL ? 0 : mysql->options.port,
-		group == NULL ? NULL : mysql->options.unix_socket,
-		0
-	   ) == NULL)
+	mysql = mysql_real_connect(mysql0,
+		group == NULL ? host_copy : mysql0->options.host,
+		group == NULL ? user : mysql0->options.user,
+		group == NULL ? password : mysql0->options.password,
+		group == NULL ? database : mysql0->options.db,
+		group == NULL ? port : mysql0->options.port,
+		group == NULL ? NULL : mysql0->options.unix_socket,
+		0);
+	if (mysql == NULL) {
+		g_free(host_copy);
+		r_error(input->r, "ERROR: mysql_real_connect returned: %s\n", mysql_error(mysql));
 		return NULL;
+	}
 
-	mysql_select_db(mysql,database);
+	g_free(host_copy);
+
+	if (mysql_select_db(mysql, database)) {
+		r_error(input->r, "ERROR: mysql_select_db returned: %s\n", mysql_error(mysql));
+		return NULL;
+	}
 
 	INPUT_PRIVATE(input)->mysql = mysql;
 	return mysql;
 }
 
-static gint rlib_mysql_input_close(gpointer input_ptr) {
-	struct input_filter *input = input_ptr;
+static gint rlib_mysql_input_close(input_filter *input) {
 	mysql_close(INPUT_PRIVATE(input)->mysql);
 #if MYSQL_VERSION_ID > 40110
 /*	mysql_library_end(); */
@@ -88,7 +110,7 @@ static gint rlib_mysql_input_close(gpointer input_ptr) {
 	return 0;
 }
 
-static MYSQL_RES * rlib_mysql_query(MYSQL *mysql, gchar *query) {
+static MYSQL_RES *rlib_mysql_query(rlib *r, MYSQL *mysql, gchar *query) {
 	MYSQL_RES *result = NULL;
 	gint rtn;
 	rtn = mysql_query(mysql, query);
@@ -96,10 +118,12 @@ static MYSQL_RES * rlib_mysql_query(MYSQL *mysql, gchar *query) {
 		result = mysql_store_result(mysql);
 		return result;
 	}
+
+	r_error(r, "ERROR: MySQL error: %s\n", mysql_error(mysql));
 	return NULL;
 }
 
-static gint rlib_mysql_first(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_mysql_first(input_filter *input, gpointer result_ptr) {
 	struct rlib_mysql_results *result = result_ptr;
 	if (result) {
 		mysql_data_seek(result->result,0);
@@ -113,7 +137,7 @@ static gint rlib_mysql_first(gpointer input_ptr, gpointer result_ptr) {
 	return FALSE;
 }
 
-static gint rlib_mysql_next(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_mysql_next(input_filter *input, gpointer result_ptr) {
 	struct rlib_mysql_results *result = result_ptr;
 	MYSQL_ROW row;
 
@@ -140,7 +164,7 @@ static gint rlib_mysql_next(gpointer input_ptr, gpointer result_ptr) {
 	}
 }
 
-static gint rlib_mysql_isdone(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_mysql_isdone(input_filter *input, gpointer result_ptr) {
 	struct rlib_mysql_results *result = result_ptr;
 	if (result)
 		return result->isdone;
@@ -148,7 +172,7 @@ static gint rlib_mysql_isdone(gpointer input_ptr, gpointer result_ptr) {
 		return TRUE;
 }
 
-static gint rlib_mysql_previous(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_mysql_previous(input_filter *input, gpointer result_ptr) {
 	struct rlib_mysql_results *result = result_ptr;
 	if (result) {
 		result->save_row = result->this_row;
@@ -164,11 +188,11 @@ static gint rlib_mysql_previous(gpointer input_ptr, gpointer result_ptr) {
 	return FALSE;
 }
 
-static gint rlib_mysql_last(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_mysql_last(input_filter *input, gpointer result_ptr) {
 	return TRUE;
 }
 
-static gchar * rlib_mysql_get_field_value_as_string(gpointer input_ptr, gpointer result_ptr, gpointer field_ptr) {
+static gchar * rlib_mysql_get_field_value_as_string(input_filter *input, gpointer result_ptr, gpointer field_ptr) {
 	struct rlib_mysql_results *result = result_ptr;
 	gint field = GPOINTER_TO_INT(field_ptr);
 	if(result_ptr == NULL)
@@ -179,7 +203,7 @@ static gchar * rlib_mysql_get_field_value_as_string(gpointer input_ptr, gpointer
 	return result->this_row[field];
 }
 
-static gpointer rlib_mysql_resolve_field_pointer(gpointer input_ptr, gpointer result_ptr, gchar *name) {
+static gpointer rlib_mysql_resolve_field_pointer(input_filter *input, gpointer result_ptr, gchar *name) {
 	struct rlib_mysql_results *results = result_ptr;
 	gint x=0;
 	MYSQL_FIELD *field;
@@ -195,27 +219,27 @@ static gpointer rlib_mysql_resolve_field_pointer(gpointer input_ptr, gpointer re
 	return NULL;
 }
 
-void * mysql_new_result_from_query(gpointer input_ptr, gchar *query) {
-	struct input_filter *input = input_ptr;
+void * mysql_new_result_from_query(struct input_filter *input, struct rlib_queries *query) {
 	struct rlib_mysql_results *results;
 	MYSQL_RES *result;
-	guint count,i;
-	result = rlib_mysql_query(INPUT_PRIVATE(input)->mysql, query);
-	if(result == NULL)
+	guint i;
+	result = rlib_mysql_query(input->r, INPUT_PRIVATE(input)->mysql, query->sql);
+	if(result == NULL) {
+		r_error(input->r, "ERROR: rlib_mysql_query returned NULL\n");
 		return NULL;
-	else {
+	} else {
 		results = g_malloc(sizeof(struct rlib_mysql_results));
 		results->result = result;
 	}
-	count = mysql_field_count(INPUT_PRIVATE(input)->mysql);
-	results->fields = g_malloc(sizeof(gint) * count);
-	for(i=0;i<count;i++) {
-		results->fields[i] = i+1;
+	results->cols = mysql_field_count(INPUT_PRIVATE(input)->mysql);
+	results->fields = g_malloc(sizeof(gint) * results->cols);
+	for (i = 0; i < results->cols; i++) {
+		results->fields[i] = i + 1;
 	}
 	return results;
 }
 
-static void rlib_mysql_rlib_free_result(gpointer input_ptr, gpointer result_ptr) {
+static void rlib_mysql_rlib_free_result(struct input_filter *input, gpointer result_ptr) {
 	struct rlib_mysql_results *results = result_ptr;
 	if (results) {
 		mysql_free_result(results->result);
@@ -224,24 +248,49 @@ static void rlib_mysql_rlib_free_result(gpointer input_ptr, gpointer result_ptr)
 	}
 }
 
-static gint rlib_mysql_free_input_filter(gpointer input_ptr) {
-	struct input_filter *input = input_ptr;
+static gint rlib_mysql_free_input_filter(input_filter *input) {
 	g_free(input->private);
 	g_free(input);
 	return 0;
 }
 
-static const gchar* rlib_mysql_get_error(gpointer input_ptr) {
-	struct input_filter *input = input_ptr;
+static const gchar* rlib_mysql_get_error(input_filter *input) {
 	return mysql_error(INPUT_PRIVATE(input)->mysql);
+}
+
+static gint rlib_mysql_num_fields(input_filter *input, gpointer result_ptr) {
+	struct rlib_mysql_results *result = result_ptr;
+
+	if (result == NULL)
+		return 0;
+
+	return result->cols;
+}
+
+static gchar *rlib_mysql_get_field_name(input_filter *input, gpointer result_ptr, gpointer field_ptr) {
+	struct rlib_mysql_results *result = result_ptr;
+	gint x, fieldnum = GPOINTER_TO_INT(field_ptr) - 1;
+	MYSQL_FIELD *field;
+
+	if (!result)
+		return NULL;
+
+	mysql_field_seek(result->result, 0);
+
+	x = 0;
+	while ((field = mysql_fetch_field(result->result))) {
+		if (x == fieldnum)
+			return field->name;
+		x++;
+	}
+	return NULL;
 }
 
 gpointer rlib_mysql_new_input_filter(rlib *r) {
 	struct input_filter *input;
 
-	input = g_malloc(sizeof(struct input_filter));
-	input->private = g_malloc(sizeof(struct _private));
-	memset(input->private, 0, sizeof(struct _private));
+	input = g_malloc0(sizeof(struct input_filter));
+	input->private = g_malloc0(sizeof(struct _private));
 	input->r = r;
 	input->input_close = rlib_mysql_input_close;
 	input->first = rlib_mysql_first;
@@ -257,5 +306,9 @@ gpointer rlib_mysql_new_input_filter(rlib *r) {
 
 	input->free = rlib_mysql_free_input_filter;
 	input->free_result = rlib_mysql_rlib_free_result;
+
+	input->num_fields = rlib_mysql_num_fields;
+	input->get_field_name = rlib_mysql_get_field_name;
+
 	return input;
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: William K. Volkman
  *
@@ -176,6 +176,40 @@ implement_signal_call(rlib *rlib_ptr,  void *user_data) {
 	return 1;
 }
 
+static GString *rlib_python_dump_memory_variables(void) {
+	GString *dump;
+	PyObject *moduledict = PyImport_GetModuleDict();
+	PyObject *mainmodule;
+	PyObject *dict;
+	PyObject *key, *value;
+	Py_ssize_t pos = 0;
+
+	dump = g_string_new("");
+
+	mainmodule = PyDict_GetItemString(moduledict, "__main__");
+	if (!PyModule_Check(mainmodule)) {
+		PyErr_SetString(RLIBError, "could not find main module");
+		return dump;
+	}
+
+	dict = PyModule_GetDict(mainmodule);
+
+	while (PyDict_Next(dict, &pos, &key, &value)) {
+		const char *k;
+		const char *v;
+		Py_ssize_t k_len, v_len;
+
+		if (PyObject_AsCharBuffer(key, &k, &k_len) != 0 || PyObject_AsCharBuffer(value, &v, &v_len) != 0)
+			continue;
+
+		g_string_append_printf(dump, "%s=\"", k);
+		rlib_escape_c_string(dump, v, v_len);
+		g_string_append(dump, "\"\n");
+	}
+
+	return dump;
+}
+
 static gchar * rlib_python_resolve_memory_variable(gchar *name) {
 	PyObject	*moduledict = PyImport_GetModuleDict();
 	PyObject	*mainmodule;
@@ -221,10 +255,11 @@ static void rlib_python_free(rlib *r) {
 
 static struct environment_filter *rlib_python_new_environment() {
 	struct environment_filter *ef;
-        ef = g_malloc(sizeof(struct environment_filter));
-        ef->rlib_resolve_memory_variable = rlib_python_resolve_memory_variable;
-        ef->rlib_write_output = rlib_python_write_output;
-        ef->free = rlib_python_free;
+	ef = g_malloc(sizeof(struct environment_filter));
+	ef->rlib_resolve_memory_variable = rlib_python_resolve_memory_variable;
+	ef->rlib_write_output = rlib_python_write_output;
+	ef->free = rlib_python_free;
+	ef->rlib_dump_memory_variables = rlib_python_dump_memory_variables;
 	return ef;
 }
 
@@ -267,8 +302,7 @@ rlib_python_array_locate(char *name)
 	return PySequence_Fast(array, "array is of incorrect type");
 }
 
-void * rlib_python_array_new_result_from_query(gpointer input_ptr, gchar *query) {
-	struct input_filter *input = input_ptr;
+void * rlib_python_array_new_result_from_query(input_filter *input, struct rlib_queries *query) {
         struct rlib_python_array_results *result;
 	PyObject	*outerlist;
 	PyObject	*innerlist;
@@ -284,9 +318,9 @@ void * rlib_python_array_new_result_from_query(gpointer input_ptr, gchar *query)
 	if (result == NULL)
 		return PyErr_NoMemory();
         memset(result, 0, sizeof(struct rlib_python_array_results));
-        result->array_name = query;
+        result->array_name = query->sql;
 
-	outerlist = rlib_python_array_locate(query);
+	outerlist = rlib_python_array_locate(query->sql);
 	if (outerlist == NULL) {
 		PyMem_Free(result);
 		return NULL;
@@ -355,12 +389,19 @@ void * rlib_python_array_new_result_from_query(gpointer input_ptr, gchar *query)
         return result;
 }
 
+static gint rlib_python_array_num_fields(input_filter * input, gpointer result_ptr) {
+	struct rlib_python_array_results *result = result_ptr;
 
+	if (result == NULL)
+		return 0;
 
-static gint rlib_python_array_input_close(gpointer input_ptr) {
+	return result->cols;
+}
+
+static gint rlib_python_array_input_close(input_filter *input) {
         return TRUE;
 }
-static gint rlib_python_array_first(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_first(input_filter *input, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
         result->current_row = 1;
         if(result->rows <= 1) {
@@ -371,7 +412,7 @@ static gint rlib_python_array_first(gpointer input_ptr, gpointer result_ptr) {
         return TRUE;
 }
 
-static gint rlib_python_array_next(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_next(input_filter *input, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
 	result->current_row++;
 	result->isdone = FALSE;
@@ -382,12 +423,12 @@ static gint rlib_python_array_next(gpointer input_ptr, gpointer result_ptr) {
 	return FALSE;
 }
 
-static gint rlib_python_array_isdone(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_isdone(input_filter *input, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
         return result->isdone;
 }
 
-static gint rlib_python_array_previous(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_previous(input_filter *input, gpointer result_ptr) {
 	struct rlib_python_array_results *result = result_ptr;
 	result->current_row--;
 	result->isdone = FALSE;
@@ -396,13 +437,13 @@ static gint rlib_python_array_previous(gpointer input_ptr, gpointer result_ptr) 
 	result->current_row = 0;
 	return FALSE;
 }
-static gint rlib_python_array_last(gpointer input_ptr, gpointer result_ptr) {
+static gint rlib_python_array_last(input_filter *input, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
         result->current_row = result->rows-1;
         return TRUE;
 }
 
-static gchar * rlib_python_array_get_field_value_as_string(gpointer input_ptr, gpointer result_ptr, gpointer field_ptr) {
+static gchar * rlib_python_array_get_field_value_as_string(input_filter *input, gpointer result_ptr, gpointer field_ptr) {
         struct rlib_python_array_results *result = result_ptr;
         int which_field = GPOINTER_TO_INT(field_ptr) - 1;
         if(result->rows <= 1)
@@ -411,7 +452,7 @@ static gchar * rlib_python_array_get_field_value_as_string(gpointer input_ptr, g
         return result->data[(result->current_row*result->cols)+which_field];
 }
 
-static gpointer rlib_python_array_resolve_field_pointer(gpointer input_ptr, gpointer result_ptr, gchar *name) {
+static gpointer rlib_python_array_resolve_field_pointer(input_filter *input, gpointer result_ptr, gchar *name) {
         struct rlib_python_array_results *result = result_ptr;
         int i;
         for(i=0;i<result->cols;i++) {
@@ -423,8 +464,17 @@ static gpointer rlib_python_array_resolve_field_pointer(gpointer input_ptr, gpoi
         return NULL;
 }
 
-static gint rlib_python_array_free_input_filter(gpointer input_ptr) {
-	struct input_filter *input = input_ptr;
+static gchar *rlib_python_array_get_field_name(input_filter *input, gpointer result_ptr, gpointer field_ptr) {
+	struct rlib_python_array_results *result = result_ptr;
+	int field = GPOINTER_TO_INT(field_ptr) - 1;
+
+	if (result == NULL)
+		return NULL;
+
+	return result->data[field];
+}
+
+static gint rlib_python_array_free_input_filter(input_filter *input) {
 	if (input->private) {
 		PyMem_Free(input->private);
 		input->private = NULL;
@@ -433,8 +483,7 @@ static gint rlib_python_array_free_input_filter(gpointer input_ptr) {
         return 0;
 }
 
-static void rlib_python_array_free_result(gpointer input_ptr, gpointer result_ptr) {
-	struct input_filter *input = input_ptr;
+static void rlib_python_array_free_result(input_filter *input, gpointer result_ptr) {
         struct rlib_python_array_results *result = result_ptr;
 	int	i, j;
 	if (result) {
@@ -451,11 +500,13 @@ static void rlib_python_array_free_result(gpointer input_ptr, gpointer result_pt
 }
 
 
-gpointer rlib_python_array_new_input_filter() {
+gpointer rlib_python_array_new_input_filter(rlib *r) {
         struct input_filter *input;
         input = PyMem_Malloc(sizeof(struct input_filter));
+        memset(input, 0, sizeof(struct input_filter));
         input->private = PyMem_Malloc(sizeof(struct _private));
         memset(input->private, 0, sizeof(struct _private));
+        input->r = r;
         input->input_close = rlib_python_array_input_close;
         input->first = rlib_python_array_first;
         input->next = rlib_python_array_next;
@@ -469,6 +520,10 @@ gpointer rlib_python_array_new_input_filter() {
 
         input->free = rlib_python_array_free_input_filter;
         input->free_result = rlib_python_array_free_result;
+
+        input->num_fields = rlib_python_array_num_fields;
+        input->get_field_name = rlib_python_array_get_field_name;
+
         return input;
 }
 
@@ -486,7 +541,7 @@ method_add_datasource_array(PyObject *self, PyObject *_args) {
 	if (!PyArg_ParseTuple(_args, "s:add_datasource_array", &datasource))
 		return NULL;
 	check_rlibobject_open(rp);
-	(void) rlib_add_datasource(rp->rlib_ptr, datasource, rlib_python_array_new_input_filter());
+	(void) rlib_add_datasource(rp->rlib_ptr, datasource, rlib_python_array_new_input_filter(rp->rlib_ptr));
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -577,7 +632,6 @@ method_add_function(PyObject *self, PyObject *_args) {
 	char		*name;
 	int		param_count;
 	func_chain	*nfp;
-	long		result;
 	
 	PyObject *callable;
 	if (!PyArg_ParseTuple(_args, "sOi:add_function", &name, &callable, &param_count))
@@ -595,7 +649,7 @@ method_add_function(PyObject *self, PyObject *_args) {
 	nfp->param_count = param_count;
 	nfp->next = rp->funcs;
 	rp->funcs = nfp;
-	result = rlib_add_function(rp->rlib_ptr, name, implement_function_call, nfp);
+	rlib_add_function(rp->rlib_ptr, name, implement_function_call, nfp);
 	Py_INCREF(Py_None);
 	return Py_None;
 }

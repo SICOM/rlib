@@ -20,10 +20,12 @@
  * $Id$
  */
 
+#include <config.h>
+
 #include <stdlib.h>
 #include <gmodule.h>
+#include <libxml/parser.h>
 
-#include "config.h"
 #include "rlib.h"
 #include "pcode.h"
 #include "rlib_input.h"
@@ -543,8 +545,14 @@ void rlib_free_results_and_queries(rlib *r) {
 	for(i=0;i<r->queries_count;i++) {
 		if (r->results[i]->result)
 			INPUT(r, i)->free_result(INPUT(r, i), r->results[i]->result);
-		g_free(r->queries[i]->sql);
-		g_free(r->queries[i]->name);
+		if (QUERY(r, i) && QUERY(r, i)->input && QUERY(r, i)->input->free_query)
+			QUERY(r, i)->input->free_query(QUERY(r, i)->input, QUERY(r, i));
+		if (r && r->queries[i]) {
+			g_free(r->queries[i]->sql);
+			r->queries[i]->sql = NULL;
+			g_free(r->queries[i]->name);
+			r->queries[i]->name = NULL;
+		}
 	}
 }
 
@@ -586,6 +594,7 @@ gint rlib_free(rlib *r) {
 	rlib_free_follower(r);
 	g_free(r->special_locale);
 	g_free(r->current_locale);
+	g_free(r->textdomain);
 	for(i=0;i<r->queries_count;i++) {
 		g_free(r->queries[i]);
 		g_free(r->results[i]);

@@ -20,7 +20,7 @@
 ##
 ## Process this file with automake to produce Makefile.in
 
-AM_CFLAGS = $(LIBGLIB_CFLAGS) $(RLIB_CFLAGS) $(RLIB_WERROR) -I${top_srcdir}/libsrc
+AM_CFLAGS = $(LIBGLIB_CFLAGS) $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
 odbcincludedir=$(includedir)/rlib
 lib_LTLIBRARIES = libr-odbc.la
 libr_odbc_la_SOURCES = odbc.c

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2006 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -18,11 +18,36 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#include <config.h>
+
+#include <string.h>
 #include <unistd.h>
 #include <glib.h>
 
-#include "config.h"
 #include "rlib.h"
+
+static GString *rlib_c_dump_memory_variables() {
+	GString *dump;
+	int pos;
+
+	dump = g_string_new("");
+
+	for (pos = 0; environ[pos]; pos++) {
+		gchar *env = g_strdup(environ[pos]);
+		char *eq = strchr(env, '=');
+
+		if (eq) {
+			*eq = 0x00;
+			g_string_append_printf(dump, "%s=\"", env);
+			rlib_escape_c_string(dump, eq + 1, -1);
+			g_string_append(dump, "\"\n");
+		}
+
+		g_free(env);
+	}
+
+	return dump;
+}
 
 static gchar * rlib_c_resolve_memory_variable(gchar *name) {
 	return (gchar *)g_getenv(name);
@@ -43,4 +68,5 @@ void rlib_new_c_environment(rlib *r) {
 	ENVIRONMENT(r)->rlib_resolve_memory_variable = rlib_c_resolve_memory_variable;
 	ENVIRONMENT(r)->rlib_write_output = rlib_c_write_output;
 	ENVIRONMENT(r)->free = rlib_c_free;
+	ENVIRONMENT(r)->rlib_dump_memory_variables = rlib_c_dump_memory_variables;
 }

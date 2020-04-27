@@ -42,26 +42,6 @@ void safestrncpy(gchar *dest, gchar *str, int n) {
 }
 
 
-#if DISABLE_UTF8
-static void utf8_to_8813(rlib *r, gchar *dest, gchar *str) {
-	size_t len;
-	size_t slen;
-	gchar *olddest = dest;
-	if(str != NULL && str[0] != 0) {
-		if(r->xml_encoder != NULL && r->xml_encoder != (void *)-1) {
-			slen = strlen(str);
-			len = slen + sizeof(gchar);
-			memset(dest, 0, len);
-			g_iconv(r->xml_encoder, (char **)&str, &slen, &olddest, &len);
-		} else {
-			strcpy(dest, str);
-		}
-	} else {
-		dest[0] = 0;
-	}
-}
-#endif
-
 static int ignoreElement(const char *elname) {
 	const xmlChar	*xmlname = (xmlChar *)elname;
 	int result = FALSE;
@@ -106,19 +86,16 @@ static struct rlib_element * parse_line_array(rlib *r, xmlDocPtr doc, xmlNsPtr n
 	while (cur != NULL) {
 		current = NULL;
 		if ((!xmlStrcmp(cur->name, (const xmlChar *) "field"))) {
-			struct rlib_report_field *f = g_new0(struct rlib_report_field, 1);
-			current = (void *)g_new0(struct rlib_element, 1);
+			struct rlib_report_field *f;
 			sp = xmlGetProp(cur, (const xmlChar *) "value");
 			if(sp == NULL) {
 				r_error(r, "Line: %d - <field> is missing 'value' attribute. \n", xmlGetLineNo (cur),cur->name);
 				return NULL;
 			}
+			f = g_new0(struct rlib_report_field, 1);
+			current = (void *)g_new0(struct rlib_element, 1);
 			f->value = g_malloc0(strlen((char *)sp) + sizeof(gchar));
-#if DISABLE_UTF8
-			utf8_to_8813(r, f->value, (gchar *)sp);
-#else
 			safestrncpy(f->value, (gchar *)sp, strlen((char *)sp)+1);
-#endif
 			xmlFree(sp);
 			/* TODO: we need to utf to 8813 all string values in single quotes */
 			f->value_line_number = xmlGetLineNo (cur);
@@ -147,12 +124,8 @@ static struct rlib_element * parse_line_array(rlib *r, xmlDocPtr doc, xmlNsPtr n
 				t->value = g_malloc0(strlen((char *)sp) + sizeof(gchar));
 			else
 				t->value = g_malloc0(sizeof(gchar));
-#if DISABLE_UTF8
-			utf8_to_8813(r, t->value, (char *)sp);
-#else
 			if(sp != NULL)
 				safestrncpy(t->value, (gchar *)sp, strlen((char *)sp)+1);
-#endif
 			xmlFree(sp);
 			get_both(&t->xml_align, cur, "align");
 			get_both(&t->xml_bgcolor, cur, "bgcolor");
@@ -799,14 +772,10 @@ struct rlib_part * parse_part_file(rlib *r, int report_index) {
 
 	xmlLineNumbersDefault(1);
 
-#if DISABLE_UTF8
-	r->xml_encoder = g_iconv_open(ICONV_ISO, "UTF-8");
-#endif
-
 	if(type == RLIB_REPORT_TYPE_BUFFER)
 		doc = xmlReadMemory(filename, strlen(filename), NULL, NULL, XML_PARSE_XINCLUDE);
 	else {
-		gchar *file = get_filename(r, filename, report_index, TRUE);
+		gchar *file = get_filename(r, filename, report_index, TRUE, FALSE);
 		doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
 		g_free(file);
 	}
@@ -835,6 +804,7 @@ struct rlib_part * parse_part_file(rlib *r, int report_index) {
 	part = (struct rlib_part *) g_new0(struct rlib_part, 1);
 	if(part == NULL) {
 		r_error(r, "Out of Memory :(\n");
+		g_free(report);
 		xmlFreeDoc(doc);
 		return(NULL);
 	}
@@ -891,12 +861,10 @@ struct rlib_part * parse_part_file(rlib *r, int report_index) {
 		return(NULL);
 	}
 
-	xmlFreeDoc(doc);
+	if (r->output_testcase)
+		xmlDocDumpFormatMemory(doc, &part->xml_dump, &part->xml_dump_len, 1);
 
-#if DISABLE_UTF8
-	if((long)r->xml_encoder != -1)
-		g_iconv_close(r->xml_encoder);
-#endif
+	xmlFreeDoc(doc);
 
 	return part;
 }
@@ -911,7 +879,7 @@ static struct rlib_report * parse_report_file(rlib *r, int report_index, gchar *
 
 	xmlLineNumbersDefault(1);
 
-	file = get_filename(r, filename, report_index, FALSE);
+	file = get_filename(r, filename, report_index, FALSE, FALSE);
 	doc = xmlReadFile(file, NULL, XML_PARSE_XINCLUDE);
 	g_free(file);
 	xmlXIncludeProcess(doc);

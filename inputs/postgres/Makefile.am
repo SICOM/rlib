@@ -20,7 +20,7 @@
 ##
 ## Process this file with automake to produce Makefile.in
 
-AM_CFLAGS = $(RLIB_CFLAGS) $(RLIB_WERROR) -I${top_srcdir}/libsrc
+AM_CFLAGS = $(RLIB_CFLAGS) -I${top_srcdir}/libsrc
 postgresincludedir=$(includedir)/rlib
 lib_LTLIBRARIES = libr-postgres.la
 libr_postgres_la_SOURCES = postgres.c

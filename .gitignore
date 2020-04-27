@@ -131,6 +131,7 @@ rpdf/librpdf.la
 rpdf/rpdf.lo
 rpdf/test
 rpdf/test.o
+rpdf/*.pdf
 src/.deps/
 src/Makefile
 src/Makefile.in
@@ -173,3 +174,13 @@ tests/test2
 tests/test2.o
 tests/test3
 tests/test3.o
+
+bindings/php/acinclude.m4
+bindings/php/mkinstalldirs
+bindings/php/build
+bindings/php/modules
+bindings/php/Makefile*
+bindings/php/config.*
+!bindings/php/config.m4
+bindings/php/configure*
+bindings/php/run-tests.php

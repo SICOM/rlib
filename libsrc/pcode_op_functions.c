@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2014 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -18,7 +18,10 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#include "config.h"
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <time.h>
@@ -26,7 +29,6 @@
 #include <inttypes.h>
 #include <locale.h>
 
-#include "config.h"
 #include "rlib.h"
 #include "datetime.h"
 #include "pcode.h"
@@ -961,7 +963,7 @@ gint rlib_pcode_operator_val(rlib *r, struct rlib_pcode *code, struct rlib_value
 
 /* TODO: REVISIT THIS */
 gint rlib_pcode_operator_str(rlib *r, struct rlib_pcode *code, struct rlib_value_stack *vs, struct rlib_value *this_field_value, gpointer user_data) {
-	gchar fmtstring[20];
+	gchar fmtstring[64];
 	gchar *dest;
 	gint64 n1, n2;
 	struct rlib_value *v1, *v2, *v3, rval_rtn;

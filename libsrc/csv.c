@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2003-2014 SICOM Systems, INC.
+ *  Copyright (C) 2003-2017 SICOM Systems, INC.
  *
  *  Authors: Bob Doan <bdoan@sicompos.com>
  *
@@ -18,10 +18,12 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#include <config.h>
+
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
-#include "config.h"
 #include "rlib.h"
 #include "pcode.h"
 
@@ -41,19 +43,25 @@ struct _private {
 };
 
 static void print_text(rlib *r, const gchar *text, gint backwards, gint col, gint rval_type) {
+	gchar *encoded_text = NULL;
+
+	rlib_encode_text(r, text, &encoded_text);
+
 	if(col < MAX_COL) {
 		OUTPUT_PRIVATE(r)->rval_type[col] = rval_type;
 		if(OUTPUT_PRIVATE(r)->col[col][0] == 0)
-			strcpy(OUTPUT_PRIVATE(r)->col[col], text);
+			strcpy(OUTPUT_PRIVATE(r)->col[col], encoded_text);
 		else {
 			gchar *tmp;
-			tmp = g_strdup_printf("%s %s", OUTPUT_PRIVATE(r)->col[col], text);
+			tmp = g_strdup_printf("%s %s", OUTPUT_PRIVATE(r)->col[col], encoded_text);
 			if(strlen(tmp) > MAXSTRLEN)
 				tmp[MAXSTRLEN] = 0;
 			strncpy(OUTPUT_PRIVATE(r)->col[col], tmp, MAXSTRLEN);
 			g_free(tmp);
 		}
 	}
+
+	g_free(encoded_text);
 }
 
 static gfloat csv_get_string_width(rlib *r, const gchar *text) {
@@ -85,7 +93,8 @@ static char csv_get_delimiter(rlib *r) {
 }
 
 static void really_print_text(rlib *r, const gchar *passed_text, gint rval_type, gint field_count) {
-	gchar buf[MAXSTRLEN], text[MAXSTRLEN];
+	GString *buf = g_string_new(NULL);
+	gchar text[MAXSTRLEN];
 	gchar *str_ptr;
 	gchar csv_delimeter;
 	gint text_size = strlen(passed_text);
@@ -120,39 +129,40 @@ static void really_print_text(rlib *r, const gchar *passed_text, gint rval_type,
 			text_size += 2;
 
 			if (field_count == 0) {
-				sprintf(buf, "\"%s\"", text);
+				g_string_printf(buf, "\"%s\"", text);
 			} else {
 				/* Handle null delimeter */
 				if (csv_delimeter) {
-					sprintf(buf, "%c\"%s\"", csv_delimeter, text);
+					g_string_printf(buf, "%c\"%s\"", csv_delimeter, text);
 					text_size += 1;
 				} else {
-					sprintf(buf, "\"%s\"", text);					
+					g_string_printf(buf, "\"%s\"", text);
 				}
 			}
 		} else {
 			text_size = spot -1;
 			if (field_count == 0) {
-				sprintf(buf, "%s", text);
+				g_string_printf(buf, "%s", text);
 			} else {
 				/* Handle null delimeter */
 				if (csv_delimeter) {
-					sprintf(buf, "%c%s", csv_delimeter, text);
+					g_string_printf(buf, "%c%s", csv_delimeter, text);
 					text_size += 1;
 				} else {
-					strcat(buf, text);
+					g_string_printf(buf, "%s", text);
 				}
 			}
 		}
 	} else {
-		strcpy(buf, passed_text);
+		g_string_printf(buf, "%s", passed_text);
 	}
 
 	make_more_space_if_necessary(&OUTPUT_PRIVATE(r)->top, &OUTPUT_PRIVATE(r)->top_size, 
 		&OUTPUT_PRIVATE(r)->top_total_size, text_size);
 	str_ptr = OUTPUT_PRIVATE(r)->top;	
 	size = &OUTPUT_PRIVATE(r)->top_size;
-	memcpy(str_ptr + (*size), buf, text_size+1);
+	memcpy(str_ptr + (*size), buf->str, text_size + 1);
+	g_string_free(buf, TRUE);
 	*size = (*size) + text_size;
 }
 

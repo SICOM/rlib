@@ -18,10 +18,13 @@
  * Boston, MA 02111-1307, USA.
  */
  
+#include <config.h>
+
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
-#include "config.h"
+#include <rpdf.h>
 #include "rlib.h"
 #include "pcode.h"
 #include "rlib_input.h"
@@ -58,10 +61,8 @@ gint rlib_resolve_rlib_variable(rlib *r, gchar *name) {
 
 gchar * rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 	struct input_filter *rs = INPUT(r, rf->resultset);
-#if !DISABLE_UTF8
 	gsize slen, elen;
 	gchar *ptr = NULL;
-#endif	
 	gchar *str;
 
 
@@ -72,18 +73,17 @@ gchar * rlib_resolve_field_value(rlib *r, struct rlib_resultset_field *rf) {
 		str = rs->get_field_value_as_string(rs, r->results[rf->resultset]->result, rf->field);
 	else
 		str = "";
-#if DISABLE_UTF8
-	return g_strdup(str);
-#else
 	if(str == NULL)
 		return g_strdup("");
 	else {
+		gboolean error __attribute__((unused));
+
 		slen = strlen(str);
 		elen = MAXSTRLEN;
-		rlib_charencoder_convert(rs->info.encoder, &str, &slen, &ptr, &elen);
+		/* Here we are converting to UTF-8, so we don't care about the error */
+		rlib_charencoder_convert(rs->info.encoder, &str, &slen, &ptr, &elen, &error);
 		return ptr;
 	}
-#endif
 }
 
 gint rlib_lookup_result(rlib *r, gchar *name) {
@@ -102,6 +102,9 @@ gint rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gint *r
 	gint found = FALSE;
 	gchar *right_side = NULL, *result_name = NULL;
 
+	if (r->results == NULL)
+		return FALSE;
+
 	resultset = r->current_result;
 	right_side = memchr(name, '.', r_strlen(name));
 	if(right_side != NULL) {
@@ -117,10 +120,10 @@ gint rlib_resolve_resultset_field(rlib *r, char *name, void **rtn_field, gint *r
 			resultset = t;
 		} else {
 			if(!isdigit((int)*result_name)) {
-				r_error(r, "rlib_resolve_namevalue: INVALID RESULT SET %s, name was [%s]\n", result_name, name);
+				g_free(result_name);
 				return FALSE;
 			}
-		}		
+		}
 	}
 	*rtn_field = INPUT(r, resultset)->resolve_field_pointer(INPUT(r, resultset), r->results[resultset]->result, name);
 	
@@ -511,7 +514,7 @@ void rlib_resolve_part_fields(rlib *r, struct rlib_part *part) {
 	part->left_margin_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_left_margin.xml, part->xml_left_margin.line, TRUE);
 	part->bottom_margin = RLIB_DEFAULT_BOTTOM_MARGIN;
 	part->bottom_margin_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_bottom_margin.xml, part->xml_bottom_margin.line, TRUE);
-	part->paper = rlib_layout_get_paper(r, RLIB_PAPER_LETTER);
+	part->paper = rlib_layout_get_paper(r, RPDF_PAPER_LETTER);
 	part->paper_type_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_paper_type.xml, part->xml_paper_type.line, TRUE);
 	part->pages_across = 1;
 	part->pages_across_code = rlib_infix_to_pcode(r, part, NULL, (gchar *)part->xml_pages_across.xml, part->xml_pages_across.line, TRUE);
